@@ -11,7 +11,8 @@ def _production_complete() -> Parametres:
     return Parametres(
         environnement="production",
         session_secret_key="x" * 64,
-        database_url="postgresql://postgres:secret@example.test:5432/mahay",
+        database_url="postgresql://mahay_runtime.ref-test:secret@example.test:5432/mahay",
+        migration_database_url="postgresql://postgres.ref-test:secret@example.test:5432/mahay",
         supabase_url="https://example.supabase.co",
         supabase_service_key="service-secret",
     )
@@ -34,6 +35,30 @@ def test_configuration_production_refuse_sqlite_et_secret_faible() -> None:
     assert any("SESSION_SECRET_KEY" in erreur for erreur in erreurs)
     with pytest.raises(RuntimeError, match="Configuration production incomplete"):
         valider_configuration_production(config)
+
+
+def test_configuration_production_refuse_un_compte_runtime_privilegie() -> None:
+    config = replace(
+        _production_complete(),
+        database_url="postgresql://postgres.ref-test:secret@example.test:5432/mahay",
+    )
+    erreurs = erreurs_configuration_production(config)
+    assert any("rôle personnalisé mahay_runtime" in erreur for erreur in erreurs)
+
+
+def test_configuration_production_refuse_le_meme_role_pour_runtime_et_migrations() -> None:
+    config = replace(
+        _production_complete(),
+        migration_database_url="postgresql://mahay_runtime.ref-test:other@example.test:5432/mahay",
+    )
+    erreurs = erreurs_configuration_production(config)
+    assert any("deux rôles PostgreSQL distincts" in erreur for erreur in erreurs)
+
+
+def test_configuration_production_exige_un_compte_migrations_separe() -> None:
+    config = replace(_production_complete(), migration_database_url="")
+    erreurs = erreurs_configuration_production(config)
+    assert any("MIGRATION_DATABASE_URL" in erreur for erreur in erreurs)
 
 
 def test_configuration_production_refuse_stockage_ephemere() -> None:
