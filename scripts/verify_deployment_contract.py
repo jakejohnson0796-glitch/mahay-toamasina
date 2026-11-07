@@ -11,6 +11,7 @@ DOCKERFILE = ROOT / "Dockerfile"
 REQUIRED_RENDER_KEYS = {
     "ENVIRONNEMENT",
     "DATABASE_URL",
+    "MIGRATION_DATABASE_URL",
     "SESSION_SECRET_KEY",
     "SUPABASE_URL",
     "SUPABASE_SERVICE_KEY",
@@ -34,7 +35,7 @@ def verifier_contrat_render() -> tuple[int, int]:
     assert REQUIRED_RENDER_KEYS <= keys, sorted(REQUIRED_RENDER_KEYS - keys)
     for group in OPTIONAL_GROUPS:
         assert group <= keys, sorted(group - keys)
-    for key in ("DATABASE_URL", "SESSION_SECRET_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "LIVEKIT_API_SECRET"):
+    for key in ("DATABASE_URL", "MIGRATION_DATABASE_URL", "SESSION_SECRET_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "LIVEKIT_API_SECRET"):
         bloc = re.search(rf"(?ms)^\s*- key: {re.escape(key)}\s*$.*?(?=^\s*- key: |\Z)", render)
         assert bloc is not None, key
         assert "sync: false" in bloc.group(0), key
