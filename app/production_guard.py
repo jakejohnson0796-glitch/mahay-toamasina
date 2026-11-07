@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from urllib.parse import urlsplit
 
+from sqlalchemy.engine import make_url
+
 from .config import Parametres
 
 
@@ -12,6 +14,16 @@ def _est_postgresql(url: str) -> bool:
     except ValueError:
         return False
     return scheme in {"postgresql", "postgres"}
+
+
+def _role_postgres(url: str) -> str:
+    """Extrait seulement le nom du rôle, jamais le mot de passe ni l'URL."""
+    try:
+        utilisateur = make_url(url).username or ""
+    except Exception:
+        return ""
+    # Supavisor attend ROLE.PROJECT_REF ; une connexion directe utilise ROLE.
+    return utilisateur.split(".", 1)[0].strip().lower()
 
 
 def erreurs_configuration_production(config: Parametres) -> list[str]:
@@ -38,6 +50,21 @@ def erreurs_configuration_production(config: Parametres) -> list[str]:
 
     if not _est_postgresql(config.database_url):
         erreurs.append("DATABASE_URL doit pointer vers PostgreSQL en production.")
+
+    if not _est_postgresql(config.migration_database_url):
+        erreurs.append("MIGRATION_DATABASE_URL doit pointer vers PostgreSQL en production.")
+    else:
+        role_runtime = _role_postgres(config.database_url)
+        role_migration = _role_postgres(config.migration_database_url)
+        if role_runtime and role_runtime in {"postgres", "supabase_admin", "service_role"}:
+            erreurs.append(
+                "DATABASE_URL doit utiliser le rôle personnalisé mahay_runtime, "
+                "pas un rôle d'administration ou un rôle qui contourne RLS."
+            )
+        if not role_runtime or not role_migration or role_runtime == role_migration:
+            erreurs.append(
+                "DATABASE_URL et MIGRATION_DATABASE_URL doivent utiliser deux rôles PostgreSQL distincts."
+            )
 
     if not config.supabase_url.strip() or not config.supabase_service_key.strip():
         erreurs.append(
