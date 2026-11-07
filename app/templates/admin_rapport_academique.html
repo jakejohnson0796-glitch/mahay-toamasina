@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titre %}Suivi pédagogique global — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="rapport-pedagogique-title">
+    <div>
+      <span class="ops-kicker">Pilotage · suivi académique</span>
+      <h1 id="rapport-pedagogique-title">Vue pédagogique des cours.</h1>
+      <p>Indicateurs agrégés issus des devoirs, des notes officiellement publiées et des pointages validés. Aucune note nominative n'est exposée sur cette page.</p>
+      <div class="ops-hero-actions">
+        <a href="/admin/stats">Statistiques générales</a>
+        <a href="/admin/statistiques-academiques.csv">Exporter le rapport CSV</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ statistiques.totaux.nb_cours }}</strong><span>cours</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.totaux.nb_etudiants }}</strong><span>étudiants distincts</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.totaux.nb_inscriptions }}</strong><span>inscriptions aux cours</span></div>
+      <div class="ops-stat"><strong>{{ "%.2f"|format(statistiques.totaux.moyenne) if statistiques.totaux.moyenne is not none else "—" }}</strong><span>moyenne agrégée / 20</span></div>
+    </div>
+  </section>
+
+  <section class="ops-section">
+    <div class="ops-metric-grid">
+      <div class="ops-metric"><strong>{{ statistiques.totaux.nb_evaluations }}</strong><span>Évaluations créées</span></div>
+      <div class="ops-metric"><strong>{{ statistiques.totaux.nb_rendus }}</strong><span>Copies reçues</span></div>
+      <div class="ops-metric"><strong>{{ statistiques.totaux.nb_corriges }}</strong><span>Copies notées</span></div>
+      <div class="ops-metric"><strong>{{ statistiques.totaux.nb_seances }}</strong><span>Séances</span></div>
+      <div class="ops-metric"><strong>{{ statistiques.totaux.presences.present }}</strong><span>Présences validées</span></div>
+      <div class="ops-metric"><strong>{{ statistiques.totaux.presences.absent }}</strong><span>Absences validées</span></div>
+      <div class="ops-metric"><strong>{{ statistiques.totaux.presences.retard }}</strong><span>Retards validés</span></div>
+      <div class="ops-metric"><strong>{{ statistiques.totaux.presences.excuse }}</strong><span>Absences excusées</span></div>
+    </div>
+  </section>
+
+  <section class="ops-section">
+    <div class="ops-section-head"><div><h2>Répartition par portée académique</h2><p>Les cours universitaires et scolaires restent séparés pour ne pas mélanger les cohortes.</p></div></div>
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Portée</th><th>Cours</th><th>Inscriptions</th><th>Évaluations</th><th>Rendus</th><th>Corrigés</th><th>Moyenne / 20</th></tr></thead>
+        <tbody>
+          {% for groupe in statistiques.par_portee %}
+          <tr><th>{{ groupe.portee|capitalize }}</th><td>{{ groupe.nb_cours }}</td><td>{{ groupe.nb_inscriptions }}</td><td>{{ groupe.nb_evaluations }}</td><td>{{ groupe.nb_rendus }}</td><td>{{ groupe.nb_corriges }}</td><td>{{ "%.2f"|format(groupe.moyenne) if groupe.moyenne is not none else "—" }}</td></tr>
+          {% else %}<tr><td colspan="7">Aucun cours enregistré.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="ops-section">
+    <div class="ops-section-head"><div><h2>Détail par cours</h2><p>La couverture des notes indique la part des étudiants ayant au moins une moyenne calculable.</p></div></div>
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Cours</th><th>Responsable</th><th>Matière / niveau</th><th>Étudiants</th><th>Évaluations</th><th>Rendus / corrigés</th><th>Couverture</th><th>Moyenne / 20</th></tr></thead>
+        <tbody>
+          {% for ligne in statistiques.cours %}
+          <tr>
+            <th><strong>{{ ligne.cours.nom }}</strong><small>{{ ligne.portee|capitalize }} · {{ ligne.nb_seances }} séance(s)</small></th>
+            <td>{{ ligne.professeur.nom if ligne.professeur else "Non renseigné" }}</td>
+            <td>{{ ligne.cours.matiere }} · {{ ligne.cours.niveau }}</td>
+            <td>{{ ligne.nb_etudiants }}</td>
+            <td>{{ ligne.nb_evaluations }}</td>
+            <td>{{ ligne.nb_rendus }} / {{ ligne.nb_corriges }}</td>
+            <td>{{ ligne.couverture_notes_pct }} %</td>
+            <td><strong>{{ "%.2f"|format(ligne.moyenne) if ligne.moyenne is not none else "—" }}</strong></td>
+          </tr>
+          {% else %}<tr><td colspan="8">Aucun cours n'est encore créé.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="ops-section-head">Les moyennes sont calculées sur 20 à partir des notes publiées, après application des coefficients. Les rendus non corrigés, les propositions IA et les pointages « à renseigner » sont exclus.</p>
+</div>
+{% endblock %}

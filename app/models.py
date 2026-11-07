@@ -1499,6 +1499,10 @@ class TypeNotification(str, Enum):
     DOCUMENT_SUPPRIME = "document_supprime"
     FICHE_REVISION_PRETE = "fiche_revision_prete"
     FICHE_REVISION_DOCUMENT_PRETE = "fiche_revision_document_prete"
+    NOUVEAU_DEVOIR = "nouveau_devoir"
+    NOTE_PUBLIEE = "note_publiee"
+    STATUT_PRESENCE = "statut_presence"
+    RAPPEL_ECHEANCE = "rappel_echeance"
 
 
 class Notification(SQLModel, table=True):
@@ -1519,6 +1523,7 @@ class Notification(SQLModel, table=True):
     acteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     cercle_id: Optional[int] = Field(default=None, foreign_key="cercleetude.id")
     message_id: Optional[int] = Field(default=None, foreign_key="messagecercle.id")
+    url_destination: Optional[str] = Field(default=None, max_length=300)
     lu: bool = Field(default=False)
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
 
@@ -1617,6 +1622,8 @@ class Cours(SQLModel, table=True):
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
     matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
     description: Optional[str] = None
+    objectifs: Optional[str] = None
+    code_invitation: Optional[str] = Field(default=None, unique=True, index=True, max_length=12)
     professeur_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
@@ -1650,17 +1657,36 @@ class Seance(SQLModel, table=True):
 
 
 class PresenceSeance(SQLModel, table=True):
-    """Une ligne par (seance, utilisateur) ayant rejoint la salle au
-    moins une fois. heure_sortie reste vide tant que l'utilisateur est
-    connecte ; mise a jour a chaque 'quitter' (et re-ouverte si la
-    personne revient et repart plusieurs fois — on garde la derniere
-    sortie, la duree_estimee_secondes cumule au fil des allers-retours)."""
+    """Historique technique des connexions réelles à une salle."""
     id: Optional[int] = Field(default=None, primary_key=True)
     seance_id: int = Field(foreign_key="seance.id")
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
     heure_entree: datetime = Field(default_factory=datetime.utcnow)
     heure_sortie: Optional[datetime] = None
     duree_estimee_secondes: int = Field(default=0)
+
+
+class StatutPointage(str, Enum):
+    A_RENSEIGNER = "a_renseigner"
+    PRESENT = "present"
+    ABSENT = "absent"
+    RETARD = "retard"
+    EXCUSE = "excuse"
+
+
+class PointagePresence(SQLModel, table=True):
+    """Statut pédagogique validé par le professeur, distinct des connexions LiveKit."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    statut: StatutPointage = Field(default=StatutPointage.A_RENSEIGNER)
+    justificatif: Optional[str] = Field(default=None, max_length=1200)
+    saisi_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_maj: datetime = Field(default_factory=datetime.utcnow)
+    __table_args__ = (
+        UniqueConstraint("seance_id", "utilisateur_id", name="uq_pointagepresence_seance_utilisateur"),
+        Index("ix_pointagepresence_utilisateur_statut", "utilisateur_id", "statut"),
+    )
 
 
 # ============================================================
@@ -1719,6 +1745,12 @@ class Devoir(SQLModel, table=True):
     titre: str
     description: Optional[str] = None
     date_limite: Optional[datetime] = None
+    bareme: float = Field(default=20.0, ge=1.0, le=1000.0)
+    coefficient: float = Field(default=1.0, ge=0.1, le=10.0)
+    periode: Optional[str] = Field(default=None, max_length=40)
+    criteres_json: Optional[str] = None
+    est_clos: bool = Field(default=False, index=True)
+    archive: bool = Field(default=False, index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -1736,6 +1768,8 @@ class RenduDevoir(SQLModel, table=True):
     date_rendu: datetime = Field(default_factory=datetime.utcnow)
     note: Optional[float] = None
     appreciation_prof: Optional[str] = None
+    details_correction_json: Optional[str] = None
+    correction_ia_json: Optional[str] = None
     date_correction: Optional[datetime] = None
 
 

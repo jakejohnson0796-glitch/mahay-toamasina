@@ -22,6 +22,7 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    dashboard_module.notifier_echeances_proches(session, utilisateur.id)
     donnees = dashboard_module.donnees_dashboard(session, utilisateur)
 
     return templates.TemplateResponse(

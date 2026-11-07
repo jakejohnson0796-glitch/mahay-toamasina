@@ -285,3 +285,18 @@ def test_smoke_browser_couvre_les_disciplines_et_la_sanitisation():
         "img[onerror], script",
     ):
         assert fragment in smoke
+
+
+def test_version_katex_est_alignee_dans_build_runtime_et_ci():
+    chargeur = (RACINE / "app" / "static" / "js" / "charger-dependances-ia.js").read_text(encoding="utf-8")
+    vendor = (RACINE / "scripts" / "vendor_frontend_dependencies.py").read_text(encoding="utf-8")
+    smoke = (RACINE / "scripts" / "smoke_ai_renderer.mjs").read_text(encoding="utf-8")
+    ci = (RACINE / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    for fichier in (chargeur, vendor, smoke, ci):
+        assert "0.19.1" in fichier
+    assert "0.19.0" not in chargeur
+    assert '"version": "0.19.1"' in vendor
+    assert "simulation_count" in smoke
+    assert "simulationsAttendues" in smoke
+    assert "katex@0.19.1" in ci

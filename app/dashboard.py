@@ -3,12 +3,13 @@ Agregation des donnees du tableau de bord etudiant. Separe du router pour
 garder celui-ci fin (responsabilite unique : le router orchestre la
 requete HTTP, ce module sait comment lire les donnees).
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from sqlmodel import Session, select
 
 from .models import (
+    ActionGamification,
     CercleEtude,
     MembreCercle,
     ConsultationDocument,
@@ -16,7 +17,10 @@ from .models import (
     Devoir,
     Document,
     InscriptionCours,
+    Notification,
     RenduDevoir,
+    TypeNotification,
+    SessionTuteur,
     StatutDocument,
     TentativeQuiz,
     Utilisateur,
@@ -32,6 +36,9 @@ NB_RESSOURCES_POPULAIRES = 4
 NB_RECOMMANDATIONS = 4
 NB_ECHEANCES = 4
 NB_PROGRESSIONS = 8
+
+# Les routines quotidiennes suivent le jour civil de Madagascar.
+_FUSEAU_ROUTINE = timezone(timedelta(hours=3))
 
 
 def cercles_rejoints(session: Session, utilisateur_id: int) -> List[dict]:
@@ -134,6 +141,108 @@ def jours_actifs_consecutifs(
         total += 1
         jour -= timedelta(days=1)
     return total
+
+
+
+def routine_du_jour(
+    session: Session,
+    utilisateur_id: int,
+    maintenant: Optional[datetime] = None,
+) -> dict:
+    """Construit la routine à partir d'activités réelles du jour local.
+
+    Les dates naïves du modèle sont interprétées comme UTC (convention de
+    stockage historique). Le jour est calculé dans le fuseau de Madagascar,
+    puis converti en bornes UTC naïves pour les requêtes SQL.
+    """
+    maintenant = maintenant or datetime.now(timezone.utc)
+    if maintenant.tzinfo is None:
+        instant_utc = maintenant.replace(tzinfo=timezone.utc)
+    else:
+        instant_utc = maintenant.astimezone(timezone.utc)
+
+    debut_local = instant_utc.astimezone(_FUSEAU_ROUTINE).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    fin_local = debut_local + timedelta(days=1)
+    debut_jour = debut_local.astimezone(timezone.utc).replace(tzinfo=None)
+    fin_jour_calendaire = fin_local.astimezone(timezone.utc).replace(tzinfo=None)
+    # Une activité horodatée dans le futur ne doit pas valider la routine.
+    fin_jour = min(fin_jour_calendaire, instant_utc.replace(tzinfo=None))
+
+    quiz_termine = session.exec(
+        select(TentativeQuiz.id).where(
+            TentativeQuiz.utilisateur_id == utilisateur_id,
+            TentativeQuiz.date_soumission != None,  # noqa: E711
+            TentativeQuiz.date_soumission >= debut_jour,
+            TentativeQuiz.date_soumission < fin_jour,
+        ).limit(1)
+    ).first() is not None
+
+    document_consulte = session.exec(
+        select(ConsultationDocument.id)
+        .join(Document, Document.id == ConsultationDocument.document_id)
+        .where(
+            ConsultationDocument.utilisateur_id == utilisateur_id,
+            ConsultationDocument.date_consultation >= debut_jour,
+            ConsultationDocument.date_consultation < fin_jour,
+            Document.statut == StatutDocument.APPROUVE,
+        )
+        .limit(1)
+    ).first() is not None
+
+    echange_tuteur = session.exec(
+        select(SessionTuteur.id).where(
+            SessionTuteur.utilisateur_id == utilisateur_id,
+            SessionTuteur.date_creation >= debut_jour,
+            SessionTuteur.date_creation < fin_jour,
+        ).limit(1)
+    ).first() is not None
+
+    message_cercle = session.exec(
+        select(ActionGamification.id).where(
+            ActionGamification.utilisateur_id == utilisateur_id,
+            ActionGamification.action == "cercle",
+            ActionGamification.date_creation >= debut_jour,
+            ActionGamification.date_creation < fin_jour,
+        ).limit(1)
+    ).first() is not None
+
+    etapes = [
+        {
+            "id": "quiz",
+            "titre": "Un mini-quiz",
+            "description": "Termine un quiz pour vérifier ce que tu sais déjà.",
+            "lien": "/quiz",
+            "lien_label": "Faire un quiz",
+            "terminee": quiz_termine,
+        },
+        {
+            "id": "document",
+            "titre": "Une ressource de cours",
+            "description": "Télécharge un cours, une fiche ou une annale approuvée.",
+            "lien": "/documents",
+            "lien_label": "Explorer les ressources",
+            "terminee": document_consulte,
+        },
+        {
+            "id": "interaction",
+            "titre": "Un échange utile",
+            "description": "Pose une question au Tuteur IA ou envoie un message dans un cercle.",
+            "lien": "/tuteur",
+            "lien_label": "Ouvrir le Tuteur IA",
+            "terminee": echange_tuteur or message_cercle,
+        },
+    ]
+    terminees = sum(1 for etape in etapes if etape["terminee"])
+    total = len(etapes)
+    return {
+        "etapes": etapes,
+        "terminees": terminees,
+        "total": total,
+        "pourcentage": round(terminees * 100 / total) if total else 0,
+        "complete": total > 0 and terminees == total,
+    }
 
 
 def _delai_relatif(moment: datetime) -> str:
@@ -344,6 +453,7 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
 
     return {
         "parcours_demarrage": parcours_demarrage,
+        "routine_du_jour": routine_du_jour(session, utilisateur.id),
         "gamification": gam,
         "abonnement": abonnement,
         "acces_premium": subscription.acces_premium_valide(abonnement),
@@ -371,3 +481,74 @@ def donnees_dashboard(session: Session, utilisateur: Utilisateur) -> dict:
         "notions_a_revoir": quiz_module.plan_revision_du_jour(session, utilisateur.id, limit=6),
         "prochaine_revision": prochaine_revision,
     }
+
+def notifier_echeances_proches(
+    session: Session,
+    utilisateur_id: int,
+    maintenant: Optional[datetime] = None,
+    delai_heures: int = 24,
+) -> int:
+    """Crée au plus un rappel par devoir et par date limite, à l'ouverture du dashboard."""
+    maintenant = maintenant or datetime.utcnow()
+    borne = maintenant + timedelta(hours=max(1, min(int(delai_heures), 72)))
+    cours_ids = session.exec(
+        select(InscriptionCours.cours_id).where(InscriptionCours.utilisateur_id == utilisateur_id)
+    ).all()
+    if not cours_ids:
+        return 0
+
+    devoirs = session.exec(
+        select(Devoir)
+        .where(Devoir.cours_id.in_(cours_ids))
+        .where(Devoir.date_limite.is_not(None))
+        .where(Devoir.date_limite > maintenant)
+        .where(Devoir.date_limite <= borne)
+        .where(Devoir.est_clos == False)  # noqa: E712
+        .where(Devoir.archive == False)  # noqa: E712
+        .order_by(Devoir.date_limite)
+    ).all()
+    if not devoirs:
+        return 0
+
+    ids_devoirs = [devoir.id for devoir in devoirs]
+    rendus = session.exec(
+        select(RenduDevoir.devoir_id)
+        .where(RenduDevoir.utilisateur_id == utilisateur_id)
+        .where(RenduDevoir.devoir_id.in_(ids_devoirs))
+    ).all()
+    devoirs_deja_rendus = set(rendus)
+
+    existantes = session.exec(
+        select(Notification.url_destination)
+        .where(Notification.destinataire_id == utilisateur_id)
+        .where(Notification.type_notification == TypeNotification.RAPPEL_ECHEANCE)
+    ).all()
+    destinations_existantes = {value for value in existantes if value}
+
+    cours = session.exec(select(Cours).where(Cours.id.in_(cours_ids))).all()
+    cours_par_id = {item.id: item for item in cours}
+    creees = 0
+    for devoir in devoirs:
+        if devoir.id in devoirs_deja_rendus:
+            continue
+        date_cible = devoir.date_limite.replace(microsecond=0).isoformat()
+        destination = f"/classe/devoirs/{devoir.id}?rappel={date_cible}"
+        if destination in destinations_existantes:
+            continue
+        cours_item = cours_par_id.get(devoir.cours_id)
+        nom_cours = cours_item.nom if cours_item else "ton cours"
+        session.add(Notification(
+            destinataire_id=utilisateur_id,
+            type_notification=TypeNotification.RAPPEL_ECHEANCE,
+            contenu=(
+                f"Le devoir « {devoir.titre} » dans « {nom_cours} » "
+                f"arrive à échéance le {devoir.date_limite.strftime('%d/%m/%Y à %H:%M')}."
+            ),
+            url_destination=destination,
+        ))
+        destinations_existantes.add(destination)
+        creees += 1
+    if creees:
+        session.commit()
+    return creees
+

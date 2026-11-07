@@ -31,9 +31,9 @@ def test_base_charge_les_assets_quiz_tuteur_et_renderer_ia():
         'local + "highlightjs/highlight.min.js?v=" + versionsLocales.highlight',
     ]
     ordre = [
-        'katex@0.19.0/dist/katex.min.css',
-        'katex@0.19.0/dist/katex.min.js',
-        'katex@0.19.0/dist/contrib/mhchem.min.js',
+        'katex@0.19.1/dist/katex.min.css',
+        'katex@0.19.1/dist/katex.min.js',
+        'katex@0.19.1/dist/contrib/mhchem.min.js',
         'marked@18.1.1/lib/marked.umd.js',
         'dompurify@3.4.17/dist/purify.min.js',
         'highlightjs/cdn-release@11.12.0/build/highlight.min.js',

@@ -57,6 +57,35 @@
     </div>
   </div>
 
+  {% if request.query_params.get("erreur") == "champs_cours_invalides" %}
+  <div class="erreur" role="alert">Vérifie le nom, la matière et le niveau du cours.</div>
+  {% elif request.query_params.get("erreur") == "code_invalide" %}
+  <div class="erreur" role="alert">Ce code de cours n'est pas reconnu. Vérifie-le auprès du professeur.</div>
+  {% elif request.query_params.get("erreur") == "trop_de_tentatives" %}
+  <div class="erreur" role="alert">Trop de tentatives. Réessaie plus tard.</div>
+  {% elif request.query_params.get("erreur") == "inscription_reservee" %}
+  <div class="erreur" role="alert">Seuls les comptes étudiants peuvent rejoindre un cours avec un code.</div>
+  {% endif %}
+  {% if request.query_params.get("inscription") == "confirmee" %}<div class="info" role="status">Inscription confirmée. Le cours est maintenant visible dans ton espace.</div>{% endif %}
+
+  {% if not est_professeur %}
+  <section class="classe-form-panel classe-code-join" id="rejoindre-cours" aria-labelledby="rejoindre-cours-title">
+    <div class="classe-form-head">
+      <div><h2 id="rejoindre-cours-title">Rejoindre un cours avec un code</h2><p>Entre le code communiqué par ton professeur pour rejoindre sa classe.</p></div>
+    </div>
+    <form method="post" action="/classe/rejoindre">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <div class="classe-form-grid">
+        <div class="classe-field">
+          <label for="code_cours">Code d'invitation</label>
+          <input type="text" id="code_cours" name="code" required maxlength="12" minlength="8" autocomplete="off" placeholder="Ex. 8 caractères">
+        </div>
+      </div>
+      <div class="classe-form-actions"><button class="bouton bouton-primaire" type="submit">Rejoindre le cours</button></div>
+    </form>
+  </section>
+  {% endif %}
+
   {% if est_professeur %}
   <section class="classe-form-panel" id="nouveau-cours" aria-labelledby="nouveau-cours-title">
     <div class="classe-form-head">
@@ -84,7 +113,11 @@
         </div>
         <div class="classe-field classe-field-full">
           <label for="description">Description</label>
-          <textarea id="description" name="description" rows="2" placeholder="Objectif du cours, contenu ou consignes…"></textarea>
+          <textarea id="description" name="description" rows="2" maxlength="3000" placeholder="Contenu, organisation et consignes générales…"></textarea>
+        </div>
+        <div class="classe-field classe-field-full">
+          <label for="objectifs">Objectifs pédagogiques</label>
+          <textarea id="objectifs" name="objectifs" rows="3" maxlength="3000" placeholder="À la fin du cours, les étudiants sauront…"></textarea>
         </div>
       </div>
       <div class="classe-form-actions">
@@ -106,6 +139,8 @@
       <span class="classe-course-meta">{{ cours.matiere }} · {{ cours.niveau }}</span>
       {% if cours.description %}
       <p class="classe-course-description">{{ cours.description }}</p>
+      {% elif cours.objectifs %}
+      <p class="classe-course-description">{{ cours.objectifs }}</p>
       {% else %}
       <p class="classe-course-description">Cours virtuel disponible pour les participants autorisés.</p>
       {% endif %}

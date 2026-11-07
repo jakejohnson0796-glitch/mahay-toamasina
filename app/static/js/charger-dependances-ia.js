@@ -7,23 +7,23 @@
   var DELAI_MAX_MS = 2500;
   var local = "/static/vendor/";
   var principal = "https://cdn.jsdelivr.net/";
-  var versionsLocales = { katex: "0.19.0", marked: "18.1.1", purify: "3.4.17", highlight: "11.12.0" };
+  var versionsLocales = { katex: "0.19.1", marked: "18.1.1", purify: "3.4.17", highlight: "11.12.0" };
   var secours = "https://unpkg.com/";
   var ressources = {
     css: [
       local + "katex/katex.min.css?v=" + versionsLocales.katex,
-      principal + "npm/katex@0.19.0/dist/katex.min.css",
-      secours + "katex@0.19.0/dist/katex.min.css"
+      principal + "npm/katex@0.19.1/dist/katex.min.css",
+      secours + "katex@0.19.1/dist/katex.min.css"
     ],
     katex: [
       local + "katex/katex.min.js?v=" + versionsLocales.katex,
-      principal + "npm/katex@0.19.0/dist/katex.min.js",
-      secours + "katex@0.19.0/dist/katex.min.js"
+      principal + "npm/katex@0.19.1/dist/katex.min.js",
+      secours + "katex@0.19.1/dist/katex.min.js"
     ],
     mhchem: [
       local + "katex/contrib/mhchem.min.js?v=" + versionsLocales.katex,
-      principal + "npm/katex@0.19.0/dist/contrib/mhchem.min.js",
-      secours + "katex@0.19.0/dist/contrib/mhchem.min.js"
+      principal + "npm/katex@0.19.1/dist/contrib/mhchem.min.js",
+      secours + "katex@0.19.1/dist/contrib/mhchem.min.js"
     ],
     marked: [
       local + "marked/marked.min.js?v=" + versionsLocales.marked,
