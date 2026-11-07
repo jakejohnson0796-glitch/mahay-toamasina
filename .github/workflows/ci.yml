@@ -4,13 +4,19 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+# Annule les anciennes exécutions de la même branche lorsqu'un commit plus récent arrive.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -49,6 +55,8 @@ jobs:
           node scripts/smoke_bilan_reprise.mjs
           node --check app/static/js/notifications-center.js
           node scripts/smoke_notifications_center.mjs
+          node --check app/static/js/pwa.js
+          node scripts/smoke_quiz_draft.mjs
 
       - name: Smoke navigateur responsive des cercles
         run: |

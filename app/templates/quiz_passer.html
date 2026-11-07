@@ -122,6 +122,8 @@
       data-quiz-form
       data-quiz-tentative-id="{{ tentative.id }}"
       data-quiz-adaptatif="{{ '1' if adaptatif else '0' }}"
+      data-quiz-mode-examen="{{ '1' if tentative.mode_examen else '0' }}"
+      data-quiz-owner="{{ tentative.utilisateur_id }}"
       data-examen-secondes="{{ secondes_restantes if tentative.mode_examen else 0 }}">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         {% for item in questions %}
@@ -162,7 +164,8 @@
         </article>
         {% endfor %}
         <div class="quiz-submit-bar">
-          <span class="quiz-submit-help">Après validation, la correction apparaîtra directement sous chaque question.</span>
+          <span class="quiz-submit-help" data-quiz-draft-status role="status" aria-live="polite">Tes réponses se sauvegardent sur cet appareil pour reprendre après une coupure.</span>
+          <button class="bouton bouton-secondaire" type="button" data-quiz-draft-clear hidden>Effacer mon brouillon</button>
           <button id="bouton-valider-quiz" class="bouton bouton-primaire" type="submit" data-quiz-submit>{{ "Terminer l'examen" if tentative.mode_examen else "Valider mes réponses" }}</button>
         </div>
       </form>
