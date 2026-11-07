@@ -9,6 +9,7 @@ from sqlalchemy.exc import DBAPIError
 from scripts.preflight_multi_tenant_migration import (
     activer_lecture_seule,
     construire_rapport,
+    cible_ci_autorisee,
 )
 
 
@@ -117,3 +118,24 @@ def test_preflight_sqlite_est_strictement_en_lecture_seule():
                 connection.execute(text("INSERT INTO test_guard (id) VALUES (1)"))
     finally:
         moteur.dispose()
+
+
+
+def test_preflight_cli_refuse_toute_cible_hors_postgres_local_github_actions():
+    environnement_ci = {"GITHUB_ACTIONS": "true"}
+    assert cible_ci_autorisee(
+        "postgresql://postgres:postgres@localhost:5432/mahay_ci",
+        environnement_ci,
+    )
+    assert not cible_ci_autorisee(
+        "postgresql://postgres:secret@db.example.invalid:5432/production",
+        environnement_ci,
+    )
+    assert not cible_ci_autorisee(
+        "postgresql://postgres:postgres@localhost:5432/mahay_ci",
+        {"GITHUB_ACTIONS": "false"},
+    )
+    assert not cible_ci_autorisee(
+        "sqlite:///tmp/mahay.db",
+        environnement_ci,
+    )
