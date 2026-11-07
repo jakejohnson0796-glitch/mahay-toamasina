@@ -546,6 +546,8 @@ class Utilisateur(SQLModel, table=True):
 
 class MembreEtablissement(SQLModel, table=True):
     """Appartenance et rôle d'un compte dans un établissement partenaire."""
+    # Nom SQL explicite aligné sur la migration Alembic et les préflights.
+    __tablename__ = "membre_etablissement"
     id: Optional[int] = Field(default=None, primary_key=True)
     institution_id: int = Field(foreign_key="etablissementpartenaire.id", index=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
