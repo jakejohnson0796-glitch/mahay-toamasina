@@ -12,6 +12,7 @@ import sys
 from typing import Any
 
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.engine import Connection
 
 
@@ -223,6 +224,20 @@ def executer_preflight(database_url: str) -> dict[str, Any]:
         moteur.dispose()
 
 
+def cible_ci_autorisee(database_url: str, environnement: dict[str, str] | None = None) -> bool:
+    """Le préflight CLI est limité au PostgreSQL local jetable de GitHub Actions."""
+    environnement = environnement or os.environ
+    try:
+        url = make_url(database_url)
+    except Exception:
+        return False
+    return (
+        environnement.get("GITHUB_ACTIONS") == "true"
+        and url.get_backend_name() == "postgresql"
+        and url.host in {"localhost", "127.0.0.1", "::1"}
+    )
+
+
 def main() -> int:
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
@@ -230,6 +245,15 @@ def main() -> int:
             json.dumps({
                 "status": "configuration_absente",
                 "message": "Définir DATABASE_URL dans l'environnement privé ; ne pas l'afficher ni la committer.",
+            }, ensure_ascii=False),
+            file=sys.stderr,
+        )
+        return 2
+    if not cible_ci_autorisee(database_url):
+        print(
+            json.dumps({
+                "status": "cible_refusee",
+                "message": "Ce préflight CLI est réservé au PostgreSQL local éphémère de GitHub Actions ; aucune connexion n'a été ouverte.",
             }, ensure_ascii=False),
             file=sys.stderr,
         )
@@ -247,7 +271,7 @@ def main() -> int:
         )
         return 1
     print(json.dumps(rapport, ensure_ascii=False, indent=2))
-    return 0 if rapport["status"] == "ok" else 1
+    return 0 if rapport["status"] == "ok" and not rapport["alertes"] else 1
 
 
 if __name__ == "__main__":
