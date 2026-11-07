@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 30
     runs-on: ubuntu-24.04
     env:
@@ -33,6 +34,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Installer les dependances
         run: python -m pip install -r requirements.txt
       - name: Verifier le graphe des migrations Alembic
@@ -77,6 +81,7 @@ jobs:
           done
 
   postgres-smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 15
     runs-on: ubuntu-24.04
     env:
@@ -169,3 +174,5 @@ jobs:
         run: alembic current
       - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
         run: pytest -q tests/test_postgres_referentiel_smoke.py
+      - name: Valider le backfill multiétablissement sur schéma PostgreSQL synthétique isolé
+        run: pytest -q tests/test_postgres_multi_tenant_migration.py

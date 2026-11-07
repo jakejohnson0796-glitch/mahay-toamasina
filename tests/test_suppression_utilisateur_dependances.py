@@ -31,6 +31,8 @@ from app.models import (
     TentativeQuiz,
     TypeNotification,
     Utilisateur,
+    EtablissementPartenaire,
+    MembreEtablissement,
 )
 from app.routers import admin_router
 
@@ -288,3 +290,148 @@ def test_suppression_utilisateur_nettoie_les_dependances_directes(monkeypatch):
         assert creation_traitee.traite_par_id is None
         assert filiere_traitee.traite_par_id is None
         assert adhesion_traitee.traite_par_id is None
+
+
+
+def test_suppression_utilisateur_nettoie_les_appartenances_institutionnelles(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+
+    @event.listens_for(engine, "connect")
+    def _activer_fk(connexion_dbapi, _record):
+        connexion_dbapi.execute("PRAGMA foreign_keys=ON")
+
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        admin = Utilisateur(
+            nom="Admin", telephone="0340007011",
+            mot_de_passe_hash="hash-admin", role=RoleUtilisateur.ADMIN,
+        )
+        cible = Utilisateur(
+            nom="Compte à supprimer", telephone="0340007012",
+            mot_de_passe_hash="hash-cible",
+        )
+        autre = Utilisateur(
+            nom="Autre membre", telephone="0340007013",
+            mot_de_passe_hash="hash-autre",
+        )
+        institution = EtablissementPartenaire(nom="Institut de test", code="INST-DEL")
+        session.add_all([admin, cible, autre, institution])
+        session.commit()
+        session.refresh(admin)
+        session.refresh(cible)
+        session.refresh(autre)
+        session.refresh(institution)
+
+        session.add(MembreEtablissement(
+            institution_id=institution.id,
+            utilisateur_id=cible.id,
+            role="etudiant",
+            est_actif=True,
+        ))
+        membre_conserve = MembreEtablissement(
+            institution_id=institution.id,
+            utilisateur_id=autre.id,
+            role="professeur",
+            est_actif=True,
+            ajoute_par_id=cible.id,
+        )
+        session.add(membre_conserve)
+        session.commit()
+        session.refresh(membre_conserve)
+
+        class FakeRequest:
+            async def form(self):
+                return {}
+
+        monkeypatch.setattr(admin_router, "_admin_requis", lambda request, session: admin)
+        response = asyncio.run(
+            admin_router.supprimer_utilisateur(
+                FakeRequest(), cible.id, session, None
+            )
+        )
+        assert response.status_code == 303
+
+        session.expire_all()
+        assert session.get(Utilisateur, cible.id) is None
+        assert session.exec(
+            select(MembreEtablissement).where(
+                MembreEtablissement.utilisateur_id == cible.id
+            )
+        ).all() == []
+        membre_restant = session.get(MembreEtablissement, membre_conserve.id)
+        assert membre_restant is not None
+        assert membre_restant.ajoute_par_id is None
+    engine.dispose()
+
+
+def test_suppression_refuse_le_dernier_responsable_institutionnel(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        admin = Utilisateur(
+            nom="Admin", telephone="0340007021",
+            mot_de_passe_hash="hash-admin", role=RoleUtilisateur.ADMIN,
+        )
+        cible = Utilisateur(
+            nom="Responsable unique", telephone="0340007022",
+            mot_de_passe_hash="hash-cible",
+        )
+        institution = EtablissementPartenaire(nom="Institut protégé", code="INST-KEEP")
+        session.add_all([admin, cible, institution])
+        session.commit()
+        session.refresh(admin)
+        session.refresh(cible)
+        session.refresh(institution)
+        session.add(MembreEtablissement(
+            institution_id=institution.id,
+            utilisateur_id=cible.id,
+            role="responsable",
+            est_actif=True,
+        ))
+        session.commit()
+
+        class FakeRequest:
+            async def form(self):
+                return {}
+
+        monkeypatch.setattr(admin_router, "_admin_requis", lambda request, session: admin)
+        response = asyncio.run(
+            admin_router.supprimer_utilisateur(
+                FakeRequest(), cible.id, session, None
+            )
+        )
+        assert "dernier_responsable_institution" in response.headers["location"]
+        assert session.get(Utilisateur, cible.id) is not None
+    engine.dispose()
+
+
+def test_confirmation_suppression_sans_cours_ne_leve_pas_nameerror(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        admin = Utilisateur(
+            nom="Admin courant",
+            telephone="0340007031",
+            mot_de_passe_hash="hash-admin",
+            role=RoleUtilisateur.ADMIN,
+        )
+        cible = Utilisateur(
+            nom="Compte à supprimer",
+            telephone="0340007032",
+            mot_de_passe_hash="hash-cible",
+        )
+        session.add_all([admin, cible])
+        session.commit()
+        session.refresh(admin)
+        session.refresh(cible)
+        monkeypatch.setattr(admin_router, "_admin_requis", lambda request, db: admin)
+        monkeypatch.setattr(
+            admin_router,
+            "templates",
+            SimpleNamespace(TemplateResponse=lambda *args, **kwargs: "rendered"),
+        )
+
+        assert admin_router.page_confirmation_suppression(
+            SimpleNamespace(), cible.id, session
+        ) == "rendered"
+    engine.dispose()

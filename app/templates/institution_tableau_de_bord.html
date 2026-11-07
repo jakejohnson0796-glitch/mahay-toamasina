@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block titre %}Espace établissement — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="etablissement-title">
+    <div>
+      <span class="ops-kicker">Espace institutionnel · accès responsable</span>
+      <h1 id="etablissement-title">{{ institution.nom }}</h1>
+      <p>Vue agrégée des membres, cours, devoirs et corrections de ton établissement. Les informations nominatives des étudiants et les cours d'autres établissements ne sont pas affichés ici.</p>
+      <div class="ops-hero-actions">
+        <a href="/classe">Mes cours</a>
+        <a href="/documents">Ressources pédagogiques</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ statistiques.etudiants }}</strong><span>étudiants actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.professeurs }}</strong><span>professeurs actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.cours }}</strong><span>cours institutionnels</span></div>
+    </div>
+  </section>
+  {% if request.query_params.get("ok") == "membre_attribue" %}<div class="ops-alert ops-alert-info" role="status">Le membre a été rattaché à cet établissement.</div>{% endif %}
+  {% if request.query_params.get("ok") == "membre_desactive" %}<div class="ops-alert ops-alert-info" role="status">Les accès de ce membre à l'établissement ont été désactivés.</div>{% endif %}
+  {% if request.query_params.get("erreur") %}<div class="ops-alert ops-alert-danger" role="alert">L'action n'a pas été effectuée. Vérifie le rôle, l'identifiant et l'appartenance à cet établissement.</div>{% endif %}
+  {% if institutions|length > 1 %}
+  <section class="ops-section">
+    <form method="get" action="/etablissement/tableau-de-bord" class="ops-form">
+      <label for="institution-dashboard-choice">Établissement affiché</label>
+      <select id="institution-dashboard-choice" name="institution_id">
+        {% for item in institutions %}
+        <option value="{{ item.id }}"{% if item.id == institution.id %} selected{% endif %}>{{ item.nom }}</option>
+        {% endfor %}
+      </select>
+      <button class="bouton bouton-primaire" type="submit">Afficher cet établissement</button>
+    </form>
+  </section>
+  {% endif %}
+  <section class="ops-section">
+    <h2>Vue d'ensemble pédagogique</h2>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ statistiques.membres }}</strong><span>membres actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.responsables }}</strong><span>responsables actifs</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.inscriptions }}</strong><span>inscriptions aux cours</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.devoirs }}</strong><span>devoirs publiés</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.rendus }}</strong><span>copies déposées</span></div>
+      <div class="ops-stat"><strong>{{ statistiques.copies_corrigees }}</strong><span>copies corrigées</span></div>
+    </div>
+  </section>
+  <section class="ops-section" aria-labelledby="gestion-membres-title">
+    <h2 id="gestion-membres-title">Gérer les membres de l'établissement</h2>
+    <p>Tu peux intégrer une promotion, affecter un compte existant comme professeur ou étudiant et retirer ses accès à cet établissement. Les rôles de responsable restent administrés par MITARIDALA.</p>
+    <div class="ops-admin-groups">
+      <section class="ops-admin-group">
+        <h3>Importer une promotion</h3>
+        <p>CSV ou Excel .xlsx, avec les colonnes <strong>nom</strong> et <strong>matricule</strong>. Tu peux ajouter le prénom, le téléphone, l'email et le niveau. Maximum {{ max_etudiants }} étudiants et {{ max_mo }} Mo par fichier.</p>
+        <form method="post" action="/etablissement/membres/importer" enctype="multipart/form-data" class="ops-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="institution_id" value="{{ institution.id }}">
+          <label for="institution-students-file">Liste des étudiants</label>
+          <input id="institution-students-file" type="file" name="fichier" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+          <button class="bouton bouton-primaire" type="submit">Vérifier et créer les comptes</button>
+        </form>
+      </section>
+      <section class="ops-admin-group">
+        <h3>Rattacher un compte existant</h3>
+        <p>Le compte doit déjà exister dans MITARIDALA. Utilise son identifiant institutionnel ou son téléphone.</p>
+        <form method="post" action="/etablissement/membres/attribuer" class="ops-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="institution_id" value="{{ institution.id }}">
+          <label for="membre-identifiant">Identifiant ou téléphone</label>
+          <input id="membre-identifiant" name="identifiant" type="text" maxlength="160" autocomplete="off" required>
+          <label for="membre-role">Rôle dans cet établissement</label>
+          <select id="membre-role" name="role" required>
+            <option value="etudiant">Étudiant</option>
+            <option value="professeur">Professeur</option>
+          </select>
+          <button class="bouton bouton-primaire" type="submit">Rattacher ce compte</button>
+        </form>
+      </section>
+    </div>
+    <h3>Membres actifs ({{ membres_details|length }})</h3>
+    {% if membres_details %}
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Nom</th><th>Identifiant</th><th>Matricule</th><th>Rôle</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for membre, compte in membres_details %}
+          <tr>
+            <td><strong>{{ compte.nom }}</strong></td>
+            <td>{{ compte.identifiant_connexion or compte.telephone or "—" }}</td>
+            <td>{{ compte.matricule_institutionnel or "—" }}</td>
+            <td>{{ membre.role }}</td>
+            <td>
+              {% if membre.role != "responsable" %}
+              <form method="post" action="/etablissement/membres/{{ membre.id }}/desactiver">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <input type="hidden" name="institution_id" value="{{ institution.id }}">
+                <button class="bouton bouton-secondaire" type="submit">Désactiver ici</button>
+              </form>
+              {% else %}Protégé{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>Aucun membre actif n'est encore rattaché à cet établissement.</p>
+    {% endif %}
+  </section>
+  <section class="ops-section">
+    <h2>Cours de l'établissement</h2>
+    {% if cours %}
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Cours</th><th>Matière</th><th>Niveau</th><th>Ouvrir</th></tr></thead>
+        <tbody>
+        {% for item in cours %}
+          <tr><td><strong>{{ item.nom }}</strong></td><td>{{ item.matiere }}</td><td>{{ item.niveau }}</td><td><a href="/classe/{{ item.id }}">Consulter</a></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>Aucun cours institutionnel n'a encore été créé.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

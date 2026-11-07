@@ -553,6 +553,18 @@ def test_planification_est_idempotente_et_reservee_aux_etudiants_inscrits(monkey
 
     assert ai_queue.planifier_fiche_revision_cours(seance_id, non_inscrit_id) is None
 
+    with Session(test_engine) as session:
+        inscription = session.exec(
+            select(InscriptionCours).where(
+                InscriptionCours.cours_id == cours_id,
+                InscriptionCours.utilisateur_id == etudiant_id,
+            )
+        ).one()
+        session.delete(inscription)
+        session.commit()
+    # Le retrait du cours coupe également la programmation des fiches déjà existantes.
+    assert ai_queue.planifier_fiche_revision_cours(seance_id, etudiant_id) is None
+
 def test_templates_fiche_revision_compile_et_exposent_les_formats():
     templates_dir = Path(__file__).resolve().parents[1] / "app" / "templates"
     environnement = Environment(loader=FileSystemLoader(str(templates_dir)))
@@ -680,6 +692,8 @@ def test_fiche_de_cours_integre_le_tutorat_recent_de_son_etudiant(monkeypatch):
         session.add(seance)
         session.commit()
         session.refresh(seance)
+        session.add(InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant.id))
+        session.commit()
 
         progression = ProgressionNotion(
             utilisateur_id=etudiant.id,

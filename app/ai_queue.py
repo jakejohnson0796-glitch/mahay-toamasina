@@ -16,6 +16,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from .config import parametres
+from .institution_access import est_inscrit_cours, lister_inscriptions_actives
 from .database import engine
 from .models import (
     Cours, Document, FicheRevisionCours, FicheRevisionDocument, InscriptionCours,
@@ -774,13 +775,7 @@ def planifier_fiche_revision_cours(
             seance = session.get(Seance, seance_id)
             if not seance or seance.statut != StatutSeance.TERMINEE:
                 return None
-            inscription = session.exec(
-                select(InscriptionCours).where(
-                    InscriptionCours.cours_id == seance.cours_id,
-                    InscriptionCours.utilisateur_id == utilisateur_id,
-                )
-            ).first()
-            if not inscription:
+            if not est_inscrit_cours(session, seance.cours_id, utilisateur_id):
                 return None
 
             fiche = session.exec(
@@ -844,10 +839,10 @@ def planifier_fiches_revision_cours(
         if utilisateur_id is not None:
             ids_etudiants = [int(utilisateur_id)]
         else:
-            ids_etudiants = session.exec(
-                select(InscriptionCours.utilisateur_id)
-                .where(InscriptionCours.cours_id == cours_id)
-            ).all()
+            ids_etudiants = [
+                etudiant.id
+                for _inscription, etudiant in lister_inscriptions_actives(session, cours_id)
+            ]
     total = 0
     for seance in seances:
         for etudiant_id in ids_etudiants:

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block titre %}Cours à affecter — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="courses-review-title">
+    <div>
+      <span class="ops-kicker">Sécurité · cloisonnement multiétablissements</span>
+      <h1 id="courses-review-title">Cours à affectation institutionnelle requise.</h1>
+      <p>Ces cours historiques appartiennent à des professeurs actifs dans plusieurs établissements. Aucun établissement n'a été choisi automatiquement : l'accès des étudiants reste suspendu jusqu'à validation de l'affectation.</p>
+      <div class="ops-hero-actions">
+        <a href="/admin">Administration</a>
+        <a href="/admin/inscriptions-institutionnelles">Gérer les appartenances</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ nb_cours }}</strong><span>cours à vérifier</span></div>
+    </div>
+  </section>
+
+  {% if request.query_params.get("resultat") == "affecte" %}
+  <div class="ops-alert ops-alert-info" role="status">Le cours a été rattaché à l'établissement choisi. Ses accès étudiants sont réactivés selon les appartenances actives.</div>
+  {% endif %}
+  {% if request.query_params.get("erreur") == "professeur_non_affilie" %}
+  <div class="ops-alert ops-alert-danger" role="alert">Le professeur ne possède pas d'appartenance pédagogique active dans cet établissement. Attribue-lui d'abord le rôle approprié.</div>
+  {% elif request.query_params.get("erreur") %}
+  <div class="ops-alert ops-alert-danger" role="alert">L'affectation demandée n'est pas valide. Recharge la page et vérifie les appartenances.</div>
+  {% endif %}
+
+  {% for item in elements %}
+  <section class="ops-section">
+    <div class="ops-section-head">
+      <div>
+        <span class="ops-kicker">Cours #{{ item.cours.id }}</span>
+        <h2>{{ item.cours.nom }}</h2>
+        <p>{{ item.cours.matiere }} · {{ item.cours.niveau }}</p>
+      </div>
+      <span class="ops-badge is-alert">Accès étudiant suspendu</span>
+    </div>
+    <p><strong>Professeur propriétaire :</strong> {{ item.professeur.nom if item.professeur else "Compte introuvable" }}</p>
+    {% if item.institutions %}
+    <p>Choisis uniquement un établissement dans lequel le professeur possède déjà un rôle institutionnel actif.</p>
+    <form method="post" action="/admin/cours/{{ item.cours.id }}/affecter-etablissement" class="ops-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="institution-cours-{{ item.cours.id }}">Établissement de rattachement</label>
+      <select id="institution-cours-{{ item.cours.id }}" name="institution_id" required>
+        <option value="">Choisir l'établissement</option>
+        {% for institution in item.institutions %}
+        <option value="{{ institution.id }}">{{ institution.nom }} — {{ institution.code }}</option>
+        {% endfor %}
+      </select>
+      <button class="bouton bouton-primaire" type="submit">Confirmer l'affectation</button>
+    </form>
+    {% else %}
+    <div class="ops-alert ops-alert-warning" role="status">
+      Aucun établissement actif commun n'est disponible pour ce professeur. Attribue-lui d'abord une appartenance pédagogique dans la gestion institutionnelle, puis reviens ici.
+      <p><a href="/admin/inscriptions-institutionnelles">Gérer les appartenances du professeur</a></p>
+    </div>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="ops-section">
+    <h2>Aucun cours à arbitrer</h2>
+    <p>Tous les cours historiques disposent d'un périmètre déterminé ou restent des cours individuels non rattachés.</p>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

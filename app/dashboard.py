@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from sqlmodel import Session, select
 
+from .institution_access import cours_ids_etudiant_actifs
 from .models import (
     ActionGamification,
     CercleEtude,
@@ -366,9 +367,7 @@ def echeances_a_venir(session: Session, utilisateur_id: int) -> List[dict]:
     renseignee qu'au moment ou le professeur demarre reellement la
     session -- voir models.py), donc ce widget ne montre jamais de
     fausse seance a venir."""
-    cours_ids = session.exec(
-        select(InscriptionCours.cours_id).where(InscriptionCours.utilisateur_id == utilisateur_id)
-    ).all()
+    cours_ids = cours_ids_etudiant_actifs(session, utilisateur_id)
     if not cours_ids:
         return []
 
@@ -491,9 +490,7 @@ def notifier_echeances_proches(
     """Crée au plus un rappel par devoir et par date limite, à l'ouverture du dashboard."""
     maintenant = maintenant or datetime.utcnow()
     borne = maintenant + timedelta(hours=max(1, min(int(delai_heures), 72)))
-    cours_ids = session.exec(
-        select(InscriptionCours.cours_id).where(InscriptionCours.utilisateur_id == utilisateur_id)
-    ).all()
+    cours_ids = cours_ids_etudiant_actifs(session, utilisateur_id)
     if not cours_ids:
         return 0
 
@@ -539,6 +536,7 @@ def notifier_echeances_proches(
         nom_cours = cours_item.nom if cours_item else "ton cours"
         session.add(Notification(
             destinataire_id=utilisateur_id,
+            cours_id=devoir.cours_id,
             type_notification=TypeNotification.RAPPEL_ECHEANCE,
             contenu=(
                 f"Le devoir « {devoir.titre} » dans « {nom_cours} » "

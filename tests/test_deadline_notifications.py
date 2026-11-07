@@ -75,3 +75,4 @@ def test_rappel_echeance_est_unique_et_exclut_les_devoirs_rendus_ou_fermes():
         assert len(rappels) == 1
         assert "Devoir proche" in rappels[0].contenu
         assert rappels[0].url_destination.startswith(f"/classe/devoirs/{proche.id}?rappel=")
+        assert rappels[0].cours_id == cours.id

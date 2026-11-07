@@ -135,6 +135,11 @@ def test_radar_professeur_limite_au_proprietaire_du_cours_ou_admin():
     assert _peut_gerer_cours(cours, administrateur)
     assert not _peut_gerer_cours(cours, None)
 
+    # Sans session, les anciens cours généraux restent compatibles mais un
+    # cours institutionnel échoue fermé : aucun tenant n'est deviné.
+    cours_institutionnel = SimpleNamespace(professeur_id=41, institution_id=900)
+    assert not _peut_gerer_cours(cours_institutionnel, proprietaire)
+
 
 
 def test_niveaux_academiques_sont_normalises_sans_confondre_l1_et_l2():

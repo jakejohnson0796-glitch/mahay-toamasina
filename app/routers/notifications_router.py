@@ -1,6 +1,8 @@
 """Centre de notifications utilisateur.
 Réutilise la table Notification déjà alimentée par les événements du site.
 """
+import re
+
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
@@ -8,10 +10,61 @@ from sqlmodel import Session, select
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
-from ..models import Notification
+from ..institution_access import est_inscrit_cours
+from ..models import Devoir, Notification, TypeNotification
 from ..templating import templates
 
 router = APIRouter()
+
+
+_TYPES_NOTIFICATION_COURS = {
+    TypeNotification.NOUVEAU_DEVOIR.value,
+    TypeNotification.NOTE_PUBLIEE.value,
+    TypeNotification.STATUT_PRESENCE.value,
+    TypeNotification.RAPPEL_ECHEANCE.value,
+    TypeNotification.FICHE_REVISION_PRETE.value,
+}
+
+
+def _cours_id_notification(session: Session, notification: Notification) -> int | None:
+    """Résout le cours d'une notification, y compris certains anciens liens."""
+    if notification.cours_id is not None:
+        return int(notification.cours_id)
+
+    # Les anciennes alertes de devoir et de note contiennent l'identifiant
+    # du devoir dans leur URL ; on peut donc reconstituer leur portée.
+    destination = (getattr(notification, "url_destination", None) or "").strip()
+    correspondance = re.fullmatch(
+        r"/classe/devoirs/(\d+)(?:[?#].*)?",
+        destination,
+    )
+    if correspondance:
+        devoir = session.get(Devoir, int(correspondance.group(1)))
+        return devoir.cours_id if devoir else None
+    return None
+
+
+def _notification_autorisee(
+    session: Session,
+    utilisateur_id: int,
+    notification: Notification,
+) -> bool:
+    """Les alertes de cours ne survivent pas à la révocation de l'inscription."""
+    type_value = getattr(
+        notification.type_notification,
+        "value",
+        notification.type_notification,
+    )
+    if type_value not in _TYPES_NOTIFICATION_COURS:
+        return True
+
+    cours_id = _cours_id_notification(session, notification)
+    # Une ancienne alerte pédagogique sans cours identifiable est masquée :
+    # mieux vaut ne pas exposer un événement institutionnel non vérifiable.
+    return bool(
+        cours_id
+        and est_inscrit_cours(session, cours_id, utilisateur_id)
+    )
 
 
 def _notification_vue(notification: Notification) -> dict:
@@ -68,12 +121,16 @@ def page_notifications(request: Request, session: Session = Depends(get_session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    notifications = session.exec(
+    candidates = session.exec(
         select(Notification)
         .where(Notification.destinataire_id == utilisateur.id)
         .order_by(Notification.date_creation.desc())
-        .limit(50)
+        .limit(200)
     ).all()
+    notifications = [
+        notification for notification in candidates
+        if _notification_autorisee(session, utilisateur.id, notification)
+    ][:50]
 
     return templates.TemplateResponse(
         request,
@@ -98,7 +155,11 @@ def marquer_notification_lue(
         return RedirectResponse("/connexion", status_code=303)
 
     notification = session.get(Notification, notification_id)
-    if notification and notification.destinataire_id == utilisateur.id:
+    if (
+        notification
+        and notification.destinataire_id == utilisateur.id
+        and _notification_autorisee(session, utilisateur.id, notification)
+    ):
         notification.lu = True
         session.add(notification)
         session.commit()
@@ -126,7 +187,11 @@ def ouvrir_notification(
         return RedirectResponse("/connexion", status_code=303)
 
     notification = session.get(Notification, notification_id)
-    if not notification or notification.destinataire_id != utilisateur.id:
+    if (
+        not notification
+        or notification.destinataire_id != utilisateur.id
+        or not _notification_autorisee(session, utilisateur.id, notification)
+    ):
         return RedirectResponse("/notifications", status_code=303)
 
     destination = _notification_vue(notification)["lien"]
@@ -154,11 +219,15 @@ def marquer_toutes_notifications_lues(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    notifications = session.exec(
+    candidates = session.exec(
         select(Notification)
         .where(Notification.destinataire_id == utilisateur.id)
         .where(Notification.lu == False)  # noqa: E712
     ).all()
+    notifications = [
+        notification for notification in candidates
+        if _notification_autorisee(session, utilisateur.id, notification)
+    ]
     for notification in notifications:
         notification.lu = True
         session.add(notification)

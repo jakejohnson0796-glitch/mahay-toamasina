@@ -4,6 +4,25 @@
 
 Cette feuille de route présente les améliorations attendues du point de vue des apprenants, des enseignants et des établissements. Une tâche ne doit être déclarée terminée qu’après vérification de son fonctionnement réel.
 
+## Chantier multiétablissements
+
+Le socle d'appartenance institutionnelle et le rattachement des cours sont
+implémentés dans la branche de travail dédiée. Les appartenances sont
+distinctes des rôles globaux ; les cours institutionnels contrôlent le tenant
+au niveau serveur. Les vérifications de migration et de production restent
+obligatoires avant de déclarer ce chantier terminé.
+
+- [ ] Exécuter la migration multiétablissement sur une copie PostgreSQL représentative.
+- [ ] Tester en production-like deux établissements séparés, y compris les WebSockets, fichiers de copies et fiches de révision.
+- [ ] Vérifier l'affectation des professeurs et responsables, le retrait d'un membre et la conservation du dernier responsable.
+- [ ] Vérifier que les notifications de devoir, note, présence, rappel et fiche restent invisibles après retrait de l'inscription.
+- [ ] Vérifier les cours historiques à affectation ambiguë : aucun étudiant ne doit y accéder avant l'arbitrage de l'administrateur.
+- [ ] Vérifier l'écran d'affectation admin avec des professeurs multiétablissements et des établissements suspendus.
+- [ ] Valider en environnement de test le nouveau parcours responsable : import de 500 étudiants, affectation de professeurs/étudiants existants et désactivation strictement limitée à son établissement (implémenté dans la PR #326, en attente de tests de parcours réels).
+- [ ] Définir les documents privés d'établissement et leurs règles sur la bibliothèque, le téléchargement, le Tuteur IA, les quiz et les fiches de révision.
+- [ ] Ajouter les périmètres institutionnels aux autres ressources qui doivent être privées ; les documents généraux et cercles conservent leurs règles actuelles.
+- [ ] Tester les listes, imports et rapports avec plusieurs centaines puis plusieurs milliers de comptes.
+
 ## Chantier de suivi académique
 
 Le dépôt comprend désormais le carnet de notes pondéré par cours, les moyennes par période, le registre pédagogique des présences, les notifications de devoir/note/pointage, les rapports par cours et un rapport global agrégé réservé à l'administration. Les notes faibles ouvrent aussi un parcours d'aide au Tuteur IA sans modifier artificiellement la progression mesurée par les quiz.

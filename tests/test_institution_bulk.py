@@ -5,6 +5,7 @@ from app.routers.institution_router import (
     lire_lignes_tableur,
     normaliser_code_institution,
     normaliser_matricule,
+    responsable_actif,
 )
 
 
@@ -156,3 +157,73 @@ def test_etablissementpartenaire_indexe_le_createur():
 
     indexes = {index.name for index in EtablissementPartenaire.__table__.indexes}
     assert "ix_etablissementpartenaire_cree_par_id" in indexes
+
+
+def test_responsable_institutionnel_est_strictement_limite_a_son_tenant():
+    from sqlmodel import SQLModel, Session, create_engine
+    from app.models import EtablissementPartenaire, MembreEtablissement, RoleUtilisateur, Utilisateur
+
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        a = EtablissementPartenaire(nom="Université A", code="UNIV-A")
+        b = EtablissementPartenaire(nom="Université B", code="UNIV-B")
+        responsable = Utilisateur(
+            nom="Responsable A",
+            telephone="0343000001",
+            mot_de_passe_hash="hash",
+            role=RoleUtilisateur.ETUDIANT,
+        )
+        session.add_all([a, b, responsable])
+        session.commit()
+        session.refresh(a)
+        session.refresh(b)
+        session.refresh(responsable)
+        membre = MembreEtablissement(
+            institution_id=a.id,
+            utilisateur_id=responsable.id,
+            role="responsable",
+            est_actif=True,
+        )
+        session.add(membre)
+        session.commit()
+
+        assert responsable_actif(session, responsable.id, a.id)
+        assert not responsable_actif(session, responsable.id, b.id)
+
+        membre.est_actif = False
+        session.add(membre)
+        session.commit()
+        assert not responsable_actif(session, responsable.id, a.id)
+
+        a.est_actif = False
+        session.add(a)
+        membre.est_actif = True
+        session.add(membre)
+        session.commit()
+        assert not responsable_actif(session, responsable.id, a.id)
+    engine.dispose()
+
+
+def test_templates_de_gestion_institutionnelle_se_compilent():
+    from pathlib import Path
+    from jinja2 import Environment, FileSystemLoader
+
+    templates_dir = Path(__file__).resolve().parents[1] / "app" / "templates"
+    env = Environment(loader=FileSystemLoader(templates_dir))
+    assert env.get_template("institution_tableau_de_bord.html") is not None
+    assert env.get_template("institution_import_resultat.html") is not None
+
+
+def test_dashboard_institutionnel_propose_les_actions_scopées():
+    from pathlib import Path
+
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "app" / "templates" / "institution_tableau_de_bord.html"
+    ).read_text(encoding="utf-8")
+    assert 'action="/etablissement/membres/importer"' in source
+    assert 'action="/etablissement/membres/attribuer"' in source
+    assert 'name="institution_id" value="{{ institution.id }}"' in source
+    assert 'action="/etablissement/membres/{{ membre.id }}/desactiver"' in source
+    assert 'option value="responsable"' not in source

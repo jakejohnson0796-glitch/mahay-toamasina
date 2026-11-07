@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block titre %}Résultat de l'import — {{ institution.nom }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="import-title">
+    <div>
+      <span class="ops-kicker">Espace institutionnel · import de promotion</span>
+      <h1 id="import-title">{{ institution.nom }}</h1>
+      {% if resultat %}
+      <p>{{ resultat|length }} compte(s) créé(s). Les mots de passe provisoires sont visibles uniquement dans cette réponse. Remets-les individuellement aux étudiants et demande-leur de les modifier à la première connexion.</p>
+      {% else %}
+      <p>Aucun nouvel accès n'a été créé. Corrige les lignes signalées puis recommence l'import.</p>
+      {% endif %}
+      <div class="ops-hero-actions">
+        <a href="/etablissement/tableau-de-bord?institution_id={{ institution.id }}">Retour à l'établissement</a>
+        <a href="/classe">Mes cours</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ resultat|length }}</strong><span>comptes créés</span></div>
+      <div class="ops-stat"><strong>{{ lignes_erreur|length }}</strong><span>lignes à corriger</span></div>
+    </div>
+  </section>
+
+  {% if erreur %}<div class="ops-alert ops-alert-danger" role="alert">{{ erreur }}</div>{% endif %}
+  {% if resultat %}
+  <section class="ops-section" aria-labelledby="credentials-title">
+    <div class="ops-new-users-head">
+      <div>
+        <span class="ops-kicker">Accès provisoires · affichage unique</span>
+        <h2 id="credentials-title">Identifiants à remettre aux étudiants</h2>
+        <p>MITARIDALA ne conserve pas ces mots de passe en clair. Télécharge le fichier maintenant, stocke-le dans un emplacement sécurisé et évite de le transmettre dans un groupe public. Après avoir quitté cette page, tu ne pourras pas retrouver ces mots de passe.</p>
+      </div>
+      <button class="bouton bouton-primaire" type="button" id="download-credentials">Télécharger le CSV</button>
+    </div>
+    <div class="ops-table-wrap">
+      <table class="ops-table" id="credentials-table">
+        <thead><tr><th>Nom</th><th>Matricule</th><th>Identifiant</th><th>Mot de passe provisoire</th></tr></thead>
+        <tbody>
+        {% for item in resultat %}
+          <tr>
+            <td>{{ item.nom }}</td>
+            <td>{{ item.matricule }}</td>
+            <td><code>{{ item.identifiant }}</code></td>
+            <td><code>{{ item.mot_de_passe_temporaire }}</code></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if lignes_erreur %}
+  <section class="ops-section">
+    <h2>Lignes ignorées — à corriger dans le fichier source</h2>
+    <ul>{% for ligne in lignes_erreur %}<li>{{ ligne }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+</div>
+{% if resultat %}
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  "use strict";
+  const button = document.getElementById("download-credentials");
+  const table = document.getElementById("credentials-table");
+  if (!button || !table) return;
+  function csvValue(value) {
+    var text = String(value || "").replace(/[\r\n]+/g, " ").trim();
+    if (/^[\u0000-\u0020]*[=+\-@]/.test(text)) text = "'" + text;
+    return '"' + text.replace(/"/g, '""') + '"';
+  }
+  button.addEventListener("click", function () {
+    const rows = Array.from(table.querySelectorAll("tr")).map(function (row) {
+      return Array.from(row.querySelectorAll("th, td")).map(function (cell) {
+        return csvValue(cell.innerText.trim());
+      }).join(",");
+    });
+    const blob = new Blob(["\uFEFF" + rows.join("\r\n")], {type: "text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "identifiants-etudiants-mitaridala.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

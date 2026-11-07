@@ -21,7 +21,7 @@ import unicodedata
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from sqlmodel import Session, select, func
 
 from app.main import app
@@ -121,6 +121,18 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
         assert cercles_page.status_code == 200
 
     from app.database import engine
+
+    with engine.connect() as connection:
+        rls_enabled = connection.execute(
+            text(
+                "SELECT c.relrowsecurity "
+                "FROM pg_class c "
+                "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' "
+                "AND c.relname = 'membre_etablissement'"
+            )
+        ).scalar_one()
+        assert rls_enabled is True, "La table membre_etablissement doit activer RLS."
 
     with Session(engine) as session:
         universites = {u.nom for u in session.exec(select(Universite)).all()}
@@ -947,7 +959,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "g2a7f5d9c1e3", (
+    assert revision == "h1c7e9a2b4d6", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
@@ -1007,7 +1019,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "g2a7f5d9c1e3"
+    assert revision == "h1c7e9a2b4d6"
     assert index_count == 41
     assert institution_index_count == 1
 

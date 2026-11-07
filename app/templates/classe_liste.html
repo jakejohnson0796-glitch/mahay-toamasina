@@ -49,6 +49,9 @@
     <div class="classe-toolbar-left">
       <span class="classe-toolbar-label">Mon espace</span>
       <span class="classe-course-badge">{{ cours_visibles|length }} cours</span>
+      {% if est_responsable_institution %}
+      <a class="bouton bouton-secondaire" href="/etablissement/tableau-de-bord">Tableau de bord établissement</a>
+      {% endif %}
     </div>
     <div class="classe-toolbar-right">
       <a class="bouton bouton-secondaire" href="/documents">Documents</a>
@@ -65,10 +68,14 @@
   <div class="erreur" role="alert">Trop de tentatives. Réessaie plus tard.</div>
   {% elif request.query_params.get("erreur") == "inscription_reservee" %}
   <div class="erreur" role="alert">Seuls les comptes étudiants peuvent rejoindre un cours avec un code.</div>
+  {% elif request.query_params.get("erreur") == "etablissement_incompatible" %}
+  <div class="erreur" role="alert">Ce cours est réservé aux membres actifs de l'établissement auquel il est rattaché. Contacte son responsable.</div>
+  {% elif request.query_params.get("erreur") == "institution_invalide" %}
+  <div class="erreur" role="alert">L'établissement choisi n'est pas autorisé ou doit être précisé.</div>
   {% endif %}
   {% if request.query_params.get("inscription") == "confirmee" %}<div class="info" role="status">Inscription confirmée. Le cours est maintenant visible dans ton espace.</div>{% endif %}
 
-  {% if not est_professeur %}
+  {% if peut_rejoindre_cours %}
   <section class="classe-form-panel classe-code-join" id="rejoindre-cours" aria-labelledby="rejoindre-cours-title">
     <div class="classe-form-head">
       <div><h2 id="rejoindre-cours-title">Rejoindre un cours avec un code</h2><p>Entre le code communiqué par ton professeur pour rejoindre sa classe.</p></div>
@@ -111,6 +118,23 @@
           <label for="niveau">Niveau</label>
           <input type="text" id="niveau" name="niveau" required placeholder="Ex. L2, L3…">
         </div>
+        {% if institutions_creation %}
+        <div class="classe-field classe-field-full">
+          <label for="institution_id">Établissement de rattachement</label>
+          {% if institutions_creation|length == 1 %}
+          <input type="hidden" name="institution_id" value="{{ institutions_creation[0].id }}">
+          <input id="institution_id" type="text" value="{{ institutions_creation[0].nom }}" disabled>
+          {% else %}
+          <select id="institution_id" name="institution_id" required>
+            <option value="">Choisir l'établissement</option>
+            {% for institution in institutions_creation %}
+            <option value="{{ institution.id }}">{{ institution.nom }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          <small>Le cours et ses devoirs seront accessibles aux membres autorisés de cet établissement.</small>
+        </div>
+        {% endif %}
         <div class="classe-field classe-field-full">
           <label for="description">Description</label>
           <textarea id="description" name="description" rows="2" maxlength="3000" placeholder="Contenu, organisation et consignes générales…"></textarea>
