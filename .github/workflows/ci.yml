@@ -172,3 +172,5 @@ jobs:
         run: alembic current
       - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
         run: pytest -q tests/test_postgres_referentiel_smoke.py
+      - name: Valider le backfill multiétablissement sur schéma PostgreSQL synthétique isolé
+        run: pytest -q tests/test_postgres_multi_tenant_migration.py
