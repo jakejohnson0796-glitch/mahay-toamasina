@@ -1,104 +1,63 @@
-# Validation de la migration multiétablissements sur une copie anonymisée
+# Validation de la migration multiétablissements sans copie de données réelles
 
-> **Réservé au responsable autorisé de la base de données.**
-> Ne jamais exécuter cette procédure sur la base de production. Ne jamais
-> déposer une sauvegarde réelle, des identifiants, des secrets ou des données
-> personnelles dans GitHub, ChatGPT, les journaux CI ou un ticket.
+## Principe
 
-## Objectif
+La validation de la migration `h1c7e9a2b4d6` ne requiert pas de restaurer, anonymiser ou partager une sauvegarde de la base Mahay.
 
-Vérifier le backfill de la migration `h1c7e9a2b4d6` sur une copie PostgreSQL
-représentative, sans exposer les données des apprenants et sans modifier la
-production.
+La preuve de validation du code repose sur des données entièrement synthétiques et reproductibles dans GitHub Actions :
 
-Le test synthétique `tests/test_postgres_multi_tenant_migration.py` complète
-cette validation, mais ne la remplace pas : il reproduit un sous-ensemble
-contrôlé du schéma historique.
+- un schéma historique PostgreSQL minimal qui reproduit les colonnes utiles au backfill ;
+- des établissements actifs et inactifs fictifs ;
+- des comptes fictifs avec les rôles étudiant, professeur, administrateur et sponsor ;
+- des cours et notifications fictifs ;
+- des cas d'affiliation unique, inactive, multiple et indépendante ;
+- l'application de la migration, puis sa réexécution pour vérifier l'idempotence ;
+- le contrôle de RLS, des contraintes et des compteurs agrégés.
 
-## Préparation par le responsable de la base
+Aucune sauvegarde de production n'est utilisée. Aucun nom, e-mail, téléphone, identifiant réel, contenu libre, fichier d'élève ou secret n'est requis.
 
-1. Autoriser explicitement l'opération et identifier un opérateur adulte
-   responsable de la sauvegarde et de son traitement.
-2. Créer un environnement PostgreSQL temporaire, isolé du réseau applicatif
-   et sans accès aux services de production.
-3. Restaurer la sauvegarde dans cet environnement restreint. Ne donner aucun
-   accès développeur à cette copie tant que l'anonymisation n'est pas terminée.
-4. Anonymiser de manière irréversible les identifiants directs et indirects :
-   noms, prénoms, adresses e-mail, téléphones, adresses, numéros d'élève,
-   identifiants externes, contenus libres et pièces jointes.
-5. Supprimer ou neutraliser les secrets, jetons de session, clés API,
-   identifiants OAuth et données d'authentification qui ne sont pas nécessaires.
-6. Préserver uniquement les relations et distributions nécessaires au test :
-   utilisateurs fictifs, rôles, établissements actifs/inactifs, appartenances,
-   cours, notifications, inscriptions et cas ambigus.
-7. Vérifier qu'aucune donnée permettant de réidentifier une personne ne
-   subsiste. Si cette vérification échoue, ne pas partager la copie.
+## Vérifications automatisées
 
-## Contrôles avant migration
+Les contrôles doivent être exécutés par GitHub Actions sur le PostgreSQL éphémère du job `postgres-smoke` :
 
-- [ ] Le responsable a autorisé la copie et son usage de test.
-- [ ] La base temporaire n'est pas la base de production.
-- [ ] Les intégrations sortantes (e-mails, SMS, paiements, webhooks) sont désactivées.
-- [ ] Les secrets et données personnelles ont été supprimés ou anonymisés.
-- [ ] Les relations nécessaires au backfill sont conservées.
-- [ ] Un point de restauration de l'environnement temporaire est disponible.
-- [ ] La version du schéma et la révision Alembic initiale sont consignées.
+1. Appliquer le graphe Alembic jusqu'à `g2a7f5d9c1e3`, la révision précédant la migration multiétablissements.
+2. Exécuter `scripts/preflight_multi_tenant_migration.py` : le préflight est strictement en lecture seule et ne renvoie que des nombres et indicateurs techniques.
+3. Appliquer `alembic upgrade head`.
+4. Réexécuter le préflight et vérifier que les colonnes et la table multiétablissements sont présentes.
+5. Rejouer `alembic upgrade head` et vérifier que la migration est idempotente.
+6. Exécuter `tests/test_postgres_multi_tenant_migration.py`, qui construit un schéma historique synthétique séparé, applique deux fois la migration et vérifie le backfill.
+7. Exécuter les tests d'accès interétablissements, de rôles, de désactivation, de quarantaine et de parcours HTTP.
 
-## Exécution contrôlée
+Le préflight ne doit jamais être configuré avec une URL de production dans GitHub Actions. Le job CI doit exclusivement utiliser son service PostgreSQL jetable local.
 
-Depuis le pipeline CI privé ou l'environnement de test approuvé, définir
-`DATABASE_URL` uniquement comme secret d'environnement, jamais dans le code,
-la ligne de commande partagée ou les journaux. Vérifier d'abord que l'URL
-désigne bien la base temporaire anonymisée.
+## Contrôles attendus
 
-Exécuter ensuite, dans cet ordre :
+- Les rôles reconnus sont repris sans transformer implicitement un rôle inconnu en privilège.
+- Un professeur avec une seule affiliation pédagogique active peut être rattaché au bon établissement.
+- Un établissement inactif ou une situation ambiguë ne provoque pas d'affectation arbitraire.
+- Les cours historiques indépendants conservent leur périmètre.
+- Les codes d'invitation et les notifications sont préservés par les scénarios de test.
+- La migration peut être rejouée sans doublons.
+- Les contrôles applicatifs refusent les accès interétablissements non autorisés.
+- Le schéma PostgreSQL active RLS sur `membre_etablissement`.
 
-1. Vérifier le graphe Alembic : `python scripts/verify_migrations.py`.
-2. Consigner la révision initiale avec `alembic current`.
-3. Appliquer la migration jusqu'à la tête : `alembic upgrade head`.
-4. Vérifier à nouveau la révision : `alembic current`.
-5. Rejouer `alembic upgrade head` pour contrôler l'idempotence.
-6. Exécuter les tests de backfill et de cloisonnement disponibles.
-7. Contrôler les cas ci-dessous avec des résultats agrégés, sans exporter de
-   lignes nominatives.
+Le rôle PostgreSQL utilisé par le job CI peut différer de celui utilisé par l'application en production. Le résultat RLS du job CI vérifie la migration et le rôle de test ; il ne prouve pas à lui seul les privilèges du rôle de production. Ceux-ci doivent être confirmés dans la configuration de déploiement par l'opérateur autorisé, sans publier de chaîne de connexion ou de secret.
 
-## Résultats à vérifier
+## Rapport CI
 
-- Les appartenances historiques sont reconstituées sans doublons.
-- Les rôles globaux ne sont pas transformés en privilèges excessifs.
-- Un cours d'un professeur rattaché à un seul établissement actif est affecté
-  au bon établissement.
-- Un cours lié à un établissement inactif ou à plusieurs établissements est
-  mis en quarantaine et n'est pas attribué arbitrairement.
-- Les cours historiques indépendants conservent leur périmètre prévu.
-- Les notifications et leurs liens utiles sont conservés.
-- Les inscriptions, fichiers, révisions, tâches asynchrones et autres données
-  dépendantes restent cohérents.
-- Les contrôles d'accès interétablissements refusent les accès croisés.
-- Les migrations peuvent être rejouées sans doublons ni perte de données.
+Le rapport de CI peut conserver uniquement :
 
-## Rapport de validation
+- SHA du commit testé ;
+- identifiants et conclusions des jobs GitHub Actions ;
+- révisions Alembic avant et après ;
+- état des colonnes, contraintes et RLS ;
+- compteurs agrégés produits depuis les fixtures synthétiques ;
+- résultats PASS/FAIL des scénarios et anomalies techniques.
 
-Le responsable consigne uniquement :
+Ne pas joindre de sauvegarde, export de table, ligne utilisateur, donnée personnelle, capture d'écran contenant des informations confidentielles, identifiant d'accès, jeton, clé ou chaîne de connexion.
 
-- identifiant de l'environnement temporaire (sans URL ni secret) ;
-- révision Alembic avant et après ;
-- date et version du commit testé ;
-- nombres agrégés de lignes traitées par catégorie ;
-- résultats réussite/échec des scénarios ;
-- anomalies et mesures correctives ;
-- nom/fonction du responsable ayant approuvé le rapport.
+## Déploiement
 
-Ne joindre aucune ligne de données, capture contenant des informations
-personnelles, sauvegarde, chaîne de connexion ou secret.
+La CI synthétique constitue la preuve reproductible que la migration fonctionne sur les scénarios modélisés. Elle réduit le besoin d'une validation manuelle sur copie de données réelles, mais ne transforme pas la CI en autorisation de déploiement.
 
-## Décision de fusion et de déploiement
-
-La PR #326 ne doit être fusionnée qu'après :
-1. CI complète verte sur le commit candidat ;
-2. validation documentée sur la copie anonymisée ;
-3. vérification des parcours d'accès et de non-régression ;
-4. approbation explicite du responsable du projet et du responsable de la base.
-
-La CI PostgreSQL sur base neuve et le test synthétique ne constituent pas,
-à eux seuls, une autorisation de migration en production.
+Avant une migration de production, l'opérateur adulte autorisé doit suivre la procédure de déploiement approuvée, vérifier le rôle PostgreSQL réel et disposer d'un plan de sauvegarde/restauration géré hors de GitHub et de ChatGPT. Après déploiement, vérifier la révision Alembic, la santé du service, les erreurs applicatives et les métriques agrégées. Ne jamais tester en écriture sur la base de production ni partager ses données.
