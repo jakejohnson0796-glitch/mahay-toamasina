@@ -17,6 +17,7 @@ import sqlalchemy as sa
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import text
+from scripts.preflight_multi_tenant_migration import cible_ci_autorisee
 
 
 def _charger_migration():
@@ -35,12 +36,41 @@ def _charger_migration():
     return module
 
 
-def test_backfill_postgres_historique_est_conserve_et_idempotent():
+def _database_url_postgres_ci_autorisee() -> str:
+    """Retourne uniquement l'URL du PostgreSQL local éphémère de GitHub Actions."""
     url = os.environ.get("DATABASE_URL", "")
     if not url:
         pytest.skip("DATABASE_URL absent : test PostgreSQL réservé au job postgres-smoke.")
     if sa.engine.make_url(url).get_backend_name() != "postgresql":
         pytest.skip("Ce test nécessite PostgreSQL ; aucun schéma n'est créé sur SQLite.")
+    if not cible_ci_autorisee(url):
+        pytest.fail(
+            "Cible PostgreSQL refusée : ce test destructif de schéma est limité "
+            "au PostgreSQL local éphémère de GitHub Actions. Aucune connexion "
+            "n'a été ouverte."
+        )
+    return url
+
+
+@pytest.mark.parametrize(
+    ("url", "github_actions"),
+    [
+        ("postgresql://postgres:test@db.example.invalid:5432/production", "true"),
+        ("postgresql://postgres:test@localhost:5432/mahay_ci", "false"),
+    ],
+)
+def test_migration_postgres_refuse_les_cibles_non_jetables(
+    monkeypatch, url: str, github_actions: str
+):
+    monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setenv("GITHUB_ACTIONS", github_actions)
+
+    with pytest.raises(pytest.fail.Exception, match="Cible PostgreSQL refusée"):
+        _database_url_postgres_ci_autorisee()
+
+
+def test_backfill_postgres_historique_est_conserve_et_idempotent():
+    url = _database_url_postgres_ci_autorisee()
 
     engine = sa.create_engine(url, pool_pre_ping=True)
     schema = "test_migration_tenant_" + uuid4().hex
