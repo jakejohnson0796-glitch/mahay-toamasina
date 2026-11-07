@@ -24,6 +24,7 @@ Le dépôt comprend désormais le carnet de notes pondéré par cours, les moyen
 ## Priorité 2 — Référentiel scolaire et universitaire
 
 - [ ] **Université de Toamasina :** confirmer les composantes, mentions, parcours et niveaux à partir des documents officiels les plus récents.
+- [ ] **Couverture universitaire nationale (audit du 1er novembre 2026) :** seules Antananarivo et Toamasina ont des filières détaillées dans le catalogue. Compléter les référentiels des quatre autres universités et confirmer les cinq filières sans offre active à Toamasina avant toute modification. Voir la section 10.14 de `docs/audit-universite-toamasina-addendum-2026-10-31.md`.
 - [ ] Vérifier individuellement les habilitations et accréditations auprès des autorités compétentes ; conserver la référence et la période de validité du document officiel.
 - [ ] Distinguer clairement un établissement répertorié, un programme documenté, une formation autorisée et une admission effectivement ouverte pour l’année concernée.
 - [ ] Vérifier les informations d’admission 2026–2027 auprès des composantes concernées avant toute présentation comme offre ouverte.

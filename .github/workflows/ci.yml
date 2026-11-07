@@ -15,7 +15,7 @@ permissions:
 jobs:
   test:
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ENVIRONNEMENT: developpement
       SESSION_SECRET_KEY: ci-only-not-for-production
@@ -70,7 +70,7 @@ jobs:
 
   postgres-smoke:
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ENVIRONNEMENT: developpement
       SESSION_SECRET_KEY: ci-only-not-for-production
