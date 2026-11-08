@@ -335,9 +335,8 @@
   function recevoirSegment(reader, participantInfo, message) {
     const attributes = (reader && reader.info && reader.info.attributes) || {};
     if (!attributes["lk.transcribed_track_id"]) return;
-    const segmentId = attributes["lk.segment_id"] ||
-      ((participantInfo && participantInfo.identity) || "participant") + "-" + Date.now();
-    const identite = participantInfo && participantInfo.identity;
+    const identite = (participantInfo && participantInfo.identity) || "participant";
+    const segmentId = identite + "-" + (attributes["lk.segment_id"] || Date.now());
     const room = window.mahayTranscriptionRoom;
     const participant = room && identite ? room.remoteParticipants.get(identite) : null;
     const nom = (participant && participant.name) || (participantInfo && participantInfo.name) || "Participant";
@@ -410,11 +409,33 @@
   }
   if (btnRetirer) {
     btnRetirer.addEventListener("click", async function () {
+      // Si la transcription est active, couper d'abord le microphone local :
+      // la demande d'arrêt au serveur peut échouer ou prendre du temps.
+      let microCoupe = false;
+      if (etatTranscription && etatTranscription.active) {
+        const room = window.mahayTranscriptionRoom;
+        try {
+          if (room && room.localParticipant) {
+            await room.localParticipant.setMicrophoneEnabled(false);
+            microCoupe = true;
+            const boutonMicro = document.getElementById("btn-micro");
+            if (boutonMicro) boutonMicro.textContent = "Activer le micro";
+          }
+        } catch (_erreur) {
+          notifier("Coupe immédiatement ton micro dans la barre de commandes avant de continuer.");
+        }
+      }
       try {
         await envoyerFormulaire(base + "/transcription/consentir", { consenti: "non" });
-        notifier("Ton accord est retiré. La transcription en cours a été arrêtée.");
+        notifier(microCoupe
+          ? "Ton accord est retiré, ton micro est coupé et la transcription a été arrêtée."
+          : "Ton accord est retiré. La transcription en cours a été arrêtée.");
         await actualiserTranscription();
-      } catch (erreur) { notifier(erreur.message); }
+      } catch (erreur) {
+        notifier((etatTranscription && etatTranscription.active
+          ? "Le retrait n'a pas pu être confirmé. Garde ton micro coupé. "
+          : "") + erreur.message);
+      }
     });
   }
   if (btnDemarrer) {
