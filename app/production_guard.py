@@ -1,19 +1,17 @@
 """Validation des prerequis obligatoires avant un demarrage en production."""
 from __future__ import annotations
 
-from urllib.parse import urlsplit
-
 from sqlalchemy.engine import make_url
 
 from .config import Parametres
 
 
 def _est_postgresql(url: str) -> bool:
+    """Accepte les URI PostgreSQL SQLAlchemy, avec ou sans pilote explicite."""
     try:
-        scheme = urlsplit(url).scheme.lower()
-    except ValueError:
+        return make_url(url).get_backend_name().lower() in {"postgresql", "postgres"}
+    except Exception:
         return False
-    return scheme in {"postgresql", "postgres"}
 
 
 def _role_postgres(url: str) -> str:
@@ -88,5 +86,5 @@ def valider_configuration_production(config: Parametres) -> None:
     """Leve RuntimeError si la configuration de production est incomplete."""
     erreurs = erreurs_configuration_production(config)
     if erreurs:
-        details = "\\n- " + "\\n- ".join(erreurs)
+        details = "\n- " + "\n- ".join(erreurs)
         raise RuntimeError("Configuration production incomplete:" + details)

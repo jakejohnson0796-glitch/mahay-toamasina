@@ -118,3 +118,19 @@ def test_mode_developpement_local_reste_disponible_sans_render(monkeypatch) -> N
     monkeypatch.delenv("ENVIRONNEMENT", raising=False)
     config = Parametres()
     assert config.environnement == "developpement"
+
+
+@pytest.mark.parametrize("pilote", ["psycopg", "psycopg2"])
+def test_configuration_production_accepte_les_uri_postgresql_avec_pilote(pilote):
+    config = replace(
+        _production_complete(),
+        database_url=f"postgresql+{pilote}://mahay_runtime.ref-test:secret@example.test:5432/mahay",
+        migration_database_url=f"postgresql+{pilote}://postgres.ref-test:secret@example.test:5432/mahay",
+    )
+    assert erreurs_configuration_production(config) == []
+
+
+def test_configuration_production_refuse_une_uri_base_malformee():
+    config = replace(_production_complete(), database_url="postgresql+://")
+    erreurs = erreurs_configuration_production(config)
+    assert any("DATABASE_URL" in erreur for erreur in erreurs)

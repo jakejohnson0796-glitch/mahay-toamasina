@@ -1,154 +1,293 @@
-"""Tenant membership authorization helpers."""
+"""Contrôles d'appartenance et d'autorisation multiétablissements.
+
+Ces fonctions centralisent les règles tenant côté serveur. Elles ne prétendent
+pas remplacer une isolation PostgreSQL RLS : le schéma et le rôle de connexion
+doivent respecter le contrat décrit dans la documentation d'exploitation.
+"""
 from __future__ import annotations
+
+from datetime import datetime
 from typing import Iterable, Optional
+
+from sqlalchemy import exists, or_
 from sqlmodel import Session, select
-from .models import Cours, EtablissementPartenaire, InscriptionCours, MembreEtablissement, Utilisateur
+
+from .models import (
+    Cours,
+    EtablissementPartenaire,
+    InscriptionCours,
+    MembreEtablissement,
+    Utilisateur,
+)
+
 ROLE_RESPONSABLE = "responsable"
 ROLE_PROFESSEUR = "professeur"
 ROLE_ETUDIANT = "etudiant"
 ROLES_PEDAGOGIQUES = (ROLE_RESPONSABLE, ROLE_PROFESSEUR)
+ROLES_INSTITUTIONNELS = (ROLE_RESPONSABLE, ROLE_PROFESSEUR, ROLE_ETUDIANT)
 
-def membre_actif(session: Session, institution_id: Optional[int], utilisateur_id: Optional[int], roles: Optional[Iterable[str]] = None) -> Optional[MembreEtablissement]:
-    if not institution_id or not utilisateur_id:
-        return None
-    institution = session.get(EtablissementPartenaire, institution_id)
-    if not institution or not institution.est_actif:
-        return None
-    q = select(MembreEtablissement).where(MembreEtablissement.institution_id == institution_id, MembreEtablissement.utilisateur_id == utilisateur_id, MembreEtablissement.est_actif == True)
-    if roles:
-        q = q.where(MembreEtablissement.role.in_(list(roles)))
-    return session.exec(q).first()
 
-def institutions_avec_role(session: Session, utilisateur_id: int, roles: Iterable[str]) -> list[int]:
-    rows = session.exec(
+def membre_actif(
+    session: Session,
+    institution_id: Optional[int],
+    utilisateur_id: Optional[int],
+    roles: Optional[Iterable[str]] = None,
+) -> Optional[MembreEtablissement]:
+    """Retourne une appartenance active à un établissement lui-même actif.
+
+    Une liste de rôles vide signifie « aucun rôle autorisé », et non « tous les
+    rôles ». La jointure évite une lecture préalable séparée de l'établissement.
+    """
+    if institution_id is None or utilisateur_id is None:
+        return None
+
+    roles_demandes = tuple(roles) if roles is not None else None
+    if roles_demandes is not None and not roles_demandes:
+        return None
+
+    requete = (
+        select(MembreEtablissement)
+        .join(
+            EtablissementPartenaire,
+            EtablissementPartenaire.id == MembreEtablissement.institution_id,
+        )
+        .where(
+            MembreEtablissement.institution_id == institution_id,
+            MembreEtablissement.utilisateur_id == utilisateur_id,
+            MembreEtablissement.est_actif.is_(True),
+            EtablissementPartenaire.est_actif.is_(True),
+        )
+    )
+    if roles_demandes is not None:
+        requete = requete.where(MembreEtablissement.role.in_(roles_demandes))
+    return session.exec(requete).first()
+
+
+def institutions_avec_role(
+    session: Session, utilisateur_id: int, roles: Iterable[str]
+) -> list[int]:
+    """Liste les établissements actifs où l'utilisateur possède un rôle actif."""
+    roles_demandes = tuple(roles)
+    if not roles_demandes:
+        return []
+
+    lignes = session.exec(
         select(MembreEtablissement.institution_id)
-        .join(EtablissementPartenaire, MembreEtablissement.institution_id == EtablissementPartenaire.id)
+        .join(
+            EtablissementPartenaire,
+            MembreEtablissement.institution_id == EtablissementPartenaire.id,
+        )
         .where(
             MembreEtablissement.utilisateur_id == utilisateur_id,
-            MembreEtablissement.est_actif == True,
-            MembreEtablissement.role.in_(list(roles)),
-            EtablissementPartenaire.est_actif == True,
+            MembreEtablissement.est_actif.is_(True),
+            MembreEtablissement.role.in_(roles_demandes),
+            EtablissementPartenaire.est_actif.is_(True),
         )
     ).all()
-    return sorted({int(x) for x in rows})
+    return sorted({int(institution_id) for institution_id in lignes})
 
-def assurer_membre(session: Session, institution_id: int, utilisateur_id: int, role: str, ajoute_par_id: Optional[int] = None) -> MembreEtablissement:
-    if role not in {ROLE_RESPONSABLE, ROLE_PROFESSEUR, ROLE_ETUDIANT}:
+
+def assurer_membre(
+    session: Session,
+    institution_id: int,
+    utilisateur_id: int,
+    role: str,
+    ajoute_par_id: Optional[int] = None,
+) -> MembreEtablissement:
+    """Crée ou réactive une appartenance après validation par la route appelante."""
+    if role not in ROLES_INSTITUTIONNELS:
         raise ValueError("Rôle institutionnel invalide.")
-    membre = session.exec(select(MembreEtablissement).where(MembreEtablissement.institution_id == institution_id, MembreEtablissement.utilisateur_id == utilisateur_id)).first()
+
+    membre = session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.institution_id == institution_id,
+            MembreEtablissement.utilisateur_id == utilisateur_id,
+        )
+    ).first()
     if membre is None:
-        membre = MembreEtablissement(institution_id=institution_id, utilisateur_id=utilisateur_id, role=role, est_actif=True, ajoute_par_id=ajoute_par_id)
+        membre = MembreEtablissement(
+            institution_id=institution_id,
+            utilisateur_id=utilisateur_id,
+            role=role,
+            est_actif=True,
+            ajoute_par_id=ajoute_par_id,
+        )
     else:
-        from datetime import datetime
         membre.role = role
         membre.est_actif = True
         membre.ajoute_par_id = ajoute_par_id
         membre.date_maj = datetime.utcnow()
+
     session.add(membre)
     return membre
 
-def institution_pour_cours(session: Session, utilisateur: Utilisateur, institution_id: Optional[int]) -> Optional[int]:
-    autorisees = institutions_avec_role(session, utilisateur.id, ROLES_PEDAGOGIQUES)
+
+def institution_pour_cours(
+    session: Session, utilisateur: Utilisateur, institution_id: Optional[int]
+) -> Optional[int]:
+    """Détermine sans supposition le tenant d'un nouveau cours."""
     affiliations = session.exec(
-        select(MembreEtablissement.institution_id).where(
+        select(
+            MembreEtablissement.institution_id,
+            MembreEtablissement.est_actif,
+            EtablissementPartenaire.est_actif,
+        )
+        .join(
+            EtablissementPartenaire,
+            EtablissementPartenaire.id == MembreEtablissement.institution_id,
+        )
+        .where(
             MembreEtablissement.utilisateur_id == utilisateur.id,
-            MembreEtablissement.role.in_(list(ROLES_PEDAGOGIQUES)),
+            MembreEtablissement.role.in_(ROLES_PEDAGOGIQUES),
         )
     ).all()
+    autorisees = sorted(
+        {
+            int(inst_id)
+            for inst_id, membre_actif_, institution_active in affiliations
+            if membre_actif_ and institution_active
+        }
+    )
+
     if institution_id is not None:
         if institution_id not in autorisees:
-            raise ValueError("Tu n'es pas autorisé à créer un cours dans cet établissement.")
+            raise ValueError(
+                "Tu n'es pas autorisé à créer un cours dans cet établissement."
+            )
         return institution_id
+
     if len(autorisees) == 1:
         return autorisees[0]
     if len(autorisees) > 1:
         raise ValueError("Choisis l'établissement auquel rattacher ce cours.")
     if affiliations:
-        raise ValueError("Ton rattachement institutionnel est inactif. Contacte l'administration.")
+        raise ValueError(
+            "Ton rattachement institutionnel est inactif. Contacte l'administration."
+        )
     return None
 
-def peut_gerer_cours(session: Session, cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
+
+def peut_gerer_cours(
+    session: Session, cours: Cours, utilisateur: Optional[Utilisateur]
+) -> bool:
+    """Vérifie le rôle pédagogique dans le tenant du cours."""
     if not utilisateur:
         return False
+
     role_global = getattr(utilisateur.role, "value", utilisateur.role)
     if role_global == "admin":
         return True
     if getattr(cours, "affectation_institutionnelle_requise", False):
-        # Le cours et ses données étudiant restent réservés à l'admin global
-        # jusqu'à ce qu'un tenant soit confirmé.
+        # Un cours ambigu est réservé à l'administration globale.
         return False
     if cours.institution_id is None:
         return utilisateur.id == cours.professeur_id
-    membre = membre_actif(session, cours.institution_id, utilisateur.id, ROLES_PEDAGOGIQUES)
+
+    membre = membre_actif(
+        session, cours.institution_id, utilisateur.id, ROLES_PEDAGOGIQUES
+    )
     if not membre:
         return False
     if membre.role == ROLE_RESPONSABLE:
         return True
     return utilisateur.id == cours.professeur_id
 
-def peut_rejoindre_cours(session: Session, cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    if not utilisateur:
-        return False
-    if getattr(cours, "affectation_institutionnelle_requise", False):
+
+def peut_rejoindre_cours(
+    session: Session, cours: Cours, utilisateur: Optional[Utilisateur]
+) -> bool:
+    """Vérifie qu'un compte peut rejoindre un cours dans son tenant."""
+    if not utilisateur or getattr(cours, "affectation_institutionnelle_requise", False):
         return False
     if cours.institution_id is None:
         role_global = getattr(utilisateur.role, "value", utilisateur.role)
         return role_global == "etudiant"
-    # Pour un cours institutionnel, le rôle du membre dans ce tenant prévaut
-    # sur son rôle global : un professeur peut aussi être étudiant ailleurs.
-    return membre_actif(session, cours.institution_id, utilisateur.id, (ROLE_ETUDIANT,)) is not None
 
-def est_inscrit_cours(session: Session, cours_id: int, utilisateur_id: int) -> bool:
-    cours = session.get(Cours, cours_id)
-    if not cours:
-        return False
-    if getattr(cours, "affectation_institutionnelle_requise", False):
-        return False
-    if cours.institution_id is not None and membre_actif(session, cours.institution_id, utilisateur_id, (ROLE_ETUDIANT,)) is None:
-        return False
-    return session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id, InscriptionCours.utilisateur_id == utilisateur_id)).first() is not None
+    return (
+        membre_actif(session, cours.institution_id, utilisateur.id, (ROLE_ETUDIANT,))
+        is not None
+    )
 
 
+def _appartenance_etudiante_active(
+    institution_id_expression, utilisateur_id: int
+):
+    """Expression SQL corrélée : appartenance étudiant + établissement actifs."""
+    return exists(
+        select(1)
+        .select_from(MembreEtablissement)
+        .join(
+            EtablissementPartenaire,
+            EtablissementPartenaire.id == MembreEtablissement.institution_id,
+        )
+        .where(
+            MembreEtablissement.institution_id == institution_id_expression,
+            MembreEtablissement.utilisateur_id == utilisateur_id,
+            MembreEtablissement.role == ROLE_ETUDIANT,
+            MembreEtablissement.est_actif.is_(True),
+            EtablissementPartenaire.est_actif.is_(True),
+        )
+    )
 
-def lister_inscriptions_actives(session: Session, cours_id: int):
-    """Retourne les inscriptions dont le membre appartient encore au tenant."""
-    cours = session.get(Cours, cours_id)
-    if not cours or getattr(cours, "affectation_institutionnelle_requise", False):
-        return []
+
+def est_inscrit_cours(
+    session: Session, cours_id: int, utilisateur_id: int
+) -> bool:
+    """Vérifie l'inscription et, si nécessaire, l'appartenance tenant en une requête."""
+    resultat = session.exec(
+        select(InscriptionCours.id)
+        .join(Cours, Cours.id == InscriptionCours.cours_id)
+        .where(
+            InscriptionCours.cours_id == cours_id,
+            InscriptionCours.utilisateur_id == utilisateur_id,
+            Cours.affectation_institutionnelle_requise.is_(False),
+            or_(
+                Cours.institution_id.is_(None),
+                _appartenance_etudiante_active(Cours.institution_id, utilisateur_id),
+            ),
+        )
+    ).first()
+    return resultat is not None
+
+
+def lister_inscriptions_actives(
+    session: Session, cours_id: int
+) -> list[tuple[InscriptionCours, Utilisateur]]:
+    """Retourne les inscriptions valides pour le tenant en une requête."""
     requete = (
         select(InscriptionCours, Utilisateur)
+        .join(Cours, Cours.id == InscriptionCours.cours_id)
         .join(Utilisateur, InscriptionCours.utilisateur_id == Utilisateur.id)
-        .where(InscriptionCours.cours_id == cours_id)
-    )
-    if cours.institution_id is not None:
-        requete = (
-            requete
-            .join(
-                MembreEtablissement,
-                MembreEtablissement.utilisateur_id == Utilisateur.id,
-            )
-            .join(
-                EtablissementPartenaire,
-                EtablissementPartenaire.id == MembreEtablissement.institution_id,
-            )
-            .where(
-                MembreEtablissement.institution_id == cours.institution_id,
-                MembreEtablissement.role == ROLE_ETUDIANT,
-                MembreEtablissement.est_actif == True,
-                EtablissementPartenaire.est_actif == True,
-            )
+        .where(
+            Cours.id == cours_id,
+            Cours.affectation_institutionnelle_requise.is_(False),
+            or_(
+                Cours.institution_id.is_(None),
+                _appartenance_etudiante_active(
+                    Cours.institution_id, Utilisateur.id
+                ),
+            ),
         )
-    return session.exec(requete.order_by(InscriptionCours.date_inscription)).all()
+        .order_by(InscriptionCours.date_inscription)
+    )
+    return session.exec(requete).all()
 
 
-def cours_ids_etudiant_actifs(session: Session, utilisateur_id: int) -> list[int]:
-    """Liste les cours auxquels l'étudiant appartient encore dans son tenant."""
-    ids = session.exec(
-        select(InscriptionCours.cours_id)
-        .where(InscriptionCours.utilisateur_id == utilisateur_id)
-        .order_by(InscriptionCours.cours_id)
+def cours_ids_etudiant_actifs(
+    session: Session, utilisateur_id: int
+) -> list[int]:
+    """Liste les cours actifs d'un étudiant sans requête supplémentaire par cours."""
+    lignes = session.exec(
+        select(Cours.id)
+        .join(InscriptionCours, InscriptionCours.cours_id == Cours.id)
+        .where(
+            InscriptionCours.utilisateur_id == utilisateur_id,
+            Cours.affectation_institutionnelle_requise.is_(False),
+            or_(
+                Cours.institution_id.is_(None),
+                _appartenance_etudiante_active(Cours.institution_id, utilisateur_id),
+            ),
+        )
+        .order_by(Cours.id)
     ).all()
-    return [
-        int(cours_id) for cours_id in ids
-        if est_inscrit_cours(session, int(cours_id), utilisateur_id)
-    ]
+    return [int(cours_id) for cours_id in lignes]

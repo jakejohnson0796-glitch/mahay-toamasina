@@ -112,3 +112,17 @@ l'activation RLS sans politique comme une protection effective de l'application.
   téléchargements de copies.
 - Vérifier le comportement de retrait d'un membre et du dernier responsable.
 - Vérifier les performances des listes et rapports avec des effectifs réels.
+
+
+## Connexions et délais SQL
+
+Le backend et Alembic utilisent deux moteurs SQLAlchemy distincts, même lorsque
+les deux URLs sont identiques en développement ou en CI. Les requêtes runtime
+ont un `statement_timeout` de 10 secondes afin de libérer rapidement les
+workers HTTP. Le moteur Alembic dispose d'un délai de 5 minutes par instruction
+et d'un `lock_timeout` de 30 secondes : un backfill ou un DDL ne doit pas
+hériter du délai court des requêtes HTTP, mais ne doit pas non plus attendre
+indéfiniment un verrou. Le verrou advisory PostgreSQL décrit dans
+`alembic/env.py` sérialise les démarrages concurrents ; ces délais SQL sont
+des garde-fous complémentaires, pas une autorisation d'exécuter une migration
+sur une base non sauvegardée.

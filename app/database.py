@@ -11,6 +11,7 @@ des deux est utilise.
 from pathlib import Path
 
 from sqlalchemy import event
+from sqlalchemy.engine import make_url
 
 from sqlmodel import SQLModel, Session, create_engine
 
@@ -20,20 +21,38 @@ DATABASE_URL = parametres.database_url
 MIGRATION_DATABASE_URL = parametres.migration_database_url or DATABASE_URL
 
 
-def _creer_engine(database_url: str):
-    """Construit un moteur avec les mêmes garde-fous pour chaque compte."""
-    if database_url.startswith("sqlite"):
-        connect_args = {"check_same_thread": False}
-    else:
-        connect_args = {
-            "connect_timeout": 10,
-            "options": "-c statement_timeout=10000",
-        }
+# Les requêtes HTTP doivent échouer rapidement plutôt que garder un worker occupé.
+TEMPS_REQUETE_RUNTIME_MS = 10_000
+# Les backfills et les DDL peuvent dépasser le délai des requêtes HTTP.
+TEMPS_REQUETE_MIGRATION_MS = 300_000
+# Une migration ne doit pas rester bloquée indéfiniment derrière un verrou SQL.
+TEMPS_ATTENTE_VERROU_MIGRATION_MS = 30_000
 
+
+def _arguments_connexion(database_url: str, *, pour_migrations: bool = False) -> dict[str, object]:
+    """Construit des options séparées pour les requêtes HTTP et Alembic."""
+    if make_url(database_url).get_backend_name() == "sqlite":
+        return {"check_same_thread": False}
+
+    timeout = (
+        TEMPS_REQUETE_MIGRATION_MS
+        if pour_migrations
+        else TEMPS_REQUETE_RUNTIME_MS
+    )
+    options = f"-c statement_timeout={timeout}"
+    if pour_migrations:
+        options += f" -c lock_timeout={TEMPS_ATTENTE_VERROU_MIGRATION_MS}"
+    return {"connect_timeout": 10, "options": options}
+
+
+def _creer_engine(database_url: str, *, pour_migrations: bool = False):
+    """Construit un moteur avec un délai adapté à son usage."""
     moteur = create_engine(
         database_url,
         echo=False,
-        connect_args=connect_args,
+        connect_args=_arguments_connexion(
+            database_url, pour_migrations=pour_migrations
+        ),
         pool_pre_ping=True,
         pool_recycle=300,
         pool_size=3,
@@ -41,7 +60,7 @@ def _creer_engine(database_url: str):
         pool_timeout=10,
     )
 
-    if database_url.startswith("sqlite"):
+    if make_url(database_url).get_backend_name() == "sqlite":
         @event.listens_for(moteur, "connect")
         def _enregistrer_fonction_normalisation_sqlite(dbapi_connection, _record):
             from .texte_normalise import normaliser
@@ -53,13 +72,10 @@ def _creer_engine(database_url: str):
 # Le backend n'utilise que ce moteur pour les requêtes de l'application.
 engine = _creer_engine(DATABASE_URL)
 
-# Alembic dispose d'un moteur distinct et d'un compte distinct en production.
-# Le fallback sur DATABASE_URL est conservé pour les environnements locaux/CI.
-migration_engine = (
-    engine
-    if MIGRATION_DATABASE_URL == DATABASE_URL
-    else _creer_engine(MIGRATION_DATABASE_URL)
-)
+# Alembic utilise toujours un moteur séparé, même si les URLs sont identiques
+# en local/CI : les migrations disposent ainsi de leur propre timeout.
+# En production, le garde-fou impose en plus deux rôles PostgreSQL distincts.
+migration_engine = _creer_engine(MIGRATION_DATABASE_URL, pour_migrations=True)
 
 
 RACINE_PROJET = Path(__file__).resolve().parent.parent
