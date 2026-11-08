@@ -391,6 +391,7 @@ def rejoindre_sous_salle(
             "url_livekit": parametres.livekit_url,
             "jeton_livekit": token,
             "jeton_csrf": request.session.get("_csrf_token", ""),
+            "peut_gerer": gerant,
         },
     )
 
