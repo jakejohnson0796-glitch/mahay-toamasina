@@ -23,7 +23,7 @@ from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance)
+from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -1029,6 +1029,28 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     if seance.statut != StatutSeance.EN_COURS:
         return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
 
+    # Ne crée pas une présence tant que la personne n'a pas choisi si elle
+    # accepte la transcription déjà active.
+    transcription_active = session.exec(
+        select(TranscriptionSeance).where(
+            TranscriptionSeance.seance_id == seance_id,
+            TranscriptionSeance.active == True,  # noqa: E712
+        )
+    ).first()
+    if transcription_active:
+        consentement = session.exec(
+            select(ConsentementTranscription).where(
+                ConsentementTranscription.seance_id == seance_id,
+                ConsentementTranscription.utilisateur_id == utilisateur.id,
+                ConsentementTranscription.consenti == True,  # noqa: E712
+            )
+        ).first()
+        if not consentement:
+            return RedirectResponse(
+                f"/classe/seances/{seance_id}/transcription/consentement",
+                status_code=303,
+            )
+
     # Une seule présence ouverte par étudiant et séance. Les doubles clics
     # et renvois du formulaire ne doivent pas créer plusieurs entrées
     # simultanées ni gonfler la durée de présence.
@@ -1065,6 +1087,28 @@ def salle_virtuelle(request: Request, seance_id: int, session: Session = Depends
 
     if seance.statut != StatutSeance.EN_COURS:
         return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
+
+    # Tant qu'une transcription est active, aucun nouveau participant ne
+    # rejoint la salle sans consentement explicite pour cette séance.
+    transcription_active = session.exec(
+        select(TranscriptionSeance).where(
+            TranscriptionSeance.seance_id == seance_id,
+            TranscriptionSeance.active == True,  # noqa: E712
+        )
+    ).first()
+    if transcription_active:
+        consentement_transcription = session.exec(
+            select(ConsentementTranscription).where(
+                ConsentementTranscription.seance_id == seance_id,
+                ConsentementTranscription.utilisateur_id == utilisateur.id,
+                ConsentementTranscription.consenti == True,  # noqa: E712
+            )
+        ).first()
+        if not consentement_transcription:
+            return RedirectResponse(
+                f"/classe/seances/{seance_id}/transcription/consentement",
+                status_code=303,
+            )
 
     note_personnelle = session.exec(select(NoteSeance).where(
         NoteSeance.seance_id == seance_id,

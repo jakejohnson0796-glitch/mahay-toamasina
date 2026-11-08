@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titre %}Consentement — transcription de séance — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<section class="carte-formulaire classe-consentement-transcription" style="max-width:760px;margin:2rem auto;">
+  <p class="eyebrow">CLASSE VIRTUELLE · CONFIDENTIALITÉ</p>
+  <h1>Transcription en direct</h1>
+  <p>Le professeur a activé une transcription écrite pour cette séance. Avant d'entrer, lis les informations suivantes.</p>
+  <ul>
+    <li>Le flux audio de la salle est transmis au service Groq, via le worker LiveKit, pour être converti en texte en direct. Les conditions de traitement du fournisseur Groq s'appliquent à ce traitement.</li>
+    <li>Le worker Mahay n'écrit pas de fichier d'enregistrement audio ou vidéo. Cela ne signifie pas que le flux audio n'est pas traité : il est envoyé à Groq pour la reconnaissance vocale. Vérifie les règles de ton établissement et les autorisations nécessaires avant d'activer cette fonction pour des élèves mineurs.</li>
+    <li>Les sous-titres sont visibles dans la salle. Le professeur doit arrêter la transcription puis choisir explicitement d'enregistrer le compte rendu pour conserver le texte dans Mahay.</li>
+    <li>Le professeur peut ensuite demander un résumé IA du texte enregistré.</li>
+    <li>Tu peux refuser. Le refus arrête la transcription en cours pour toute la séance ; tu pourras rejoindre la salle sans transcription.</li>
+  </ul>
+  <p class="classe-notes-confidentialite">Ne partage pas de données personnelles sensibles pendant une transcription. En cas de doute, demande des explications au professeur avant de choisir.</p>
+  <form method="post" action="/classe/seances/{{ seance_id }}/transcription/consentement" class="classe-interaction-actions">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button type="submit" name="choix" value="accepter" class="bouton bouton-primaire">Accepter et entrer dans la salle</button>
+    <button type="submit" name="choix" value="refuser" class="bouton bouton-secondaire">Refuser et entrer sans transcription</button>
+  </form>
+  <p><a href="/classe/{{ cours.id }}">Retour au cours</a></p>
+</section>
+{% endblock %}

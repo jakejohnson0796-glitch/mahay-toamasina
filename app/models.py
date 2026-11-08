@@ -2109,3 +2109,89 @@ class NoteSeance(SQLModel, table=True):
         UniqueConstraint("seance_id", "utilisateur_id", name="uq_noteseance_seance_utilisateur"),
         Index("ix_noteseance_cours_utilisateur", "cours_id", "utilisateur_id"),
     )
+
+
+# Interactions pédagogiques en direct — quiz, groupes, documents et transcription.
+class SondageSeance(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    cours_id: int = Field(foreign_key="cours.id", index=True)
+    createur_id: int = Field(foreign_key="utilisateur.id")
+    question: str = Field(max_length=300)
+    options_json: str = Field(max_length=2000)
+    type_sondage: str = Field(default="sondage", max_length=12)
+    bonne_option: Optional[int] = None
+    ouvert: bool = Field(default=True, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_cloture: Optional[datetime] = None
+
+
+class ReponseSondageSeance(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    sondage_id: int = Field(foreign_key="sondageseance.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    option_index: int
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("sondage_id", "utilisateur_id", name="uq_reponse_sondage_utilisateur"),
+    )
+
+
+class GroupeSousSalle(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    nom: str = Field(max_length=80)
+    nom_salle_livekit: str = Field(unique=True, max_length=180)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AffectationSousSalle(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    groupe_id: int = Field(foreign_key="groupesoussalle.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("seance_id", "utilisateur_id", name="uq_affectation_sous_salle_utilisateur"),
+    )
+
+
+class DocumentPartageSeance(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    cours_id: int = Field(foreign_key="cours.id", index=True)
+    document_id: int = Field(foreign_key="document.id", index=True)
+    partage_par_id: int = Field(foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("seance_id", "document_id", name="uq_document_partage_seance"),
+    )
+
+
+class ConsentementTranscription(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    consenti: bool = Field(default=False)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("seance_id", "utilisateur_id", name="uq_consentement_transcription_utilisateur"),
+    )
+
+
+class TranscriptionSeance(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", unique=True, index=True)
+    demarree_par_id: int = Field(foreign_key="utilisateur.id")
+    agent_dispatch_id: Optional[str] = Field(default=None, max_length=120)
+    active: bool = Field(default=False, index=True)
+    contenu: str = Field(default="", max_length=100000)
+    resume_ia: str = Field(default="", max_length=30000)
+    date_debut: Optional[datetime] = None
+    date_fin: Optional[datetime] = None
+    date_modification: datetime = Field(default_factory=datetime.utcnow)

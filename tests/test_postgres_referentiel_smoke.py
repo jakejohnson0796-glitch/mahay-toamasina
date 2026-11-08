@@ -896,6 +896,9 @@ def test_postgres_indexes_all_uncovered_foreign_keys():
         ("ix_fk_utilisateur_universite_id", "utilisateur", "universite_id"),
         ("ix_fk_utilisateur_verification_enseignant_par_id", "utilisateur", "verification_enseignant_par_id"),
         ("ix_fk_utilisateur_filiere_id", "utilisateur", "filiere_id"),
+        ("ix_fk_sondageseance_createur_id", "sondageseance", "createur_id"),
+        ("ix_fk_documentpartageseance_partage_par_id", "documentpartageseance", "partage_par_id"),
+        ("ix_fk_transcriptionseance_demarree_par_id", "transcriptionseance", "demarree_par_id"),
     ]
     names = [item[0] for item in expected]
 
@@ -947,7 +950,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "h4c9d1e7b2a6", (
+    assert revision == "i7d3f9a2c5b1", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
@@ -1007,8 +1010,8 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "h4c9d1e7b2a6"
-    assert index_count == 41
+    assert revision == "i7d3f9a2c5b1"
+    assert index_count == 44
     assert institution_index_count == 1
 
 

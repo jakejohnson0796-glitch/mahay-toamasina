@@ -16,7 +16,8 @@
     <button type="button" class="bouton-controle" data-outil="fleche" aria-label="Fleche" title="Fleche">↗</button>
     <button type="button" id="btn-remplir-tableau" class="bouton-controle" aria-pressed="false" aria-label="Remplir les formes" title="Remplir les formes (rectangle/cercle/triangle)">◼️</button>
     <span class="separateur-outils-tableau" aria-hidden="true"></span>
-    <button type="button" class="bouton-controle" data-outil="texte" aria-label="Texte" title="Texte">🔤</button>
+    <button type="button" class="bouton-controle" data-outil="texte" aria-label="Texte" title="Texte libre">🔤</button>
+    <button type="button" class="bouton-controle" data-outil="note" aria-label="Post-it" title="Ajouter une note autocollante">🟨</button>
 
     <span class="palette-couleurs-tableau" role="group" aria-label="Couleurs rapides">
       <button type="button" class="pastille-couleur-tableau pastille-couleur-active" data-couleur="#F2ECDD" style="background:#F2ECDD;" aria-label="Creme" title="Creme"></button>
@@ -218,8 +219,42 @@
       if (d.rempli && ["rectangle", "cercle", "triangle"].indexOf(d.forme) !== -1) ctx.fill();
       else ctx.stroke();
     } else if (e.type === "texte") {
-      ctx.font = (d.taille || 18) + "px 'Inter', sans-serif";
-      ctx.fillText(d.texte || "", d.x, d.y);
+      const taille = d.taille || 18;
+      ctx.font = taille + "px 'Inter', sans-serif";
+      if (d.note) {
+        // Post-it compact, persisté comme un élément texte existant pour
+        // rester compatible avec les journaux et clients déjà déployés.
+        const lignes = [];
+        String(d.texte || "").split(/\\r?\\n/).forEach(function (paragraphe) {
+          let ligne = "";
+          paragraphe.split(/\\s+/).forEach(function (mot) {
+            const candidat = ligne ? ligne + " " + mot : mot;
+            if (ligne && ctx.measureText(candidat).width > 190) {
+              lignes.push(ligne);
+              ligne = mot;
+            } else {
+              ligne = candidat;
+            }
+          });
+          lignes.push(ligne);
+        });
+        const hauteurLigne = Math.max(18, taille * 1.35);
+        const largeur = 220;
+        const hauteur = Math.max(54, lignes.length * hauteurLigne + 20);
+        ctx.save();
+        ctx.fillStyle = d.fond || "#FBD9A0";
+        ctx.shadowColor = "rgba(0,0,0,0.18)";
+        ctx.shadowBlur = 5;
+        ctx.fillRect(d.x - 8, d.y - taille - 10, largeur, hauteur);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = d.couleurTexte || "#20343B";
+        lignes.forEach(function (ligne, index) {
+          ctx.fillText(ligne, d.x + 4, d.y + index * hauteurLigne);
+        });
+        ctx.restore();
+      } else {
+        ctx.fillText(d.texte || "", d.x, d.y);
+      }
     }
     ctx.globalAlpha = 1;
   }
@@ -396,10 +431,19 @@
     evenement.preventDefault();
     const [x, y] = positionCanvas(evenement);
 
-    if (outilActif === "texte") {
-      const texte = prompt("Texte :");
-      if (texte) {
-        creerElement("texte", { x: x, y: y, texte: texte, couleur: couleurEl.value, taille: 14 + Number(epaisseurEl.value) });
+    if (outilActif === "texte" || outilActif === "note") {
+      const estNote = outilActif === "note";
+      const texte = prompt(estNote ? "Contenu du post-it :" : "Texte :");
+      if (texte && texte.trim()) {
+        creerElement("texte", {
+          x: x, y: y,
+          texte: texte.trim().slice(0, 180),
+          couleur: couleurEl.value,
+          taille: estNote ? 16 : 14 + Number(epaisseurEl.value),
+          note: estNote,
+          fond: estNote ? "#FBD9A0" : null,
+          couleurTexte: estNote ? "#20343B" : couleurEl.value
+        });
       }
       return;
     }

@@ -85,6 +85,8 @@ class Parametres:
     livekit_url: str = field(default_factory=lambda: os.getenv("LIVEKIT_URL", ""))
     livekit_api_key: str = field(default_factory=lambda: os.getenv("LIVEKIT_API_KEY", ""))
     livekit_api_secret: str = field(default_factory=lambda: os.getenv("LIVEKIT_API_SECRET", ""))
+    # Nom d'agent LiveKit explicitement déployé séparément. Vide = transcription désactivée.
+    livekit_transcription_agent_name: str = field(default_factory=lambda: os.getenv("LIVEKIT_TRANSCRIPTION_AGENT_NAME", "").strip())
 
     # --- Generation de quiz par IA (API Groq — gratuite) ---
     # Cle gratuite sur https://console.groq.com (aucune carte bancaire requise).

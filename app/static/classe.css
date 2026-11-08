@@ -1346,3 +1346,109 @@ body.page-classe {
 #statut-notes-page{color:var(--success,#176b43);font-size:.68rem;font-weight:700}
 #statut-notes-page.classe-notes-erreur{color:var(--danger,#a52626)}
 @media(max-width:680px){.classe-notes-page{padding:.75rem}.classe-notes-card .classe-notes-actions{display:grid;grid-template-columns:1fr}.classe-notes-card .classe-notes-actions .bouton{width:100%}}
+
+
+/* Outils interactifs de la salle : sondages, sous-salles et documents. */
+.classe-interactions-panel {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--bordure, #d8dce3);
+  border-radius: 1rem;
+  background: var(--surface, #fff);
+}
+.classe-interactions-panel h2 {
+  margin-top: 0;
+}
+.classe-interaction-form {
+  display: grid;
+  gap: .65rem;
+  max-width: 48rem;
+  margin: .75rem 0 1rem;
+}
+.classe-interaction-form input,
+.classe-interaction-form select,
+.classe-interaction-form textarea {
+  width: 100%;
+  min-width: 0;
+}
+.classe-interaction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+  margin: .75rem 0;
+}
+.classe-interaction-carte {
+  padding: .9rem;
+  margin: .8rem 0;
+  border: 1px solid var(--bordure, #d8dce3);
+  border-radius: .75rem;
+  background: var(--surface-secondaire, #f8fafc);
+}
+.classe-interaction-carte h3 {
+  margin: 0 0 .45rem;
+}
+.classe-interaction-choix {
+  display: grid;
+  gap: .45rem;
+  margin: .7rem 0;
+}
+.classe-interaction-option {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .55rem .65rem;
+  border-radius: .55rem;
+  background: var(--surface, #fff);
+}
+.classe-interaction-option input {
+  width: auto;
+}
+.classe-interaction-votes {
+  margin-left: auto;
+  color: var(--texte-secondaire, #526071);
+  font-size: .85rem;
+}
+.classe-interaction-correction {
+  font-weight: 600;
+}
+.classe-interaction-lien {
+  margin: .45rem 0;
+}
+.classe-transcription-texte {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 22rem;
+  overflow: auto;
+  padding: .85rem;
+  border: 1px solid var(--bordure, #d8dce3);
+  border-radius: .65rem;
+  background: var(--surface-secondaire, #f8fafc);
+  font: inherit;
+  line-height: 1.55;
+}
+.classe-sous-salle {
+  max-width: 1100px;
+  margin: 1.5rem auto;
+  padding: 1rem;
+}
+.classe-sous-salle header {
+  margin-bottom: 1rem;
+}
+.classe-consentement-transcription ul {
+  padding-left: 1.3rem;
+}
+.classe-consentement-transcription li {
+  margin: .55rem 0;
+}
+@media (max-width: 680px) {
+  .classe-interactions-panel {
+    padding: .75rem;
+  }
+  .classe-salle-controls {
+    flex-wrap: wrap;
+  }
+  .classe-interaction-actions > button {
+    flex: 1 1 10rem;
+  }
+}
