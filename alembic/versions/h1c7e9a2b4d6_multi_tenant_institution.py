@@ -40,11 +40,10 @@ def upgrade() -> None:
             ["universite_id"],
             ["id"],
         )
-        op.create_index(
+        op.create_unique_constraint(
             "uq_etablissementpartenaire_universite_id",
             "etablissementpartenaire",
             ["universite_id"],
-            unique=True,
         )
         op.execute(sa.text("""
             INSERT INTO etablissementpartenaire
