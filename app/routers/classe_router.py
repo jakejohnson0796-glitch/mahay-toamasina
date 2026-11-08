@@ -23,7 +23,7 @@ from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification)
+from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -31,6 +31,7 @@ from ..ws_manager import gestionnaire
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, ouvrir_fichier_local, supprimer_fichier
 from ..text_extraction import extraire_texte
 from .. import classe_correction
+from .. import classe_notes
 from ..rate_limit import limite_depassee
 from .. import gamification
 from .. import quiz as quiz_module
@@ -1065,12 +1066,19 @@ def salle_virtuelle(request: Request, seance_id: int, session: Session = Depends
     if seance.statut != StatutSeance.EN_COURS:
         return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
 
+    note_personnelle = session.exec(select(NoteSeance).where(
+        NoteSeance.seance_id == seance_id,
+        NoteSeance.utilisateur_id == utilisateur.id,
+    )).first()
+    note_contenu = note_personnelle.contenu if note_personnelle else ""
+
     if not livekit_configure():
         return templates.TemplateResponse(
             request,
             "classe_salle.html",
             {
-                "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer,
+                "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer, "note_contenu": note_contenu,
+                "ia_notes_disponible": bool(parametres.groq_api_key),
                 "erreur_livekit": "La classe virtuelle audio/video n'est pas encore configuree sur ce serveur (variables LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET manquantes).",
                 "jeton_livekit": None, "url_livekit": None,
             },
@@ -1089,7 +1097,8 @@ def salle_virtuelle(request: Request, seance_id: int, session: Session = Depends
             request,
             "classe_salle.html",
             {
-                "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer,
+                "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer, "note_contenu": note_contenu,
+                "ia_notes_disponible": bool(parametres.groq_api_key),
                 "erreur_livekit": str(erreur), "jeton_livekit": None, "url_livekit": None,
             },
         )
@@ -1098,10 +1107,86 @@ def salle_virtuelle(request: Request, seance_id: int, session: Session = Depends
         request,
         "classe_salle.html",
         {
-            "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer,
+            "utilisateur": utilisateur, "cours": cours, "seance": seance, "peut_gerer": peut_gerer, "note_contenu": note_contenu,
+            "ia_notes_disponible": bool(parametres.groq_api_key),
             "erreur_livekit": None, "jeton_livekit": jeton_livekit, "url_livekit": parametres.livekit_url,
         },
     )
+
+
+
+@router.post("/classe/seances/{seance_id}/notes")
+def enregistrer_notes_seance(
+    request: Request,
+    seance_id: int,
+    contenu: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Sauvegarde uniquement les notes de l'utilisateur connecté."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return JSONResponse({"erreur": "Connexion requise."}, status_code=401)
+    seance = session.get(Seance, seance_id)
+    cours = session.get(Cours, seance.cours_id) if seance else None
+    if not seance or not cours:
+        return JSONResponse({"erreur": "Séance introuvable."}, status_code=404)
+    if not _peut_gerer_cours(cours, utilisateur) and not _est_inscrit(session, cours.id, utilisateur.id):
+        return JSONResponse({"erreur": "Accès non autorisé à cette séance."}, status_code=403)
+    if seance.statut != StatutSeance.EN_COURS:
+        return JSONResponse({"erreur": "La séance n'est plus en direct."}, status_code=409)
+
+    texte = (contenu or "")[:30000]
+    note = session.exec(select(NoteSeance).where(
+        NoteSeance.seance_id == seance_id,
+        NoteSeance.utilisateur_id == utilisateur.id,
+    )).first()
+    maintenant = datetime.utcnow()
+    if note:
+        note.contenu = texte
+        note.date_modification = maintenant
+    else:
+        note = NoteSeance(
+            seance_id=seance_id, cours_id=cours.id, utilisateur_id=utilisateur.id,
+            contenu=texte, date_creation=maintenant, date_modification=maintenant,
+        )
+    session.add(note)
+    session.commit()
+    return JSONResponse({"ok": True, "date_modification": maintenant.isoformat(), "longueur": len(texte)})
+
+
+@router.post("/classe/seances/{seance_id}/notes/organiser")
+def organiser_notes_seance(
+    request: Request,
+    seance_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Propose une fiche structurée ; aucune note n'est remplacée sans action de l'élève."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return JSONResponse({"erreur": "Connexion requise."}, status_code=401)
+    seance = session.get(Seance, seance_id)
+    cours = session.get(Cours, seance.cours_id) if seance else None
+    if not seance or not cours:
+        return JSONResponse({"erreur": "Séance introuvable."}, status_code=404)
+    if not _peut_gerer_cours(cours, utilisateur) and not _est_inscrit(session, cours.id, utilisateur.id):
+        return JSONResponse({"erreur": "Accès non autorisé à cette séance."}, status_code=403)
+    note = session.exec(select(NoteSeance).where(
+        NoteSeance.seance_id == seance_id,
+        NoteSeance.utilisateur_id == utilisateur.id,
+    )).first()
+    if not note or len((note.contenu or "").strip()) < 40:
+        return JSONResponse({"erreur": "Ajoute quelques phrases à tes notes avant de demander leur organisation."}, status_code=400)
+    try:
+        resultat = classe_notes.organiser_notes(
+            contenu=note.contenu, nom_cours=cours.nom, titre_seance=seance.titre,
+        )
+    except ValueError as erreur:
+        return JSONResponse({"erreur": str(erreur)}, status_code=400)
+    except RuntimeError as erreur:
+        return JSONResponse({"erreur": str(erreur)}, status_code=503)
+    return JSONResponse({"contenu_organise": resultat})
 
 
 @router.post("/classe/seances/{seance_id}/quitter")
