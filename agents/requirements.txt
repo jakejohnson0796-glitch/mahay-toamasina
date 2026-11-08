@@ -1,0 +1,2 @@
+python-dotenv==1.0.1
+livekit-agents[groq]~=1.8
