@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 
 import pytest
-from sqlalchemy import event
+from sqlalchemy import event, select
 from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, Session, create_engine
 
