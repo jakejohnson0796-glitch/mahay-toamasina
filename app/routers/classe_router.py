@@ -1115,6 +1115,40 @@ def salle_virtuelle(request: Request, seance_id: int, session: Session = Depends
 
 
 
+
+@router.get("/classe/seances/{seance_id}/notes")
+def consulter_notes_seance(
+    request: Request,
+    seance_id: int,
+    session: Session = Depends(get_session),
+):
+    """Ouvre les notes personnelles d'une séance, même après sa clôture."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    seance = session.get(Seance, seance_id)
+    cours = session.get(Cours, seance.cours_id) if seance else None
+    if not seance or not cours:
+        return RedirectResponse("/classe", status_code=303)
+    if not _peut_gerer_cours(cours, utilisateur) and not _est_inscrit(session, cours.id, utilisateur.id):
+        return RedirectResponse(f"/classe/{cours.id}", status_code=303)
+    note = session.exec(select(NoteSeance).where(
+        NoteSeance.seance_id == seance_id,
+        NoteSeance.utilisateur_id == utilisateur.id,
+    )).first()
+    return templates.TemplateResponse(
+        request,
+        "classe_notes.html",
+        {
+            "utilisateur": utilisateur,
+            "cours": cours,
+            "seance": seance,
+            "note_contenu": note.contenu if note else "",
+            "ia_notes_disponible": bool(parametres.groq_api_key),
+        },
+    )
+
+
 @router.post("/classe/seances/{seance_id}/notes")
 def enregistrer_notes_seance(
     request: Request,
@@ -1133,9 +1167,6 @@ def enregistrer_notes_seance(
         return JSONResponse({"erreur": "Séance introuvable."}, status_code=404)
     if not _peut_gerer_cours(cours, utilisateur) and not _est_inscrit(session, cours.id, utilisateur.id):
         return JSONResponse({"erreur": "Accès non autorisé à cette séance."}, status_code=403)
-    if seance.statut != StatutSeance.EN_COURS:
-        return JSONResponse({"erreur": "La séance n'est plus en direct."}, status_code=409)
-
     texte = (contenu or "")[:30000]
     note = session.exec(select(NoteSeance).where(
         NoteSeance.seance_id == seance_id,
