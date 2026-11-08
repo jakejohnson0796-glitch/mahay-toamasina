@@ -38,7 +38,7 @@
   const peutGerer = root.dataset.peutGerer === "true";
   const room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
 
-  function ajouterFlux(track, participant) {
+  function ajouterFlux(track, publication, participant) {
     const carte = document.createElement("article");
     carte.className = "tuile-video";
     const titre = document.createElement("p");
