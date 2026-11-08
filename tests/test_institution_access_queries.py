@@ -221,7 +221,7 @@ def test_responsable_actif_recharge_une_appartenance_modifiee_par_une_autre_sess
             initial.commit()
             institution_id, responsable_id = institution.id, responsable.id
 
-        with Session(engine) as lecteur, Session(engine) as modificateur:
+        with Session(engine, expire_on_commit=False) as lecteur, Session(engine) as modificateur:
             assert responsable_actif(lecteur, responsable_id, institution_id)
             # Termine la transaction de lecture tout en gardant les objets dans
             # l'identité map ; l'autre session révoque ensuite le rôle.
