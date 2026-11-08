@@ -90,3 +90,14 @@ def test_routes_notes_filtrent_par_utilisateur_et_verifient_acces():
     assert "_est_inscrit(session, cours.id, utilisateur.id)" in source
     assert "verifier_csrf" in source
     assert "classe_notes.organiser_notes" in source
+
+
+def test_notes_restent_accessibles_apres_une_seance_et_ont_une_page_dediee():
+    router = (ROOT / "app" / "routers" / "classe_router.py").read_text(encoding="utf-8")
+    cours = (ROOT / "app" / "templates" / "classe_detail.html").read_text(encoding="utf-8")
+    page = (ROOT / "app" / "templates" / "classe_notes.html").read_text(encoding="utf-8")
+    assert '@router.get("/classe/seances/{seance_id}/notes")' in router
+    assert 'href="/classe/seances/{{ seance.id }}/notes"' in cours
+    assert "mes-notes-seance-" in page
+    assert "beforeunload" in page
+    assert "Organiser avec l'IA" in page
