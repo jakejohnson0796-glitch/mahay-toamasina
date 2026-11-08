@@ -631,7 +631,7 @@ async def choisir_consentement_transcription(
                 await _arreter_transcription(session, seance, transcription)
             except Exception:
                 return JSONResponse({"erreur": "L'arrêt de la transcription n'a pas pu être confirmé. Le professeur doit arrêter l'agent."}, status_code=503)
-        return RedirectResponse(f"/classe/{cours.id}?transcription=refusee", status_code=303)
+        return RedirectResponse(f"/classe/seances/{seance_id}/salle", status_code=303)
     return RedirectResponse(f"/classe/seances/{seance_id}/salle", status_code=303)
 
 
@@ -662,7 +662,11 @@ async def demarrer_transcription_seance(
         identites = await lister_participants_salle(seance.nom_salle_livekit)
     except Exception:
         return JSONResponse({"erreur": "Impossible de vérifier la liste des participants LiveKit."}, status_code=503)
-    identites_utilisateurs = [identite for identite in identites if identite.isdigit()]
+    # Chaque participant doit être identifiable par un compte Mahay. On ne
+    # démarre pas si une identité inconnue pourrait être transcrite sans accord.
+    if any(not identite.isdigit() for identite in identites):
+        return JSONResponse({"erreur": "Un participant ne peut pas être identifié par Mahay. La transcription reste désactivée tant que tous les participants ne sont pas identifiés."}, status_code=409)
+    identites_utilisateurs = identites
     if not identites_utilisateurs or str(utilisateur.id) not in identites_utilisateurs:
         return JSONResponse({"erreur": "Le professeur doit être connecté à la salle pour démarrer la transcription."}, status_code=409)
     ids = [int(identite) for identite in identites_utilisateurs]
