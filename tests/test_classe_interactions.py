@@ -210,7 +210,9 @@ def test_transcription_stt_sans_enregistrement_audio():
     assert 'language="fr"' in source
     assert "record=False" in source
     readme = (ROOT / "agents" / "README.md").read_text(encoding="utf-8")
-    assert "Aucun audio ni aucune vidéo n'est enregistré" in readme
+    assert "Le worker Mahay n'écrit pas de fichier audio/vidéo" in readme
+    assert "`record=False`" in readme
+    assert "conditions de traitement du fournisseur Groq" in readme
     assert "LIVEKIT_TRANSCRIPTION_AGENT_NAME" in readme
 
 
