@@ -44,6 +44,7 @@ def test_configuration_production_refuse_un_compte_runtime_privilegie() -> None:
     )
     erreurs = erreurs_configuration_production(config)
     assert any("rôle personnalisé mahay_runtime" in erreur for erreur in erreurs)
+    assert any("BYPASSRLS" in erreur and "contrôlés séparément" in erreur for erreur in erreurs)
 
 
 def test_configuration_production_refuse_le_meme_role_pour_runtime_et_migrations() -> None:
