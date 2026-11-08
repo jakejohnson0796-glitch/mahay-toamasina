@@ -1018,10 +1018,23 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
                 "AND indexname = 'ix_etablissementpartenaire_cree_par_id'"
             )
         ).scalar_one()
+        mapped_universities = connection.execute(
+            text(
+                "SELECT COUNT(DISTINCT universite_id) "
+                "FROM public.etablissementpartenaire "
+                "WHERE universite_id IS NOT NULL"
+            )
+        ).scalar_one()
+        university_count = connection.execute(
+            text("SELECT COUNT(*) FROM public.universite")
+        ).scalar_one()
 
     assert revision == "h1c7e9a2b4d6"
     assert index_count == 41
     assert institution_index_count == 1
+    assert mapped_universities == university_count, (
+        "Chaque université du catalogue doit avoir exactement un pont partenaire."
+    )
 
 
 @pytest.mark.skipif(
