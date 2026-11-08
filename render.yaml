@@ -80,6 +80,9 @@ services:
   # Les variables omises sont conservées lors du sync Render.
   - type: web
     name: mitaridala
+    envVars:
+      - key: DATABASE_URL
+        sync: false
     runtime: docker
     plan: free
     region: frankfurt
