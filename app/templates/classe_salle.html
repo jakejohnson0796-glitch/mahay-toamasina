@@ -16,6 +16,12 @@
     </div>
   </header>
 
+  <nav class="classe-workspace-nav" aria-label="Accès rapide pendant la séance">
+    <span>Garder tes espaces ouverts</span>
+    <a href="/classe/{{ cours.id }}" target="_blank" rel="noopener">📚 Cours et supports</a>
+    <a href="/cercles" target="_blank" rel="noopener">👥 Cercles d'étude</a>
+  </nav>
+
 {% if erreur_livekit %}
   <div class="erreur" role="alert">{{ erreur_livekit }}</div>
   <form method="post" action="/classe/seances/{{ seance.id }}/quitter">
@@ -24,7 +30,7 @@
   </form>
 {% else %}
 
-<div id="salle-virtuelle" data-url="{{ url_livekit }}" data-jeton="{{ jeton_livekit }}" data-peut-partager-ecran="{{ 'true' if peut_gerer else 'false' }}">
+<div id="salle-virtuelle" data-url="{{ url_livekit }}" data-jeton="{{ jeton_livekit }}" data-peut-partager-ecran="{{ 'true' if peut_gerer else 'false' }}" data-ia-notes="{{ 'true' if ia_notes_disponible else 'false' }}">
   <section class="classe-salle-stage" aria-label="Vidéo de la classe">
     <div id="grille-video" class="grille-video"></div>
     <div id="salle-vide" class="classe-empty-stage" hidden>
@@ -39,6 +45,7 @@
     <button type="button" id="btn-partage-ecran" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Partager l'écran" title="Partager l'écran" disabled>🖥️</button>
     {% endif %}
     <button type="button" id="btn-lever-main" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Lever la main" title="Lever la main" disabled>✋</button>
+    <button type="button" id="btn-notes" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Ouvrir mes notes privées" title="Mes notes" disabled>📝</button>
     <button type="button" id="btn-tableau" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Ouvrir le tableau blanc" title="Tableau blanc" disabled>🖍️</button>
     <button type="button" id="btn-participants" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Afficher les participants" title="Participants" disabled>👥</button>
     <button type="button" id="btn-economie-donnees" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer le mode économie de données" title="Économie de données" disabled>📶</button>
@@ -50,6 +57,31 @@
   </div>
 
   <div id="notifications-salle" aria-live="polite"></div>
+
+  <section id="panneau-notes" class="classe-salle-panel classe-notes-panel" aria-label="Notes personnelles" hidden>
+    <div class="classe-notes-head">
+      <div>
+        <h2>Mes notes privées</h2>
+        <p>Enregistrées automatiquement pour cette séance et retrouvables après le cours.</p>
+      </div>
+      <span id="statut-notes" role="status" aria-live="polite">Notes chargées</span>
+    </div>
+    <textarea id="notes-saisie" maxlength="30000" rows="10" placeholder="Écris ici les explications, exemples, définitions et questions à revoir…">{{ note_contenu }}</textarea>
+    <div class="classe-notes-actions">
+      <button type="button" id="btn-notes-ia" class="bouton bouton-primaire" {% if not ia_notes_disponible %}disabled title="Le service d'assistance IA n'est pas configuré."{% endif %}>✨ Organiser avec l'IA</button>
+      <button type="button" id="btn-notes-telecharger" class="bouton bouton-secondaire">Télécharger mes notes</button>
+    </div>
+    <p class="classe-notes-confidentialite">Tes notes restent privées. L'assistant IA envoie uniquement le texte de tes notes au service configuré ; aucun audio ni aucune vidéo de la séance n'est envoyé.</p>
+    <div id="notes-apercu" class="classe-notes-apercu" hidden>
+      <div class="classe-notes-head">
+        <strong>Proposition à relire</strong>
+        <button type="button" id="btn-notes-fermer-apercu" class="bouton bouton-secondaire">Fermer</button>
+      </div>
+      <pre id="notes-suggestion"></pre>
+      <button type="button" id="btn-notes-appliquer" class="bouton bouton-primaire">Remplacer mes notes par cette version</button>
+    </div>
+  </section>
+
   <div id="panneau-tableau" class="classe-salle-panel" hidden></div>
   <div id="panneau-participants" class="classe-salle-panel" hidden>
     <h3 class="titre-carte">Participants</h3>
@@ -74,7 +106,11 @@
   const url = conteneur.dataset.url;
   const jeton = conteneur.dataset.jeton;
   const peutPartagerEcran = conteneur.dataset.peutPartagerEcran === "true";
+  const iaNotesDisponible = conteneur.dataset.iaNotes === "true";
   const nomUtilisateur = {{ utilisateur.nom | tojson }};
+  const jetonCsrfNotes = {{ jeton_csrf(request) | tojson }};
+  const urlNotes = "/classe/seances/{{ seance.id }}/notes";
+  const urlOrganiserNotes = "/classe/seances/{{ seance.id }}/notes/organiser";
 
   // Palette d'avatars : DOIT rester identique, dans le meme ordre, a
   // _PALETTE_AVATARS dans app/templating.py et a la copie utilisee dans
@@ -159,6 +195,49 @@ const room = new Room({
     compteurEl.textContent = n + " participant" + (n > 1 ? "s" : "");
   }
 
+  function creerTuilePartageEcran(identifiantParticipant, nom) {
+    const suffixe = String(identifiantParticipant).replace(/[^a-zA-Z0-9_-]/g, "");
+    const identifiant = "tuile-ecran-" + suffixe;
+    let tuile = document.getElementById(identifiant);
+    if (!tuile) {
+      tuile = document.createElement("div");
+      tuile.className = "tuile-video tuile-partage-ecran";
+      tuile.id = identifiant;
+      const titre = document.createElement("span");
+      titre.className = "partage-ecran-titre";
+      titre.textContent = "Écran partagé par " + nom;
+      tuile.appendChild(titre);
+      const bouton = document.createElement("button");
+      bouton.type = "button";
+      bouton.className = "partage-ecran-agrandir";
+      bouton.textContent = "Agrandir";
+      bouton.setAttribute("aria-pressed", "false");
+      bouton.addEventListener("click", function () {
+        basculerTaillePartage(tuile, bouton);
+      });
+      tuile.appendChild(bouton);
+      grilleVideo.appendChild(tuile);
+    }
+    return tuile;
+  }
+
+  function basculerTaillePartage(tuile, bouton) {
+    const agrandir = !tuile.classList.contains("partage-ecran-agrandi");
+    document.querySelectorAll(".tuile-partage-ecran.partage-ecran-agrandi").forEach(function (autre) {
+      if (autre !== tuile) {
+        autre.classList.remove("partage-ecran-agrandi");
+        const autreBouton = autre.querySelector(".partage-ecran-agrandir");
+        if (autreBouton) {
+          autreBouton.textContent = "Agrandir";
+          autreBouton.setAttribute("aria-pressed", "false");
+        }
+      }
+    });
+    tuile.classList.toggle("partage-ecran-agrandi", agrandir);
+    bouton.textContent = agrandir ? "Réduire" : "Agrandir";
+    bouton.setAttribute("aria-pressed", String(agrandir));
+  }
+
   function creerTuile(identifiantParticipant, nom) {
     let tuile = document.getElementById("tuile-" + identifiantParticipant);
     if (!tuile) {
@@ -238,11 +317,16 @@ const room = new Room({
 
   // --- Reception des flux video/audio des autres participants ---
   room.on(RoomEvent.TrackSubscribed, function (track, publication, participant) {
-    const tuile = creerTuile(participant.identity, participant.name || "Participant");
+    const nomParticipant = participant.name || "Participant";
+    const estPartageEcran = track.kind === Track.Kind.Video && publication.source === Track.Source.ScreenShare;
+    const tuile = estPartageEcran
+      ? creerTuilePartageEcran(participant.identity, nomParticipant)
+      : creerTuile(participant.identity, nomParticipant);
     const element = track.attach();
     if (track.kind === Track.Kind.Video) {
       element.classList.add("tuile-video-flux");
-      appliquerModeEconomieSur(publication);  // applique le mode economie si deja actif au moment ou ce participant/flux arrive
+      if (estPartageEcran) element.classList.add("tuile-partage-ecran-flux");
+      appliquerModeEconomieSur(publication);
     }
     tuile.appendChild(element);
     actualiserAffichageTuile(participant.identity);
@@ -250,7 +334,13 @@ const room = new Room({
   });
   room.on(RoomEvent.TrackUnsubscribed, function (track, publication, participant) {
     track.detach().forEach(function (el) { el.remove(); });
-    actualiserAffichageTuile(participant.identity);
+    if (track.kind === Track.Kind.Video && publication.source === Track.Source.ScreenShare) {
+      const suffixe = String(participant.identity).replace(/[^a-zA-Z0-9_-]/g, "");
+      const tuileEcran = document.getElementById("tuile-ecran-" + suffixe);
+      if (tuileEcran) tuileEcran.remove();
+    } else {
+      actualiserAffichageTuile(participant.identity);
+    }
   });
 
   room.on(RoomEvent.ParticipantConnected, function (participant) {
@@ -262,6 +352,9 @@ const room = new Room({
   room.on(RoomEvent.ParticipantDisconnected, function (participant) {
     const tuile = document.getElementById("tuile-" + participant.identity);
     if (tuile) tuile.remove();
+    const suffixeEcran = String(participant.identity).replace(/[^a-zA-Z0-9_-]/g, "");
+    const tuileEcran = document.getElementById("tuile-ecran-" + suffixeEcran);
+    if (tuileEcran) tuileEcran.remove();
     notifier(participant.name + " a quitte la salle.");
     majCompteur();
     mettreAJourPanneauParticipants();
@@ -439,6 +532,125 @@ const room = new Room({
     definirEtatConnexion(false);
     statutEl.textContent = "Impossible de se connecter a la salle (" + erreur.message + ").";
     notifier("La connexion vidéo n'est pas disponible. Réessaie ou retourne au cours.");
+  });
+
+  // --- Notes privées : sauvegarde automatique, export et organisation IA ---
+  const btnNotes = document.getElementById("btn-notes");
+  const panneauNotes = document.getElementById("panneau-notes");
+  const notesSaisie = document.getElementById("notes-saisie");
+  const statutNotes = document.getElementById("statut-notes");
+  const btnNotesIA = document.getElementById("btn-notes-ia");
+  const notesApercu = document.getElementById("notes-apercu");
+  const notesSuggestion = document.getElementById("notes-suggestion");
+  let minuteurNotes = null;
+  let notesDernierContenuSauve = notesSaisie.value;
+
+  function afficherEtatNotes(texte, erreur) {
+    statutNotes.textContent = texte;
+    statutNotes.classList.toggle("classe-notes-erreur", Boolean(erreur));
+  }
+  function envoyerNotes(keepalive) {
+    const contenu = notesSaisie.value;
+    if (contenu === notesDernierContenuSauve) return Promise.resolve();
+    afficherEtatNotes("Enregistrement…", false);
+    return fetch(urlNotes, {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: Boolean(keepalive),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ _csrf: jetonCsrfNotes, contenu: contenu }).toString()
+    }).then(function (reponse) {
+      return reponse.json().then(function (corps) {
+        if (!reponse.ok) throw new Error(corps.erreur || "Impossible d'enregistrer les notes.");
+        notesDernierContenuSauve = contenu;
+        afficherEtatNotes("Enregistré", false);
+      });
+    }).catch(function (erreur) {
+      afficherEtatNotes(erreur.message || "Échec de la sauvegarde. Réessaie.", true);
+    });
+  }
+  function planifierSauvegardeNotes() {
+    if (minuteurNotes) clearTimeout(minuteurNotes);
+    afficherEtatNotes("Modifications en attente…", false);
+    minuteurNotes = setTimeout(function () {
+      minuteurNotes = null;
+      envoyerNotes(false);
+    }, 700);
+  }
+
+  btnNotes.addEventListener("click", function () {
+    const ouvrir = panneauNotes.hidden;
+    panneauNotes.hidden = !ouvrir;
+    this.setAttribute("aria-pressed", String(ouvrir));
+    this.classList.toggle("bouton-controle-actif", ouvrir);
+    if (ouvrir) notesSaisie.focus();
+  });
+  notesSaisie.addEventListener("input", planifierSauvegardeNotes);
+  notesSaisie.addEventListener("blur", function () {
+    if (minuteurNotes) {
+      clearTimeout(minuteurNotes);
+      minuteurNotes = null;
+    }
+    envoyerNotes(false);
+  });
+
+  document.getElementById("btn-notes-telecharger").addEventListener("click", function () {
+    const contenu = notesSaisie.value || "Aucune note pour cette séance.";
+    const fichier = new Blob([contenu], { type: "text/plain;charset=utf-8" });
+    const urlFichier = URL.createObjectURL(fichier);
+    const lien = document.createElement("a");
+    lien.href = urlFichier;
+    lien.download = "mes-notes-seance-{{ seance.id }}.txt";
+    document.body.appendChild(lien);
+    lien.click();
+    lien.remove();
+    URL.revokeObjectURL(urlFichier);
+  });
+
+  btnNotesIA.addEventListener("click", function () {
+    if (!iaNotesDisponible) return;
+    if (minuteurNotes) {
+      clearTimeout(minuteurNotes);
+      minuteurNotes = null;
+    }
+    envoyerNotes(false).then(function () {
+      if (notesSaisie.value !== notesDernierContenuSauve) {
+        afficherEtatNotes("Sauvegarde non confirmée ; vérifie ta connexion.", true);
+        return;
+      }
+      btnNotesIA.disabled = true;
+      btnNotesIA.textContent = "Organisation en cours…";
+      fetch(urlOrganiserNotes, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ _csrf: jetonCsrfNotes }).toString()
+      }).then(function (reponse) {
+        return reponse.json().then(function (corps) {
+          if (!reponse.ok) throw new Error(corps.erreur || "L'organisation IA a échoué.");
+          return corps;
+        });
+      }).then(function (corps) {
+        notesSuggestion.textContent = corps.contenu_organise || "";
+        notesApercu.hidden = false;
+        afficherEtatNotes("Proposition IA prête à relire.", false);
+      }).catch(function (erreur) {
+        afficherEtatNotes(erreur.message || "Assistant IA indisponible.", true);
+      }).finally(function () {
+        btnNotesIA.disabled = false;
+        btnNotesIA.textContent = "✨ Organiser avec l'IA";
+      });
+    });
+  });
+  document.getElementById("btn-notes-fermer-apercu").addEventListener("click", function () {
+    notesApercu.hidden = true;
+  });
+  document.getElementById("btn-notes-appliquer").addEventListener("click", function () {
+    if (!notesSuggestion.textContent.trim()) return;
+    notesSaisie.value = notesSuggestion.textContent;
+    notesApercu.hidden = true;
+    planifierSauvegardeNotes();
+    afficherEtatNotes("Version organisée appliquée ; sauvegarde en cours…", false);
   });
 
   // --- Controles ---
@@ -619,6 +831,12 @@ const room = new Room({
     room.disconnect();
   });
   window.addEventListener("beforeunload", function () {
+    if (notesSaisie.value !== notesDernierContenuSauve && navigator.sendBeacon) {
+      const donnees = new URLSearchParams({ _csrf: jetonCsrfNotes, contenu: notesSaisie.value });
+      navigator.sendBeacon(urlNotes, new Blob([donnees.toString()], {
+        type: "application/x-www-form-urlencoded"
+      }));
+    }
     room.disconnect();
   });
 })();

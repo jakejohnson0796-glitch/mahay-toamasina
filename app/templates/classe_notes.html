@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block titre %}Mes notes — {{ seance.titre }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="classe-page classe-notes-page">
+  <header class="classe-form-head">
+    <div>
+      <p class="classe-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / {{ seance.titre }}</p>
+      <h1>Mes notes personnelles</h1>
+      <p>Retrouve, complète et organise tes notes, même après la fin du direct.</p>
+    </div>
+    <div class="classe-workspace-nav">
+      <a href="/classe/{{ cours.id }}">Cours</a>
+      <a href="/cercles" target="_blank" rel="noopener">Cercles d'étude</a>
+      {% if seance.statut.value == "en_cours" %}
+      <a href="/classe/seances/{{ seance.id }}/salle">Retour à la classe</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <section class="classe-section-card classe-notes-card">
+    <div class="classe-notes-head">
+      <div>
+        <h2>{{ seance.titre }}</h2>
+        <p>{{ cours.nom }} · {{ cours.matiere }} · Notes privées à ton compte</p>
+      </div>
+      <span id="statut-notes-page" role="status" aria-live="polite">Notes chargées</span>
+    </div>
+    <textarea id="notes-page-saisie" maxlength="30000" rows="16" placeholder="Écris tes explications, définitions, exemples, formules et questions à revoir…">{{ note_contenu }}</textarea>
+    <div class="classe-notes-actions">
+      <button type="button" id="notes-page-ia" class="bouton bouton-primaire" {% if not ia_notes_disponible %}disabled title="Le service d'assistance IA n'est pas configuré."{% endif %}>✨ Organiser avec l'IA</button>
+      <button type="button" id="notes-page-telecharger" class="bouton bouton-secondaire">Télécharger mes notes</button>
+      <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Retour au cours</a>
+    </div>
+    <p class="classe-notes-confidentialite">Ces notes ne sont visibles que par toi. L'assistant IA envoie uniquement le texte des notes au service configuré. Il ne reçoit ni l'audio ni la vidéo de la classe.</p>
+    <div id="notes-page-apercu" class="classe-notes-apercu" hidden>
+      <div class="classe-notes-head">
+        <strong>Proposition à relire</strong>
+        <button type="button" id="notes-page-fermer" class="bouton bouton-secondaire">Fermer</button>
+      </div>
+      <pre id="notes-page-suggestion"></pre>
+      <button type="button" id="notes-page-appliquer" class="bouton bouton-primaire">Appliquer cette version à mes notes</button>
+    </div>
+  </section>
+</div>
+
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  const textarea = document.getElementById("notes-page-saisie");
+  const statut = document.getElementById("statut-notes-page");
+  const boutonIA = document.getElementById("notes-page-ia");
+  const apercu = document.getElementById("notes-page-apercu");
+  const suggestion = document.getElementById("notes-page-suggestion");
+  const csrf = {{ jeton_csrf(request) | tojson }};
+  const urlSave = "/classe/seances/{{ seance.id }}/notes";
+  const urlIA = "/classe/seances/{{ seance.id }}/notes/organiser";
+  let sauvegarde = textarea.value;
+  let minuteur = null;
+
+  function etat(texte, erreur) {
+    statut.textContent = texte;
+    statut.classList.toggle("classe-notes-erreur", Boolean(erreur));
+  }
+  function envoyer(keepalive) {
+    const contenu = textarea.value;
+    if (contenu === sauvegarde) return Promise.resolve();
+    etat("Enregistrement…", false);
+    return fetch(urlSave, {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: Boolean(keepalive),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ _csrf: csrf, contenu: contenu }).toString()
+    }).then(function (response) {
+      return response.json().then(function (data) {
+        if (!response.ok) throw new Error(data.erreur || "La sauvegarde a échoué.");
+        sauvegarde = contenu;
+        etat("Enregistré", false);
+      });
+    }).catch(function (error) {
+      etat(error.message || "La sauvegarde a échoué.", true);
+    });
+  }
+  function planifier() {
+    if (minuteur) clearTimeout(minuteur);
+    etat("Modifications en attente…", false);
+    minuteur = setTimeout(function () {
+      minuteur = null;
+      envoyer(false);
+    }, 700);
+  }
+  textarea.addEventListener("input", planifier);
+  textarea.addEventListener("blur", function () {
+    if (minuteur) clearTimeout(minuteur);
+    minuteur = null;
+    envoyer(false);
+  });
+
+  document.getElementById("notes-page-telecharger").addEventListener("click", function () {
+    const blob = new Blob([textarea.value || "Aucune note."], { type: "text/plain;charset=utf-8" });
+    const uri = URL.createObjectURL(blob);
+    const lien = document.createElement("a");
+    lien.href = uri;
+    lien.download = "mes-notes-seance-{{ seance.id }}.txt";
+    document.body.appendChild(lien);
+    lien.click();
+    lien.remove();
+    URL.revokeObjectURL(uri);
+  });
+
+  boutonIA.addEventListener("click", function () {
+    if (boutonIA.disabled) return;
+    if (minuteur) clearTimeout(minuteur);
+    minuteur = null;
+    envoyer(false).then(function () {
+      if (textarea.value !== sauvegarde) {
+        etat("Sauvegarde non confirmée ; réessaie.", true);
+        return;
+      }
+      boutonIA.disabled = true;
+      boutonIA.textContent = "Organisation en cours…";
+      fetch(urlIA, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ _csrf: csrf }).toString()
+      }).then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok) throw new Error(data.erreur || "L'organisation IA a échoué.");
+          return data;
+        });
+      }).then(function (data) {
+        suggestion.textContent = data.contenu_organise || "";
+        apercu.hidden = false;
+        etat("Proposition prête à relire.", false);
+      }).catch(function (error) {
+        etat(error.message || "Assistant IA indisponible.", true);
+      }).finally(function () {
+        boutonIA.disabled = false;
+        boutonIA.textContent = "✨ Organiser avec l'IA";
+      });
+    });
+  });
+  document.getElementById("notes-page-fermer").addEventListener("click", function () {
+    apercu.hidden = true;
+  });
+  document.getElementById("notes-page-appliquer").addEventListener("click", function () {
+    if (!suggestion.textContent.trim()) return;
+    textarea.value = suggestion.textContent;
+    apercu.hidden = true;
+    planifier();
+  });
+
+  window.addEventListener("beforeunload", function () {
+    if (textarea.value !== sauvegarde && navigator.sendBeacon) {
+      const donnees = new URLSearchParams({ _csrf: csrf, contenu: textarea.value });
+      navigator.sendBeacon(urlSave, new Blob([donnees.toString()], {
+        type: "application/x-www-form-urlencoded"
+      }));
+    }
+  });
+})();
+</script>
+{% endblock %}
