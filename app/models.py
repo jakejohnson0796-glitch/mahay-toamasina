@@ -395,6 +395,15 @@ class EtablissementPartenaire(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nom: str = Field(index=True, max_length=200)
     code: str = Field(unique=True, max_length=32)
+    # Référence canonique vers le catalogue universitaire existant.
+    # Une université n'est jamais dupliquée dans le catalogue : cette ligne
+    # sert uniquement de pont vers le module multi-établissements.
+    universite_id: Optional[int] = Field(
+        default=None,
+        foreign_key="universite.id",
+        unique=True,
+        index=True,
+    )
     type_etablissement: str = Field(default="universite", index=True, max_length=30)
     region: Optional[str] = Field(default=None, max_length=100)
     commune: Optional[str] = Field(default=None, max_length=120)
