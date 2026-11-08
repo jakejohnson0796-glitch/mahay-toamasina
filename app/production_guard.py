@@ -59,10 +59,10 @@ def erreurs_configuration_production(config: Parametres) -> list[str]:
         # Ce contrôle ne se connecte pas à PostgreSQL : il rejette seulement
         # les noms de comptes intégrés/admin connus et impose deux identités.
         # Il ne valide ni rolbypassrls, ni les GRANT/ACL réellement effectifs.
-        if role_runtime and role_runtime in {"postgres", "supabase_admin", "service_role"}:
+        if role_runtime != "mahay_runtime":
             erreurs.append(
-                "DATABASE_URL doit utiliser le rôle personnalisé mahay_runtime (rôle applicatif), "
-                "distinct des rôles d'administration et de service_role. "
+                "DATABASE_URL doit utiliser exactement le rôle personnalisé mahay_runtime "
+                "(rôle applicatif), distinct du compte de migration. "
                 "Ce garde-fou vérifie le nom du rôle ; les attributs BYPASSRLS et les "
                 "privilèges SQL effectifs doivent être contrôlés séparément."
             )
