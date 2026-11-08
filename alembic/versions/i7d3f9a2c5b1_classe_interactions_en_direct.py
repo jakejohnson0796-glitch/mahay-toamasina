@@ -107,6 +107,10 @@ def upgrade() -> None:
     op.create_index("ix_transcriptionseance_seance_id", "transcriptionseance", ["seance_id"])
     op.create_index("ix_transcriptionseance_active", "transcriptionseance", ["active"])
 
+    op.create_index("ix_fk_sondageseance_createur_id", "sondageseance", ["createur_id"])
+    op.create_index("ix_fk_documentpartageseance_partage_par_id", "documentpartageseance", ["partage_par_id"])
+    op.create_index("ix_fk_transcriptionseance_demarree_par_id", "transcriptionseance", ["demarree_par_id"])
+
     # Ces tables sont accessibles uniquement via le backend authentifie.
     # Aucune lecture/ecriture directe via la Supabase Data API n'est necessaire.
     bind = op.get_bind()
@@ -135,6 +139,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.drop_index("ix_fk_transcriptionseance_demarree_par_id", table_name="transcriptionseance")
+    op.drop_index("ix_fk_documentpartageseance_partage_par_id", table_name="documentpartageseance")
+    op.drop_index("ix_fk_sondageseance_createur_id", table_name="sondageseance")
     op.drop_index("ix_transcriptionseance_active", table_name="transcriptionseance")
     op.drop_index("ix_transcriptionseance_seance_id", table_name="transcriptionseance")
     op.drop_table("transcriptionseance")
