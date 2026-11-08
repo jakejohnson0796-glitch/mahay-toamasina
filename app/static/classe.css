@@ -1311,3 +1311,30 @@ body.page-classe {
   .classe-submission-head { flex-direction: column; }
   .classe-danger-zone .bouton { width: 100%; }
 }
+
+
+/* Studio de classe : accès simultané, notes privées et partage focalisable. */
+.classe-workspace-nav{display:flex;align-items:center;flex-wrap:wrap;gap:.55rem;margin:0 0 .8rem;padding:.65rem .8rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-surface)}
+.classe-workspace-nav>span{margin-right:auto;color:var(--content-text-muted);font-size:.66rem;font-weight:650}
+.classe-workspace-nav a{display:inline-flex;align-items:center;justify-content:center;min-height:2.2rem;padding:.35rem .7rem;border:1px solid var(--content-border);border-radius:9px;color:var(--content-text);background:var(--content-bg);font-size:.68rem;font-weight:700;text-decoration:none}
+.classe-workspace-nav a:hover{border-color:var(--classe-accent);color:var(--classe-accent)}
+.classe-notes-panel{display:grid;gap:.65rem}
+.classe-notes-panel[hidden],.classe-notes-apercu[hidden]{display:none}
+.classe-notes-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.7rem}
+.classe-notes-head h2{margin:0;font-family:"Fraunces",Georgia,serif;font-size:1.25rem}
+.classe-notes-head p{margin:.22rem 0 0;color:var(--content-text-muted);font-size:.68rem;line-height:1.45}
+#statut-notes{flex:0 0 auto;color:var(--success,#176b43);font-size:.66rem;font-weight:700}
+#statut-notes.classe-notes-erreur{color:var(--danger,#a52626)}
+#notes-saisie{width:100%;min-height:230px;resize:vertical;padding:.9rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);color:var(--content-text);font:inherit;font-size:.82rem;line-height:1.65}
+.classe-notes-actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.classe-notes-confidentialite{margin:0;color:var(--content-text-muted);font-size:.62rem;line-height:1.5}
+.classe-notes-apercu{display:grid;gap:.65rem;padding:.85rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg)}
+.classe-notes-apercu pre{max-height:360px;overflow:auto;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--content-text);font:inherit;font-size:.76rem;line-height:1.6}
+.tuile-partage-ecran{position:relative;grid-column:1/-1;min-width:0;min-height:250px;aspect-ratio:16/9;overflow:hidden;background:#07191c}
+.tuile-partage-ecran .tuile-partage-ecran-flux{display:block;width:100%;height:100%;max-height:70vh;object-fit:contain;background:#07191c}
+.partage-ecran-titre{position:absolute;z-index:2;left:.65rem;top:.65rem;padding:.35rem .55rem;border-radius:8px;background:rgba(4,21,23,.82);color:#fff;font-size:.68rem;font-weight:700;pointer-events:none}
+.partage-ecran-agrandir{position:absolute;z-index:3;top:.55rem;right:.55rem;min-height:2.15rem;padding:.35rem .65rem;border:1px solid rgba(255,255,255,.3);border-radius:9px;background:rgba(4,21,23,.86);color:#fff;font-size:.68rem;font-weight:750;cursor:pointer}
+.partage-ecran-agrandir:hover{background:#145a58}
+.tuile-partage-ecran.partage-ecran-agrandi{position:fixed;z-index:100;inset:4.5rem 1rem 5.25rem;display:block;width:auto;height:auto;min-height:0;max-height:none;aspect-ratio:auto;border:1px solid rgba(255,255,255,.2);border-radius:15px;box-shadow:0 20px 80px rgba(0,0,0,.65);background:#061215}
+.tuile-partage-ecran.partage-ecran-agrandi .tuile-partage-ecran-flux{width:100%;height:100%;max-height:none;object-fit:contain}
+@media(max-width:680px){.classe-workspace-nav{align-items:stretch}.classe-workspace-nav>span{width:100%}.classe-workspace-nav a{flex:1 1 45%}.classe-notes-head{flex-direction:column}.classe-notes-actions .bouton{flex:1 1 100%}.tuile-partage-ecran.partage-ecran-agrandi{inset:3.7rem .45rem 4.5rem}}
