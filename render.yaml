@@ -80,9 +80,6 @@ services:
   # Les variables omises sont conservées lors du sync Render.
   - type: web
     name: mitaridala
-    envVars:
-      - key: DATABASE_URL
-        sync: false
     runtime: docker
     plan: free
     region: frankfurt
@@ -90,6 +87,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
+      - key: DATABASE_URL
+        sync: false
       - key: MIGRATION_DATABASE_URL
         sync: false
     # Les aperçus de PR sont volontairement désactivés pour ce service :
