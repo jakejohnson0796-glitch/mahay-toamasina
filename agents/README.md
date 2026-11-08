@@ -29,8 +29,10 @@ arrêté indépendamment. Il consomme les ressources du fournisseur LiveKit et d
 
 ## Confidentialité et règles de fonctionnement
 
-- Aucun audio ni aucune vidéo n'est enregistré par ce worker ; il fait uniquement de la
-  reconnaissance vocale et publie les segments texte LiveKit.
+- Le flux audio LiveKit est transmis à Groq STT pour la reconnaissance vocale en direct.
+  Le worker Mahay n'écrit pas de fichier audio/vidéo et désactive l'enregistrement
+  d'observabilité avec `record=False`. Les conditions de traitement du fournisseur Groq
+  s'appliquent également ; elles doivent être examinées avant activation en production.
 - Le serveur Mahay n'envoie le dispatch que si tous les participants actuellement connectés
   ont explicitement consenti pour cette séance.
 - Un participant qui rejoint pendant une transcription active doit choisir d'accepter ou de
