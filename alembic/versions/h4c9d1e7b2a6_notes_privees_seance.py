@@ -26,6 +26,22 @@ def upgrade() -> None:
     op.create_index("ix_noteseance_utilisateur_id", "noteseance", ["utilisateur_id"])
     op.create_index("ix_noteseance_cours_utilisateur", "noteseance", ["cours_id", "utilisateur_id"])
 
+    # La Data API Supabase ne doit pas pouvoir lire ces notes. L'application
+    # utilise sa connexion PostgreSQL serveur ; aucun accès direct client n'est requis.
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        bind.exec_driver_sql("ALTER TABLE public.noteseance ENABLE ROW LEVEL SECURITY")
+        bind.exec_driver_sql("REVOKE ALL PRIVILEGES ON TABLE public.noteseance FROM PUBLIC")
+        roles = bind.execute(
+            sa.text("SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated')")
+        ).scalars().all()
+        quote = bind.dialect.identifier_preparer.quote
+        for role in roles:
+            if role in {"anon", "authenticated"}:
+                bind.exec_driver_sql(
+                    "REVOKE ALL PRIVILEGES ON TABLE public.noteseance FROM " + quote(role)
+                )
+
 
 def downgrade() -> None:
     op.drop_index("ix_noteseance_cours_utilisateur", table_name="noteseance")
