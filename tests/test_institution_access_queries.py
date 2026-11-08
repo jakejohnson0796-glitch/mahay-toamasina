@@ -187,3 +187,18 @@ def test_listes_cours_gerables_et_etudies_filtrent_les_tenants_en_lot(session_db
     assert {cours.id for cours in etudies} == {cours_a.id}
     assert {etudiant.id for _inscription, etudiant in lignes} == {etudiant_a.id, etudiant_b.id}
     assert requetes["select"] == 3
+
+
+def test_cours_ids_etudiant_actifs_ne_duplique_pas_les_inscriptions_historiques(session_db):
+    session, _engine = session_db
+    institution = _etablissement(session, "Université doublons", "UNIV-DUP")
+    etudiant = _compte(session, "Étudiant doublons")
+    assurer_membre(session, institution.id, etudiant.id, ROLE_ETUDIANT)
+    cours = _cours(session, "Cours avec doublon", etudiant.id, institution.id)
+    session.add_all([
+        InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant.id),
+        InscriptionCours(cours_id=cours.id, utilisateur_id=etudiant.id),
+    ])
+    session.flush()
+
+    assert cours_ids_etudiant_actifs(session, etudiant.id) == [cours.id]

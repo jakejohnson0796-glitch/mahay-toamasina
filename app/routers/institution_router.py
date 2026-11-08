@@ -75,9 +75,15 @@ def _responsable_requis(
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return None
+    # Premier contrôle sans verrou : une personne hors tenant ne peut pas
+    # bloquer une opération administrative en envoyant un institution_id.
+    if not responsable_actif(session, utilisateur.id, institution_id):
+        return None
     institution = verrouiller_etablissement(session, institution_id)
     if not institution or not institution.est_actif:
         return None
+    # Recontrôle après acquisition du verrou pour couvrir une révocation
+    # concurrente du rôle responsable.
     if not responsable_actif(session, utilisateur.id, institution_id):
         return None
     return utilisateur

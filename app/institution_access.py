@@ -374,6 +374,7 @@ def cours_ids_etudiant_actifs(
                 _appartenance_etudiante_active(Cours.institution_id, utilisateur_id),
             ),
         )
+        .distinct()
         .order_by(Cours.id)
     ).all()
     return [int(cours_id) for cours_id in lignes]
