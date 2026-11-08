@@ -12,6 +12,7 @@ from pathlib import Path
 
 from sqlalchemy import event
 from sqlalchemy.engine import make_url
+from sqlalchemy.pool import StaticPool
 
 from sqlmodel import SQLModel, Session, create_engine
 
@@ -46,21 +47,35 @@ def _arguments_connexion(database_url: str, *, pour_migrations: bool = False) ->
 
 
 def _creer_engine(database_url: str, *, pour_migrations: bool = False):
-    """Construit un moteur avec un délai adapté à son usage."""
-    moteur = create_engine(
-        database_url,
-        echo=False,
-        connect_args=_arguments_connexion(
+    """Construit un moteur adapté au backend et au type de connexion."""
+    url = make_url(database_url)
+    est_sqlite = url.get_backend_name() == "sqlite"
+    options = {
+        "echo": False,
+        "connect_args": _arguments_connexion(
             database_url, pour_migrations=pour_migrations
         ),
-        pool_pre_ping=True,
-        pool_recycle=300,
-        pool_size=3,
-        max_overflow=2,
-        pool_timeout=10,
-    )
+        "pool_pre_ping": True,
+    }
+    if est_sqlite and url.database in (None, "", ":memory:"):
+        # Une base SQLite en mémoire doit partager une seule connexion ; deux
+        # moteurs indépendants créeraient deux bases différentes.
+        moteur = create_engine(
+            database_url,
+            poolclass=StaticPool,
+            **options,
+        )
+    else:
+        moteur = create_engine(
+            database_url,
+            pool_recycle=300,
+            pool_size=3,
+            max_overflow=2,
+            pool_timeout=10,
+            **options,
+        )
 
-    if make_url(database_url).get_backend_name() == "sqlite":
+    if est_sqlite:
         @event.listens_for(moteur, "connect")
         def _enregistrer_fonction_normalisation_sqlite(dbapi_connection, _record):
             from .texte_normalise import normaliser
@@ -69,13 +84,29 @@ def _creer_engine(database_url: str, *, pour_migrations: bool = False):
     return moteur
 
 
+def _creer_engine_migration(
+    database_url: str,
+    migration_database_url: str,
+    engine_runtime,
+):
+    """Partage SQLite lorsqu'il n'y a pas de compte/URL séparé."""
+    if (
+        database_url == migration_database_url
+        and make_url(database_url).get_backend_name() == "sqlite"
+    ):
+        return engine_runtime
+    return _creer_engine(migration_database_url, pour_migrations=True)
+
+
 # Le backend n'utilise que ce moteur pour les requêtes de l'application.
 engine = _creer_engine(DATABASE_URL)
 
-# Alembic utilise toujours un moteur séparé, même si les URLs sont identiques
-# en local/CI : les migrations disposent ainsi de leur propre timeout.
-# En production, le garde-fou impose en plus deux rôles PostgreSQL distincts.
-migration_engine = _creer_engine(MIGRATION_DATABASE_URL, pour_migrations=True)
+# Alembic utilise un moteur distinct pour PostgreSQL afin d'avoir ses propres
+# délais. SQLite réutilise le moteur runtime lorsque l'URL est identique, en
+# particulier pour préserver la même base en mémoire pendant les tests locaux.
+migration_engine = _creer_engine_migration(
+    DATABASE_URL, MIGRATION_DATABASE_URL, engine
+)
 
 
 RACINE_PROJET = Path(__file__).resolve().parent.parent

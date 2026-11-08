@@ -644,7 +644,13 @@ async def importer_etudiants_institutionnels(
     _csrf: None = Depends(verifier_csrf),
 ):
     admin = _admin_requis(request, session)
-    institution = verrouiller_etablissement(session, institution_id)
+    # Un responsable ne doit verrouiller la ligne qu'après son propre contrôle
+    # d'accès ; les requêtes non autorisées restent purement en lecture.
+    institution = (
+        verrouiller_etablissement(session, institution_id)
+        if admin
+        else session.get(EtablissementPartenaire, institution_id)
+    )
     if not institution or not institution.est_actif:
         if admin:
             return _page(request, session, admin, erreur="Choisis un établissement partenaire actif.")
