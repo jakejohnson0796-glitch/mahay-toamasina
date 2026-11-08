@@ -34,7 +34,7 @@ def _service_block(render: str, name: str) -> str:
                  if lines[position].startswith("  - type: ")),
                 len(lines),
             )
-            block = "\\n".join(lines[index:end])
+            block = "\n".join(lines[index:end])
             if re.search(rf"(?m)^    name: {re.escape(name)}$", block):
                 return block
     raise AssertionError(f"Service Render absent: {name}")
@@ -61,7 +61,7 @@ def verifier_contrat_render() -> tuple[int, int]:
         )
         for key in required_db_keys:
             variable = re.search(
-                rf"(?ms)^\\s*- key: {re.escape(key)}\\s*$.*?(?=^\\s*- key: |\\Z)",
+                rf"(?ms)^\s*- key: {re.escape(key)}\s*$.*?(?=^\s*- key: |\Z)",
                 service_block,
             )
             assert variable is not None and "sync: false" in variable.group(0), (
