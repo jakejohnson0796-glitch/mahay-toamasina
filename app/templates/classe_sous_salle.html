@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block titre %}{{ groupe.nom }} — {{ groupe.seance_id }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<section class="classe-sous-salle" id="sous-salle"
+         data-url="{{ url_livekit }}"
+         data-jeton="{{ jeton_livekit }}"
+         data-peut-gerer="{{ 'true' if peut_gerer else 'false' }}">
+  <header>
+    <p class="eyebrow">CLASSE VIRTUELLE · TRAVAIL EN GROUPE</p>
+    <h1>{{ groupe.nom }}</h1>
+    <p>La salle principale reste ouverte dans l'autre onglet.</p>
+  </header>
+  <div id="sous-salle-statut" role="status" aria-live="polite">Prêt à rejoindre le groupe.</div>
+  <div id="sous-salle-grille" class="grille-video"></div>
+  <div class="classe-interaction-actions">
+    <button type="button" id="sous-salle-rejoindre" class="bouton bouton-primaire">Rejoindre le groupe</button>
+    <button type="button" id="sous-salle-micro" class="bouton bouton-secondaire" disabled>Activer le micro</button>
+    <button type="button" id="sous-salle-camera" class="bouton bouton-secondaire" disabled>Activer la caméra</button>
+    {% if peut_gerer %}
+    <button type="button" id="sous-salle-ecran" class="bouton bouton-secondaire" disabled>Partager l'écran</button>
+    {% endif %}
+    <button type="button" id="sous-salle-quitter" class="bouton bouton-secondaire" disabled>Quitter le groupe</button>
+  </div>
+  <p class="stat-label">Le micro et la caméra ne s'activent qu'après ton action.</p>
+</section>
+<script nonce="{{ csp_nonce(request) }}" src="https://cdn.jsdelivr.net/npm/livekit-client@2.17.0/dist/livekit-client.umd.min.js"></script>
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  const root = document.getElementById("sous-salle");
+  const statut = document.getElementById("sous-salle-statut");
+  const grille = document.getElementById("sous-salle-grille");
+  const btnRejoindre = document.getElementById("sous-salle-rejoindre");
+  const btnMicro = document.getElementById("sous-salle-micro");
+  const btnCamera = document.getElementById("sous-salle-camera");
+  const btnEcran = document.getElementById("sous-salle-ecran");
+  const btnQuitter = document.getElementById("sous-salle-quitter");
+  const peutGerer = root.dataset.peutGerer === "true";
+  const room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+
+  function ajouterFlux(track, participant) {
+    const carte = document.createElement("article");
+    carte.className = "tuile-video";
+    const titre = document.createElement("p");
+    titre.textContent = participant.name || "Participant";
+    carte.appendChild(titre);
+    carte.appendChild(track.attach());
+    grille.appendChild(carte);
+  }
+
+  room.on(LivekitClient.RoomEvent.TrackSubscribed, ajouterFlux);
+  room.on(LivekitClient.RoomEvent.TrackUnsubscribed, function (track) {
+    track.detach().forEach(function (element) { element.remove(); });
+  });
+  room.on(LivekitClient.RoomEvent.ParticipantDisconnected, function () {
+    statut.textContent = "Un participant a quitté le groupe.";
+  });
+
+  btnRejoindre.addEventListener("click", async function () {
+    btnRejoindre.disabled = true;
+    try {
+      await room.connect(root.dataset.url, root.dataset.jeton);
+      statut.textContent = "Connecté au groupe. Active ton micro ou ta caméra si nécessaire.";
+      btnMicro.disabled = false;
+      btnCamera.disabled = false;
+      if (btnEcran) btnEcran.disabled = !peutGerer;
+      btnQuitter.disabled = false;
+    } catch (_erreur) {
+      statut.textContent = "Connexion impossible. Réessaie ou retourne dans la salle principale.";
+      btnRejoindre.disabled = false;
+    }
+  });
+
+  btnMicro.addEventListener("click", async function () {
+    const actif = room.localParticipant.isMicrophoneEnabled;
+    try {
+      await room.localParticipant.setMicrophoneEnabled(!actif);
+      btnMicro.textContent = actif ? "Activer le micro" : "Couper le micro";
+    } catch (_erreur) { statut.textContent = "Impossible de modifier le micro."; }
+  });
+  btnCamera.addEventListener("click", async function () {
+    const actif = room.localParticipant.isCameraEnabled;
+    try {
+      await room.localParticipant.setCameraEnabled(!actif);
+      btnCamera.textContent = actif ? "Activer la caméra" : "Couper la caméra";
+    } catch (_erreur) { statut.textContent = "Impossible de modifier la caméra."; }
+  });
+  if (btnEcran) {
+    btnEcran.addEventListener("click", async function () {
+      try {
+        const actif = room.localParticipant.isScreenShareEnabled;
+        await room.localParticipant.setScreenShareEnabled(!actif);
+        btnEcran.textContent = actif ? "Partager l'écran" : "Arrêter le partage";
+      } catch (_erreur) { statut.textContent = "Partage d'écran indisponible."; }
+    });
+  }
+  btnQuitter.addEventListener("click", async function () {
+    await room.disconnect();
+    statut.textContent = "Déconnecté du groupe.";
+    btnRejoindre.disabled = false;
+    btnMicro.disabled = true;
+    btnCamera.disabled = true;
+    if (btnEcran) btnEcran.disabled = true;
+    btnQuitter.disabled = true;
+  });
+  window.addEventListener("beforeunload", function () { room.disconnect(); });
+})();
+</script>
+{% endblock %}
