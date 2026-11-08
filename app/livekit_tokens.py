@@ -124,3 +124,36 @@ def generer_jeton_salle(nom_salle: str, utilisateur_id: int, nom_affiche: str, p
         .to_jwt()
     )
     return jeton
+
+
+
+async def lister_participants_salle(nom_salle: str) -> list[str]:
+    """Retourne les identités présentes dans une salle LiveKit."""
+    async with _client_serveur() as lk:
+        reponse = await lk.room.list_participants(api.ListParticipantsRequest(room=nom_salle))
+        return [participant.identity for participant in reponse.participants]
+
+
+async def demarrer_agent_transcription(nom_salle: str, nom_agent: str, metadata: str) -> str:
+    """Demande explicitement à l'agent STT configuré de rejoindre une salle."""
+    async with _client_serveur() as lk:
+        dispatch = await lk.agent_dispatch.create_dispatch(
+            api.CreateAgentDispatchRequest(
+                agent_name=nom_agent,
+                room=nom_salle,
+                metadata=metadata,
+            )
+        )
+        return dispatch.id
+
+
+async def arreter_agent_transcription(nom_salle: str, dispatch_id: str) -> None:
+    """Arrête un dispatch de transcription ; un arrêt répété reste sans effet."""
+    if not dispatch_id:
+        return
+    async with _client_serveur() as lk:
+        try:
+            await lk.agent_dispatch.delete_dispatch(dispatch_id, nom_salle)
+        except Exception as erreur:
+            if "not found" not in str(erreur).lower():
+                raise
