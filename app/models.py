@@ -402,7 +402,6 @@ class EtablissementPartenaire(SQLModel, table=True):
         default=None,
         foreign_key="universite.id",
         unique=True,
-        index=True,
     )
     type_etablissement: str = Field(default="universite", index=True, max_length=30)
     region: Optional[str] = Field(default=None, max_length=100)
