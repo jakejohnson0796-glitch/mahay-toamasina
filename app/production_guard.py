@@ -56,10 +56,15 @@ def erreurs_configuration_production(config: Parametres) -> list[str]:
     else:
         role_runtime = _role_postgres(config.database_url)
         role_migration = _role_postgres(config.migration_database_url)
+        # Ce contrôle ne se connecte pas à PostgreSQL : il rejette seulement
+        # les noms de comptes intégrés/admin connus et impose deux identités.
+        # Il ne valide ni rolbypassrls, ni les GRANT/ACL réellement effectifs.
         if role_runtime and role_runtime in {"postgres", "supabase_admin", "service_role"}:
             erreurs.append(
-                "DATABASE_URL doit utiliser le rôle personnalisé mahay_runtime, "
-                "pas un rôle d'administration ou un rôle qui contourne RLS."
+                "DATABASE_URL doit utiliser le rôle applicatif personnalisé mahay_runtime, "
+                "distinct des rôles d'administration et de service_role. "
+                "Ce garde-fou vérifie le nom du rôle ; les attributs BYPASSRLS et les "
+                "privilèges SQL effectifs doivent être contrôlés séparément."
             )
         if not role_runtime or not role_migration or role_runtime == role_migration:
             erreurs.append(
