@@ -25,6 +25,83 @@ def upgrade() -> None:
             sa.UniqueConstraint("institution_id", "utilisateur_id", name="uq_membre_etablissement_utilisateur"),
         )
 
+    # Pont idempotent vers le catalogue universitaire canonique.
+    # Les lignes et leurs codes UNIV-* sont des références techniques,
+    # pas une seconde copie des facultés/programmes.
+    if bind.dialect.name == "postgresql":
+        op.add_column(
+            "etablissementpartenaire",
+            sa.Column("universite_id", sa.Integer(), nullable=True),
+        )
+        op.create_foreign_key(
+            "fk_etablissementpartenaire_universite_id_universite",
+            "etablissementpartenaire",
+            "universite",
+            ["universite_id"],
+            ["id"],
+        )
+        op.create_index(
+            "uq_etablissementpartenaire_universite_id",
+            "etablissementpartenaire",
+            ["universite_id"],
+            unique=True,
+        )
+        op.execute(sa.text("""
+            INSERT INTO etablissementpartenaire
+                (nom, code, type_etablissement, commune, est_actif, universite_id)
+            SELECT u.nom, 'UNIV-' || u.id::text, 'universite', u.ville, u.est_active, u.id
+            FROM universite AS u
+            WHERE NOT EXISTS (
+                SELECT 1 FROM etablissementpartenaire ep
+                WHERE ep.universite_id = u.id
+            )
+            ON CONFLICT DO NOTHING
+        """))
+        # Le rattachement confirmé concerne le compte administrateur
+        # de l'Université de Toamasina (universite.id = 1).
+        op.execute(sa.text("""
+            UPDATE utilisateur AS u
+            SET institution_id = ep.id
+            FROM etablissementpartenaire AS ep
+            WHERE ep.universite_id = 1
+              AND u.role::text = 'admin'
+              AND u.universite_id = 1
+              AND u.institution_id IS NULL
+        """))
+    else:
+        # SQLite : colonne/FK/unique sont gérés par Alembic batch.
+        with op.batch_alter_table("etablissementpartenaire") as batch:
+            batch.add_column(sa.Column("universite_id", sa.Integer(), nullable=True))
+            batch.create_foreign_key(
+                "fk_etablissementpartenaire_universite_id_universite",
+                "universite",
+                ["universite_id"],
+                ["id"],
+            )
+            batch.create_unique_constraint(
+                "uq_etablissementpartenaire_universite_id", ["universite_id"]
+            )
+        bind.execute(sa.text("""
+            INSERT INTO etablissementpartenaire
+                (nom, code, type_etablissement, commune, est_actif, universite_id)
+            SELECT u.nom, 'UNIV-' || CAST(u.id AS TEXT), 'universite', u.ville, u.est_active, u.id
+            FROM universite AS u
+            WHERE NOT EXISTS (
+                SELECT 1 FROM etablissementpartenaire ep
+                WHERE ep.universite_id = u.id
+            )
+        """))
+        bind.execute(sa.text("""
+            UPDATE utilisateur
+            SET institution_id = (
+                SELECT ep.id FROM etablissementpartenaire ep
+                WHERE ep.universite_id = 1
+            )
+            WHERE lower(CAST(role AS TEXT)) = 'admin'
+              AND universite_id = 1
+              AND institution_id IS NULL
+        """))
+
     # Même posture que les autres tables du schéma Supabase public.
     # L'application serveur se connecte avec un rôle backend BYPASSRLS ;
     # l'activation empêche toute exposition accidentelle via la Data API.
