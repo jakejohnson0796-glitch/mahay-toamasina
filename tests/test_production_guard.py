@@ -47,6 +47,15 @@ def test_configuration_production_refuse_un_compte_runtime_privilegie() -> None:
     assert any("BYPASSRLS" in erreur and "contrôlés séparément" in erreur for erreur in erreurs)
 
 
+def test_configuration_production_exige_exactement_mahay_runtime() -> None:
+    config = replace(
+        _production_complete(),
+        database_url="postgresql://app_user.ref-test:secret@example.test:5432/mahay",
+    )
+    erreurs = erreurs_configuration_production(config)
+    assert any("exactement le rôle personnalisé mahay_runtime" in erreur for erreur in erreurs)
+
+
 def test_configuration_production_refuse_le_meme_role_pour_runtime_et_migrations() -> None:
     config = replace(
         _production_complete(),
