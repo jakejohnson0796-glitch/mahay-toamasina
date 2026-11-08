@@ -1029,6 +1029,28 @@ def rejoindre_seance(request: Request, seance_id: int, session: Session = Depend
     if seance.statut != StatutSeance.EN_COURS:
         return RedirectResponse(f"/classe/{cours.id}?erreur=seance_non_demarree", status_code=303)
 
+    # Ne crée pas une présence tant que la personne n'a pas choisi si elle
+    # accepte la transcription déjà active.
+    transcription_active = session.exec(
+        select(TranscriptionSeance).where(
+            TranscriptionSeance.seance_id == seance_id,
+            TranscriptionSeance.active == True,  # noqa: E712
+        )
+    ).first()
+    if transcription_active:
+        consentement = session.exec(
+            select(ConsentementTranscription).where(
+                ConsentementTranscription.seance_id == seance_id,
+                ConsentementTranscription.utilisateur_id == utilisateur.id,
+                ConsentementTranscription.consenti == True,  # noqa: E712
+            )
+        ).first()
+        if not consentement:
+            return RedirectResponse(
+                f"/classe/seances/{seance_id}/transcription/consentement",
+                status_code=303,
+            )
+
     # Une seule présence ouverte par étudiant et séance. Les doubles clics
     # et renvois du formulaire ne doivent pas créer plusieurs entrées
     # simultanées ni gonfler la durée de présence.
