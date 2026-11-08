@@ -2093,3 +2093,19 @@ class CycleEnseigne(SQLModel, table=True):
             name="uq_cycleenseigne_utilisateur_cycle",
         ),
     )
+
+
+# Notes personnelles de séance : une note privée par étudiant et par cours en direct.
+class NoteSeance(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    seance_id: int = Field(foreign_key="seance.id", index=True)
+    cours_id: int = Field(foreign_key="cours.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    contenu: str = Field(default="", max_length=30000)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("seance_id", "utilisateur_id", name="uq_noteseance_seance_utilisateur"),
+        Index("ix_noteseance_cours_utilisateur", "cours_id", "utilisateur_id"),
+    )
