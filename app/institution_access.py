@@ -35,6 +35,7 @@ def verrouiller_etablissement(
         select(EtablissementPartenaire)
         .where(EtablissementPartenaire.id == institution_id)
         .with_for_update()
+        .execution_options(populate_existing=True)
     ).first()
 
 

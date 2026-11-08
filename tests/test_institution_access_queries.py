@@ -202,3 +202,40 @@ def test_cours_ids_etudiant_actifs_ne_duplique_pas_les_inscriptions_historiques(
     session.flush()
 
     assert cours_ids_etudiant_actifs(session, etudiant.id) == [cours.id]
+
+
+def test_responsable_actif_recharge_une_appartenance_modifiee_par_une_autre_session(tmp_path):
+    from app.routers.institution_router import responsable_actif
+    from app.models import MembreEtablissement
+
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'responsable-refresh.db'}",
+        connect_args={"check_same_thread": False},
+    )
+    SQLModel.metadata.create_all(engine)
+    try:
+        with Session(engine) as initial:
+            institution = _etablissement(initial, "Institut actualisé", "INST-REFRESH")
+            responsable = _compte(initial, "Responsable actualisé")
+            assurer_membre(initial, institution.id, responsable.id, "responsable")
+            initial.commit()
+            institution_id, responsable_id = institution.id, responsable.id
+
+        with Session(engine) as lecteur, Session(engine) as modificateur:
+            assert responsable_actif(lecteur, responsable_id, institution_id)
+            # Termine la transaction de lecture tout en gardant les objets dans
+            # l'identité map ; l'autre session révoque ensuite le rôle.
+            lecteur.commit()
+            membre = modificateur.exec(
+                select(MembreEtablissement).where(
+                    MembreEtablissement.institution_id == institution_id,
+                    MembreEtablissement.utilisateur_id == responsable_id,
+                )
+            ).one()
+            membre.est_actif = False
+            modificateur.add(membre)
+            modificateur.commit()
+
+            assert not responsable_actif(lecteur, responsable_id, institution_id)
+    finally:
+        engine.dispose()

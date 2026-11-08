@@ -54,16 +54,22 @@ def responsable_actif(
     """Vérifie un rôle responsable actif dans un établissement précis."""
     if not utilisateur_id or not institution_id:
         return False
-    institution = session.get(EtablissementPartenaire, institution_id)
+    institution = session.exec(
+        select(EtablissementPartenaire)
+        .where(EtablissementPartenaire.id == institution_id)
+        .execution_options(populate_existing=True)
+    ).first()
     if not institution or not institution.est_actif:
         return False
     return session.exec(
-        select(MembreEtablissement).where(
+        select(MembreEtablissement)
+        .where(
             MembreEtablissement.institution_id == institution_id,
             MembreEtablissement.utilisateur_id == utilisateur_id,
             MembreEtablissement.role == ROLE_RESPONSABLE,
             MembreEtablissement.est_actif == True,  # noqa: E712
         )
+        .execution_options(populate_existing=True)
     ).first() is not None
 
 
