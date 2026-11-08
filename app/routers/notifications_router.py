@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
-from ..institution_access import est_inscrit_cours
+from ..institution_access import est_inscrit_cours, cours_ids_etudiant_actifs
 from ..models import Devoir, Notification, TypeNotification
 from ..templating import templates
 
@@ -65,6 +65,78 @@ def _notification_autorisee(
         cours_id
         and est_inscrit_cours(session, cours_id, utilisateur_id)
     )
+
+
+def _notifications_autorisees(
+    session: Session,
+    utilisateur_id: int,
+    notifications: list[Notification],
+) -> list[Notification]:
+    """Filtre un lot de notifications sans requête SQL par notification."""
+    notifications_cours = [
+        notification
+        for notification in notifications
+        if getattr(
+            notification.type_notification,
+            "value",
+            notification.type_notification,
+        ) in _TYPES_NOTIFICATION_COURS
+    ]
+    if not notifications_cours:
+        return notifications
+
+    cours_par_notification: dict[int, int] = {}
+    devoir_ids: set[int] = set()
+    for notification in notifications_cours:
+        if notification.cours_id is not None:
+            cours_par_notification[notification.id] = int(notification.cours_id)
+            continue
+        destination = (
+            getattr(notification, "url_destination", None) or ""
+        ).strip()
+        correspondance = re.fullmatch(
+            r"/classe/devoirs/(\\d+)(?:[?#].*)?",
+            destination,
+        )
+        if correspondance:
+            devoir_ids.add(int(correspondance.group(1)))
+
+    cours_par_devoir: dict[int, int] = {}
+    if devoir_ids:
+        lignes_devoirs = session.exec(
+            select(Devoir.id, Devoir.cours_id).where(Devoir.id.in_(devoir_ids))
+        ).all()
+        cours_par_devoir = {
+            int(devoir_id): int(cours_id)
+            for devoir_id, cours_id in lignes_devoirs
+        }
+
+    for notification in notifications_cours:
+        if notification.id in cours_par_notification:
+            continue
+        destination = (
+            getattr(notification, "url_destination", None) or ""
+        ).strip()
+        correspondance = re.fullmatch(
+            r"/classe/devoirs/(\\d+)(?:[?#].*)?",
+            destination,
+        )
+        if correspondance:
+            cours_id = cours_par_devoir.get(int(correspondance.group(1)))
+            if cours_id is not None:
+                cours_par_notification[notification.id] = cours_id
+
+    cours_actifs = set(cours_ids_etudiant_actifs(session, utilisateur_id))
+    return [
+        notification
+        for notification in notifications
+        if getattr(
+            notification.type_notification,
+            "value",
+            notification.type_notification,
+        ) not in _TYPES_NOTIFICATION_COURS
+        or cours_par_notification.get(notification.id) in cours_actifs
+    ]
 
 
 def _notification_vue(notification: Notification) -> dict:
@@ -127,10 +199,9 @@ def page_notifications(request: Request, session: Session = Depends(get_session)
         .order_by(Notification.date_creation.desc())
         .limit(200)
     ).all()
-    notifications = [
-        notification for notification in candidates
-        if _notification_autorisee(session, utilisateur.id, notification)
-    ][:50]
+    notifications = _notifications_autorisees(
+        session, utilisateur.id, candidates
+    )[:50]
 
     return templates.TemplateResponse(
         request,
@@ -224,10 +295,9 @@ def marquer_toutes_notifications_lues(
         .where(Notification.destinataire_id == utilisateur.id)
         .where(Notification.lu == False)  # noqa: E712
     ).all()
-    notifications = [
-        notification for notification in candidates
-        if _notification_autorisee(session, utilisateur.id, notification)
-    ]
+    notifications = _notifications_autorisees(
+        session, utilisateur.id, candidates
+    )
     for notification in notifications:
         notification.lu = True
         session.add(notification)

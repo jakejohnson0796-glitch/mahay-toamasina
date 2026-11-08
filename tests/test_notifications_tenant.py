@@ -13,7 +13,10 @@ from app.models import (
     TypeNotification,
     Utilisateur,
 )
-from app.routers.notifications_router import _notification_autorisee
+from app.routers.notifications_router import (
+    _notification_autorisee,
+    _notifications_autorisees,
+)
 
 
 def _db():
@@ -214,4 +217,54 @@ def test_compteur_entete_ignore_les_notifications_pedagogiques_revoquees(monkeyp
         session.commit()
 
         assert templating._compter_notifications_non_lues(request) == 1
+    engine.dispose()
+
+
+def test_filtrage_notifications_en_lot_preserve_le_tenant_et_masque_les_alertes_orphelines():
+    engine = _db()
+    with Session(engine) as session:
+        _, _, cours, etudiant_a, _ = _setup_tenants(session)
+        devoir = Devoir(cours_id=cours.id, titre="Devoir historique")
+        session.add(devoir)
+        session.commit()
+        session.refresh(devoir)
+        bonnes = Notification(
+            destinataire_id=etudiant_a.id,
+            type_notification=TypeNotification.NOTE_PUBLIEE,
+            contenu="Note du cours A",
+            cours_id=cours.id,
+        )
+        ancienne = Notification(
+            destinataire_id=etudiant_a.id,
+            type_notification=TypeNotification.NOUVEAU_DEVOIR,
+            contenu="Ancienne alerte",
+            url_destination=f"/classe/devoirs/{devoir.id}",
+        )
+        orpheline = Notification(
+            destinataire_id=etudiant_a.id,
+            type_notification=TypeNotification.NOTE_PUBLIEE,
+            contenu="Alerte sans cours",
+        )
+        generale = Notification(
+            destinataire_id=etudiant_a.id,
+            type_notification=TypeNotification.REPONSE_MESSAGE,
+            contenu="Message général",
+        )
+        session.add_all([bonnes, ancienne, orpheline, generale])
+        session.commit()
+        candidates = [bonnes, ancienne, orpheline, generale]
+
+        autorisees = _notifications_autorisees(session, etudiant_a.id, candidates)
+        assert autorisees == [bonnes, ancienne, generale]
+
+        membre = session.exec(
+            select(MembreEtablissement).where(
+                MembreEtablissement.institution_id == cours.institution_id,
+                MembreEtablissement.utilisateur_id == etudiant_a.id,
+            )
+        ).one()
+        membre.est_actif = False
+        session.add(membre)
+        session.commit()
+        assert _notifications_autorisees(session, etudiant_a.id, candidates) == [generale]
     engine.dispose()

@@ -13,7 +13,11 @@ from app.institution_access import (
     cours_ids_etudiant_actifs,
     est_inscrit_cours,
     lister_inscriptions_actives,
+    lister_inscriptions_actives_pour_cours,
+    lister_cours_gerables,
+    lister_cours_etudies,
     membre_actif,
+    verrouiller_etablissement,
 )
 from app.models import (
     Cours,
@@ -134,3 +138,52 @@ def test_les_listes_de_cours_tenant_sont_filtrees_en_une_requete(session_db):
 
     # Each helper emits a single SELECT, rather than one query per course/member.
     assert requetes["select"] == 5
+
+
+def test_verrouillage_etablissement_retrouve_uniquement_un_parent_existant(session_db):
+    session, _engine = session_db
+    institution = _etablissement(session, "Université verrouillée", "UNIV-LOCK")
+    assert verrouiller_etablissement(session, institution.id).id == institution.id
+    assert verrouiller_etablissement(session, institution.id + 999) is None
+
+
+def test_listes_cours_gerables_et_etudies_filtrent_les_tenants_en_lot(session_db):
+    session, engine = session_db
+    inst_a = _etablissement(session, "Université A", "UNIV-A")
+    inst_b = _etablissement(session, "Université B", "UNIV-B")
+    professeur_a = _compte(session, "Professeur A")
+    etudiant_a = _compte(session, "Étudiant A")
+    etudiant_b = _compte(session, "Étudiant B")
+    assurer_membre(session, inst_a.id, professeur_a.id, "professeur")
+    assurer_membre(session, inst_a.id, etudiant_a.id, ROLE_ETUDIANT)
+    assurer_membre(session, inst_b.id, etudiant_b.id, ROLE_ETUDIANT)
+    cours_a = _cours(session, "Cours A", professeur_a.id, inst_a.id)
+    cours_b = _cours(session, "Cours B", professeur_a.id, inst_b.id)
+    cours_libre = _cours(session, "Cours libre", professeur_a.id)
+    cours_quarantaine = _cours(session, "Cours suspendu", professeur_a.id, inst_a.id, quarantaine=True)
+    session.add_all([
+        InscriptionCours(cours_id=cours_a.id, utilisateur_id=etudiant_a.id),
+        InscriptionCours(cours_id=cours_a.id, utilisateur_id=etudiant_b.id),
+        InscriptionCours(cours_id=cours_b.id, utilisateur_id=etudiant_b.id),
+        InscriptionCours(cours_id=cours_quarantaine.id, utilisateur_id=etudiant_a.id),
+    ])
+    session.flush()
+
+    requetes = Counter()
+
+    def compter_select(_conn, _cursor, statement, _parameters, _context, _executemany):
+        if statement.lstrip().upper().startswith("SELECT"):
+            requetes["select"] += 1
+
+    event.listen(engine, "before_cursor_execute", compter_select)
+    try:
+        gerables = lister_cours_gerables(session, professeur_a)
+        etudies = lister_cours_etudies(session, etudiant_a.id)
+        lignes = lister_inscriptions_actives_pour_cours(session, [cours_a.id, cours_b.id])
+    finally:
+        event.remove(engine, "before_cursor_execute", compter_select)
+
+    assert {cours.id for cours in gerables} == {cours_a.id, cours_libre.id}
+    assert {cours.id for cours in etudies} == {cours_a.id}
+    assert {etudiant.id for _inscription, etudiant in lignes} == {etudiant_a.id, etudiant_b.id}
+    assert requetes["select"] == 3

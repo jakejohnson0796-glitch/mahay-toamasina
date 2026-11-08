@@ -12,7 +12,12 @@ from sqlmodel import Session, select
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
-from ..institution_access import peut_gerer_cours, est_inscrit_cours, lister_inscriptions_actives
+from ..institution_access import (
+    peut_gerer_cours,
+    est_inscrit_cours,
+    lister_inscriptions_actives,
+    cours_ids_etudiant_actifs,
+)
 from ..models import (
     Cours, Devoir, InscriptionCours, Notification, PointagePresence,
     PresenceSeance, RenduDevoir, RoleUtilisateur, Seance, StatutPointage,
@@ -92,8 +97,7 @@ def page_mes_notes(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    inscriptions = session.exec(select(InscriptionCours).where(InscriptionCours.utilisateur_id == utilisateur.id)).all()
-    ids = sorted({i.cours_id for i in inscriptions})
+    ids = cours_ids_etudiant_actifs(session, utilisateur.id)
     cours_map = {c.id: c for c in session.exec(select(Cours).where(Cours.id.in_(ids))).all()} if ids else {}
     informations = []
     for cid in ids:
@@ -107,27 +111,27 @@ def page_mes_presences(request: Request, session: Session = Depends(get_session)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    pointages = session.exec(select(PointagePresence).where(
-        PointagePresence.utilisateur_id == utilisateur.id
-    ).order_by(PointagePresence.date_maj.desc())).all()
+    ids_cours_actifs = cours_ids_etudiant_actifs(session, utilisateur.id)
+    if ids_cours_actifs:
+        pointages_actifs = session.exec(
+            select(PointagePresence, Seance, Cours)
+            .join(Seance, Seance.id == PointagePresence.seance_id)
+            .join(Cours, Cours.id == Seance.cours_id)
+            .where(
+                PointagePresence.utilisateur_id == utilisateur.id,
+                PointagePresence.statut != StatutPointage.A_RENSEIGNER,
+                Cours.id.in_(ids_cours_actifs),
+                Cours.affectation_institutionnelle_requise.is_(False),
+            )
+            .order_by(PointagePresence.date_maj.desc())
+        ).all()
+    else:
+        pointages_actifs = []
     compteurs = {s.value: 0 for s in StatutPointage}
-    lignes, cache_seances, cache_cours = [], {}, {}
-    for p in pointages:
-        if p.statut == StatutPointage.A_RENSEIGNER:
-            continue
-        seance = cache_seances.get(p.seance_id)
-        if p.seance_id not in cache_seances:
-            seance = session.get(Seance, p.seance_id)
-            cache_seances[p.seance_id] = seance
-        if not seance:
-            continue
-        cours = cache_cours.get(seance.cours_id)
-        if seance.cours_id not in cache_cours:
-            cours = session.get(Cours, seance.cours_id)
-            cache_cours[seance.cours_id] = cours
-        if cours and _est_inscrit(session, cours.id, utilisateur.id):
-            compteurs[p.statut.value] += 1
-            lignes.append({"pointage": p, "seance": seance, "cours": cours})
+    lignes = []
+    for pointage, seance, cours in pointages_actifs:
+        compteurs[pointage.statut.value] += 1
+        lignes.append({"pointage": pointage, "seance": seance, "cours": cours})
     return templates.TemplateResponse(request, "mes_presences.html", {
         "utilisateur": utilisateur, "lignes": lignes, "compteurs": compteurs,
     })

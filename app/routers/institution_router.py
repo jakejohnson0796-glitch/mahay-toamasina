@@ -26,6 +26,8 @@ from ..institution_access import (
     ROLE_PROFESSEUR,
     ROLE_RESPONSABLE,
     lister_inscriptions_actives,
+    lister_inscriptions_actives_pour_cours,
+    verrouiller_etablissement,
 )
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
@@ -71,7 +73,12 @@ def _responsable_requis(
     institution_id: int,
 ) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or not responsable_actif(session, utilisateur.id, institution_id):
+    if not utilisateur:
+        return None
+    institution = verrouiller_etablissement(session, institution_id)
+    if not institution or not institution.est_actif:
+        return None
+    if not responsable_actif(session, utilisateur.id, institution_id):
         return None
     return utilisateur
 
@@ -303,7 +310,7 @@ def attribuer_membre_institutionnel(
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/connexion", status_code=303)
-    institution = session.get(EtablissementPartenaire, institution_id)
+    institution = verrouiller_etablissement(session, institution_id)
     if not institution or not institution.est_actif:
         return _page(request, session, admin, erreur="Choisis un établissement actif.")
     valeur = (identifiant or "").strip()
@@ -358,10 +365,21 @@ def desactiver_membre_institutionnel(
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/connexion", status_code=303)
-    membre = session.get(MembreEtablissement, membre_id)
-    if not membre:
+    membre_initial = session.get(MembreEtablissement, membre_id)
+    if not membre_initial:
         return _page(request, session, admin, erreur="Appartenance introuvable.")
-    if membre.role == "responsable" and membre.est_actif:
+    institution = verrouiller_etablissement(session, membre_initial.institution_id)
+    if not institution:
+        return _page(request, session, admin, erreur="Établissement introuvable.")
+    membre = session.exec(
+        select(MembreEtablissement)
+        .where(MembreEtablissement.id == membre_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).first()
+    if not membre or membre.institution_id != institution.id or not membre.est_actif:
+        return _page(request, session, admin, erreur="Appartenance déjà modifiée.")
+    if membre.role == "responsable":
         autres = session.exec(
             select(MembreEtablissement).where(
                 MembreEtablissement.institution_id == membre.institution_id,
@@ -429,11 +447,9 @@ def tableau_de_bord_institutionnel(
         select(Cours).where(Cours.institution_id == institution.id).order_by(Cours.nom)
     ).all()
     ids_cours = [item.id for item in cours]
-    inscriptions_actives = [
-        (inscription, etudiant)
-        for cours_item in cours
-        for inscription, etudiant in lister_inscriptions_actives(session, cours_item.id)
-    ]
+    inscriptions_actives = lister_inscriptions_actives_pour_cours(
+        session, ids_cours
+    )
     inscriptions = [inscription for inscription, _etudiant in inscriptions_actives]
     devoirs = session.exec(
         select(Devoir).where(Devoir.cours_id.in_(ids_cours))
@@ -628,7 +644,7 @@ async def importer_etudiants_institutionnels(
     _csrf: None = Depends(verifier_csrf),
 ):
     admin = _admin_requis(request, session)
-    institution = session.get(EtablissementPartenaire, institution_id)
+    institution = verrouiller_etablissement(session, institution_id)
     if not institution or not institution.est_actif:
         if admin:
             return _page(request, session, admin, erreur="Choisis un établissement partenaire actif.")

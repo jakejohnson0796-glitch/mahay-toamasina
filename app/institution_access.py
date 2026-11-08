@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Iterable, Optional
 
-from sqlalchemy import exists, or_
+from sqlalchemy import and_, exists, or_
 from sqlmodel import Session, select
 
 from .models import (
@@ -25,6 +25,17 @@ ROLE_PROFESSEUR = "professeur"
 ROLE_ETUDIANT = "etudiant"
 ROLES_PEDAGOGIQUES = (ROLE_RESPONSABLE, ROLE_PROFESSEUR)
 ROLES_INSTITUTIONNELS = (ROLE_RESPONSABLE, ROLE_PROFESSEUR, ROLE_ETUDIANT)
+
+
+def verrouiller_etablissement(
+    session: Session, institution_id: int
+) -> Optional[EtablissementPartenaire]:
+    """Verrouille la ligne parente jusqu'au commit pour sérialiser les rôles."""
+    return session.exec(
+        select(EtablissementPartenaire)
+        .where(EtablissementPartenaire.id == institution_id)
+        .with_for_update()
+    ).first()
 
 
 def membre_actif(
@@ -209,10 +220,15 @@ def peut_rejoindre_cours(
     )
 
 
-def _appartenance_etudiante_active(
-    institution_id_expression, utilisateur_id: int
+def _appartenance_role_active(
+    institution_id_expression,
+    utilisateur_id: int,
+    roles: Iterable[str],
 ):
-    """Expression SQL corrélée : appartenance étudiant + établissement actifs."""
+    """Expression SQL corrélée pour vérifier un rôle actif dans le tenant."""
+    roles_demandes = tuple(roles)
+    if not roles_demandes:
+        return False
     return exists(
         select(1)
         .select_from(MembreEtablissement)
@@ -223,11 +239,97 @@ def _appartenance_etudiante_active(
         .where(
             MembreEtablissement.institution_id == institution_id_expression,
             MembreEtablissement.utilisateur_id == utilisateur_id,
-            MembreEtablissement.role == ROLE_ETUDIANT,
+            MembreEtablissement.role.in_(roles_demandes),
             MembreEtablissement.est_actif.is_(True),
             EtablissementPartenaire.est_actif.is_(True),
         )
     )
+
+
+def _appartenance_etudiante_active(
+    institution_id_expression, utilisateur_id: int
+):
+    """Expression SQL corrélée : appartenance étudiant + établissement actifs."""
+    return _appartenance_role_active(
+        institution_id_expression, utilisateur_id, (ROLE_ETUDIANT,)
+    )
+
+
+def lister_cours_gerables(
+    session: Session, utilisateur: Utilisateur
+) -> list[Cours]:
+    """Charge les cours administrables sans vérification SQL par ligne."""
+    cours_professeur_independants = and_(
+        Cours.institution_id.is_(None),
+        Cours.professeur_id == utilisateur.id,
+    )
+    cours_professeur_tenant = and_(
+        Cours.professeur_id == utilisateur.id,
+        _appartenance_role_active(
+            Cours.institution_id, utilisateur.id, ROLES_PEDAGOGIQUES
+        ),
+    )
+    cours_responsable_tenant = _appartenance_role_active(
+        Cours.institution_id, utilisateur.id, (ROLE_RESPONSABLE,)
+    )
+    requete = (
+        select(Cours)
+        .where(
+            Cours.affectation_institutionnelle_requise.is_(False),
+            or_(
+                cours_professeur_independants,
+                cours_professeur_tenant,
+                cours_responsable_tenant,
+            ),
+        )
+        .order_by(Cours.date_creation.desc())
+    )
+    return session.exec(requete).all()
+
+
+def lister_cours_etudies(
+    session: Session, utilisateur_id: int
+) -> list[Cours]:
+    """Charge les cours suivis dans un seul SELECT, tenant compris."""
+    requete = (
+        select(Cours)
+        .join(InscriptionCours, InscriptionCours.cours_id == Cours.id)
+        .where(
+            InscriptionCours.utilisateur_id == utilisateur_id,
+            Cours.affectation_institutionnelle_requise.is_(False),
+            or_(
+                Cours.institution_id.is_(None),
+                _appartenance_etudiante_active(Cours.institution_id, utilisateur_id),
+            ),
+        )
+        .distinct()
+        .order_by(Cours.date_creation.desc())
+    )
+    return session.exec(requete).all()
+
+
+def lister_inscriptions_actives_pour_cours(
+    session: Session, cours_ids: Iterable[int]
+) -> list[tuple[InscriptionCours, Utilisateur]]:
+    """Charge les inscriptions valides de plusieurs cours dans un seul SELECT."""
+    ids = sorted({int(cours_id) for cours_id in cours_ids if cours_id is not None})
+    if not ids:
+        return []
+    requete = (
+        select(InscriptionCours, Utilisateur)
+        .join(Cours, Cours.id == InscriptionCours.cours_id)
+        .join(Utilisateur, InscriptionCours.utilisateur_id == Utilisateur.id)
+        .where(
+            Cours.id.in_(ids),
+            Cours.affectation_institutionnelle_requise.is_(False),
+            or_(
+                Cours.institution_id.is_(None),
+                _appartenance_etudiante_active(Cours.institution_id, Utilisateur.id),
+            ),
+        )
+        .order_by(InscriptionCours.date_inscription)
+    )
+    return session.exec(requete).all()
 
 
 def est_inscrit_cours(
@@ -254,23 +356,7 @@ def lister_inscriptions_actives(
     session: Session, cours_id: int
 ) -> list[tuple[InscriptionCours, Utilisateur]]:
     """Retourne les inscriptions valides pour le tenant en une requête."""
-    requete = (
-        select(InscriptionCours, Utilisateur)
-        .join(Cours, Cours.id == InscriptionCours.cours_id)
-        .join(Utilisateur, InscriptionCours.utilisateur_id == Utilisateur.id)
-        .where(
-            Cours.id == cours_id,
-            Cours.affectation_institutionnelle_requise.is_(False),
-            or_(
-                Cours.institution_id.is_(None),
-                _appartenance_etudiante_active(
-                    Cours.institution_id, Utilisateur.id
-                ),
-            ),
-        )
-        .order_by(InscriptionCours.date_inscription)
-    )
-    return session.exec(requete).all()
+    return lister_inscriptions_actives_pour_cours(session, (cours_id,))
 
 
 def cours_ids_etudiant_actifs(

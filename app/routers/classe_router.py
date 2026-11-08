@@ -35,7 +35,8 @@ from ..rate_limit import limite_depassee
 from .. import gamification
 from ..institution_access import (
     ROLE_RESPONSABLE, ROLES_PEDAGOGIQUES,
-    est_inscrit_cours, institution_pour_cours, institutions_avec_role, lister_inscriptions_actives,
+    est_inscrit_cours, institution_pour_cours, institutions_avec_role,
+    lister_inscriptions_actives, lister_cours_gerables, lister_cours_etudies,
     peut_gerer_cours, peut_rejoindre_cours,
 )
 from .. import quiz as quiz_module
@@ -214,28 +215,10 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
     else:
         # Un compte peut être professeur dans un établissement et étudiant
         # dans un autre : on réunit les deux périmètres sans élargir les droits.
-        ids_responsable = institutions_avec_role(
-            session, utilisateur.id, (ROLE_RESPONSABLE,)
-        )
-        conditions_gestion = [Cours.professeur_id == utilisateur.id]
-        if ids_responsable:
-            conditions_gestion.append(Cours.institution_id.in_(ids_responsable))
-        candidats_gestion = session.exec(
-            select(Cours).where(or_(*conditions_gestion))
-        ).all()
-        cours_geres = [
-            cours for cours in candidats_gestion
-            if _peut_gerer_cours(cours, utilisateur, session)
-        ]
-        candidats_inscription = session.exec(
-            select(Cours)
-            .where(InscriptionCours.cours_id == Cours.id)
-            .where(InscriptionCours.utilisateur_id == utilisateur.id)
-        ).all()
-        cours_etudies = [
-            cours for cours in candidats_inscription
-            if _est_inscrit(session, cours.id, utilisateur.id)
-        ]
+        # Les deux périmètres sont obtenus par des requêtes avec EXISTS corrélés :
+        # aucune requête d'autorisation supplémentaire par cours.
+        cours_geres = lister_cours_gerables(session, utilisateur)
+        cours_etudies = lister_cours_etudies(session, utilisateur.id)
         cours_par_id = {cours.id: cours for cours in cours_geres}
         cours_par_id.update({cours.id: cours for cours in cours_etudies})
         cours_visibles = sorted(

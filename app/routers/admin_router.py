@@ -20,12 +20,14 @@ from ..institution_access import (
     membre_actif,
     institutions_avec_role,
     ROLES_PEDAGOGIQUES,
+    verrouiller_etablissement,
 )
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant, verifier_mot_de_passe
 from ..models import (
-    Utilisateur, RoleUtilisateur, NiveauScolaire, OptionScolaire, CycleEnseigne, CercleEtude, MembreCercle, MembreEtablissement, RoleMembreCercle, MessageCercle, SignalementMessage,
+    Utilisateur, RoleUtilisateur, NiveauScolaire, OptionScolaire, CycleEnseigne, CercleEtude,
+    EtablissementPartenaire, MembreCercle, MembreEtablissement, RoleMembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
@@ -1179,12 +1181,26 @@ async def supprimer_utilisateur(
         return RedirectResponse("/admin/utilisateurs", status_code=303)
 
     # Ne supprime pas le seul responsable actif d'un établissement.
+    # Les opérations de création/révocation d'un responsable verrouillent
+    # également la ligne parente de l'établissement. Verrouiller les parents
+    # dans l'ordre croissant puis relire les appartenances dans la transaction.
+    ids_institutions = select(MembreEtablissement.institution_id).where(
+        MembreEtablissement.utilisateur_id == utilisateur_id,
+    )
+    session.exec(
+        select(EtablissementPartenaire)
+        .where(EtablissementPartenaire.id.in_(ids_institutions))
+        .order_by(EtablissementPartenaire.id)
+        .with_for_update()
+    ).all()
     responsabilites = session.exec(
-        select(MembreEtablissement).where(
+        select(MembreEtablissement)
+        .where(
             MembreEtablissement.utilisateur_id == utilisateur_id,
             MembreEtablissement.role == "responsable",
             MembreEtablissement.est_actif == True,  # noqa: E712
         )
+        .execution_options(populate_existing=True)
     ).all()
     for responsabilite in responsabilites:
         autres = session.exec(
