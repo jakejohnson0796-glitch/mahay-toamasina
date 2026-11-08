@@ -101,3 +101,9 @@ def test_notes_restent_accessibles_apres_une_seance_et_ont_une_page_dediee():
     assert "mes-notes-seance-" in page
     assert "beforeunload" in page
     assert "Organiser avec l'IA" in page
+
+
+def test_page_notes_compile_avec_jinja():
+    from jinja2 import Environment, FileSystemLoader
+    env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
+    assert env.get_template("classe_notes.html") is not None
