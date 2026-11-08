@@ -30,7 +30,7 @@
   </form>
 {% else %}
 
-<div id="salle-virtuelle" data-url="{{ url_livekit }}" data-jeton="{{ jeton_livekit }}" data-peut-partager-ecran="{{ 'true' if peut_gerer else 'false' }}" data-ia-notes="{{ 'true' if ia_notes_disponible else 'false' }}">
+<div id="salle-virtuelle" data-url="{{ url_livekit }}" data-jeton="{{ jeton_livekit }}" data-peut-partager-ecran="{{ 'true' if peut_gerer else 'false' }}" data-ia-notes="{{ 'true' if ia_notes_disponible else 'false' }}" data-seance-id="{{ seance.id }}" data-csrf-token="{{ jeton_csrf(request) }}" data-peut-gerer="{{ 'true' if peut_gerer else 'false' }}">
   <section class="classe-salle-stage" aria-label="Vidéo de la classe">
     <div id="grille-video" class="grille-video"></div>
     <div id="salle-vide" class="classe-empty-stage" hidden>
@@ -49,6 +49,10 @@
     <button type="button" id="btn-tableau" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Ouvrir le tableau blanc" title="Tableau blanc" disabled>🖍️</button>
     <button type="button" id="btn-participants" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Afficher les participants" title="Participants" disabled>👥</button>
     <button type="button" id="btn-economie-donnees" class="classe-salle-control bouton-controle" aria-pressed="false" aria-label="Activer le mode économie de données" title="Économie de données" disabled>📶</button>
+    <button type="button" id="btn-sondages" class="classe-salle-control bouton-controle" title="Quiz et sondages" disabled>🗳️</button>
+    <button type="button" id="btn-groupes" class="classe-salle-control bouton-controle" title="Salles de petits groupes" disabled>👥</button>
+    <button type="button" id="btn-documents" class="classe-salle-control bouton-controle" title="Documents partagés" disabled>📄</button>
+    <button type="button" id="btn-transcription" class="classe-salle-control bouton-controle" title="Transcription et consentement" disabled>💬</button>
     <span id="compteur-participants" class="classe-salle-participants">1 participant</span>
     <form method="post" action="/classe/seances/{{ seance.id }}/quitter" id="form-quitter">
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -83,6 +87,79 @@
   </section>
 
   <div id="panneau-tableau" class="classe-salle-panel" hidden></div>
+
+  <section id="panneau-sondages" class="classe-salle-panel classe-interactions-panel" hidden aria-label="Quiz et sondages en direct">
+    <h2>Quiz et sondages en direct</h2>
+    {% if peut_gerer %}
+    <form id="form-creer-sondage" class="classe-interaction-form">
+      <label for="sondage-question">Question</label>
+      <input id="sondage-question" name="question" maxlength="300" required placeholder="Pose une question à la classe">
+      <label for="sondage-type">Type d'interaction</label>
+      <select id="sondage-type" name="type_sondage">
+        <option value="sondage">Sondage</option>
+        <option value="quiz">Quiz avec bonne réponse</option>
+      </select>
+      <label for="sondage-options">Réponses (une par ligne, 2 à 6 choix)</label>
+      <textarea id="sondage-options" name="options" rows="4" maxlength="1000" required placeholder="Réponse A&#10;Réponse B"></textarea>
+      <div id="sondage-bonne-reponse-wrap" hidden>
+        <label for="sondage-bonne-reponse">Numéro de la bonne réponse</label>
+        <input id="sondage-bonne-reponse" name="bonne_option_numero" type="number" min="1" max="6" value="1">
+      </div>
+      <button type="submit" class="bouton bouton-primaire">Lancer en direct</button>
+    </form>
+    {% endif %}
+    <div id="liste-sondages" aria-live="polite"></div>
+  </section>
+
+  <section id="panneau-groupes" class="classe-salle-panel classe-interactions-panel" hidden aria-label="Salles de petits groupes">
+    <h2>Salles de petits groupes</h2>
+    {% if peut_gerer %}
+    <form id="form-creer-groupes" class="classe-interaction-form">
+      <label for="nombre-groupes">Nombre de groupes</label>
+      <input id="nombre-groupes" name="nombre_groupes" type="number" min="2" max="12" value="2" required>
+      <button type="submit" class="bouton bouton-primaire">Répartir les élèves</button>
+    </form>
+    <p class="stat-label">La répartition remplace les groupes précédents de cette séance.</p>
+    {% endif %}
+    <div id="liste-groupes" aria-live="polite"></div>
+  </section>
+
+  <section id="panneau-documents" class="classe-salle-panel classe-interactions-panel" hidden aria-label="Documents partagés">
+    <h2>Documents partagés</h2>
+    {% if peut_gerer %}
+    <form id="form-partager-document" class="classe-interaction-form">
+      <label for="document-a-partager">Support approuvé de la matière</label>
+      <select id="document-a-partager" name="document_id">
+        <option value="">Chargement des documents…</option>
+      </select>
+      <button type="submit" class="bouton bouton-primaire">Partager avec la séance</button>
+    </form>
+    {% endif %}
+    <div id="liste-documents-partages" aria-live="polite"></div>
+  </section>
+
+  <section id="panneau-transcription" class="classe-salle-panel classe-interactions-panel" hidden aria-label="Transcription intelligente">
+    <h2>Transcription de la séance</h2>
+    <p class="classe-notes-confidentialite">La transcription utilise la reconnaissance vocale en direct. Aucun fichier audio ou vidéo n'est enregistré. Chaque participant doit accepter explicitement avant le démarrage. Le texte n'est conservé que si le professeur l'enregistre après l'arrêt.</p>
+    <p id="transcription-statut" role="status" aria-live="polite">Vérification du statut…</p>
+    <div class="classe-interaction-actions">
+      <button type="button" id="btn-consentir-transcription" class="bouton bouton-secondaire">J'accepte la transcription</button>
+      <button type="button" id="btn-retirer-consentement" class="bouton bouton-secondaire">Retirer mon accord</button>
+      {% if peut_gerer %}
+      <button type="button" id="btn-demarrer-transcription" class="bouton bouton-primaire">Démarrer la transcription</button>
+      <button type="button" id="btn-arreter-transcription" class="bouton bouton-secondaire">Arrêter</button>
+      {% endif %}
+    </div>
+    <pre id="transcription-live" class="classe-transcription-texte" aria-live="polite">Les sous-titres apparaîtront ici lorsque la transcription sera démarrée.</pre>
+    {% if peut_gerer %}
+    <div class="classe-interaction-actions">
+      <button type="button" id="btn-enregistrer-transcription" class="bouton bouton-primaire" disabled>Enregistrer le compte rendu</button>
+      <button type="button" id="btn-resumer-transcription" class="bouton bouton-secondaire" disabled>Créer un résumé IA</button>
+    </div>
+    <div id="transcription-resume" class="classe-transcription-texte" hidden></div>
+    {% endif %}
+  </section>
+
   <div id="panneau-participants" class="classe-salle-panel" hidden>
     <h3 class="titre-carte">Participants</h3>
     <ul id="liste-participants" class="liste-participants-salle"></ul>
@@ -189,6 +266,8 @@ const room = new Room({
                        // peut tenir, sans que qui que ce soit n'ait a y penser.
   },
 });
+  // Expose la room à l'outil de transcription chargé après le script principal.
+  window.mahayTranscriptionRoom = room;
 
   function majCompteur() {
     const n = room.numParticipants || (room.remoteParticipants.size + 1);
@@ -841,6 +920,7 @@ const room = new Room({
   });
 })();
 </script>
+<script nonce="{{ csp_nonce(request) }}" src="/static/classe_interactions.js"></script>
 {% endif %}
 </div>
 {% endblock %}
