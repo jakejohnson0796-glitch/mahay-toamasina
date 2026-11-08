@@ -205,7 +205,9 @@ def test_entree_dans_la_salle_est_bloquee_sans_consentement_si_transcription_act
 def test_transcription_stt_sans_enregistrement_audio():
     source = (ROOT / "agents" / "mahay_transcription.py").read_text(encoding="utf-8")
     assert 'agent_name="mahay-transcription"' in source
-    assert "groq.STT(model=" in source
+    assert "groq.STT(" in source
+    assert 'model="whisper-large-v3-turbo"' in source
+    assert 'language="fr"' in source
     assert "record=False" in source
     readme = (ROOT / "agents" / "README.md").read_text(encoding="utf-8")
     assert "Aucun audio ni aucune vidéo n'est enregistré" in readme
