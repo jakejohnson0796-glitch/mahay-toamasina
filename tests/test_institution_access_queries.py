@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections import Counter
 
 import pytest
-from sqlalchemy import event, select
+from sqlalchemy import event
 from sqlalchemy.pool import StaticPool
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.institution_access import (
     ROLE_ETUDIANT,
