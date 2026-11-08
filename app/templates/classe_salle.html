@@ -140,7 +140,7 @@
 
   <section id="panneau-transcription" class="classe-salle-panel classe-interactions-panel" hidden aria-label="Transcription intelligente">
     <h2>Transcription de la séance</h2>
-    <p class="classe-notes-confidentialite">La transcription utilise la reconnaissance vocale en direct. Aucun fichier audio ou vidéo n'est enregistré. Chaque participant doit accepter explicitement avant le démarrage. Le texte n'est conservé que si le professeur l'enregistre après l'arrêt.</p>
+    <p class="classe-notes-confidentialite">Le flux audio de la salle est transmis à Groq via le worker LiveKit pour la reconnaissance vocale en direct. Le worker Mahay n'écrit pas de fichier audio/vidéo ; les conditions de traitement du fournisseur Groq s'appliquent. Chaque participant doit consentir explicitement avant le démarrage. Le texte n'est conservé dans Mahay que si le professeur l'enregistre après l'arrêt. Pour les élèves mineurs, vérifie les règles de l'établissement et les autorisations nécessaires avant activation.</p>
     <p id="transcription-statut" role="status" aria-live="polite">Vérification du statut…</p>
     <div class="classe-interaction-actions">
       <button type="button" id="btn-consentir-transcription" class="bouton bouton-secondaire">J'accepte la transcription</button>
