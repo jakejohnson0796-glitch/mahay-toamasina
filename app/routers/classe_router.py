@@ -1207,6 +1207,8 @@ def organiser_notes_seance(
         NoteSeance.seance_id == seance_id,
         NoteSeance.utilisateur_id == utilisateur.id,
     )).first()
+    if limite_depassee(f"classe-notes-ia:user:{utilisateur.id}", 4, 60):
+        return JSONResponse({"erreur": "Trop de demandes IA en peu de temps. Réessaie dans une minute."}, status_code=429)
     if not note or len((note.contenu or "").strip()) < 40:
         return JSONResponse({"erreur": "Ajoute quelques phrases à tes notes avant de demander leur organisation."}, status_code=400)
     try:
