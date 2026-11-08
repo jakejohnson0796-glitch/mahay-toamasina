@@ -25,9 +25,9 @@ def upgrade() -> None:
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column("date_cloture", sa.DateTime(), nullable=True),
     )
-    op.create_index("ix_sondage_seance", "sondageseance", ["seance_id"])
-    op.create_index("ix_sondage_cours", "sondageseance", ["cours_id"])
-    op.create_index("ix_sondage_ouvert", "sondageseance", ["ouvert"])
+    op.create_index("ix_sondageseance_seance_id", "sondageseance", ["seance_id"])
+    op.create_index("ix_sondageseance_cours_id", "sondageseance", ["cours_id"])
+    op.create_index("ix_sondageseance_ouvert", "sondageseance", ["ouvert"])
 
     op.create_table(
         "reponsesondageseance",
@@ -38,8 +38,8 @@ def upgrade() -> None:
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.UniqueConstraint("sondage_id", "utilisateur_id", name="uq_reponse_sondage_utilisateur"),
     )
-    op.create_index("ix_reponse_sondage", "reponsesondageseance", ["sondage_id"])
-    op.create_index("ix_reponse_utilisateur", "reponsesondageseance", ["utilisateur_id"])
+    op.create_index("ix_reponsesondageseance_sondage_id", "reponsesondageseance", ["sondage_id"])
+    op.create_index("ix_reponsesondageseance_utilisateur_id", "reponsesondageseance", ["utilisateur_id"])
 
     op.create_table(
         "groupesoussalle",
@@ -49,7 +49,7 @@ def upgrade() -> None:
         sa.Column("nom_salle_livekit", sa.String(length=180), nullable=False, unique=True),
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
     )
-    op.create_index("ix_groupe_sous_salle_seance", "groupesoussalle", ["seance_id"])
+    op.create_index("ix_groupesoussalle_seance_id", "groupesoussalle", ["seance_id"])
 
     op.create_table(
         "affectationsoussalle",
@@ -60,9 +60,9 @@ def upgrade() -> None:
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.UniqueConstraint("seance_id", "utilisateur_id", name="uq_affectation_sous_salle_utilisateur"),
     )
-    op.create_index("ix_affectation_sous_salle_seance", "affectationsoussalle", ["seance_id"])
-    op.create_index("ix_affectation_sous_salle_groupe", "affectationsoussalle", ["groupe_id"])
-    op.create_index("ix_affectation_sous_salle_utilisateur", "affectationsoussalle", ["utilisateur_id"])
+    op.create_index("ix_affectationsoussalle_seance_id", "affectationsoussalle", ["seance_id"])
+    op.create_index("ix_affectationsoussalle_groupe_id", "affectationsoussalle", ["groupe_id"])
+    op.create_index("ix_affectationsoussalle_utilisateur_id", "affectationsoussalle", ["utilisateur_id"])
 
     op.create_table(
         "documentpartageseance",
@@ -74,9 +74,9 @@ def upgrade() -> None:
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.UniqueConstraint("seance_id", "document_id", name="uq_document_partage_seance"),
     )
-    op.create_index("ix_document_partage_seance", "documentpartageseance", ["seance_id"])
-    op.create_index("ix_document_partage_cours", "documentpartageseance", ["cours_id"])
-    op.create_index("ix_document_partage_document", "documentpartageseance", ["document_id"])
+    op.create_index("ix_documentpartageseance_seance_id", "documentpartageseance", ["seance_id"])
+    op.create_index("ix_documentpartageseance_cours_id", "documentpartageseance", ["cours_id"])
+    op.create_index("ix_documentpartageseance_document_id", "documentpartageseance", ["document_id"])
 
     op.create_table(
         "consentementtranscription",
@@ -88,8 +88,8 @@ def upgrade() -> None:
         sa.Column("date_modification", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.UniqueConstraint("seance_id", "utilisateur_id", name="uq_consentement_transcription_utilisateur"),
     )
-    op.create_index("ix_consentement_transcription_seance", "consentementtranscription", ["seance_id"])
-    op.create_index("ix_consentement_transcription_utilisateur", "consentementtranscription", ["utilisateur_id"])
+    op.create_index("ix_consentementtranscription_seance_id", "consentementtranscription", ["seance_id"])
+    op.create_index("ix_consentementtranscription_utilisateur_id", "consentementtranscription", ["utilisateur_id"])
 
     op.create_table(
         "transcriptionseance",
@@ -104,8 +104,8 @@ def upgrade() -> None:
         sa.Column("date_fin", sa.DateTime(), nullable=True),
         sa.Column("date_modification", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
     )
-    op.create_index("ix_transcription_seance_id", "transcriptionseance", ["seance_id"])
-    op.create_index("ix_transcription_active", "transcriptionseance", ["active"])
+    op.create_index("ix_transcriptionseance_seance_id", "transcriptionseance", ["seance_id"])
+    op.create_index("ix_transcriptionseance_active", "transcriptionseance", ["active"])
 
     # Ces tables sont accessibles uniquement via le backend authentifie.
     # Aucune lecture/ecriture directe via la Supabase Data API n'est necessaire.
@@ -135,32 +135,32 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_transcription_active", table_name="transcriptionseance")
-    op.drop_index("ix_transcription_seance_id", table_name="transcriptionseance")
+    op.drop_index("ix_transcriptionseance_active", table_name="transcriptionseance")
+    op.drop_index("ix_transcriptionseance_seance_id", table_name="transcriptionseance")
     op.drop_table("transcriptionseance")
 
-    op.drop_index("ix_consentement_transcription_utilisateur", table_name="consentementtranscription")
-    op.drop_index("ix_consentement_transcription_seance", table_name="consentementtranscription")
+    op.drop_index("ix_consentementtranscription_utilisateur_id", table_name="consentementtranscription")
+    op.drop_index("ix_consentementtranscription_seance_id", table_name="consentementtranscription")
     op.drop_table("consentementtranscription")
 
-    op.drop_index("ix_document_partage_document", table_name="documentpartageseance")
-    op.drop_index("ix_document_partage_cours", table_name="documentpartageseance")
-    op.drop_index("ix_document_partage_seance", table_name="documentpartageseance")
+    op.drop_index("ix_documentpartageseance_document_id", table_name="documentpartageseance")
+    op.drop_index("ix_documentpartageseance_cours_id", table_name="documentpartageseance")
+    op.drop_index("ix_documentpartageseance_seance_id", table_name="documentpartageseance")
     op.drop_table("documentpartageseance")
 
-    op.drop_index("ix_affectation_sous_salle_utilisateur", table_name="affectationsoussalle")
-    op.drop_index("ix_affectation_sous_salle_groupe", table_name="affectationsoussalle")
-    op.drop_index("ix_affectation_sous_salle_seance", table_name="affectationsoussalle")
+    op.drop_index("ix_affectationsoussalle_utilisateur_id", table_name="affectationsoussalle")
+    op.drop_index("ix_affectationsoussalle_groupe_id", table_name="affectationsoussalle")
+    op.drop_index("ix_affectationsoussalle_seance_id", table_name="affectationsoussalle")
     op.drop_table("affectationsoussalle")
 
-    op.drop_index("ix_groupe_sous_salle_seance", table_name="groupesoussalle")
+    op.drop_index("ix_groupesoussalle_seance_id", table_name="groupesoussalle")
     op.drop_table("groupesoussalle")
 
-    op.drop_index("ix_reponse_utilisateur", table_name="reponsesondageseance")
-    op.drop_index("ix_reponse_sondage", table_name="reponsesondageseance")
+    op.drop_index("ix_reponsesondageseance_utilisateur_id", table_name="reponsesondageseance")
+    op.drop_index("ix_reponsesondageseance_sondage_id", table_name="reponsesondageseance")
     op.drop_table("reponsesondageseance")
 
-    op.drop_index("ix_sondage_ouvert", table_name="sondageseance")
-    op.drop_index("ix_sondage_cours", table_name="sondageseance")
-    op.drop_index("ix_sondage_seance", table_name="sondageseance")
+    op.drop_index("ix_sondageseance_ouvert", table_name="sondageseance")
+    op.drop_index("ix_sondageseance_cours_id", table_name="sondageseance")
+    op.drop_index("ix_sondageseance_seance_id", table_name="sondageseance")
     op.drop_table("sondageseance")
