@@ -77,6 +77,20 @@ applique pas les politiques RLS ordinaires. Le test du rôle runtime synthétiqu
 vérifie des privilèges et des opérations sur une table de test, mais ne prouve
 pas l'isolation de deux tenants par RLS.
 
+Le contrat testé pour le compte applicatif personnalisé `mahay_runtime` est
+un compte `LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE`, sans propriété des
+tables ni privilège DDL, avec les droits DML nécessaires au backend et
+`BYPASSRLS` activé. Cela permet aux contrôles d'autorisation du serveur
+d'accéder aux données malgré l'absence de politiques RLS ; **cela ne fournit
+pas une isolation tenant au niveau PostgreSQL**. Le compte de migration doit
+être distinct et réservé aux migrations.
+
+Le garde-fou de démarrage inspecte les noms extraits des deux URL et vérifie
+qu'ils sont différents. Il ne se connecte pas pour inspecter
+`rolsuper`, `rolbypassrls`, les propriétaires de tables ou les privilèges
+effectifs. Ces attributs et droits doivent être audités séparément sur une
+base de test avant de configurer les identifiants de production.
+
 Le test `tests/test_postgres_tenant_authorization.py` vérifie séparément les
 contrôles applicatifs sur un PostgreSQL jetable : deux établissements, des
 membres distincts, une inscription incohérente volontaire et la révocation
