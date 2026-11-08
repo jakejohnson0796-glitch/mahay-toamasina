@@ -54,7 +54,7 @@ def upgrade() -> None:
                 SELECT 1 FROM etablissementpartenaire ep
                 WHERE ep.universite_id = u.id
             )
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (universite_id) DO NOTHING
         """))
         # Le rattachement confirmé concerne le compte administrateur
         # de l'Université de Toamasina (universite.id = 1).
