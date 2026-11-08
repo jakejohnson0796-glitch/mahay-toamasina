@@ -298,6 +298,33 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     bind = op.get_bind()
+    if sa.inspect(bind).has_table("etablissementpartenaire"):
+        columns = {item["name"] for item in sa.inspect(bind).get_columns("etablissementpartenaire")}
+        if "universite_id" in columns:
+            if bind.dialect.name == "sqlite":
+                with op.batch_alter_table("etablissementpartenaire", recreate="always") as batch:
+                    batch.drop_constraint(
+                        "uq_etablissementpartenaire_universite_id",
+                        type_="unique",
+                    )
+                    batch.drop_constraint(
+                        "fk_etablissementpartenaire_universite_id_universite",
+                        type_="foreignkey",
+                    )
+                    batch.drop_column("universite_id")
+            else:
+                op.drop_constraint(
+                    "uq_etablissementpartenaire_universite_id",
+                    "etablissementpartenaire",
+                    type_="unique",
+                )
+                op.drop_constraint(
+                    "fk_etablissementpartenaire_universite_id_universite",
+                    "etablissementpartenaire",
+                    type_="foreignkey",
+                )
+                op.drop_column("etablissementpartenaire", "universite_id")
+
     if sa.inspect(bind).has_table("notification"):
         notification_indexes = {
             item["name"] for item in sa.inspect(bind).get_indexes("notification")
