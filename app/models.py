@@ -401,7 +401,6 @@ class EtablissementPartenaire(SQLModel, table=True):
     universite_id: Optional[int] = Field(
         default=None,
         foreign_key="universite.id",
-        unique=True,
     )
     type_etablissement: str = Field(default="universite", index=True, max_length=30)
     region: Optional[str] = Field(default=None, max_length=100)
@@ -409,6 +408,13 @@ class EtablissementPartenaire(SQLModel, table=True):
     est_actif: bool = Field(default=True, index=True)
     cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "universite_id",
+            name="uq_etablissementpartenaire_universite_id",
+        ),
+    )
 
 
 class Utilisateur(SQLModel, table=True):
