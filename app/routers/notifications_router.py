@@ -95,7 +95,7 @@ def _notifications_autorisees(
             getattr(notification, "url_destination", None) or ""
         ).strip()
         correspondance = re.fullmatch(
-            r"/classe/devoirs/(\\d+)(?:[?#].*)?",
+            r"/classe/devoirs/(\d+)(?:[?#].*)?",
             destination,
         )
         if correspondance:
@@ -118,7 +118,7 @@ def _notifications_autorisees(
             getattr(notification, "url_destination", None) or ""
         ).strip()
         correspondance = re.fullmatch(
-            r"/classe/devoirs/(\\d+)(?:[?#].*)?",
+            r"/classe/devoirs/(\d+)(?:[?#].*)?",
             destination,
         )
         if correspondance:

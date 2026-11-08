@@ -20,7 +20,6 @@ from ..institution_access import (
     membre_actif,
     institutions_avec_role,
     ROLES_PEDAGOGIQUES,
-    verrouiller_etablissement,
 )
 from ..templating import templates
 from ..csrf import verifier_csrf
