@@ -238,6 +238,9 @@
             </form>
             {% endif %}
             {% endif %}
+            {% if not peut_gerer %}
+            <a href="/classe/seances/{{ seance.id }}/notes" class="bouton bouton-secondaire">Mes notes</a>
+            {% endif %}
             {% if peut_gerer %}
             <a href="/classe/seances/{{ seance.id }}/presences" class="bouton bouton-secondaire">Connexions</a>
             <a href="/classe/seances/{{ seance.id }}/registre-presences" class="bouton bouton-secondaire">Registre des présences</a>
