@@ -61,7 +61,7 @@ def erreurs_configuration_production(config: Parametres) -> list[str]:
         # Il ne valide ni rolbypassrls, ni les GRANT/ACL réellement effectifs.
         if role_runtime and role_runtime in {"postgres", "supabase_admin", "service_role"}:
             erreurs.append(
-                "DATABASE_URL doit utiliser le rôle applicatif personnalisé mahay_runtime, "
+                "DATABASE_URL doit utiliser le rôle personnalisé mahay_runtime (rôle applicatif), "
                 "distinct des rôles d'administration et de service_role. "
                 "Ce garde-fou vérifie le nom du rôle ; les attributs BYPASSRLS et les "
                 "privilèges SQL effectifs doivent être contrôlés séparément."
