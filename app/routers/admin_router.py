@@ -27,6 +27,7 @@ from ..models import (
     Feedback, ReponseFeedback, StatutFeedback, Notification, TypeNotification,
     TacheIA, StatutTacheIA, PerformanceModeleIA, ProgressionNotion,
     CodeReinitialisationMotDePasse, DemandeCreationCercle, DemandeChangementFiliere,
+    LienResponsableEleve, EvenementLienResponsableEleve,
     MessageReaction, MessageMention, FAQ, ActionGamification,
 )
 from ..storage import supprimer_fichier
@@ -1062,11 +1063,9 @@ async def supprimer_utilisateur(
         utilisateur) -> mis a None, la decision/l'historique reste mais
         sans plus referencer un compte supprime.
 
-    Enfin la ligne Utilisateur elle-meme est supprimee — plus aucune
-    reference vers utilisateur_id ne doit subsister a ce stade, sans
-    quoi la suppression echouera sur une contrainte de cle etrangere
-    (ce qui, dans ce cas, est volontairement une garde-fou : mieux vaut
-    une erreur explicite qu'une ligne orpheline silencieuse)."""
+    Les liens famille sont désactivés et leurs références vers le compte
+    sont anonymisées ; le journal d'audit est conservé sans identifiant
+    d'acteur lorsque celui-ci est supprimé."""
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
@@ -1388,6 +1387,41 @@ async def supprimer_utilisateur(
     for document in session.exec(select(Document).where(Document.uploader_id == utilisateur_id)).all():
         document.uploader_id = admin.id
         session.add(document)
+
+    # Les liens famille restent présents pour l'audit, mais ne doivent
+    # plus donner accès aux données après la suppression d'un compte.
+    # Les événements historiques sont conservés avec l'acteur anonymisé.
+    maintenant_suppression = datetime.utcnow()
+    liens_famille = session.exec(
+        select(LienResponsableEleve).where(
+            (LienResponsableEleve.responsable_id == utilisateur_id)
+            | (LienResponsableEleve.eleve_id == utilisateur_id)
+            | (LienResponsableEleve.verifie_par_id == utilisateur_id)
+            | (LienResponsableEleve.revoque_par_id == utilisateur_id)
+        )
+    ).all()
+    for lien_famille in liens_famille:
+        if lien_famille.responsable_id == utilisateur_id:
+            lien_famille.responsable_id = None
+            lien_famille.statut = "revoque"
+            lien_famille.date_revocation = lien_famille.date_revocation or maintenant_suppression
+        if lien_famille.eleve_id == utilisateur_id:
+            lien_famille.eleve_id = None
+            lien_famille.statut = "revoque"
+            lien_famille.date_revocation = maintenant_suppression
+        if lien_famille.verifie_par_id == utilisateur_id:
+            lien_famille.verifie_par_id = None
+        if lien_famille.revoque_par_id == utilisateur_id:
+            lien_famille.revoque_par_id = None
+        session.add(lien_famille)
+
+    for evenement_famille in session.exec(
+        select(EvenementLienResponsableEleve).where(
+            EvenementLienResponsableEleve.acteur_id == utilisateur_id
+        )
+    ).all():
+        evenement_famille.acteur_id = None
+        session.add(evenement_famille)
 
     # Verifie explicitement qu'aucune FK directe vers le compte ne reste
     # avant de supprimer la ligne Utilisateur.
