@@ -531,3 +531,97 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
         }.isdisjoint(anciennes_salles)
 
     engine.dispose()
+
+
+def test_fermer_sondages_ouverts_est_une_mise_a_jour_unique_et_scopee():
+    from sqlalchemy import event
+
+    from app.routers.classe_interactions_router import _fermer_sondages_ouverts
+
+    engine = creer_base()
+    compteurs = {"select": 0, "update": 0}
+
+    def compter_requetes(_connexion, _curseur, instruction, _parametres, _contexte, _executemany):
+        commande = instruction.lstrip().split(None, 1)[0].upper()
+        if commande == "SELECT":
+            compteurs["select"] += 1
+        elif commande == "UPDATE":
+            compteurs["update"] += 1
+
+    with Session(engine) as session:
+        professeur, _eleve_a, _eleve_b, cours, seance = creer_seance(session)
+        cours_id = cours.id
+        seance_id = seance.id
+        professeur_id = professeur.id
+
+        autre_seance = Seance(
+            cours_id=cours_id,
+            titre="Autre séance",
+            nom_salle_livekit="autre-seance-sondages-batch",
+        )
+        session.add(autre_seance)
+        session.commit()
+        session.refresh(autre_seance)
+        autre_seance_id = autre_seance.id
+
+        session.add_all([
+            SondageSeance(
+                seance_id=seance_id,
+                cours_id=cours_id,
+                createur_id=professeur_id,
+                question="Ancien sondage 1",
+                options_json='["A", "B"]',
+                ouvert=True,
+            ),
+            SondageSeance(
+                seance_id=seance_id,
+                cours_id=cours_id,
+                createur_id=professeur_id,
+                question="Ancien sondage 2",
+                options_json='["A", "B"]',
+                ouvert=True,
+            ),
+            SondageSeance(
+                seance_id=seance_id,
+                cours_id=cours_id,
+                createur_id=professeur_id,
+                question="Sondage déjà fermé",
+                options_json='["A", "B"]',
+                ouvert=False,
+            ),
+            SondageSeance(
+                seance_id=autre_seance_id,
+                cours_id=cours_id,
+                createur_id=professeur_id,
+                question="Sondage autre séance",
+                options_json='["A", "B"]',
+                ouvert=True,
+            ),
+        ])
+        session.commit()
+
+        event.listen(engine, "before_cursor_execute", compter_requetes)
+        try:
+            nombre_ferme = _fermer_sondages_ouverts(session, seance_id)
+        finally:
+            event.remove(engine, "before_cursor_execute", compter_requetes)
+
+        assert nombre_ferme == 2
+        assert compteurs == {"select": 0, "update": 1}
+
+        session.expire_all()
+        sondages = session.exec(
+            select(SondageSeance).order_by(SondageSeance.id)
+        ).all()
+        par_question = {sondage.question: sondage for sondage in sondages}
+
+        assert par_question["Ancien sondage 1"].ouvert is False
+        assert par_question["Ancien sondage 1"].date_cloture is not None
+        assert par_question["Ancien sondage 2"].ouvert is False
+        assert par_question["Ancien sondage 2"].date_cloture is not None
+        assert par_question["Sondage déjà fermé"].ouvert is False
+        assert par_question["Sondage déjà fermé"].date_cloture is None
+        assert par_question["Sondage autre séance"].ouvert is True
+        assert par_question["Sondage autre séance"].date_cloture is None
+
+    engine.dispose()
