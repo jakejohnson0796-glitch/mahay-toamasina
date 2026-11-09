@@ -668,6 +668,7 @@ def modifier_statut_membre_etablissement(
         raise HTTPException(status_code=422, detail="Statut invalide.")
     membre.statut = statut
     membre.date_modification = datetime.utcnow()
+    membre.modifie_par_id = utilisateur.id
     session.add(membre)
     session.commit()
     return RedirectResponse(f"/etablissements/{institution.id}/gestion?ok=statut_modifie", status_code=303)
