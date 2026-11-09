@@ -272,3 +272,10 @@ def test_journal_famille_conserve_validation_revocation_et_reactivation(db):
         .order_by(EvenementLienResponsableEleve.id)
     ).all()
     assert actions == ["validation", "revocation", "reactivation"]
+
+
+def test_les_references_famille_sont_anonymisables_lors_d_une_suppression_de_compte():
+    assert LienResponsableEleve.__table__.c.responsable_id.nullable is True
+    assert LienResponsableEleve.__table__.c.eleve_id.nullable is True
+    assert LienResponsableEleve.__table__.c.verifie_par_id.nullable is True
+    assert EvenementLienResponsableEleve.__table__.c.acteur_id.nullable is True
