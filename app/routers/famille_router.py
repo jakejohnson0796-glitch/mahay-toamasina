@@ -87,6 +87,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
                         RenduDevoir.utilisateur_id == eleve.id,
                         RenduDevoir.devoir_id.in_(list(devoirs_par_id)),
                         RenduDevoir.note.is_not(None),
+                        RenduDevoir.date_correction.is_not(None),
                     )
                     .order_by(RenduDevoir.date_rendu.desc())
                 ).all()
