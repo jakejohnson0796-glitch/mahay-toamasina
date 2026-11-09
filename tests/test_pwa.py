@@ -91,7 +91,9 @@ def test_les_packs_hors_ligne_expirent_et_sont_verifies_a_ouverture():
     assert "DUREE_PACK_MS=7*24*60*60*1000" in pwa
     assert "expires_le:" in pwa
     assert "Date.parse(pack.expires_le" in lecteur
-    assert 'deletePack(uid+":"+cid)' in lecteur
+    # Le lecteur supprime les packs expirés de la bibliothèque et à leur ouverture.
+    assert 'expired.forEach(function (key) { deletePack(key).catch(function () {}); });' in lecteur
+    assert 'deletePack(userId + ":" + courseId)' in lecteur
 
 
 def test_la_bibliotheque_hors_ligne_liste_les_packs_du_dernier_compte():
