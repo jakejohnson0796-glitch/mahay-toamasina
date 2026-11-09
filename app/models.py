@@ -553,11 +553,11 @@ class LienResponsableEleve(SQLModel, table=True):
     l'activation. Une révocation coupe immédiatement l'accès au portail.
     """
     id: Optional[int] = Field(default=None, primary_key=True)
-    responsable_id: int = Field(foreign_key="utilisateur.id", index=True)
-    eleve_id: int = Field(foreign_key="utilisateur.id", index=True)
+    responsable_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
+    eleve_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
     type_lien: str = Field(default="parent", max_length=24)
     statut: str = Field(default="actif", index=True, max_length=16)
-    verifie_par_id: int = Field(foreign_key="utilisateur.id")
+    verifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     date_verification: datetime = Field(default_factory=datetime.utcnow)
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     revoque_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
@@ -580,7 +580,7 @@ class EvenementLienResponsableEleve(SQLModel, table=True):
     """Journal append-only des validations et révocations du lien famille."""
     id: Optional[int] = Field(default=None, primary_key=True)
     lien_id: int = Field(foreign_key="lienresponsableeleve.id", index=True)
-    acteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    acteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
     action: str = Field(max_length=16, index=True)
     type_lien: str = Field(max_length=24)
     date_evenement: datetime = Field(default_factory=datetime.utcnow, index=True)
