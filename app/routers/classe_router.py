@@ -65,6 +65,31 @@ def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
     ).first() is not None
 
 
+def _ids_seances_terminees_sans_fiche(
+    session: Session,
+    cours_id: int,
+    utilisateur_id: int,
+) -> list[int]:
+    """Ne retourne que les séances terminées sans fiche privée pour l'étudiant."""
+    fiche_existante = (
+        select(FicheRevisionCours.id)
+        .where(
+            FicheRevisionCours.seance_id == Seance.id,
+            FicheRevisionCours.utilisateur_id == utilisateur_id,
+        )
+        .exists()
+    )
+    return session.exec(
+        select(Seance.id)
+        .where(
+            Seance.cours_id == cours_id,
+            Seance.statut == StatutSeance.TERMINEE,
+            ~fiche_existante,
+        )
+        .order_by(Seance.date_creation, Seance.id)
+    ).all()
+
+
 def _compter_inscrits_cours(session: Session, cours_id: int) -> int:
     """Compte les inscriptions directement en SQL, sans charger les lignes ORM."""
     return int(
@@ -374,25 +399,16 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
     # séances déjà terminées avant l'arrivée d'un nouvel étudiant.
     if not peut_gerer:
         session.commit()
-        fiches_existantes = session.exec(
-            select(FicheRevisionCours).where(
-                FicheRevisionCours.cours_id == cours_id,
-                FicheRevisionCours.utilisateur_id == utilisateur.id,
+        sessions_sans_fiche = _ids_seances_terminees_sans_fiche(
+            session,
+            cours_id,
+            utilisateur.id,
+        )
+        for seance_id_sans_fiche in sessions_sans_fiche:
+            ai_queue.planifier_fiche_revision_cours(
+                seance_id_sans_fiche,
+                utilisateur.id,
             )
-        ).all()
-        sessions_avec_fiche = {fiche.seance_id for fiche in fiches_existantes}
-        sessions_terminees = session.exec(
-            select(Seance).where(
-                Seance.cours_id == cours_id,
-                Seance.statut == StatutSeance.TERMINEE,
-            )
-        ).all()
-        for seance_terminee in sessions_terminees:
-            if seance_terminee.id not in sessions_avec_fiche:
-                ai_queue.planifier_fiche_revision_cours(
-                    seance_terminee.id,
-                    utilisateur.id,
-                )
         session.expire_all()
 
     if peut_gerer and not cours.code_invitation:
