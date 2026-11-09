@@ -1,8 +1,10 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from app.objectif_examen import construire_contexte_examen
+from app.routers.quiz_router import _libelle_serie_baccalaureat
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +31,7 @@ def test_bepc_nouveau_programme_est_distinct_de_ps():
     pe = construire_contexte_examen("bepc_pe")
 
     assert pe["code"] == "bepc_pe"
-    assert "Programme d'études (PE)" in pe["label"]
+    assert "programme d'études (pe)" in pe["label"].casefold()
     assert "Programme scolaire (PS)" not in pe["instruction"]
 
 
@@ -66,4 +68,49 @@ def test_page_objectif_examen_signale_le_perimetre_cepe_non_raccorde():
     assert "référentiel primaire" in template
     assert "10 questions et 15 minutes" in template
     assert "ne reproduit pas la durée" in template
-    assert "BEPC 2027" in template
+    assert "BEPC · Session 2027" in template
+
+
+class _SessionOptions:
+    def __init__(self, options):
+        self.options = options
+
+    def get(self, model, option_id):
+        return self.options.get(option_id)
+
+
+def test_serie_baccalaureat_accepte_une_serie_verifiee():
+    serie = SimpleNamespace(
+        id=10, referentiel_id=2, niveau_id=7, code='D', libelle='Série D',
+        type_option='serie', est_active=True, statut_validation='verifie',
+        parent_option_id=None,
+    )
+    assert _libelle_serie_baccalaureat(_SessionOptions({}), serie) == 'D · Série D'
+
+
+def test_serie_baccalaureat_accepte_une_option_fille_avec_parent_verifie():
+    parent = SimpleNamespace(
+        id=10, referentiel_id=2, niveau_id=7, code='S', libelle='Série S',
+        type_option='serie', est_active=True, statut_validation='verifie',
+        parent_option_id=None,
+    )
+    enfant = SimpleNamespace(
+        id=11, referentiel_id=2, niveau_id=7, code='Option D', libelle='Option D',
+        type_option='option', est_active=True, statut_validation='verifie',
+        parent_option_id=10,
+    )
+    assert _libelle_serie_baccalaureat(_SessionOptions({10: parent}), enfant) == 'S · Série S — Option D · Option D'
+
+
+def test_serie_baccalaureat_refuse_option_avec_parent_non_verifie():
+    parent = SimpleNamespace(
+        id=10, referentiel_id=2, niveau_id=7, code='S', libelle='Série S',
+        type_option='serie', est_active=True, statut_validation='a_verifier',
+        parent_option_id=None,
+    )
+    enfant = SimpleNamespace(
+        id=11, referentiel_id=2, niveau_id=7, code='Option D', libelle='Option D',
+        type_option='option', est_active=True, statut_validation='verifie',
+        parent_option_id=10,
+    )
+    assert _libelle_serie_baccalaureat(_SessionOptions({10: parent}), enfant) is None
