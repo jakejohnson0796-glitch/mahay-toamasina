@@ -363,6 +363,7 @@ async def importer_etudiants_institutionnels(
                 role=RoleMembreEtablissement.ETUDIANT.value,
                 statut=StatutMembreEtablissement.ACTIF.value,
                 cree_par_id=admin.id,
+                modifie_par_id=admin.id,
             ))
         session.flush()
         creer_essais_gratuits_en_masse(session, comptes_crees)
@@ -582,6 +583,7 @@ def ajouter_membre_etablissement(
         existant.role = role
         existant.statut = StatutMembreEtablissement.ACTIF.value
         existant.date_modification = maintenant
+        existant.modifie_par_id = utilisateur.id
         session.add(existant)
     else:
         session.add(MembreEtablissement(
@@ -590,6 +592,7 @@ def ajouter_membre_etablissement(
             role=role,
             statut=StatutMembreEtablissement.ACTIF.value,
             cree_par_id=utilisateur.id,
+            modifie_par_id=utilisateur.id,
             date_creation=maintenant,
             date_modification=maintenant,
         ))
@@ -636,6 +639,7 @@ def modifier_role_membre_etablissement(
         raise HTTPException(status_code=422, detail="Le compte ne remplit pas les conditions de ce rôle.")
     membre.role = role
     membre.date_modification = datetime.utcnow()
+    membre.modifie_par_id = utilisateur.id
     session.add(membre)
     session.commit()
     return RedirectResponse(f"/etablissements/{institution.id}/gestion?ok=role_modifie", status_code=303)
