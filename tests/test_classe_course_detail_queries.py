@@ -104,19 +104,26 @@ def test_seances_terminees_sans_fiche_sont_filtrees_en_une_requete_sql():
                     utilisateur_id=autre_etudiant.id,
                 ),
             ])
+            # Conserver les identifiants avant commit : SQLAlchemy expire les
+            # objets ORM et leur accès après commit déclencherait des SELECT
+            # supplémentaires qui ne font pas partie de la requête testée.
+            cours_id = cours.id
+            etudiant_id = etudiant.id
+            seance_fiche_autre_id = seance_fiche_autre.id
+            seance_sans_fiche_id = seance_sans_fiche.id
             session.commit()
 
             event.listen(engine, "before_cursor_execute", capturer_selects)
             try:
                 manquantes = _ids_seances_terminees_sans_fiche(
                     session,
-                    cours.id,
-                    etudiant.id,
+                    cours_id,
+                    etudiant_id,
                 )
             finally:
                 event.remove(engine, "before_cursor_execute", capturer_selects)
 
-            assert manquantes == [seance_fiche_autre.id, seance_sans_fiche.id]
+            assert manquantes == [seance_fiche_autre_id, seance_sans_fiche_id]
             assert len(requetes) == 1
             assert "not exists" in requetes[0].casefold()
     finally:
