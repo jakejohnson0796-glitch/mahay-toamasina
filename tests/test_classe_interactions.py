@@ -333,3 +333,91 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
             event.remove(engine, "before_cursor_execute", compter_selects)
 
     engine.dispose()
+
+def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
+    from sqlalchemy import event
+
+    from app.routers.classe_interactions_router import _resultats_groupes_sous_salles
+
+    engine = creer_base()
+    nombre_selects = {"total": 0}
+
+    def compter_selects(_connexion, _curseur, instruction, _parametres, _contexte, _executemany):
+        if instruction.lstrip().upper().startswith("SELECT"):
+            nombre_selects["total"] += 1
+
+    with Session(engine) as session:
+        professeur, eleve_a, eleve_b, _cours, seance = creer_seance(session)
+        professeur_id = professeur.id
+        eleve_a_id = eleve_a.id
+        eleve_b_id = eleve_b.id
+        groupe_a = GroupeSousSalle(
+            seance_id=seance.id,
+            nom="Groupe 1",
+            nom_salle_livekit="sous-salle-batch-1",
+        )
+        groupe_b = GroupeSousSalle(
+            seance_id=seance.id,
+            nom="Groupe 2",
+            nom_salle_livekit="sous-salle-batch-2",
+        )
+        session.add_all([groupe_a, groupe_b])
+        session.commit()
+        session.refresh(groupe_a)
+        session.refresh(groupe_b)
+        groupe_a_id = groupe_a.id
+        groupe_b_id = groupe_b.id
+        session.add_all([
+            AffectationSousSalle(
+                seance_id=seance.id,
+                groupe_id=groupe_a_id,
+                utilisateur_id=eleve_a_id,
+            ),
+            AffectationSousSalle(
+                seance_id=seance.id,
+                groupe_id=groupe_a_id,
+                utilisateur_id=eleve_b_id,
+            ),
+            AffectationSousSalle(
+                seance_id=seance.id,
+                groupe_id=groupe_b_id,
+                utilisateur_id=eleve_b_id,
+            ),
+        ])
+        session.commit()
+        groupes = session.exec(
+            select(GroupeSousSalle)
+            .where(GroupeSousSalle.seance_id == seance.id)
+            .order_by(GroupeSousSalle.id)
+        ).all()
+
+        event.listen(engine, "before_cursor_execute", compter_selects)
+        try:
+            resultats_prof = _resultats_groupes_sous_salles(
+                session,
+                seance.id,
+                groupes,
+                professeur_id,
+                True,
+            )
+            assert nombre_selects["total"] == 2
+            assert [g["nombre_membres"] for g in resultats_prof] == [2, 1]
+            assert resultats_prof[0]["membres"] == ["Élève A", "Élève B"]
+            assert resultats_prof[1]["membres"] == ["Élève B"]
+
+            resultats_eleve = _resultats_groupes_sous_salles(
+                session,
+                seance.id,
+                groupes,
+                eleve_a_id,
+                False,
+            )
+            assert nombre_selects["total"] == 3
+            assert len(resultats_eleve) == 1
+            assert resultats_eleve[0]["id"] == groupe_a_id
+            assert resultats_eleve[0]["membres"] == []
+            assert resultats_eleve[0]["est_mon_groupe"] is True
+        finally:
+            event.remove(engine, "before_cursor_execute", compter_selects)
+
+    engine.dispose()
