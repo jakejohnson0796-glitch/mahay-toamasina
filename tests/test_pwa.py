@@ -21,7 +21,7 @@ def test_service_worker_ne_met_pas_les_pages_dynamiques_en_cache():
     sw = (ROOT / "app" / "static" / "sw.js").read_text(encoding="utf-8")
     assert 'url.pathname.startsWith("/static/")' in sw
     assert 'requete.method !== "GET"' in sw
-    assert 'CACHE_NOM = "mahay-static-v3"' in sw
+    assert 'CACHE_NOM = "mahay-static-v4"' in sw
     assert 'self.clients.claim()' in sw
 
 
@@ -62,3 +62,24 @@ def test_ci_verifie_la_syntaxe_et_le_comportement_du_brouillon():
 
     assert "node --check app/static/js/pwa.js" in workflow
     assert "node scripts/smoke_quiz_draft.mjs" in workflow
+
+
+def test_service_worker_prepare_le_shell_de_lecture_hors_ligne():
+    sw = (ROOT / "app" / "static" / "sw.js").read_text(encoding="utf-8")
+    assert 'CACHE_NOM = "mahay-static-v4"' in sw
+    assert '"/static/offline.html"' in sw
+    assert '"/static/offline.css"' in sw
+    assert '"/static/js/offline-reader.js"' in sw
+
+
+def test_packs_hors_ligne_ne_sont_pas_mis_en_cache_par_le_service_worker():
+    sw = (ROOT / "app" / "static" / "sw.js").read_text(encoding="utf-8")
+    assert 'url.pathname.startsWith("/static/")' in sw
+    assert 'requete.method !== "GET"' in sw
+    assert 'url.pathname.startsWith("/classe/")' not in sw
+
+
+def test_quitter_le_compte_nettoie_les_packs_locaux():
+    pwa = (ROOT / "app" / "static" / "js" / "pwa.js").read_text(encoding="utf-8")
+    assert 'form[action="/deconnexion"]' in pwa
+    assert "supprimerTous()" in pwa

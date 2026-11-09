@@ -50,6 +50,25 @@
     <div class="classe-overview-card"><strong>{{ nb_etudiants }}</strong><span>étudiant{{ "s" if nb_etudiants != 1 else "" }} inscrit{{ "s" if nb_etudiants != 1 else "" }}</span></div>
   </div>
 
+  <section class="classe-section-card classe-offline-pack"
+           data-offline-course
+           data-course-id="{{ cours.id }}"
+           data-user-id="{{ utilisateur.id }}"
+           data-export-url="/classe/{{ cours.id }}/hors-ligne"
+           aria-labelledby="offline-pack-title">
+    <div>
+      <h2 id="offline-pack-title">Continuer à apprendre sans réseau</h2>
+      <p>Enregistre la présentation, les séances et les consignes de devoirs sur cet appareil pour les consulter hors connexion.</p>
+      <p class="classe-field-help">Le pack ne contient ni notes personnelles, ni copies, ni données de présence. Utilise cette fonction sur un appareil personnel : la déconnexion de MITARIDALA supprimera les packs enregistrés.</p>
+    </div>
+    <div class="classe-offline-actions">
+      <button class="bouton bouton-primaire" type="button" data-offline-save>Enregistrer pour le hors connexion</button>
+      <a class="bouton bouton-secondaire" data-offline-open href="#" hidden>Ouvrir hors connexion</a>
+      <button class="bouton bouton-secondaire" type="button" data-offline-delete hidden>Supprimer le téléchargement</button>
+      <p class="classe-field-help" data-offline-status role="status" aria-live="polite">Vérification du stockage local…</p>
+    </div>
+  </section>
+
   {% if peut_gerer %}
   <div class="classe-toolbar">
     <div class="classe-toolbar-left">

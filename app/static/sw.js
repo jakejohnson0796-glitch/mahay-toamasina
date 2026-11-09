@@ -1,7 +1,7 @@
 // MITARIDALA — service worker léger pour les réseaux instables.
 // Les pages et données utilisateur restent toujours dynamiques et ne sont
 // jamais mises en cache. Seuls les assets statiques sont mis en cache.
-const CACHE_NOM = "mahay-static-v3";
+const CACHE_NOM = "mahay-static-v4";
 const FICHIERS_STATIQUES = [
   "/static/manifest.json",
   "/static/style.css",
@@ -14,7 +14,10 @@ const FICHIERS_STATIQUES = [
   "/static/student-hub.css",
   "/static/js/navigation.js",
   "/static/js/theme.js",
-  "/static/js/pwa.js"
+  "/static/js/pwa.js",
+  "/static/offline.html",
+  "/static/offline.css",
+  "/static/js/offline-reader.js"
 ];
 
 self.addEventListener("install", (event) => {

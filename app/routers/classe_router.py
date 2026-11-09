@@ -36,6 +36,7 @@ from ..rate_limit import limite_depassee
 from .. import gamification
 from .. import quiz as quiz_module
 from .. import ai_queue, course_revision
+from ..classe_offline import construire_pack_hors_ligne
 
 router = APIRouter()
 
@@ -437,6 +438,47 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
         },
     )
 
+
+@router.get("/classe/{cours_id}/hors-ligne")
+def exporter_pack_cours_hors_ligne(
+    request: Request,
+    cours_id: int,
+    session: Session = Depends(get_session),
+):
+    """Exporte uniquement le contenu pédagogique partagé d'un cours autorisé."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return JSONResponse({"detail": "Connexion requise."}, status_code=401)
+
+    cours = session.get(Cours, cours_id)
+    if not cours:
+        return JSONResponse({"detail": "Cours introuvable."}, status_code=404)
+
+    peut_gerer = _peut_gerer_cours(cours, utilisateur)
+    if not peut_gerer and not _est_inscrit(session, cours_id, utilisateur.id):
+        return JSONResponse({"detail": "Tu n'es pas inscrit à ce cours."}, status_code=403)
+
+    seances = session.exec(
+        select(Seance)
+        .where(Seance.cours_id == cours_id)
+        .order_by(Seance.date_creation)
+    ).all()
+
+    requete_devoirs = select(Devoir).where(Devoir.cours_id == cours_id)
+    if not peut_gerer:
+        requete_devoirs = requete_devoirs.where(Devoir.archive == False)  # noqa: E712
+    devoirs = session.exec(
+        requete_devoirs.order_by(Devoir.date_creation.desc())
+    ).all()
+
+    reponse = JSONResponse(construire_pack_hors_ligne(cours, seances, devoirs))
+    reponse.headers.update({
+        "Cache-Control": "private, no-store",
+        "Pragma": "no-cache",
+        "Vary": "Cookie",
+        "X-Content-Type-Options": "nosniff",
+    })
+    return reponse
 
 
 # Le radar reste volontairement collectif : aucun nom, score individuel ni
