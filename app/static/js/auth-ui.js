@@ -103,6 +103,7 @@
 
   function initialiserRoleEtProgression() {
     const roleSelect = document.getElementById("role");
+    const modeResponsable = document.getElementById("mode_responsable");
     const blocAcademique = document.getElementById("bloc-academique");
     const cycleSelect = document.getElementById("cycle_education");
     const blocUniversite = document.getElementById("bloc-universite");
@@ -157,7 +158,8 @@
     }
 
     function estProfilAvecParcours() {
-      return roleSelect.value === "etudiant" || roleSelect.value === "professeur";
+      return !(modeResponsable && modeResponsable.checked) &&
+        (roleSelect.value === "etudiant" || roleSelect.value === "professeur");
     }
 
     function cycleValide() {
@@ -257,6 +259,7 @@
     }
 
     roleSelect.addEventListener("change", actualiser);
+    if (modeResponsable) modeResponsable.addEventListener("change", actualiser);
     if (cycleSelect) cycleSelect.addEventListener("change", actualiser);
     champsCompte.forEach(function (champ) {
       champ.addEventListener("input", actualiser);
