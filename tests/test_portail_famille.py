@@ -9,6 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 from app.models import (
     Cours,
     Devoir,
+    EvenementLienResponsableEleve,
     InscriptionCours,
     LienResponsableEleve,
     PointagePresence,
