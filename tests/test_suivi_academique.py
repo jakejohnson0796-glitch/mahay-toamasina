@@ -138,3 +138,65 @@ def test_pages_personnelles_notes_et_presences_chargent_les_styles_de_classe():
     base = (ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
     assert 'request.url.path in ["/mes-notes", "/mes-presences"]' in base
     assert 'href="/static/classe.css' in base
+
+
+def test_actions_suivi_enseignant_s_appuient_uniquement_sur_les_donnees_enregistrees():
+    from datetime import datetime
+    from types import SimpleNamespace
+    from app.routers.suivi_academique_router import construire_actions_suivi_classe
+
+    eleve_a = SimpleNamespace(id=1, nom="Élève A")
+    eleve_b = SimpleNamespace(id=2, nom="Élève B")
+    eleve_c = SimpleNamespace(id=3, nom="Élève C")
+    corrige = SimpleNamespace(note=16, date_correction=datetime(2026, 10, 1))
+    en_attente = SimpleNamespace(note=None, date_correction=None)
+    note_sans_date = SimpleNamespace(note=12, date_correction=None)
+    lignes = [
+        {
+            "utilisateur": eleve_a,
+            "moyenne": 16.0,
+            "notes": [
+                {"rendu": corrige},
+                {"rendu": en_attente},
+                {"devoir": SimpleNamespace(archive=True), "rendu": en_attente},
+            ],
+        },
+        {
+            "utilisateur": eleve_b,
+            "moyenne": 11.5,
+            "notes": [{"rendu": note_sans_date}],
+        },
+        {"utilisateur": eleve_c, "moyenne": None, "notes": []},
+    ]
+    pointages = [
+        SimpleNamespace(utilisateur_id=2, statut=StatutPointage.ABSENT),
+        SimpleNamespace(utilisateur_id=2, statut=StatutPointage.RETARD),
+        SimpleNamespace(utilisateur_id=3, statut=StatutPointage.A_RENSEIGNER),
+    ]
+
+    resultat = construire_actions_suivi_classe(lignes, pointages)
+
+    assert resultat["totaux"] == {
+        "nb_eleves": 3,
+        "nb_eleves_a_suivre": 2,
+        "nb_eleves_copies_a_corriger": 2,
+        "nb_copies_a_corriger": 2,
+        "nb_eleves_absence_retard": 1,
+        "nb_absences_enregistrees": 1,
+        "nb_retards_enregistres": 1,
+    }
+    par_id = {ligne["utilisateur"].id: ligne for ligne in resultat["lignes"]}
+    assert par_id[1]["copies_a_corriger"] == 1
+    assert par_id[2]["copies_a_corriger"] == 1
+    assert par_id[2]["presences"]["absent"] == 1
+    assert par_id[2]["presences"]["retard"] == 1
+    assert par_id[3]["presences"]["absent"] == 0
+    assert par_id[3]["a_suivre"] is False
+    assert "Corriger les copies déposées" in par_id[1]["action"]
+    assert "pointages" in par_id[2]["action"]
+
+
+def test_rapport_academique_contient_la_section_actions_de_suivi():
+    source = (ROOT / "app" / "templates" / "rapport_academique.html").read_text(encoding="utf-8")
+    assert "Actions de suivi enseignant" in source
+    assert "Une séance sans pointage n'est jamais comptée comme une absence." in source
