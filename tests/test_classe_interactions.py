@@ -90,7 +90,7 @@ def test_un_eleve_ne_peut_pas_repondre_deux_fois_au_meme_sondage():
     with Session(engine) as session:
         _prof, eleve_a, _eleve_b, cours, seance = creer_seance(session)
         sondage = SondageSeance(
-            seance_id=seance_id,
+            seance_id=seance.id,
             cours_id=cours.id,
             createur_id=1,
             question="Combien font 2 + 2 ?",
@@ -122,12 +122,12 @@ def test_un_eleve_ne_peut_appartenir_qu_a_une_sous_salle_par_seance():
     with Session(engine) as session:
         _prof, eleve_a, _eleve_b, _cours, seance = creer_seance(session)
         groupe_a = GroupeSousSalle(
-            seance_id=seance_id,
+            seance_id=seance.id,
             nom="Groupe 1",
             nom_salle_livekit="interactions-test-groupe-a",
         )
         groupe_b = GroupeSousSalle(
-            seance_id=seance_id,
+            seance_id=seance.id,
             nom="Groupe 2",
             nom_salle_livekit="interactions-test-groupe-b",
         )
@@ -136,13 +136,13 @@ def test_un_eleve_ne_peut_appartenir_qu_a_une_sous_salle_par_seance():
         session.refresh(groupe_a)
         session.refresh(groupe_b)
         session.add(AffectationSousSalle(
-            seance_id=seance_id,
+            seance_id=seance.id,
             groupe_id=groupe_a.id,
             utilisateur_id=eleve_a.id,
         ))
         session.commit()
         session.add(AffectationSousSalle(
-            seance_id=seance_id,
+            seance_id=seance.id,
             groupe_id=groupe_b.id,
             utilisateur_id=eleve_a.id,
         ))
@@ -156,13 +156,13 @@ def test_consentement_et_transcription_sont_uniques_par_seance():
     with Session(engine) as session:
         professeur, _eleve_a, _eleve_b, _cours, seance = creer_seance(session)
         session.add(ConsentementTranscription(
-            seance_id=seance_id,
+            seance_id=seance.id,
             utilisateur_id=professeur.id,
             consenti=True,
         ))
         session.commit()
         session.add(ConsentementTranscription(
-            seance_id=seance_id,
+            seance_id=seance.id,
             utilisateur_id=professeur.id,
             consenti=False,
         ))
@@ -170,12 +170,12 @@ def test_consentement_et_transcription_sont_uniques_par_seance():
             session.commit()
         session.rollback()
         session.add(TranscriptionSeance(
-            seance_id=seance_id,
+            seance_id=seance.id,
             demarree_par_id=professeur.id,
         ))
         session.commit()
         session.add(TranscriptionSeance(
-            seance_id=seance_id,
+            seance_id=seance.id,
             demarree_par_id=professeur.id,
         ))
         with pytest.raises(IntegrityError):
@@ -254,7 +254,7 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
         eleve_a_id = eleve_a.id
         eleve_b_id = eleve_b.id
         sondage_ouvert = SondageSeance(
-            seance_id=seance_id,
+            seance_id=seance.id,
             cours_id=cours.id,
             createur_id=professeur_id,
             question="Question ouverte",
@@ -263,7 +263,7 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
             ouvert=True,
         )
         quiz_cloture = SondageSeance(
-            seance_id=seance_id,
+            seance_id=seance.id,
             cours_id=cours.id,
             createur_id=professeur.id,
             question="Question terminée",
@@ -429,6 +429,7 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
     engine.dispose()
 
 
+
 def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
     from sqlalchemy import event
 
@@ -470,6 +471,7 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
         session.commit()
         for ancien in anciens:
             session.refresh(ancien)
+        anciens_ids = {ancien.id for ancien in anciens}
         session.add_all([
             AffectationSousSalle(
                 seance_id=seance_id,
@@ -522,7 +524,7 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
             eleve_a_id, eleve_b_id, eleve_c_id
         }
         assert {affectation.groupe_id for affectation in affectations}.isdisjoint(
-            {ancien.id for ancien in anciens}
+            anciens_ids
         )
 
     engine.dispose()
