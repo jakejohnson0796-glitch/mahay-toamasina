@@ -231,6 +231,7 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert 'return RedirectResponse("/famille", status_code=303)' in auth
     assert 'id="mode_responsable"' in register
     assert 'modeResponsable.addEventListener("change", actualiser)' in ui
+    assert 'roleField.hidden = estResponsable' in ui
     assert 'LienResponsableEleve.statut == "actif"' in family_router
     assert "NoteSeance" not in family_router
     assert 'class EvenementLienResponsableEleve' in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
