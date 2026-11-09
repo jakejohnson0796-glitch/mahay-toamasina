@@ -23,6 +23,7 @@ from .. import adaptive_learning
 from .. import ai_queue
 from .. import theme_service
 from .. import gamification
+from .. import objectif_examen
 from .. import quiz_calibration
 from ..rate_limit import limite_depassee
 
@@ -257,6 +258,211 @@ def _derniere_tentative_utilisateur(session: Session, utilisateur_id: int) -> Op
     except Exception:
         logger.debug("Historique de niveau du quiz indisponible.", exc_info=True)
         return None
+
+
+@router.get("/objectif-examen")
+def page_objectif_examen(request: Request, session: Session = Depends(get_session)):
+    """Centre de préparation initial BEPC/Baccalauréat, basé sur le profil vérifié."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    contexte = _contexte_scolaire_quiz(utilisateur, session)
+    cycle_profil = getattr(utilisateur, "cycle_education", None)
+    if (
+        cycle_profil in {"college", "lycee"}
+        and not contexte
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    ):
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+
+    cycle = contexte["cycle_education"] if contexte else cycle_profil
+    niveau = contexte["niveau"] if contexte else getattr(utilisateur, "niveau", None)
+    matieres = (
+        _matieres_scolaires_disponibles(session, contexte)
+        if contexte else _matieres_disponibles(session)
+    )
+
+    bepc_disponible = bool(
+        contexte
+        and cycle == "college"
+        and str(niveau or "").strip().casefold() == "3e"
+    )
+    option_profil = (
+        session.get(OptionScolaire, contexte["option_scolaire_id"])
+        if contexte and contexte.get("option_scolaire_id") else None
+    )
+    bacc_disponible = bool(
+        contexte
+        and cycle == "lycee"
+        and str(niveau or "").strip().casefold() == "terminale"
+        and option_profil is not None
+        and option_profil.est_active
+        and option_profil.statut_validation == "verifie"
+    )
+    serie_label = (
+        f"{option_profil.code} · {option_profil.libelle}"
+        if bacc_disponible and option_profil else None
+    )
+    priorites = quiz_module.plan_revision_du_jour(
+        session, utilisateur.id, limit=5
+    )
+    return templates.TemplateResponse(
+        request,
+        "objectif_examen.html",
+        {
+            "utilisateur": utilisateur,
+            "cycle": cycle,
+            "niveau": niveau,
+            "matieres": matieres,
+            "bepc_disponible": bepc_disponible,
+            "bacc_disponible": bacc_disponible,
+            "serie_label": serie_label,
+            "priorites": priorites,
+        },
+    )
+
+
+@router.post("/objectif-examen/lancer")
+def lancer_objectif_examen(
+    request: Request,
+    objectif: str = Form(...),
+    matiere: str = Form(...),
+    option_ps: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Lance un examen blanc court après validation serveur du parcours."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    host = adresse_ip_client(request)
+    if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
+        return RedirectResponse("/objectif-examen?erreur=trop_de_generations", status_code=303)
+
+    contexte = _contexte_scolaire_quiz(utilisateur, session)
+    if (
+        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and not contexte
+        and not _enseignant_sans_classe_scolaire(utilisateur)
+    ):
+        return RedirectResponse(
+            "/profil/academique?erreur=profil_scolaire_incomplet",
+            status_code=303,
+        )
+
+    niveau = None
+    cycle = None
+    niveau_scolaire_id = None
+    option_scolaire_id = None
+
+    if objectif in {"bepc_ps", "bepc_pe"}:
+        if (
+            not contexte
+            or contexte.get("cycle_education") != "college"
+            or str(contexte.get("niveau") or "").strip().casefold() != "3e"
+        ):
+            return RedirectResponse("/objectif-examen?erreur=parcours_indisponible", status_code=303)
+        cycle = contexte["cycle_education"]
+        niveau = contexte["niveau"]
+        niveau_scolaire_id = contexte["niveau_scolaire_id"]
+        option_scolaire_id = contexte.get("option_scolaire_id")
+        try:
+            contexte_examen = objectif_examen.construire_contexte_examen(
+                objectif, option_ps=option_ps
+            )
+        except ValueError:
+            return RedirectResponse("/objectif-examen?erreur=option_invalide", status_code=303)
+        matieres_disponibles = _matieres_scolaires_disponibles(session, contexte)
+
+    elif objectif == "baccalaureat":
+        if (
+            not contexte
+            or contexte.get("cycle_education") != "lycee"
+            or str(contexte.get("niveau") or "").strip().casefold() != "terminale"
+            or not contexte.get("option_scolaire_id")
+        ):
+            return RedirectResponse("/objectif-examen?erreur=serie_manquante", status_code=303)
+        option_profil = session.get(OptionScolaire, contexte["option_scolaire_id"])
+        if (
+            not option_profil
+            or option_profil.referentiel_id != contexte.get("referentiel_id")
+            or option_profil.niveau_id != contexte.get("niveau_scolaire_id")
+            or not option_profil.est_active
+            or option_profil.statut_validation != "verifie"
+        ):
+            return RedirectResponse("/objectif-examen?erreur=serie_manquante", status_code=303)
+        cycle = contexte["cycle_education"]
+        niveau = contexte["niveau"]
+        niveau_scolaire_id = contexte["niveau_scolaire_id"]
+        option_scolaire_id = option_profil.id
+        serie = f"{option_profil.code} · {option_profil.libelle}"
+        try:
+            contexte_examen = objectif_examen.construire_contexte_examen(
+                objectif, serie=serie
+            )
+        except ValueError:
+            return RedirectResponse("/objectif-examen?erreur=serie_manquante", status_code=303)
+        matieres_disponibles = _matieres_scolaires_disponibles(session, contexte)
+
+    else:
+        return RedirectResponse("/objectif-examen?erreur=parcours_indisponible", status_code=303)
+
+    matiere_validee = next(
+        (
+            item for item in matieres_disponibles
+            if str(item).strip().casefold() == str(matiere or "").strip().casefold()
+        ),
+        None,
+    )
+    if not matiere_validee:
+        return RedirectResponse("/objectif-examen?erreur=matiere_indisponible", status_code=303)
+
+    progressions = quiz_module.plan_revision_du_jour(
+        session, utilisateur.id, limit=100
+    )
+    progression_cible = next(
+        (
+            item for item in progressions
+            if str(getattr(item, "matiere", "") or "").casefold() == matiere_validee.casefold()
+            and (
+                not niveau
+                or not getattr(item, "niveau", None)
+                or str(item.niveau).casefold() == str(niveau).casefold()
+            )
+        ),
+        None,
+    )
+    difficulte = quiz_module.difficulte_revision_adaptative(progression_cible)
+
+    try:
+        tentative = quiz_module.creer_tentative_examen(
+            session,
+            utilisateur,
+            matiere_validee,
+            niveau or _niveau_quiz_par_defaut(utilisateur),
+            difficulte,
+            cycle_education=cycle,
+            niveau_scolaire_id=niveau_scolaire_id,
+            option_scolaire_id=option_scolaire_id,
+            sujet_cible=contexte_examen["instruction"],
+        )
+    except quiz_module.QuizValidationError:
+        return RedirectResponse("/objectif-examen?erreur=generation_invalide", status_code=303)
+
+    tache_ia_id = ai_queue.planifier_verification_quiz(tentative.id)
+    print(
+        f"[AI QUEUE] Objectif Examen quiz={tentative.id} "
+        f"objectif={contexte_examen['code']} tache_ia={tache_ia_id}.",
+        flush=True,
+    )
+    return RedirectResponse(f"/quiz/{tentative.id}", status_code=303)
 
 
 @router.get("/quiz")
