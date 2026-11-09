@@ -235,6 +235,7 @@
       <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Securite</a>
       {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
       <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %}<span class="tb-sidebar-badge">{{ nb_admin_notifs }}</span>{% endif %}</a>
+      <a href="/admin/responsables-eleves" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin/responsables-eleves') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin/responsables-eleves') else '' }}><span class="tb-icone">👨‍👩‍👧</span> Rattachements famille</a>
       {% endif %}
 
       <p class="tb-sidebar-groupe">{% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}Services{% else %}Premium{% endif %}</p>
