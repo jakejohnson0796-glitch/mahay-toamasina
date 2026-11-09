@@ -254,8 +254,8 @@ def inscription(
     option_scolaire_obj = None
     etablissement_scolaire_obj = None
 
-    if role == RoleUtilisateur.SPONSOR:
-        # Les comptes sponsor n'ont pas de rattachement pédagogique.
+    if role == RoleUtilisateur.SPONSOR or est_responsable:
+        # Les comptes sponsor et responsable n'ont pas de rattachement pédagogique.
         universite_id_nettoye = None
         composante_id_nettoye = None
         mention_id_nettoye = None
