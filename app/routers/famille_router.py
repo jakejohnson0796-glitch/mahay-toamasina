@@ -296,15 +296,15 @@ def associer_responsable_eleve(
             date_creation=maintenant,
         )
         session.add(lien)
-    session.flush()
-    session.add(EvenementLienResponsableEleve(
-        lien_id=lien.id,
-        acteur_id=admin.id,
-        action=action_auditee,
-        type_lien=type_lien,
-        date_evenement=maintenant,
-    ))
     try:
+        session.flush()
+        session.add(EvenementLienResponsableEleve(
+            lien_id=lien.id,
+            acteur_id=admin.id,
+            action=action_auditee,
+            type_lien=type_lien,
+            date_evenement=maintenant,
+        ))
         session.commit()
     except IntegrityError:
         session.rollback()
