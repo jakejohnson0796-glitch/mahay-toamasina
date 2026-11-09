@@ -1,0 +1,34 @@
+.objectif-examen-page{padding-top:1.25rem}
+.objectif-examen-hero{align-items:center}
+.objectif-examen-hero h1{max-width:15ch}
+.objectif-examen-stat{padding:1rem 1.1rem;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(255,255,255,.07)}
+.objectif-examen-stat span,.objectif-examen-stat small{display:block;color:rgba(241,249,246,.75);font-size:.76rem}
+.objectif-examen-stat strong{display:block;margin:.3rem 0;color:#fff;font-size:1.35rem}
+.objectif-examen-notice{margin:1.2rem 0;padding:1rem 1.1rem;border:1px solid var(--content-border);border-left:4px solid var(--refonte-orange,var(--accent));border-radius:12px;background:var(--content-surface);color:var(--content-text)}
+.objectif-examen-notice p{margin:.35rem 0 0;color:var(--content-muted);line-height:1.6}
+.objectif-examen-section{margin-top:2rem}
+.objectif-examen-heading{margin-bottom:1rem}
+.objectif-examen-heading h2{margin:.35rem 0;font-size:clamp(1.45rem,3vw,2rem);color:var(--content-text)}
+.objectif-examen-heading p{margin:0;color:var(--content-muted);line-height:1.6}
+.objectif-examen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.objectif-examen-card{display:flex;flex-direction:column;gap:.65rem;padding:1.2rem;border:1px solid var(--content-border);border-radius:18px;background:var(--content-surface);box-shadow:var(--refonte-shadow-sm,0 4px 16px rgba(0,0,0,.04))}
+.objectif-examen-card-icon{display:grid;place-items:center;width:2.7rem;height:2.7rem;border-radius:12px;background:var(--content-bg);font-size:1.35rem}
+.objectif-examen-tag{color:var(--color-accent,var(--accent));font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.objectif-examen-card h3{margin:0;color:var(--content-text);font-size:1.2rem}
+.objectif-examen-card p{margin:0;color:var(--content-muted);font-size:.88rem;line-height:1.6}
+.objectif-examen-card-muted{background:var(--content-bg)}
+.objectif-examen-form{display:grid;gap:.55rem;margin-top:.35rem}
+.objectif-examen-form label{color:var(--content-text);font-size:.78rem;font-weight:750}
+.objectif-examen-form select{width:100%;min-height:2.8rem;padding:.65rem .75rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}
+.objectif-examen-form button{width:100%;margin-top:.3rem}
+.objectif-examen-empty{padding:.75rem;border-radius:10px;background:var(--content-bg)}
+.objectif-examen-cepe{grid-column:1/-1}
+.objectif-examen-priorites-list{display:grid;gap:.65rem}
+.objectif-examen-priorites-list article{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 1rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-surface)}
+.objectif-examen-priorites-list article div{display:grid;gap:.18rem;min-width:0}
+.objectif-examen-priorites-list span,.objectif-examen-priorites-list small{color:var(--content-muted);font-size:.74rem}
+.objectif-examen-priorites-list strong{color:var(--content-text);overflow-wrap:anywhere}
+.objectif-examen-priorites-list a{flex-shrink:0;color:var(--color-accent,var(--accent));font-weight:800;text-decoration:none}
+.objectif-examen-empty-state{padding:1.1rem;border:1px dashed var(--content-border);border-radius:14px;background:var(--content-surface)}
+.objectif-examen-empty-state p{color:var(--content-muted)}
+@media(max-width:760px){.objectif-examen-grid{grid-template-columns:1fr}.objectif-examen-cepe{grid-column:auto}.objectif-examen-priorites-list article{align-items:flex-start;flex-direction:column}.objectif-examen-page{padding-inline:.75rem}}
