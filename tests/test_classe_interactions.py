@@ -250,10 +250,13 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
 
     with Session(engine) as session:
         professeur, eleve_a, eleve_b, cours, seance = creer_seance(session)
+        professeur_id = professeur.id
+        eleve_a_id = eleve_a.id
+        eleve_b_id = eleve_b.id
         sondage_ouvert = SondageSeance(
             seance_id=seance.id,
             cours_id=cours.id,
-            createur_id=professeur.id,
+            createur_id=professeur_id,
             question="Question ouverte",
             options_json='["A", "B"]',
             type_sondage="sondage",
@@ -273,13 +276,10 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
         session.commit()
         session.refresh(sondage_ouvert)
         session.refresh(quiz_cloture)
-        professeur_id = professeur.id
-        eleve_a_id = eleve_a.id
-        eleve_b_id = eleve_b.id
         session.add_all([
             ReponseSondageSeance(
                 sondage_id=sondage_ouvert.id,
-                utilisateur_id=eleve_a.id,
+                utilisateur_id=eleve_a_id,
                 option_index=0,
             ),
             ReponseSondageSeance(
@@ -302,7 +302,7 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
             resultats_eleve = _resultats_sondages(
                 session,
                 [sondage_ouvert, quiz_cloture],
-                eleve_a.id,
+                eleve_a_id,
                 False,
             )
             assert nombre_selects["total"] == 2
@@ -323,7 +323,7 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
             resultats_prof = _resultats_sondages(
                 session,
                 [sondage_ouvert, quiz_cloture],
-                professeur.id,
+                professeur_id,
                 True,
             )
             assert nombre_selects["total"] == 4
