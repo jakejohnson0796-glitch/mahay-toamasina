@@ -200,6 +200,7 @@ def construire_actions_suivi_classe(lignes: list[dict], pointages: list[Pointage
             1
             for item in ligne.get("notes", [])
             if item.get("rendu") is not None
+            and not getattr(item.get("devoir"), "archive", False)
             and (
                 item["rendu"].note is None
                 or item["rendu"].date_correction is None
