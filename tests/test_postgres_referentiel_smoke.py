@@ -902,6 +902,7 @@ def test_postgres_indexes_all_uncovered_foreign_keys():
         ("ix_fk_membre_etablissement_institution_id", "membre_etablissement", "institution_id"),
         ("ix_fk_membre_etablissement_utilisateur_id", "membre_etablissement", "utilisateur_id"),
         ("ix_fk_membre_etablissement_cree_par_id", "membre_etablissement", "cree_par_id"),
+        ("ix_fk_membre_etablissement_modifie_par_id", "membre_etablissement", "modifie_par_id"),
     ]
     names = [item[0] for item in expected]
 
@@ -1014,7 +1015,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         ).scalar_one()
 
     assert revision == "i7d3f9a2c5b1"
-    assert index_count == 47
+    assert index_count == 48
     assert institution_index_count == 1
 
 
