@@ -398,12 +398,14 @@ def _remplacer_groupes_sous_salles(
     # Supprimer d'abord toutes les affectations de la séance, puis les groupes.
     # Ces deux DELETE remplacent une lecture d'affectations par ancien groupe.
     session.exec(
-        delete(AffectationSousSalle).where(
-            AffectationSousSalle.seance_id == seance_id
-        )
+        delete(AffectationSousSalle)
+        .where(AffectationSousSalle.seance_id == seance_id)
+        .execution_options(synchronize_session=False)
     )
     session.exec(
-        delete(GroupeSousSalle).where(GroupeSousSalle.seance_id == seance_id)
+        delete(GroupeSousSalle)
+        .where(GroupeSousSalle.seance_id == seance_id)
+        .execution_options(synchronize_session=False)
     )
 
     groupes = [
