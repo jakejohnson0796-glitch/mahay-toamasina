@@ -218,6 +218,14 @@ def inscription(
     if est_demande_enseignant:
         role = RoleUtilisateur.ETUDIANT
 
+    # Le compte responsable reste un compte sans privilège spécial.
+    # Le portail est accessible uniquement après rattachement vérifié.
+    est_responsable = mode_responsable == "oui"
+    if est_responsable:
+        role = RoleUtilisateur.ETUDIANT
+        profil_demande = "responsable"
+        est_demande_enseignant = False
+
     # Compatibilité avec les anciens formulaires/tests et liens : un choix
     # universitaire historique est interprété comme le cycle université si
     # le nouvel attribut cycle_education n'est pas encore envoyé.
