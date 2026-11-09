@@ -239,7 +239,8 @@ def page_admin_responsables_eleves(request: Request, session: Session = Depends(
     if not admin:
         return RedirectResponse("/connexion", status_code=303)
     erreurs = {
-        "telephone": "Les deux numéros doivent être des mobiles malgaches valides.",
+        "telephone": "Le numéro du responsable ou de l'élève doit être un mobile malgache valide.",
+        "identifiant": "Renseignez soit le téléphone, soit l'identifiant institutionnel de l'élève (un seul des deux).",
         "comptes": "Compte responsable ou compte élève introuvable.",
         "profil": "Le compte parent doit avoir été créé avec le profil responsable légal.",
         "eleve": "Le compte ciblé doit être un compte élève distinct du responsable.",
@@ -263,7 +264,8 @@ def page_admin_responsables_eleves(request: Request, session: Session = Depends(
 def associer_responsable_eleve(
     request: Request,
     telephone_responsable: str = Form(...),
-    telephone_eleve: str = Form(...),
+    telephone_eleve: str = Form(""),
+    identifiant_eleve: str = Form(""),
     type_lien: str = Form("parent"),
     verification_confirmee: str = Form(""),
     session: Session = Depends(get_session),
@@ -277,9 +279,19 @@ def associer_responsable_eleve(
     if type_lien not in _TYPES_LIEN:
         return RedirectResponse("/admin/responsables-eleves?erreur=integrite", status_code=303)
 
+    identifiant_eleve_nettoye = (identifiant_eleve or "").strip()
+    telephone_eleve_saisi = (telephone_eleve or "").strip()
+    if bool(identifiant_eleve_nettoye) == bool(telephone_eleve_saisi):
+        return RedirectResponse("/admin/responsables-eleves?erreur=identifiant", status_code=303)
+    if len(identifiant_eleve_nettoye) > 160:
+        return RedirectResponse("/admin/responsables-eleves?erreur=identifiant", status_code=303)
+
     try:
         telephone_parent = normaliser_telephone(telephone_responsable)
-        telephone_enfant = normaliser_telephone(telephone_eleve)
+        telephone_enfant = (
+            normaliser_telephone(telephone_eleve_saisi)
+            if telephone_eleve_saisi else None
+        )
     except TelephoneInvalide:
         return RedirectResponse("/admin/responsables-eleves?erreur=telephone", status_code=303)
 
@@ -290,7 +302,11 @@ def associer_responsable_eleve(
         )
     ).first()
     eleve = session.exec(
-        select(Utilisateur).where(Utilisateur.telephone == telephone_enfant)
+        select(Utilisateur).where(
+            Utilisateur.telephone == telephone_enfant
+            if telephone_enfant else
+            Utilisateur.identifiant_connexion == identifiant_eleve_nettoye
+        )
     ).first()
     if not responsable or not eleve:
         return RedirectResponse("/admin/responsables-eleves?erreur=comptes", status_code=303)
