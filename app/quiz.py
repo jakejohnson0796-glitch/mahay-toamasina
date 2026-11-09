@@ -1235,6 +1235,150 @@ def statistiques(tentatives_terminees: List[TentativeQuiz]) -> dict:
     return {"nb_quiz": nb_quiz, "score_moyen_pourcent": score_moyen, "meilleure_matiere": meilleure_matiere}
 
 
+def statistiques_detaillees(tentatives_terminees: List[TentativeQuiz]) -> dict:
+    """Agrege les reussites par notion et les questions strictement identiques.
+
+    L'analyse est calculee a partir des seules tentatives fournies par l'appelant
+    (les routes personnelles ne transmettent que l'historique du compte courant).
+    Les questions sont rapprochees par leur empreinte normalisee, jamais par leur
+    position dans un quiz. Une question repetee n'est signalee comme tendance
+    qu'apres au moins deux passages.
+    """
+    par_notion: dict = {}
+    par_question: dict = {}
+    nb_questions_analysees = 0
+    nb_tentatives_analysees = 0
+
+    for tentative in tentatives_terminees or []:
+        if getattr(tentative, "date_soumission", None) is None:
+            continue
+        try:
+            questions_tentative = questions(tentative)
+            reponses_tentative = reponses(tentative) or []
+        except (TypeError, ValueError, KeyError, IndexError):
+            # Un ancien quiz endommage ne doit pas rendre l'historique illisible.
+            continue
+        if not isinstance(questions_tentative, list):
+            continue
+        if not isinstance(reponses_tentative, list):
+            reponses_tentative = []
+
+        matiere = str(getattr(tentative, "matiere", "") or "Matière non précisée").strip()
+        niveau = str(getattr(tentative, "niveau", "") or "Niveau non précisé").strip()
+        matiere_cle = matiere.casefold()
+        niveau_cle = niveau.casefold()
+        date_soumission = tentative.date_soumission
+        nb_tentatives_analysees += 1
+
+        for index, question in enumerate(questions_tentative):
+            if not isinstance(question, dict):
+                continue
+            notion = str(question.get("notion") or f"Notions générales — {matiere}").strip()[:120]
+            notion_cle = notion.casefold()
+            reponse = reponses_tentative[index] if index < len(reponses_tentative) else None
+            bonne_reponse = question.get("index_bonne_reponse")
+            correcte = reponse is not None and reponse == bonne_reponse
+            sans_reponse = reponse is None
+            cle_notion = (matiere_cle, niveau_cle, notion_cle)
+
+            if cle_notion not in par_notion:
+                par_notion[cle_notion] = {
+                    "matiere": matiere,
+                    "niveau": niveau,
+                    "notion": notion,
+                    "nb_questions": 0,
+                    "nb_reussites": 0,
+                    "nb_erreurs": 0,
+                    "nb_sans_reponse": 0,
+                    "questions_distinctes": set(),
+                }
+            bilan_notion = par_notion[cle_notion]
+            bilan_notion["nb_questions"] += 1
+            bilan_notion["nb_reussites"] += int(correcte)
+            bilan_notion["nb_sans_reponse"] += int(sans_reponse)
+            bilan_notion["nb_erreurs"] += int(not sans_reponse and not correcte)
+
+            empreinte = _empreinte_question(question)
+            if not empreinte:
+                continue
+            bilan_notion["questions_distinctes"].add(empreinte)
+            cle_question = (matiere_cle, niveau_cle, notion_cle, empreinte)
+            if cle_question not in par_question:
+                par_question[cle_question] = {
+                    "matiere": matiere,
+                    "niveau": niveau,
+                    "notion": notion,
+                    "question": str(question.get("question") or "").strip()[:280],
+                    "nb_tentatives": 0,
+                    "nb_reussites": 0,
+                    "nb_erreurs": 0,
+                    "nb_sans_reponse": 0,
+                    "derniere_tentative": date_soumission,
+                }
+            bilan_question = par_question[cle_question]
+            bilan_question["nb_tentatives"] += 1
+            bilan_question["nb_reussites"] += int(correcte)
+            bilan_question["nb_sans_reponse"] += int(sans_reponse)
+            bilan_question["nb_erreurs"] += int(not sans_reponse and not correcte)
+            if date_soumission and (
+                bilan_question["derniere_tentative"] is None
+                or date_soumission > bilan_question["derniere_tentative"]
+            ):
+                bilan_question["derniere_tentative"] = date_soumission
+            nb_questions_analysees += 1
+
+    notions = []
+    for bilan in par_notion.values():
+        total = bilan["nb_questions"]
+        distinctes = len(bilan["questions_distinctes"])
+        notions.append({
+            "matiere": bilan["matiere"],
+            "niveau": bilan["niveau"],
+            "notion": bilan["notion"],
+            "nb_questions": total,
+            "nb_questions_distinctes": distinctes,
+            "nb_reussites": bilan["nb_reussites"],
+            "nb_erreurs": bilan["nb_erreurs"],
+            "nb_sans_reponse": bilan["nb_sans_reponse"],
+            "taux_reussite": round(100 * bilan["nb_reussites"] / total) if total else 0,
+        })
+    notions.sort(key=lambda item: (
+        item["taux_reussite"],
+        -item["nb_questions"],
+        item["matiere"].casefold(),
+        item["notion"].casefold(),
+    ))
+
+    questions_recurrentes = []
+    for bilan in par_question.values():
+        total = bilan["nb_tentatives"]
+        if total < 2:
+            continue
+        date_derniere = bilan["derniere_tentative"]
+        questions_recurrentes.append({
+            **bilan,
+            "taux_reussite": round(100 * bilan["nb_reussites"] / total) if total else 0,
+            "derniere_tentative": (
+                date_derniere.strftime("%d/%m/%Y") if date_derniere else None
+            ),
+        })
+    questions_recurrentes.sort(key=lambda item: (
+        item["taux_reussite"],
+        -item["nb_tentatives"],
+        item["question"].casefold(),
+    ))
+
+    return {
+        "nb_tentatives_analysees": nb_tentatives_analysees,
+        "nb_questions_analysees": nb_questions_analysees,
+        "nb_matieres": len({cle[0] for cle in par_notion}),
+        "nb_notions": len(notions),
+        "nb_questions_recurrentes": len(questions_recurrentes),
+        "notions": notions[:12],
+        "questions_recurrentes": questions_recurrentes[:8],
+    }
+
+
 def signaler_question(
     session: Session, tentative_id: int, index_question: int, signale_par_id: int, motif: Optional[str] = None
 ) -> None:

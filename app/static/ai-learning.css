@@ -2424,3 +2424,19 @@
     font-size: 1.08em;
   }
 }
+
+
+/* Analyse pedagogique des quiz : notions, erreurs et questions recurrentes. */
+.ai-topic-analytics{margin-top:1rem}
+.ai-topic-analytics .ai-remediation-result-item{border-color:var(--content-border)}
+.ai-topic-analytics .ai-remediation-result-item>div:first-child{flex:1;min-width:0}
+.ai-topic-analytics .ai-remediation-result-item span{color:var(--content-text-muted)}
+.ai-topic-analytics .ai-remediation-result-item small{display:block;margin-top:.28rem;color:var(--content-text-muted);font-size:.6rem;line-height:1.45}
+.ai-topic-analytics-score{display:grid;grid-template-columns:auto minmax(7rem,12rem);align-items:center;gap:.55rem;min-width:10rem;text-align:right}
+.ai-topic-analytics-score strong{margin:0!important;font-family:"IBM Plex Mono",monospace;font-size:.78rem!important}
+.ai-topic-analytics-score progress{display:block;width:100%;height:.55rem;accent-color:var(--refonte-teal)}
+.ai-topic-analytics-subhead{margin-top:1.1rem}
+.ai-analytics-empty{margin:.65rem 0 0;padding:.75rem;border:1px dashed var(--content-border);border-radius:12px;color:var(--content-text-muted);font-size:.65rem;line-height:1.5}
+@media(max-width:600px){
+  .ai-topic-analytics-score{width:100%;grid-template-columns:auto minmax(0,1fr);text-align:left}
+}

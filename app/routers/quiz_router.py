@@ -501,11 +501,13 @@ def page_historique(request: Request, session: Session = Depends(get_session)):
 
     tentatives = quiz_module.historique(session, utilisateur.id)
     stats = quiz_module.statistiques(tentatives)
+    # Analyse pedagogique bornee aux 100 derniers quiz pour garder une page rapide.
+    analyse_detaillee = quiz_module.statistiques_detaillees(tentatives[:100])
 
     return templates.TemplateResponse(
         request,
         "quiz_historique.html",
-        {"utilisateur": utilisateur, "tentatives": tentatives, "stats": stats},
+        {"utilisateur": utilisateur, "tentatives": tentatives, "stats": stats, "analyse_detaillee": analyse_detaillee},
     )
 
 
@@ -935,6 +937,7 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
 
     questions_resultat = quiz_module.questions(tentative)
     reponses_resultat = quiz_module.reponses(tentative) or []
+    analyse_quiz = quiz_module.statistiques_detaillees([tentative])
     confiances_resultat = quiz_calibration.lire_confiances(tentative)
     diagnostic_confiance = quiz_calibration.diagnostic_confiance(
         tentative,
@@ -999,6 +1002,7 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
             "diagnostic_confiance": diagnostic_confiance,
             "notions_detectees": notions_detectees,
             "progressions_par_question": progressions_par_question,
+            "analyse_quiz": analyse_quiz,
             "diagnostic_examen": diagnostic_examen,
             "mission_adaptative": mission_adaptative,
         },
