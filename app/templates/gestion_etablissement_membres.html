@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block titre %}Équipe de {{ institution.nom }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero" aria-labelledby="equipe-title">
+    <div>
+      <span class="ops-kicker">Organisation · {{ institution.code }}</span>
+      <h1 id="equipe-title">{{ institution.nom }}</h1>
+      <p>Gère les appartenances et les responsabilités de cet établissement. Les rôles attribués ici sont locaux à cet établissement : ils ne donnent jamais les droits d'administration générale de MITARIDALA.</p>
+      <p>La suspension agit sur l'appartenance locale ; elle ne bannit pas le compte MITARIDALA et ne remplace pas encore les règles d'inscription aux cours existants.</p>
+      <div class="ops-hero-actions">
+        <a href="/admin/inscriptions-institutionnelles">Retour aux établissements</a>
+        <a href="/dashboard">Mon tableau de bord</a>
+      </div>
+    </div>
+    <div class="ops-stat-grid">
+      <div class="ops-stat"><strong>{{ total_membres }}</strong><span>membres enregistrés</span></div>
+      <div class="ops-stat"><strong>{{ roles_assignables|length }}</strong><span>rôles attribuables par ton compte</span></div>
+    </div>
+  </section>
+
+  {% if erreur %}<div class="ops-alert ops-alert-danger" role="alert">{{ erreur }}</div>{% endif %}
+  {% if request.query_params.get("ok") == "membre_ajoute" %}<div class="ops-alert ops-alert-info" role="status">L'appartenance a été enregistrée.</div>{% endif %}
+  {% if request.query_params.get("ok") == "role_modifie" %}<div class="ops-alert ops-alert-info" role="status">Le rôle du membre a été mis à jour.</div>{% endif %}
+  {% if request.query_params.get("ok") == "statut_modifie" %}<div class="ops-alert ops-alert-info" role="status">Le statut du membre a été mis à jour.</div>{% endif %}
+
+  {% if roles_assignables %}
+  <section class="ops-admin-group" aria-labelledby="ajout-membre-title">
+    <h2 id="ajout-membre-title">Ajouter un membre</h2>
+    <p>Le compte doit déjà exister sur MITARIDALA. Utilise son identifiant institutionnel ou son téléphone. Pour ajouter un enseignant, son profil professeur doit avoir été validé au préalable.</p>
+    <form method="post" action="/etablissements/{{ institution.id }}/membres" class="ops-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="membre-identifiant">Téléphone ou identifiant institutionnel</label>
+      <input id="membre-identifiant" type="text" name="identifiant" required maxlength="160" autocomplete="username" placeholder="+261… ou UNIV-T-001">
+      <label for="membre-role">Rôle dans l'établissement</label>
+      <select id="membre-role" name="role" required>
+        {% for role in roles_assignables %}
+        <option value="{{ role }}">{{ roles_labels[role] }}</option>
+        {% endfor %}
+      </select>
+      <button class="bouton bouton-primaire" type="submit">Ajouter à l'équipe</button>
+    </form>
+  </section>
+  {% endif %}
+
+  <section class="ops-section" aria-labelledby="membres-title">
+    <h2 id="membres-title">Membres de l'établissement</h2>
+    {% if membres %}
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead><tr><th>Nom</th><th>Matricule</th><th>Rôle local</th><th>Statut</th><th>Gestion</th></tr></thead>
+        <tbody>
+        {% for item in membres %}
+          <tr>
+            <td><strong>{{ item.utilisateur.nom }}</strong></td>
+            <td>{{ item.utilisateur.matricule_institutionnel or "—" }}</td>
+            <td>{{ roles_labels.get(item.membre.role, item.membre.role) }}</td>
+            <td>{% if item.membre.statut == "actif" %}<span class="ops-badge is-success">Actif</span>{% else %}<span class="ops-badge is-alert">Suspendu</span>{% endif %}</td>
+            <td>
+              {% if item.peut_modifier %}
+                <form method="post" action="/etablissements/{{ institution.id }}/membres/{{ item.membre.id }}/role" class="ops-inline-form">
+                  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                  <label class="visually-hidden" for="role-membre-{{ item.membre.id }}">Changer le rôle de {{ item.utilisateur.nom }}</label>
+                  <select id="role-membre-{{ item.membre.id }}" name="role" required>
+                    {% for role in roles_assignables %}
+                    <option value="{{ role }}"{% if item.membre.role == role %} selected{% endif %}>{{ roles_labels[role] }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="bouton bouton-secondaire" type="submit">Enregistrer</button>
+                </form>
+                <form method="post" action="/etablissements/{{ institution.id }}/membres/{{ item.membre.id }}/statut" class="ops-inline-form">
+                  <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                  {% if item.membre.statut == "actif" %}
+                    <input type="hidden" name="statut" value="suspendu">
+                    <button class="bouton bouton-secondaire" type="submit">Suspendre</button>
+                  {% else %}
+                    <input type="hidden" name="statut" value="actif">
+                    <button class="bouton bouton-secondaire" type="submit">Réactiver</button>
+                  {% endif %}
+                </form>
+              {% else %}
+                <span>Gestion réservée au responsable ou à un administrateur autorisé</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p>Aucun membre n'est encore enregistré dans cet établissement.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
