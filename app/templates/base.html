@@ -206,7 +206,7 @@
 
     {% if request.session.get("user_id") %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
-      {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable") %}
+      {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or (utilisateur.profil_souhaite == "responsable" and utilisateur.role != "admin")) %}
       <p class="tb-sidebar-groupe">Compte</p>
       <a href="/famille" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/famille' else '' }}" {{ 'aria-current="page"' if request.url.path == '/famille' else '' }}><span class="tb-icone">👨‍👩‍👧</span> Espace famille</a>
       <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Sécurité du compte</a>
@@ -289,7 +289,7 @@
           <span>Actions rapides</span>
         </div>
 
-        {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable") %}
+        {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or (utilisateur.profil_souhaite == "responsable" and utilisateur.role != "admin")) %}
         <p class="tb-menu-compte-groupe">Mon espace</p>
         <a class="tb-menu-compte-item" href="/famille"><span class="tb-menu-compte-icone">👨‍👩‍👧</span><span>Espace famille</span></a>
         <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
