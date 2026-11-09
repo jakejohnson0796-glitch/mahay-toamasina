@@ -64,4 +64,6 @@ def test_page_objectif_examen_signale_le_perimetre_cepe_non_raccorde():
 
     assert "CEPE et primaire" in template
     assert "référentiel primaire" in template
+    assert "10 questions et 15 minutes" in template
+    assert "ne reproduit pas la durée" in template
     assert "BEPC 2027" in template
