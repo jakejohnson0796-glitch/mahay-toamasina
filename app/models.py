@@ -17,6 +17,7 @@ class RoleUtilisateur(str, Enum):
     ETUDIANT = "etudiant"
     SPONSOR = "sponsor"      # repetiteur, petit commerce, service pour etudiants
     PROFESSEUR = "professeur"  # anime des cours dans le module Classe virtuelle
+    RESPONSABLE = "responsable"  # consulte uniquement le portail famille vérifié
     ADMIN = "admin"
 
 
