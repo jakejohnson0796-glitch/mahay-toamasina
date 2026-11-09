@@ -282,3 +282,4 @@ def test_les_references_famille_sont_anonymisables_lors_d_une_suppression_de_com
     admin_router = (ROOT / "app" / "routers" / "admin_router.py").read_text(encoding="utf-8")
     assert "PointagePresence.utilisateur_id == utilisateur_id" in admin_router
     assert "PointagePresence.saisi_par_id == utilisateur_id" in admin_router
+    assert 'action="revocation"' in admin_router
