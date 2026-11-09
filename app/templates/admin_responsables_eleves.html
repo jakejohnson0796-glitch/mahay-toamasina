@@ -29,8 +29,12 @@
           <input id="telephone_responsable" name="telephone_responsable" type="tel" inputmode="tel" placeholder="034 12 345 67" required maxlength="20">
         </div>
         <div class="classe-field">
-          <label for="telephone_eleve">Téléphone du compte élève</label>
-          <input id="telephone_eleve" name="telephone_eleve" type="tel" inputmode="tel" placeholder="034 12 345 67" required maxlength="20">
+          <label for="telephone_eleve">Téléphone de l'élève (facultatif)</label>
+          <input id="telephone_eleve" name="telephone_eleve" type="tel" inputmode="tel" placeholder="034 12 345 67" maxlength="20">
+        </div>
+        <div class="classe-field">
+          <label for="identifiant_eleve">Identifiant institutionnel de l'élève (facultatif)</label>
+          <input id="identifiant_eleve" name="identifiant_eleve" type="text" autocomplete="off" placeholder="Ex. MAT-2026-001" maxlength="160">
         </div>
         <div class="classe-field">
           <label for="type_lien">Type de lien</label>
@@ -45,6 +49,7 @@
         <input type="checkbox" id="verification_confirmee" name="verification_confirmee" value="oui" required>
         <label for="verification_confirmee">Je confirme avoir vérifié l’identité du responsable et son autorité auprès de l’établissement, en dehors de MITARIDALA. Aucun justificatif légal ne doit être téléversé ou conservé ici.</label>
       </div>
+      <p class="classe-section-card-intro">Renseignez un seul identifiant de l'élève : son téléphone ou son identifiant institutionnel. Ce dernier permet de rattacher les comptes créés par import d'établissement sans numéro de mobile.</p>
       <button class="bouton bouton-primaire" type="submit">Activer le rattachement</button>
     </form>
   </section>
