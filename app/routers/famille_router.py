@@ -218,17 +218,11 @@ def portail_famille(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    if utilisateur.profil_souhaite != "responsable":
-        # Un lien actif reste une autorisation explicite, mais le profil
-        # responsable garde un parcours d'interface distinct.
-        possede_lien = session.exec(
-            select(LienResponsableEleve.id).where(
-                LienResponsableEleve.responsable_id == utilisateur.id,
-                LienResponsableEleve.statut == "actif",
-            )
-        ).first()
-        if not possede_lien:
-            return RedirectResponse("/dashboard", status_code=303)
+    if (
+        utilisateur.role != RoleUtilisateur.RESPONSABLE
+        or utilisateur.profil_souhaite != "responsable"
+    ):
+        return RedirectResponse("/dashboard", status_code=303)
 
     enfants = construire_portail_famille(session, utilisateur.id)
     return templates.TemplateResponse(
@@ -300,7 +294,7 @@ def associer_responsable_eleve(
     ).first()
     if not responsable or not eleve:
         return RedirectResponse("/admin/responsables-eleves?erreur=comptes", status_code=303)
-    if responsable.role != RoleUtilisateur.ETUDIANT:
+    if responsable.role != RoleUtilisateur.RESPONSABLE:
         return RedirectResponse("/admin/responsables-eleves?erreur=profil", status_code=303)
     if (
         responsable.banni
