@@ -1452,3 +1452,20 @@ body.page-classe {
     flex: 1 1 10rem;
   }
 }
+
+.classe-offline-pack {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr);
+  gap: 22px;
+  align-items: center;
+  margin: 20px 0;
+  border: 1px solid #cbdced;
+  background: linear-gradient(135deg, #f5f9ff 0%, #ffffff 75%);
+}
+.classe-offline-pack h2 { margin-top: 0; }
+.classe-offline-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.classe-offline-actions [data-offline-status] { flex-basis: 100%; margin: 0; }
+.classe-offline-actions [hidden] { display: none !important; }
+@media (max-width: 680px) {
+  .classe-offline-pack { grid-template-columns: minmax(0, 1fr); }
+}
