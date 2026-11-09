@@ -142,6 +142,7 @@ def inscription(
     telephone: str = Form(...),
     mot_de_passe: str = Form(...),
     role: RoleUtilisateur = Form(RoleUtilisateur.ETUDIANT),
+    mode_responsable: str = Form(""),
     mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     universite_id: Optional[str] = Form(None),
