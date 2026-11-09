@@ -9,6 +9,7 @@ from app.models import (
     AffectationSousSalle,
     ConsentementTranscription,
     Cours,
+    DocumentPartageSeance,
     GroupeSousSalle,
     ReponseSondageSeance,
     RoleUtilisateur,
@@ -747,3 +748,82 @@ def test_interface_salle_permet_au_professeur_de_retirer_un_document_partage():
     assert 'window.confirm("Retirer ce document de la séance ?' in source
     assert '"/documents/"' in source
     assert '"/retirer"' in source
+
+
+def test_retrait_document_partage_supprime_uniquement_l_association_ciblee(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.routers import classe_interactions_router
+
+    engine = creer_base()
+    with Session(engine) as session:
+        professeur, _eleve_a, _eleve_b, cours, seance = creer_seance(session)
+        autre_seance = Seance(
+            cours_id=cours.id,
+            titre="Autre séance",
+            nom_salle_livekit="interactions-autre-seance",
+        )
+        session.add(autre_seance)
+        session.commit()
+        session.refresh(autre_seance)
+
+        session.add_all([
+            DocumentPartageSeance(
+                seance_id=seance.id,
+                cours_id=cours.id,
+                document_id=15,
+                partage_par_id=professeur.id,
+            ),
+            DocumentPartageSeance(
+                seance_id=seance.id,
+                cours_id=cours.id,
+                document_id=16,
+                partage_par_id=professeur.id,
+            ),
+            DocumentPartageSeance(
+                seance_id=autre_seance.id,
+                cours_id=cours.id,
+                document_id=15,
+                partage_par_id=professeur.id,
+            ),
+        ])
+        session.commit()
+
+        monkeypatch.setattr(
+            classe_interactions_router,
+            "_contexte_seance",
+            lambda *_args: (professeur, seance, cours, True),
+        )
+        response = classe_interactions_router.retirer_document_partage_seance(
+            SimpleNamespace(), seance.id, 15, session
+        )
+
+        assert response.status_code == 200
+        restants = session.exec(
+            select(DocumentPartageSeance).order_by(
+                DocumentPartageSeance.seance_id,
+                DocumentPartageSeance.document_id,
+            )
+        ).all()
+        assert {
+            (partage.seance_id, partage.document_id)
+            for partage in restants
+        } == {
+            (seance.id, 16),
+            (autre_seance.id, 15),
+        }
+
+    engine.dispose()
+
+
+def test_panneaux_de_salle_ouverts_sont_rafraichis_sans_requetes_concurrentes():
+    source = (ROOT / "app" / "static" / "classe_interactions.js").read_text(encoding="utf-8")
+
+    assert "panels.groupes && !panels.groupes.hidden" in source
+    assert "panels.documents && !panels.documents.hidden" in source
+    assert "panels.transcription && !panels.transcription.hidden" in source
+    assert "}, 10000);" in source
+    assert "rafraichissementsEnCours.groupes" in source
+    assert "rafraichissementsEnCours.documents" in source
+    assert "rafraichissementsEnCours.transcription" in source
+    assert "finally {" in source
