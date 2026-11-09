@@ -313,6 +313,59 @@ def cloturer_sondage_seance(
     return JSONResponse({"ok": True})
 
 
+def _resultats_groupes_sous_salles(
+    session: Session,
+    seance_id: int,
+    groupes: list[GroupeSousSalle],
+    utilisateur_id: int,
+    gerant: bool,
+) -> list[dict]:
+    """Charge les affectations et les noms des membres en requêtes groupées."""
+    if not groupes:
+        return []
+
+    groupe_ids = [groupe.id for groupe in groupes if groupe.id is not None]
+    membres_par_groupe: dict[int, list[int]] = {groupe_id: [] for groupe_id in groupe_ids}
+    affectations = session.exec(
+        select(AffectationSousSalle)
+        .where(AffectationSousSalle.seance_id == seance_id)
+        .order_by(AffectationSousSalle.id)
+    ).all()
+    tous_les_membres: set[int] = set()
+    for affectation in affectations:
+        if affectation.groupe_id not in membres_par_groupe:
+            continue
+        membres_par_groupe[affectation.groupe_id].append(affectation.utilisateur_id)
+        tous_les_membres.add(affectation.utilisateur_id)
+
+    noms_par_utilisateur: dict[int, str] = {}
+    if gerant and tous_les_membres:
+        utilisateurs = session.exec(
+            select(Utilisateur.id, Utilisateur.nom)
+            .where(Utilisateur.id.in_(sorted(tous_les_membres)))
+            .order_by(Utilisateur.id)
+        ).all()
+        noms_par_utilisateur = {
+            utilisateur_id: nom
+            for utilisateur_id, nom in utilisateurs
+        }
+
+    resultats = []
+    for groupe in groupes:
+        ids = membres_par_groupe.get(groupe.id, [])
+        if not gerant and utilisateur_id not in ids:
+            continue
+        resultats.append({
+            "id": groupe.id,
+            "nom": groupe.nom,
+            "nombre_membres": len(ids),
+            "membres": [noms_par_utilisateur[i] for i in ids if i in noms_par_utilisateur] if gerant else [],
+            "rejoindre_url": f"/classe/seances/{seance_id}/groupes/{groupe.id}/rejoindre",
+            "est_mon_groupe": utilisateur_id in ids,
+        })
+    return resultats
+
+
 @router.get("/classe/seances/{seance_id}/groupes")
 def lister_groupes_sous_salles(request: Request, seance_id: int, session: Session = Depends(get_session)):
     contexte = _contexte_seance(request, session, seance_id)
@@ -324,26 +377,13 @@ def lister_groupes_sous_salles(request: Request, seance_id: int, session: Sessio
         .where(GroupeSousSalle.seance_id == seance_id)
         .order_by(GroupeSousSalle.id)
     ).all()
-    resultats = []
-    for groupe in groupes:
-        affectations = session.exec(
-            select(AffectationSousSalle).where(AffectationSousSalle.groupe_id == groupe.id)
-        ).all()
-        ids = [a.utilisateur_id for a in affectations]
-        if not gerant and utilisateur.id not in ids:
-            continue
-        noms = []
-        if gerant and ids:
-            utilisateurs = session.exec(select(Utilisateur).where(Utilisateur.id.in_(ids))).all()
-            noms = [u.nom for u in utilisateurs]
-        resultats.append({
-            "id": groupe.id,
-            "nom": groupe.nom,
-            "nombre_membres": len(ids),
-            "membres": noms if gerant else [],
-            "rejoindre_url": f"/classe/seances/{seance_id}/groupes/{groupe.id}/rejoindre",
-            "est_mon_groupe": utilisateur.id in ids,
-        })
+    resultats = _resultats_groupes_sous_salles(
+        session,
+        seance_id,
+        groupes,
+        utilisateur.id,
+        gerant,
+    )
     return JSONResponse({"groupes": resultats, "peut_gerer": gerant})
 
 
