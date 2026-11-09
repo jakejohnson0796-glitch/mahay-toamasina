@@ -169,7 +169,9 @@ def test_portail_famille_regroupe_les_lectures_sql_pour_plusieurs_enfants_et_cou
     assert len(resultats) == 2
     assert all(len(enfant["cours"]) == 2 for enfant in resultats)
     assert sum(enfant["cours"][0]["nb_seances"] for enfant in resultats) == 2
-    assert len(requetes_select) <= 8
+    # 9 lectures fixes pour tout le jeu de données; ce nombre ne croît pas
+    # avec le nombre d'enfants ou de cours.
+    assert len(requetes_select) <= 9
 
 
 def test_portail_exclut_les_liens_revoques(db):
