@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import csv
+from datetime import datetime
 import io
 import re
 import secrets
 import unicodedata
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, func, select
@@ -16,7 +17,10 @@ from sqlmodel import Session, func, select
 from ..auth import hacher_mot_de_passe, utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
-from ..models import EtablissementPartenaire, RoleUtilisateur, Utilisateur
+from ..models import (
+    EtablissementPartenaire, MembreEtablissement, RoleMembreEtablissement,
+    RoleUtilisateur, StatutMembreEtablissement, Utilisateur,
+)
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
 from ..subscription import creer_essais_gratuits_en_masse
@@ -352,6 +356,16 @@ async def importer_etudiants_institutionnels(
         # Attribue les identifiants puis crée les essais Premium standards en
         # une transaction de groupe, sans effectuer un commit par étudiant.
         session.flush()
+        for compte in comptes_crees:
+            session.add(MembreEtablissement(
+                institution_id=institution.id,
+                utilisateur_id=compte.id,
+                role=RoleMembreEtablissement.ETUDIANT.value,
+                statut=StatutMembreEtablissement.ACTIF.value,
+                cree_par_id=admin.id,
+                modifie_par_id=admin.id,
+            ))
+        session.flush()
         creer_essais_gratuits_en_masse(session, comptes_crees)
         session.commit()
     except IntegrityError:
@@ -362,3 +376,299 @@ async def importer_etudiants_institutionnels(
 
     return _page(request, session, admin, resultat=resultat, lignes_erreur=lignes_erreur,
                  institution_selectionnee=institution.id)
+
+
+# --- Gestion des équipes et des appartenances institutionnelles ----------------
+
+ROLE_MEMBRE_LABELS = {
+    RoleMembreEtablissement.RESPONSABLE.value: "Responsable",
+    RoleMembreEtablissement.GESTIONNAIRE.value: "Gestionnaire",
+    RoleMembreEtablissement.ENSEIGNANT.value: "Enseignant",
+    RoleMembreEtablissement.ETUDIANT.value: "Apprenant",
+}
+RANG_ROLE_MEMBRE = {
+    RoleMembreEtablissement.ETUDIANT.value: 1,
+    RoleMembreEtablissement.ENSEIGNANT.value: 2,
+    RoleMembreEtablissement.GESTIONNAIRE.value: 3,
+    RoleMembreEtablissement.RESPONSABLE.value: 4,
+}
+
+
+def roles_assignables(role_acteur: str | None, administrateur_global: bool = False) -> list[str]:
+    """Rôles locaux que l'acteur peut attribuer ; le responsable reste réservé au global admin."""
+    if administrateur_global:
+        return list(ROLE_MEMBRE_LABELS)
+    role = str(getattr(role_acteur, "value", role_acteur) or "")
+    if role == RoleMembreEtablissement.RESPONSABLE.value:
+        return [
+            RoleMembreEtablissement.GESTIONNAIRE.value,
+            RoleMembreEtablissement.ENSEIGNANT.value,
+            RoleMembreEtablissement.ETUDIANT.value,
+        ]
+    if role == RoleMembreEtablissement.GESTIONNAIRE.value:
+        return [
+            RoleMembreEtablissement.ENSEIGNANT.value,
+            RoleMembreEtablissement.ETUDIANT.value,
+        ]
+    return []
+
+
+def peut_gerer_role(role_acteur: str | None, role_cible: str | None, administrateur_global: bool = False) -> bool:
+    """Interdit à un acteur local de modifier un membre de rang égal ou supérieur."""
+    if administrateur_global:
+        return True
+    acteur = str(getattr(role_acteur, "value", role_acteur) or "")
+    cible = str(getattr(role_cible, "value", role_cible) or "")
+    return RANG_ROLE_MEMBRE.get(acteur, 0) > RANG_ROLE_MEMBRE.get(cible, 99)
+
+
+def _contexte_gestion_institution(request: Request, session: Session, institution_id: int):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connexion requise.")
+    institution = session.get(EtablissementPartenaire, institution_id)
+    if not institution:
+        raise HTTPException(status_code=404, detail="Établissement introuvable.")
+    administrateur_global = utilisateur.role == RoleUtilisateur.ADMIN
+    membre_acteur = None
+    role_acteur = "admin" if administrateur_global else None
+    if not administrateur_global:
+        membre_acteur = session.exec(
+            select(MembreEtablissement).where(
+                MembreEtablissement.institution_id == institution.id,
+                MembreEtablissement.utilisateur_id == utilisateur.id,
+                MembreEtablissement.statut == StatutMembreEtablissement.ACTIF.value,
+            )
+        ).first()
+        if (
+            not institution.est_actif
+            or not membre_acteur
+            or membre_acteur.role not in {
+                RoleMembreEtablissement.RESPONSABLE.value,
+                RoleMembreEtablissement.GESTIONNAIRE.value,
+            }
+        ):
+            raise HTTPException(status_code=403, detail="Tu n'as pas les droits de gestion de cet établissement.")
+        role_acteur = membre_acteur.role
+    return utilisateur, institution, role_acteur, administrateur_global
+
+
+def _page_gestion_membres(
+    request: Request,
+    session: Session,
+    utilisateur: Utilisateur,
+    institution: EtablissementPartenaire,
+    role_acteur: str,
+    administrateur_global: bool,
+    erreur: str | None = None,
+):
+    paires = session.exec(
+        select(MembreEtablissement, Utilisateur)
+        .join(Utilisateur, Utilisateur.id == MembreEtablissement.utilisateur_id)
+        .where(MembreEtablissement.institution_id == institution.id)
+        .order_by(Utilisateur.nom, MembreEtablissement.id)
+    ).all()
+    assignables = roles_assignables(role_acteur, administrateur_global)
+    membres = []
+    for membre, personne in paires:
+        membres.append({
+            "membre": membre,
+            "utilisateur": personne,
+            "peut_modifier": peut_gerer_role(role_acteur, membre.role, administrateur_global),
+        })
+    return templates.TemplateResponse(
+        request,
+        "gestion_etablissement_membres.html",
+        {
+            "utilisateur": utilisateur,
+            "institution": institution,
+            "membres": membres,
+            "roles_labels": ROLE_MEMBRE_LABELS,
+            "roles_assignables": assignables,
+            "erreur": erreur,
+            "administrateur_global": administrateur_global,
+            "total_membres": len(membres),
+        },
+        headers={"Cache-Control": "no-store, private", "Pragma": "no-cache", "X-Robots-Tag": "noindex, nofollow"},
+    )
+
+
+def _trouver_compte_membre(session: Session, identifiant: str) -> Utilisateur | None:
+    valeur = (identifiant or "").strip()
+    if not valeur or len(valeur) > 160:
+        return None
+    compte = session.exec(
+        select(Utilisateur).where(Utilisateur.identifiant_connexion == valeur)
+    ).first()
+    if compte:
+        return compte
+    try:
+        telephone = normaliser_telephone(valeur)
+    except TelephoneInvalide:
+        return None
+    return session.exec(select(Utilisateur).where(Utilisateur.telephone == telephone)).first()
+
+
+def _role_membre_valide(role: str, compte: Utilisateur) -> bool:
+    if role not in ROLE_MEMBRE_LABELS:
+        return False
+    if role == RoleMembreEtablissement.ENSEIGNANT.value:
+        return compte.role == RoleUtilisateur.PROFESSEUR
+    return True
+
+
+@router.get("/etablissements/{institution_id}/gestion")
+def page_gestion_etablissement(
+    request: Request,
+    institution_id: int,
+    session: Session = Depends(get_session),
+):
+    try:
+        utilisateur, institution, role_acteur, administrateur_global = _contexte_gestion_institution(
+            request, session, institution_id
+        )
+    except HTTPException as exc:
+        if exc.status_code == 401:
+            return RedirectResponse("/connexion", status_code=303)
+        raise
+    return _page_gestion_membres(
+        request, session, utilisateur, institution, role_acteur, administrateur_global
+    )
+
+
+@router.post("/etablissements/{institution_id}/membres")
+def ajouter_membre_etablissement(
+    request: Request,
+    institution_id: int,
+    identifiant: str = Form(...),
+    role: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    try:
+        utilisateur, institution, role_acteur, administrateur_global = _contexte_gestion_institution(
+            request, session, institution_id
+        )
+    except HTTPException as exc:
+        if exc.status_code == 401:
+            return RedirectResponse("/connexion", status_code=303)
+        raise
+    compte = _trouver_compte_membre(session, identifiant)
+    assignables = roles_assignables(role_acteur, administrateur_global)
+    if not compte:
+        return _page_gestion_membres(
+            request, session, utilisateur, institution, role_acteur, administrateur_global,
+            "Aucun compte trouvé. Vérifie le téléphone ou l'identifiant institutionnel.",
+        )
+    if role not in assignables:
+        raise HTTPException(status_code=403, detail="Tu ne peux pas attribuer ce rôle.")
+    if compte.banni or (compte.role == RoleUtilisateur.ADMIN and not administrateur_global):
+        raise HTTPException(status_code=403, detail="Ce compte ne peut pas être ajouté par cet acteur.")
+    if not _role_membre_valide(role, compte):
+        return _page_gestion_membres(
+            request, session, utilisateur, institution, role_acteur, administrateur_global,
+            "Pour attribuer le rôle Enseignant, le compte doit déjà avoir le rôle professeur validé par MITARIDALA.",
+        )
+
+    existant = session.exec(
+        select(MembreEtablissement).where(
+            MembreEtablissement.institution_id == institution.id,
+            MembreEtablissement.utilisateur_id == compte.id,
+        )
+    ).first()
+    if existant and not peut_gerer_role(role_acteur, existant.role, administrateur_global):
+        raise HTTPException(status_code=403, detail="Tu ne peux pas modifier un membre de rang égal ou supérieur.")
+    maintenant = datetime.utcnow()
+    if existant:
+        existant.role = role
+        existant.statut = StatutMembreEtablissement.ACTIF.value
+        existant.date_modification = maintenant
+        existant.modifie_par_id = utilisateur.id
+        session.add(existant)
+    else:
+        session.add(MembreEtablissement(
+            institution_id=institution.id,
+            utilisateur_id=compte.id,
+            role=role,
+            statut=StatutMembreEtablissement.ACTIF.value,
+            cree_par_id=utilisateur.id,
+            modifie_par_id=utilisateur.id,
+            date_creation=maintenant,
+            date_modification=maintenant,
+        ))
+    # Champ historique conservé comme établissement principal lorsqu'il est vide.
+    # Les appartenances multiples sont portées exclusivement par MembreEtablissement.
+    if compte.institution_id is None:
+        compte.institution_id = institution.id
+        session.add(compte)
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        return _page_gestion_membres(
+            request, session, utilisateur, institution, role_acteur, administrateur_global,
+            "L'appartenance n'a pas pu être enregistrée. Actualise la page puis réessaie.",
+        )
+    return RedirectResponse(
+        f"/etablissements/{institution.id}/gestion?ok=membre_ajoute",
+        status_code=303,
+    )
+
+
+@router.post("/etablissements/{institution_id}/membres/{membre_id}/role")
+def modifier_role_membre_etablissement(
+    request: Request,
+    institution_id: int,
+    membre_id: int,
+    role: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur, institution, role_acteur, administrateur_global = _contexte_gestion_institution(
+        request, session, institution_id
+    )
+    membre = session.get(MembreEtablissement, membre_id)
+    if not membre or membre.institution_id != institution.id:
+        raise HTTPException(status_code=404, detail="Membre introuvable.")
+    if not peut_gerer_role(role_acteur, membre.role, administrateur_global):
+        raise HTTPException(status_code=403, detail="Tu ne peux pas modifier ce membre.")
+    if role not in roles_assignables(role_acteur, administrateur_global):
+        raise HTTPException(status_code=403, detail="Tu ne peux pas attribuer ce rôle.")
+    compte = session.get(Utilisateur, membre.utilisateur_id)
+    if not compte or not _role_membre_valide(role, compte):
+        raise HTTPException(status_code=422, detail="Le compte ne remplit pas les conditions de ce rôle.")
+    membre.role = role
+    membre.date_modification = datetime.utcnow()
+    membre.modifie_par_id = utilisateur.id
+    session.add(membre)
+    session.commit()
+    return RedirectResponse(f"/etablissements/{institution.id}/gestion?ok=role_modifie", status_code=303)
+
+
+@router.post("/etablissements/{institution_id}/membres/{membre_id}/statut")
+def modifier_statut_membre_etablissement(
+    request: Request,
+    institution_id: int,
+    membre_id: int,
+    statut: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur, institution, role_acteur, administrateur_global = _contexte_gestion_institution(
+        request, session, institution_id
+    )
+    membre = session.get(MembreEtablissement, membre_id)
+    if not membre or membre.institution_id != institution.id:
+        raise HTTPException(status_code=404, detail="Membre introuvable.")
+    if not peut_gerer_role(role_acteur, membre.role, administrateur_global):
+        raise HTTPException(status_code=403, detail="Tu ne peux pas modifier ce membre.")
+    if membre.utilisateur_id == utilisateur.id:
+        raise HTTPException(status_code=403, detail="Tu ne peux pas suspendre ta propre appartenance.")
+    if statut not in {item.value for item in StatutMembreEtablissement}:
+        raise HTTPException(status_code=422, detail="Statut invalide.")
+    membre.statut = statut
+    membre.date_modification = datetime.utcnow()
+    membre.modifie_par_id = utilisateur.id
+    session.add(membre)
+    session.commit()
+    return RedirectResponse(f"/etablissements/{institution.id}/gestion?ok=statut_modifie", status_code=303)

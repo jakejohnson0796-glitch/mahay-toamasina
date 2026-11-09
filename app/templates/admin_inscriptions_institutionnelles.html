@@ -77,7 +77,7 @@
     <h2>Établissements partenaires</h2>
     <div class="ops-table-wrap">
       <table class="ops-table">
-        <thead><tr><th>Établissement</th><th>Code</th><th>Type</th><th>Localisation</th><th>Comptes</th><th>État</th></tr></thead>
+        <thead><tr><th>Établissement</th><th>Code</th><th>Type</th><th>Localisation</th><th>Comptes</th><th>Équipe</th><th>État</th></tr></thead>
         <tbody>
         {% for item in institutions %}
           <tr>
@@ -86,6 +86,7 @@
             <td>{{ item.type_etablissement }}</td>
             <td>{{ item.commune or "—" }}{% if item.region %}, {{ item.region }}{% endif %}</td>
             <td>{{ effectifs.get(item.id, 0) }}</td>
+            <td><a href="/etablissements/{{ item.id }}/gestion">Gérer l'équipe</a></td>
             <td>{% if item.est_actif %}<span class="ops-badge is-success">Actif</span>{% else %}<span class="ops-badge is-alert">Inactif</span>{% endif %}</td>
           </tr>
         {% endfor %}

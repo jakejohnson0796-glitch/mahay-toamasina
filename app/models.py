@@ -2245,3 +2245,62 @@ class TranscriptionSeance(SQLModel, table=True):
     date_debut: Optional[datetime] = None
     date_fin: Optional[datetime] = None
     date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+
+class RoleMembreEtablissement(str, Enum):
+    """Rôle organisationnel limité à un établissement partenaire."""
+
+    RESPONSABLE = "responsable"
+    GESTIONNAIRE = "gestionnaire"
+    ENSEIGNANT = "enseignant"
+    ETUDIANT = "etudiant"
+
+
+class StatutMembreEtablissement(str, Enum):
+    ACTIF = "actif"
+    SUSPENDU = "suspendu"
+
+
+class MembreEtablissement(SQLModel, table=True):
+    """Appartenance d'un compte à un établissement, indépendante du rôle global.
+
+    Un même compte peut appartenir à plusieurs établissements. Cette table est
+    la source d'autorité pour les droits organisationnels locaux ; elle ne
+    transforme jamais un compte en administrateur global.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    institution_id: int = Field(foreign_key="etablissementpartenaire.id")
+    utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    role: str = Field(default=RoleMembreEtablissement.ETUDIANT.value, max_length=20)
+    statut: str = Field(default=StatutMembreEtablissement.ACTIF.value, max_length=16)
+    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    modifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "institution_id",
+            "utilisateur_id",
+            name="uq_membre_etablissement_institution_utilisateur",
+        ),
+        CheckConstraint(
+            "role IN ('responsable', 'gestionnaire', 'enseignant', 'etudiant')",
+            name="ck_membre_etablissement_role",
+        ),
+        CheckConstraint(
+            "statut IN ('actif', 'suspendu')",
+            name="ck_membre_etablissement_statut",
+        ),
+        Index(
+            "ix_membre_etablissement_institution_role_statut",
+            "institution_id",
+            "role",
+            "statut",
+        ),
+        Index("ix_fk_membre_etablissement_institution_id", "institution_id"),
+        Index("ix_fk_membre_etablissement_utilisateur_id", "utilisateur_id"),
+        Index("ix_fk_membre_etablissement_cree_par_id", "cree_par_id"),
+        Index("ix_fk_membre_etablissement_modifie_par_id", "modifie_par_id"),
+    )
