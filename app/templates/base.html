@@ -270,7 +270,7 @@
         {{ avatar_utilisateur(utilisateur, taille=30) }}
         <span class="tb-sidebar-compte-identite">
           <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
-          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% else %}Mon compte{% endif %}</span>
+          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% elif utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable" %}Responsable légal{% else %}Mon compte{% endif %}</span>
           {% set jours_compte = calculer_jours_inactivite(utilisateur) %}
           <span class="tb-sidebar-compte-activite">{{ jours_compte }} j. inactif</span>
         </span>
@@ -289,6 +289,15 @@
           <span>Actions rapides</span>
         </div>
 
+        {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable") %}
+        <p class="tb-menu-compte-groupe">Mon espace</p>
+        <a class="tb-menu-compte-item" href="/famille"><span class="tb-menu-compte-icone">👨‍👩‍👧</span><span>Espace famille</span></a>
+        <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
+        <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Sécurité du compte</span></a>
+        <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
+        <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
+        <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
+        {% else %}
         <p class="tb-menu-compte-groupe">Mon espace</p>
         <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord</span></a>
         <a class="tb-menu-compte-item" href="/mes-revisions"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Mes révisions</span></a>
@@ -316,6 +325,7 @@
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
         {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
         <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %} · {{ nb_admin_notifs }} nouvelles{% endif %}</span></a>
+        {% endif %}
         {% endif %}
 
         <div class="tb-menu-compte-separateur"></div>
