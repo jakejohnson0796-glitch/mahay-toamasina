@@ -23,7 +23,7 @@ from ..models import (
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
     StatutAbonnementEtudiant, SignalementQuestionQuiz, CodeSecours2FA, SessionTuteur,
     ConsultationDocument, Abonnement, StatutAbonnement, Cours, InscriptionCours, Seance, PresenceSeance,
-    EvenementTableauBlanc, AutorisationEcritureTableau, Devoir, RenduDevoir,
+    EvenementTableauBlanc, AutorisationEcritureTableau, PointagePresence, Devoir, RenduDevoir,
     Feedback, ReponseFeedback, StatutFeedback, Notification, TypeNotification,
     TacheIA, StatutTacheIA, PerformanceModeleIA, ProgressionNotion,
     CodeReinitialisationMotDePasse, DemandeCreationCercle, DemandeChangementFiliere,
@@ -1317,6 +1317,15 @@ async def supprimer_utilisateur(
         select(PresenceSeance).where(PresenceSeance.utilisateur_id == utilisateur_id)
     ).all():
         session.delete(presence)
+    for pointage in session.exec(
+        select(PointagePresence).where(PointagePresence.utilisateur_id == utilisateur_id)
+    ).all():
+        session.delete(pointage)
+    for pointage_saisi in session.exec(
+        select(PointagePresence).where(PointagePresence.saisi_par_id == utilisateur_id)
+    ).all():
+        pointage_saisi.saisi_par_id = None
+        session.add(pointage_saisi)
     for evenement in session.exec(
         select(EvenementTableauBlanc).where(EvenementTableauBlanc.utilisateur_id == utilisateur_id)
     ).all():
