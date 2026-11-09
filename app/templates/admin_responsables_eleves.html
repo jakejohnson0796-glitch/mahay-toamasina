@@ -41,7 +41,7 @@
           </select>
         </div>
       </div>
-      <div class="auth-legal-checkbox" style="margin-top:1rem">
+      <div class="auth-legal-checkbox admin-link-consent">
         <input type="checkbox" id="verification_confirmee" name="verification_confirmee" value="oui" required>
         <label for="verification_confirmee">Je confirme avoir vérifié l’identité du responsable et son autorité auprès de l’établissement, en dehors de MITARIDALA. Aucun justificatif légal ne doit être téléversé ou conservé ici.</label>
       </div>
@@ -84,6 +84,40 @@
       </div>
     {% else %}
       <p class="classe-empty-stage">Aucun rattachement enregistré.</p>
+    {% endif %}
+  </section>
+
+  <section class="classe-section-card">
+    <div class="classe-form-head">
+      <div>
+        <h2>Journal des actions sensibles</h2>
+        <p>Historique append-only des validations, réactivations et révocations. Les justificatifs légaux ne sont pas conservés.</p>
+      </div>
+      <strong>{{ evenements|length }} événement(s)</strong>
+    </div>
+    {% if evenements %}
+      <div class="classe-table-scroll">
+        <table class="classe-table">
+          <thead><tr><th>Date</th><th>Action</th><th>Responsable</th><th>Élève</th><th>Administrateur</th></tr></thead>
+          <tbody>
+          {% for ligne in evenements %}
+            <tr>
+              <td>{{ ligne.evenement.date_evenement.strftime("%d/%m/%Y %H:%M") }}</td>
+              <td>
+                {% if ligne.evenement.action == "validation" %}Validation initiale
+                {% elif ligne.evenement.action == "reactivation" %}Réactivation
+                {% else %}Révocation{% endif %}
+              </td>
+              <td>{{ ligne.responsable.nom if ligne.responsable else "Compte supprimé" }}</td>
+              <td>{{ ligne.eleve.nom if ligne.eleve else "Compte supprimé" }}</td>
+              <td>{{ ligne.acteur.nom if ligne.acteur else "Compte supprimé" }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="classe-empty-stage">Aucun événement enregistré.</p>
     {% endif %}
   </section>
 </div>
