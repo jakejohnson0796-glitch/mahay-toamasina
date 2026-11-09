@@ -224,6 +224,8 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert 'modeResponsable.addEventListener("change", actualiser)' in ui
     assert 'LienResponsableEleve.statut == "actif"' in family_router
     assert "NoteSeance" not in family_router
+    assert 'class EvenementLienResponsableEleve' in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
+    assert 'EvenementLienResponsableEleve.statut' not in family_router
 
 
 def test_templates_portail_famille_compilent():
