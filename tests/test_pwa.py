@@ -91,4 +91,4 @@ def test_les_packs_hors_ligne_expirent_et_sont_verifies_a_ouverture():
     assert "DUREE_PACK_MS=7*24*60*60*1000" in pwa
     assert "expires_le:" in pwa
     assert "Date.parse(pack.expires_le" in lecteur
-    assert "deletePack(uid+':'+cid)" not in lecteur  # suppression utilise les chaînes exactes du JS sans interpolation
+    assert 'deletePack(uid+":"+cid)' in lecteur
