@@ -19,6 +19,7 @@ from app.models import (
     Utilisateur,
 )
 from app.routers.famille_router import construire_portail_famille
+from app.admin_security import action_admin_protegee
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -225,10 +226,48 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert 'LienResponsableEleve.statut == "actif"' in family_router
     assert "NoteSeance" not in family_router
     assert 'class EvenementLienResponsableEleve' in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
-    assert 'EvenementLienResponsableEleve.statut' not in family_router
+    assert "EvenementLienResponsableEleve" in family_router
+    assert 'eleve.profil_souhaite != "eleve"' in family_router
+    assert "responsable.role != RoleUtilisateur.ETUDIANT" in family_router
+    assert action_admin_protegee("/admin/responsables-eleves/associer") is True
+    assert action_admin_protegee("/famille") is False
 
 
 def test_templates_portail_famille_compilent():
     env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
     assert env.get_template("famille_portail.html") is not None
     assert env.get_template("admin_responsables_eleves.html") is not None
+
+
+def test_journal_famille_conserve_validation_revocation_et_reactivation(db):
+    admin = _utilisateur("Admin", "03400000041", RoleUtilisateur.ADMIN)
+    parent = _utilisateur("Parent", "03400000042", profil="responsable")
+    enfant = _utilisateur("Élève", "03400000043")
+    db.add_all([admin, parent, enfant])
+    db.commit()
+    for utilisateur in (admin, parent, enfant):
+        db.refresh(utilisateur)
+
+    lien = LienResponsableEleve(
+        responsable_id=parent.id,
+        eleve_id=enfant.id,
+        type_lien="parent",
+        statut="actif",
+        verifie_par_id=admin.id,
+    )
+    db.add(lien)
+    db.commit()
+    db.refresh(lien)
+    db.add_all([
+        EvenementLienResponsableEleve(lien_id=lien.id, acteur_id=admin.id, action="validation", type_lien="parent"),
+        EvenementLienResponsableEleve(lien_id=lien.id, acteur_id=admin.id, action="revocation", type_lien="parent"),
+        EvenementLienResponsableEleve(lien_id=lien.id, acteur_id=admin.id, action="reactivation", type_lien="parent"),
+    ])
+    db.commit()
+
+    actions = db.exec(
+        select(EvenementLienResponsableEleve.action)
+        .where(EvenementLienResponsableEleve.lien_id == lien.id)
+        .order_by(EvenementLienResponsableEleve.id)
+    ).all()
+    assert actions == ["validation", "revocation", "reactivation"]
