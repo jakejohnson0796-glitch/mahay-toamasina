@@ -21,6 +21,7 @@ def chemin_autorise_responsable(method: str, path: str, user_id: int) -> bool:
         "/health",
         "/ready",
         "/favicon.ico",
+        "/sw.js",
         "/cadre-legal",
         "/conditions-utilisation",
         "/charte-ethique",
