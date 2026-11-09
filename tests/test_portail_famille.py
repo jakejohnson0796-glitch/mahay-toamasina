@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import SQLModel, Session, create_engine, select
 from sqlalchemy.pool import StaticPool
@@ -88,6 +89,89 @@ def test_portail_ne_retourne_que_les_eleves_rattaches_au_responsable(db):
     resultats = construire_portail_famille(db, parent_a.id)
     assert [item["eleve"].id for item in resultats] == [enfant_a.id]
     assert all(item["eleve"].id != enfant_b.id for item in resultats)
+
+
+
+def test_portail_famille_regroupe_les_lectures_sql_pour_plusieurs_enfants_et_cours(db):
+    admin = _utilisateur("Admin", "03400000101", RoleUtilisateur.ADMIN)
+    parent = _utilisateur("Parent", "03400000102", profil="responsable")
+    eleves = [
+        _utilisateur("Élève A", "03400000103"),
+        _utilisateur("Élève B", "03400000104"),
+    ]
+    professeur = _utilisateur("Professeur", "03400000105", RoleUtilisateur.PROFESSEUR)
+    db.add_all([admin, parent, professeur, *eleves])
+    db.commit()
+    for utilisateur in (admin, parent, professeur, *eleves):
+        db.refresh(utilisateur)
+
+    cours = [
+        Cours(nom="Mathématiques", matiere="Mathématiques", niveau="Terminale", professeur_id=professeur.id),
+        Cours(nom="Physique", matiere="Physique", niveau="Terminale", professeur_id=professeur.id),
+    ]
+    db.add_all(cours)
+    db.commit()
+    for item in cours:
+        db.refresh(item)
+
+    liens = [
+        LienResponsableEleve(
+            responsable_id=parent.id,
+            eleve_id=eleve.id,
+            type_lien="parent",
+            statut="actif",
+            verifie_par_id=admin.id,
+        )
+        for eleve in eleves
+    ]
+    inscriptions = [
+        InscriptionCours(cours_id=classe.id, utilisateur_id=eleve.id)
+        for eleve in eleves
+        for classe in cours
+    ]
+    devoirs = [
+        Devoir(cours_id=classe.id, titre=f"Évaluation {classe.nom}", bareme=20, coefficient=1)
+        for classe in cours
+    ]
+    seances = [
+        Seance(
+            cours_id=classe.id,
+            titre=f"Séance {classe.nom}",
+            nom_salle_livekit=f"famille-batch-{classe.id}",
+        )
+        for classe in cours
+    ]
+    db.add_all([*liens, *inscriptions, *devoirs, *seances])
+    db.commit()
+    for seance in seances:
+        db.refresh(seance)
+
+    db.add(PointagePresence(
+        seance_id=seances[0].id,
+        utilisateur_id=eleves[0].id,
+        statut=StatutPointage.PRESENT,
+    ))
+    db.commit()
+
+    requetes_select = []
+
+    def compter_select(_connexion, _curseur, instruction, _parametres, _contexte, _executemany):
+        if instruction.lstrip().upper().startswith("SELECT"):
+            requetes_select.append(instruction)
+
+    moteur = db.get_bind()
+    event.listen(moteur, "before_cursor_execute", compter_select)
+    try:
+        resultats = construire_portail_famille(db, parent.id)
+    finally:
+        event.remove(moteur, "before_cursor_execute", compter_select)
+
+    assert len(resultats) == 2
+    assert all(len(enfant["cours"]) == 2 for enfant in resultats)
+    assert sum(enfant["cours"][0]["nb_seances"] for enfant in resultats) == 2
+    # 9 lectures fixes pour tout le jeu de données; ce nombre ne croît pas
+    # avec le nombre d'enfants ou de cours.
+    assert len(requetes_select) <= 9
 
 
 def test_portail_exclut_les_liens_revoques(db):

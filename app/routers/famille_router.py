@@ -45,7 +45,13 @@ def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
 
 
 def construire_portail_famille(session: Session, responsable_id: int) -> list[dict]:
-    """Construit les seules données accessibles via les liens actifs du compte."""
+    """Construit le portail famille avec des lectures groupées et bornées.
+
+    Les filtres de sécurité restent identiques : seuls les liens actifs,
+    les élèves non bannis, les évaluations corrigées et les pointages connus
+    sont exposés. Les lectures sont regroupées pour éviter un N+1 par enfant
+    et par cours.
+    """
     liens = session.exec(
         select(LienResponsableEleve)
         .where(
@@ -54,48 +60,130 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         )
         .order_by(LienResponsableEleve.date_creation.desc())
     ).all()
+    if not liens:
+        return []
+
+    ids_eleves_candidats = sorted({
+        lien.eleve_id for lien in liens if lien.eleve_id is not None
+    })
+    eleves_par_id = {}
+    if ids_eleves_candidats:
+        eleves_par_id = {
+            eleve.id: eleve
+            for eleve in session.exec(
+                select(Utilisateur).where(Utilisateur.id.in_(ids_eleves_candidats))
+            ).all()
+        }
+
+    liens_valides = [
+        lien for lien in liens
+        if lien.eleve_id in eleves_par_id and not eleves_par_id[lien.eleve_id].banni
+    ]
+    if not liens_valides:
+        return []
+
+    ids_eleves = sorted({lien.eleve_id for lien in liens_valides})
+    inscriptions = session.exec(
+        select(InscriptionCours).where(InscriptionCours.utilisateur_id.in_(ids_eleves))
+    ).all()
+    cours_ids_par_eleve: dict[int, set[int]] = {}
+    for inscription in inscriptions:
+        cours_ids_par_eleve.setdefault(inscription.utilisateur_id, set()).add(
+            inscription.cours_id
+        )
+
+    ids_cours = sorted({
+        cours_id
+        for cours_ids in cours_ids_par_eleve.values()
+        for cours_id in cours_ids
+    })
+    cours_liste = (
+        session.exec(
+            select(Cours).where(Cours.id.in_(ids_cours)).order_by(Cours.nom)
+        ).all()
+        if ids_cours else []
+    )
+    cours_par_eleve = {
+        eleve_id: [
+            cours for cours in cours_liste
+            if cours.id in cours_ids
+        ]
+        for eleve_id, cours_ids in cours_ids_par_eleve.items()
+    }
+
+    devoirs = (
+        session.exec(
+            select(Devoir)
+            .where(
+                Devoir.cours_id.in_(ids_cours),
+                Devoir.archive == False,  # noqa: E712
+            )
+            .order_by(Devoir.date_creation.desc())
+        ).all()
+        if ids_cours else []
+    )
+    devoirs_par_id = {}
+    for devoir in devoirs:
+        devoirs_par_id[devoir.id] = devoir
+
+    ids_devoirs = sorted(devoirs_par_id)
+    rendus = (
+        session.exec(
+            select(RenduDevoir)
+            .where(
+                RenduDevoir.utilisateur_id.in_(ids_eleves),
+                RenduDevoir.devoir_id.in_(ids_devoirs),
+                RenduDevoir.note.is_not(None),
+                RenduDevoir.date_correction.is_not(None),
+            )
+            .order_by(RenduDevoir.date_rendu.desc())
+        ).all()
+        if ids_devoirs else []
+    )
+    rendus_par_eleve_cours: dict[tuple[int, int], list[RenduDevoir]] = {}
+    for rendu in rendus:
+        devoir = devoirs_par_id.get(rendu.devoir_id)
+        if devoir:
+            rendus_par_eleve_cours.setdefault(
+                (rendu.utilisateur_id, devoir.cours_id), []
+            ).append(rendu)
+
+    seances = (
+        session.exec(
+            select(Seance).where(Seance.cours_id.in_(ids_cours))
+        ).all()
+        if ids_cours else []
+    )
+    seances_par_cours: dict[int, list[Seance]] = {}
+    for seance in seances:
+        seances_par_cours.setdefault(seance.cours_id, []).append(seance)
+
+    ids_seances = sorted({seance.id for seance in seances if seance.id is not None})
+    pointages = (
+        session.exec(
+            select(PointagePresence).where(
+                PointagePresence.utilisateur_id.in_(ids_eleves),
+                PointagePresence.seance_id.in_(ids_seances),
+            )
+        ).all()
+        if ids_seances else []
+    )
+    pointages_par_eleve_seance: dict[tuple[int, int], list[PointagePresence]] = {}
+    for pointage in pointages:
+        pointages_par_eleve_seance.setdefault(
+            (pointage.utilisateur_id, pointage.seance_id), []
+        ).append(pointage)
 
     enfants = []
-    for lien in liens:
-        eleve = session.get(Utilisateur, lien.eleve_id)
-        if not eleve or eleve.banni:
-            continue
-
-        inscriptions = session.exec(
-            select(InscriptionCours).where(InscriptionCours.utilisateur_id == eleve.id)
-        ).all()
-        cours_ids = sorted({ligne.cours_id for ligne in inscriptions})
-        cours_liste = (
-            session.exec(select(Cours).where(Cours.id.in_(cours_ids)).order_by(Cours.nom)).all()
-            if cours_ids else []
-        )
+    for lien in liens_valides:
+        eleve = eleves_par_id[lien.eleve_id]
         cours_infos = []
 
-        for cours in cours_liste:
-            devoirs = session.exec(
-                select(Devoir).where(
-                    Devoir.cours_id == cours.id,
-                    Devoir.archive == False,  # noqa: E712
-                ).order_by(Devoir.date_creation.desc())
-            ).all()
-            devoirs_par_id = {devoir.id: devoir for devoir in devoirs}
-            rendus = []
-            if devoirs_par_id:
-                rendus = session.exec(
-                    select(RenduDevoir)
-                    .where(
-                        RenduDevoir.utilisateur_id == eleve.id,
-                        RenduDevoir.devoir_id.in_(list(devoirs_par_id)),
-                        RenduDevoir.note.is_not(None),
-                        RenduDevoir.date_correction.is_not(None),
-                    )
-                    .order_by(RenduDevoir.date_rendu.desc())
-                ).all()
-
+        for cours in cours_par_eleve.get(eleve.id, []):
             notes = []
             total_pondere = 0.0
             poids_total = 0.0
-            for rendu in rendus:
+            for rendu in rendus_par_eleve_cours.get((eleve.id, cours.id), []):
                 devoir = devoirs_par_id.get(rendu.devoir_id)
                 if not devoir or devoir.bareme <= 0 or rendu.note is None:
                     continue
@@ -111,30 +199,26 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
                     "date_correction": rendu.date_correction,
                 })
 
-            seances = session.exec(
-                select(Seance).where(Seance.cours_id == cours.id)
-            ).all()
-            seance_ids = [seance.id for seance in seances]
-            pointages = []
-            if seance_ids:
-                pointages = session.exec(
-                    select(PointagePresence).where(
-                        PointagePresence.utilisateur_id == eleve.id,
-                        PointagePresence.seance_id.in_(seance_ids),
-                    )
-                ).all()
+            seances_cours = seances_par_cours.get(cours.id, [])
             compteurs = {statut: 0 for statut in _STATUTS_PRESENCE}
-            for pointage in pointages:
-                statut = pointage.statut.value if hasattr(pointage.statut, "value") else str(pointage.statut)
-                if statut in compteurs:
-                    compteurs[statut] += 1
+            for seance in seances_cours:
+                for pointage in pointages_par_eleve_seance.get(
+                    (eleve.id, seance.id), []
+                ):
+                    statut = (
+                        pointage.statut.value
+                        if hasattr(pointage.statut, "value")
+                        else str(pointage.statut)
+                    )
+                    if statut in compteurs:
+                        compteurs[statut] += 1
 
             cours_infos.append({
                 "cours": cours,
                 "notes": notes[:8],
                 "moyenne": round(total_pondere / poids_total, 2) if poids_total else None,
                 "nb_notes": len(notes),
-                "nb_seances": len(seances),
+                "nb_seances": len(seances_cours),
                 "nb_pointages": sum(compteurs.values()),
                 "presences": compteurs,
             })
