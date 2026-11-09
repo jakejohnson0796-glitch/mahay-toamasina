@@ -69,5 +69,83 @@
       </div>
     </div>
   </section>
+
+  {% if analyse_detaillee.nb_questions_analysees %}
+  <section class="ai-section ai-topic-analytics" aria-labelledby="analytics-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Analyse pédagogique</span>
+        <h2 id="analytics-title">Tes résultats par thème</h2>
+        <p>Analyse des {{ analyse_detaillee.nb_tentatives_analysees }} derniers quiz pris en compte. Les matières et niveaux restent séparés.</p>
+      </div>
+      <span class="ai-badge">{{ analyse_detaillee.nb_notions }} notions</span>
+    </div>
+
+    <div class="ai-feature-strip">
+      <div class="ai-feature">
+        <strong>{{ analyse_detaillee.nb_questions_analysees }}</strong>
+        <span>questions analysées</span>
+      </div>
+      <div class="ai-feature">
+        <strong>{{ analyse_detaillee.nb_matieres }}</strong>
+        <span>matières suivies</span>
+      </div>
+      <div class="ai-feature">
+        <strong>{{ analyse_detaillee.nb_questions_recurrentes }}</strong>
+        <span>questions revues au moins deux fois</span>
+      </div>
+    </div>
+
+    <div class="ai-remediation-result-list">
+      {% for n in analyse_detaillee.notions %}
+      <article class="ai-remediation-result-item">
+        <div>
+          <span>{{ n.matiere }} · {{ n.niveau }}</span>
+          <strong>{{ n.notion }}</strong>
+          <small>{{ n.nb_reussites }}/{{ n.nb_questions }} réussites · {{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} · {{ n.nb_sans_reponse }} sans réponse · {{ n.nb_questions_distinctes }} question{{ "s" if n.nb_questions_distinctes != 1 else "" }} distincte{{ "s" if n.nb_questions_distinctes != 1 else "" }}</small>
+        </div>
+        <div class="ai-topic-analytics-score">
+          <strong>{{ n.taux_reussite }}%</strong>
+          <progress max="100" value="{{ n.taux_reussite }}" aria-label="Taux de réussite pour {{ n.notion }}">{{ n.taux_reussite }}%</progress>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {% if analyse_detaillee.questions_recurrentes %}
+    <div class="ai-section-head ai-topic-analytics-subhead">
+      <div>
+        <h3>Questions à suivre dans le temps</h3>
+        <p>Une question apparaît ici uniquement après au moins deux passages identiques.</p>
+      </div>
+    </div>
+    <div class="ai-correction-list">
+      {% for q in analyse_detaillee.questions_recurrentes %}
+      <article class="ai-correction-card {{ 'is-good' if q.taux_reussite >= 75 else 'is-bad' }}">
+        <div class="ai-correction-top">
+          <span class="ai-correction-index">{{ q.matiere }} · {{ q.niveau }}</span>
+          <span class="ai-correction-status">{{ q.taux_reussite }}% de réussite</span>
+        </div>
+        <p class="ai-correction-question" data-rendu>{{ q.question }}</p>
+        <small>{{ q.notion }} · {{ q.nb_reussites }} réussite{{ "s" if q.nb_reussites != 1 else "" }} · {{ q.nb_erreurs }} erreur{{ "s" if q.nb_erreurs != 1 else "" }} · {{ q.nb_sans_reponse }} sans réponse · {{ q.nb_tentatives }} passages{% if q.derniere_tentative %} · dernière fois le {{ q.derniere_tentative }}{% endif %}</small>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="ai-analytics-empty">Les statistiques de questions répétées apparaîtront lorsqu'une même question aura été rencontrée au moins deux fois. Tes résultats par notion sont déjà calculés ci-dessus.</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="ai-section ai-topic-analytics" aria-labelledby="analytics-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Analyse pédagogique</span>
+        <h2 id="analytics-title">Ton bilan par thème apparaîtra ici</h2>
+        <p>Termine un quiz pour commencer à comparer tes résultats par notion et repérer les questions qui reviennent.</p>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
 </div>
 {% endblock %}
