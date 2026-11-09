@@ -1889,7 +1889,6 @@ class FAQ(SQLModel, table=True):
     est_active: bool = Field(default=True, index=True)
     ordre_affichage: int = Field(default=0)
     cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
-    modifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_modification: datetime = Field(default_factory=datetime.utcnow)
 
@@ -2226,6 +2225,7 @@ class MembreEtablissement(SQLModel, table=True):
     role: str = Field(default=RoleMembreEtablissement.ETUDIANT.value, max_length=20)
     statut: str = Field(default=StatutMembreEtablissement.ACTIF.value, max_length=16)
     cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    modifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_modification: datetime = Field(default_factory=datetime.utcnow)
 
