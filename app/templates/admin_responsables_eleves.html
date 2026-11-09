@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block titre %}Responsables et élèves — Administration{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="classe-page">
+  <p class="classe-breadcrumb"><a href="/admin">Administration</a> / Responsables et élèves</p>
+  <header class="classe-detail-head">
+    <div>
+      <h1>Rattachements famille</h1>
+      <p class="classe-detail-meta">Associez un responsable légal à un compte élève après vérification auprès de l’établissement.</p>
+    </div>
+  </header>
+
+  {% if erreur %}<div class="auth-alert auth-alert-error" role="alert">{{ erreur }}</div>{% endif %}
+  {% if succes %}<div class="auth-alert auth-alert-success" role="status">{{ succes }}</div>{% endif %}
+
+  <section class="classe-form-panel">
+    <div class="classe-form-head">
+      <div>
+        <h2>Activer un rattachement</h2>
+        <p>Le responsable doit d’abord créer un compte en sélectionnant le profil « parent / responsable légal ».</p>
+      </div>
+    </div>
+    <form method="post" action="/admin/responsables-eleves/associer">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <div class="classe-form-grid">
+        <div class="classe-field">
+          <label for="telephone_responsable">Téléphone du responsable</label>
+          <input id="telephone_responsable" name="telephone_responsable" type="tel" inputmode="tel" placeholder="034 12 345 67" required maxlength="20">
+        </div>
+        <div class="classe-field">
+          <label for="telephone_eleve">Téléphone de l'élève (facultatif)</label>
+          <input id="telephone_eleve" name="telephone_eleve" type="tel" inputmode="tel" placeholder="034 12 345 67" maxlength="20">
+        </div>
+        <div class="classe-field">
+          <label for="identifiant_eleve">Identifiant institutionnel de l'élève (facultatif)</label>
+          <input id="identifiant_eleve" name="identifiant_eleve" type="text" autocomplete="off" placeholder="Ex. MAT-2026-001" maxlength="160">
+        </div>
+        <div class="classe-field">
+          <label for="type_lien">Type de lien</label>
+          <select id="type_lien" name="type_lien" required>
+            <option value="parent">Parent</option>
+            <option value="tuteur_legal">Tuteur légal</option>
+            <option value="responsable_autorise">Responsable autorisé</option>
+          </select>
+        </div>
+      </div>
+      <div class="auth-legal-checkbox admin-link-consent">
+        <input type="checkbox" id="verification_confirmee" name="verification_confirmee" value="oui" required>
+        <label for="verification_confirmee">Je confirme avoir vérifié l’identité du responsable et son autorité auprès de l’établissement, en dehors de MITARIDALA. Aucun justificatif légal ne doit être téléversé ou conservé ici.</label>
+      </div>
+      <p class="classe-section-card-intro">Renseignez un seul identifiant de l'élève : son téléphone ou son identifiant institutionnel. Ce dernier permet de rattacher les comptes créés par import d'établissement sans numéro de mobile.</p>
+      <button class="bouton bouton-primaire" type="submit">Activer le rattachement</button>
+    </form>
+  </section>
+
+  <section class="classe-section-card">
+    <div class="classe-form-head">
+      <div>
+        <h2>Historique des rattachements</h2>
+        <p>La date et le compte administrateur ayant validé le lien sont conservés pour audit.</p>
+      </div>
+      <strong>{{ liens|length }} lien(s)</strong>
+    </div>
+    {% if liens %}
+      <div class="classe-table-scroll">
+        <table class="classe-table">
+          <thead><tr><th>Responsable</th><th>Élève</th><th>Lien</th><th>Vérifié par</th><th>Statut</th><th>Action</th></tr></thead>
+          <tbody>
+          {% for ligne in liens %}
+            <tr>
+              <td>{{ ligne.responsable.nom if ligne.responsable else "Compte supprimé" }}</td>
+              <td>{{ ligne.eleve.nom if ligne.eleve else "Compte supprimé" }}</td>
+              <td>{{ ligne.type_lien }}</td>
+              <td>{{ ligne.verificateur.nom if ligne.verificateur else "—" }}</td>
+              <td>{% if ligne.lien.statut == "actif" %}<span class="classe-course-badge">Actif</span>{% else %}Révoqué{% endif %}</td>
+              <td>
+                {% if ligne.lien.statut == "actif" %}
+                  <form method="post" action="/admin/responsables-eleves/{{ ligne.lien.id }}/revoquer">
+                    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                    <button class="bouton bouton-secondaire" type="submit">Révoquer l’accès</button>
+                  </form>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="classe-empty-stage">Aucun rattachement enregistré.</p>
+    {% endif %}
+  </section>
+
+  <section class="classe-section-card">
+    <div class="classe-form-head">
+      <div>
+        <h2>Journal des actions sensibles</h2>
+        <p>Historique append-only des validations, réactivations et révocations. Les justificatifs légaux ne sont pas conservés.</p>
+      </div>
+      <strong>{{ evenements|length }} événement(s)</strong>
+    </div>
+    {% if evenements %}
+      <div class="classe-table-scroll">
+        <table class="classe-table">
+          <thead><tr><th>Date</th><th>Action</th><th>Responsable</th><th>Élève</th><th>Administrateur</th></tr></thead>
+          <tbody>
+          {% for ligne in evenements %}
+            <tr>
+              <td>{{ ligne.evenement.date_evenement.strftime("%d/%m/%Y %H:%M") }}</td>
+              <td>
+                {% if ligne.evenement.action == "validation" %}Validation initiale
+                {% elif ligne.evenement.action == "reactivation" %}Réactivation
+                {% else %}Révocation{% endif %}
+              </td>
+              <td>{{ ligne.responsable.nom if ligne.responsable else "Compte supprimé" }}</td>
+              <td>{{ ligne.eleve.nom if ligne.eleve else "Compte supprimé" }}</td>
+              <td>{{ ligne.acteur.nom if ligne.acteur else "Compte supprimé" }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="classe-empty-stage">Aucun événement enregistré.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

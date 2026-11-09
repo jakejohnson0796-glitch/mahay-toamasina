@@ -17,6 +17,7 @@ class RoleUtilisateur(str, Enum):
     ETUDIANT = "etudiant"
     SPONSOR = "sponsor"      # repetiteur, petit commerce, service pour etudiants
     PROFESSEUR = "professeur"  # anime des cours dans le module Classe virtuelle
+    RESPONSABLE = "responsable"  # consulte uniquement le portail famille vérifié
     ADMIN = "admin"
 
 
@@ -541,6 +542,55 @@ class Utilisateur(SQLModel, table=True):
 
     __table_args__ = (
         UniqueConstraint("institution_id", "matricule_institutionnel", name="uq_utilisateur_institution_matricule"),
+    )
+
+
+class LienResponsableEleve(SQLModel, table=True):
+    """Rattachement familial vérifié manuellement avant tout accès aux données.
+
+    Le responsable doit être un compte déclaré comme tel. Le lien n'est
+    jamais créé par simple connaissance du numéro de téléphone de l'élève :
+    un administrateur valide l'autorité légale hors plateforme puis audite
+    l'activation. Une révocation coupe immédiatement l'accès au portail.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    responsable_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
+    eleve_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
+    type_lien: str = Field(default="parent", max_length=24)
+    statut: str = Field(default="actif", index=True, max_length=16)
+    verifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_verification: datetime = Field(default_factory=datetime.utcnow)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    revoque_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_revocation: Optional[datetime] = None
+
+    __table_args__ = (
+        UniqueConstraint("responsable_id", "eleve_id", name="uq_lienresponsableeleve_pair"),
+        CheckConstraint("responsable_id <> eleve_id", name="ck_lienresponsableeleve_distinct"),
+        CheckConstraint(
+            "type_lien IN ('parent', 'tuteur_legal', 'responsable_autorise')",
+            name="ck_lienresponsableeleve_type",
+        ),
+        CheckConstraint("statut IN ('actif', 'revoque')", name="ck_lienresponsableeleve_statut"),
+        Index("ix_lienresponsableeleve_responsable_statut", "responsable_id", "statut"),
+        Index("ix_lienresponsableeleve_eleve_statut", "eleve_id", "statut"),
+    )
+
+
+class EvenementLienResponsableEleve(SQLModel, table=True):
+    """Journal append-only des validations et révocations du lien famille."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    lien_id: int = Field(foreign_key="lienresponsableeleve.id", index=True)
+    acteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
+    action: str = Field(max_length=16, index=True)
+    type_lien: str = Field(max_length=24)
+    date_evenement: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('validation', 'reactivation', 'revocation')",
+            name="ck_evenementlienresponsable_action",
+        ),
     )
 
 

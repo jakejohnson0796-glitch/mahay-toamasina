@@ -103,6 +103,8 @@
 
   function initialiserRoleEtProgression() {
     const roleSelect = document.getElementById("role");
+    const modeResponsable = document.getElementById("mode_responsable");
+    const roleField = roleSelect ? roleSelect.closest(".auth-field") : null;
     const blocAcademique = document.getElementById("bloc-academique");
     const cycleSelect = document.getElementById("cycle_education");
     const blocUniversite = document.getElementById("bloc-universite");
@@ -157,7 +159,8 @@
     }
 
     function estProfilAvecParcours() {
-      return roleSelect.value === "etudiant" || roleSelect.value === "professeur";
+      return !(modeResponsable && modeResponsable.checked) &&
+        (roleSelect.value === "etudiant" || roleSelect.value === "professeur");
     }
 
     function cycleValide() {
@@ -192,6 +195,9 @@
 
     function actualiser() {
       const profilActif = estProfilAvecParcours();
+      const estResponsable = Boolean(modeResponsable && modeResponsable.checked);
+      if (roleField) roleField.hidden = estResponsable;
+      if (roleSelect) roleSelect.disabled = estResponsable;
       const estUniversitaire = profilActif && cycleSelect && cycleSelect.value === "universite";
       const estScolaire = profilActif && cycleSelect && ["college", "lycee"].includes(cycleSelect.value);
       const estProfesseur = roleSelect.value === "professeur";
@@ -257,6 +263,7 @@
     }
 
     roleSelect.addEventListener("change", actualiser);
+    if (modeResponsable) modeResponsable.addEventListener("change", actualiser);
     if (cycleSelect) cycleSelect.addEventListener("change", actualiser);
     champsCompte.forEach(function (champ) {
       champ.addEventListener("input", actualiser);

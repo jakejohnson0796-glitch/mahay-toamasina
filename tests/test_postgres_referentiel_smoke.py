@@ -954,7 +954,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "j2a8e5c1d7f4", (
+    assert revision == "k3f8a1d6c9b2", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
@@ -1014,7 +1014,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "j2a8e5c1d7f4"
+    assert revision == "k3f8a1d6c9b2"
     assert index_count == 48
     assert institution_index_count == 1
 
@@ -1481,3 +1481,28 @@ def test_postgres_unaccent_relocate_preserves_french_full_text_search():
                 {"document": "École supérieure de Toamasina", "query": "ecole"},
             ).scalar_one()
             assert role_full_text_match is True
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(
+        ("postgresql://", "postgresql+psycopg2://")
+    ),
+    reason="Enum natif réservé à PostgreSQL",
+)
+def test_postgres_enum_role_contient_responsable():
+    """Le nouveau rôle RESPONSABLE doit exister dans l'enum natif PostgreSQL."""
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    with engine.connect() as connection:
+        valeurs = connection.execute(
+            text(
+                "SELECT e.enumlabel "
+                "FROM pg_enum e "
+                "JOIN pg_type t ON t.oid = e.enumtypid "
+                "WHERE t.typname = 'roleutilisateur'"
+            )
+        ).scalars().all()
+
+    assert "RESPONSABLE" in valeurs

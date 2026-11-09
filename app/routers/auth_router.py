@@ -142,6 +142,7 @@ def inscription(
     telephone: str = Form(...),
     mot_de_passe: str = Form(...),
     role: RoleUtilisateur = Form(RoleUtilisateur.ETUDIANT),
+    mode_responsable: str = Form(""),
     mention_id: Optional[str] = Form(None),
     filiere_id: Optional[str] = Form(None),
     universite_id: Optional[str] = Form(None),
@@ -217,6 +218,14 @@ def inscription(
     if est_demande_enseignant:
         role = RoleUtilisateur.ETUDIANT
 
+    # Le compte responsable reste un compte sans privilège spécial.
+    # Le portail est accessible uniquement après rattachement vérifié.
+    est_responsable = mode_responsable == "oui"
+    if est_responsable:
+        role = RoleUtilisateur.RESPONSABLE
+        profil_demande = "responsable"
+        est_demande_enseignant = False
+
     # Compatibilité avec les anciens formulaires/tests et liens : un choix
     # universitaire historique est interprété comme le cycle université si
     # le nouvel attribut cycle_education n'est pas encore envoyé.
@@ -245,8 +254,8 @@ def inscription(
     option_scolaire_obj = None
     etablissement_scolaire_obj = None
 
-    if role == RoleUtilisateur.SPONSOR:
-        # Les comptes sponsor n'ont pas de rattachement pédagogique.
+    if role in (RoleUtilisateur.SPONSOR, RoleUtilisateur.RESPONSABLE):
+        # Les comptes sponsor et responsable n'ont pas de rattachement pédagogique.
         universite_id_nettoye = None
         composante_id_nettoye = None
         mention_id_nettoye = None
@@ -484,6 +493,8 @@ def inscription(
     session.commit()
 
     _ouvrir_session_authentifiee(request, utilisateur)
+    if utilisateur.profil_souhaite == "responsable":
+        return RedirectResponse("/famille", status_code=303)
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         return RedirectResponse("/bienvenue", status_code=303)
     return RedirectResponse("/", status_code=303)

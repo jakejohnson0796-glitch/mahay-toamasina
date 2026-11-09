@@ -49,7 +49,7 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation.js?v={{ version_asset('js/admin-confirmation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/pwa.js?v={{ version_asset('js/pwa.js') }}" defer></script>
 {% if request.url.path in ["/notifications", "/mes-revisions", "/dashboard"] %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
-{% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences"] %}
+{% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences"] or request.url.path in ["/famille", "/admin/responsables-eleves"] %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
 {% endif %}
 {% if request.url.path in ["/connexion", "/inscription", "/mot-de-passe-oublie", "/mot-de-passe-oublie/code", "/connexion/2fa"] %}
@@ -130,7 +130,7 @@
 {% endif %}
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
-  class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
+  class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') or request.url.path in ['/famille', '/admin/responsables-eleves'] %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
   {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}data-admin-session="1"{% endif %}
 >
 {% from "components/icone.html" import icone %}
@@ -206,6 +206,11 @@
 
     {% if request.session.get("user_id") %}
     <nav class="tb-sidebar-nav" aria-label="Navigation principale">
+      {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or (utilisateur.profil_souhaite == "responsable" and utilisateur.role != "admin")) %}
+      <p class="tb-sidebar-groupe">Compte</p>
+      <a href="/famille" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/famille' else '' }}" {{ 'aria-current="page"' if request.url.path == '/famille' else '' }}><span class="tb-icone">👨‍👩‍👧</span> Espace famille</a>
+      <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Sécurité du compte</a>
+      {% else %}
       <a href="/dashboard" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
         <span class="tb-icone">{{ icone("dashboard", 17) }}</span> Tableau de bord
       </a>
@@ -232,6 +237,7 @@
       <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Securite</a>
       {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
       <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %}<span class="tb-sidebar-badge">{{ nb_admin_notifs }}</span>{% endif %}</a>
+      <a href="/admin/responsables-eleves" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin/responsables-eleves') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin/responsables-eleves') else '' }}><span class="tb-icone">👨‍👩‍👧</span> Rattachements famille</a>
       {% endif %}
 
       <p class="tb-sidebar-groupe">{% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}Services{% else %}Premium{% endif %}</p>
@@ -243,6 +249,7 @@
       <p class="tb-sidebar-groupe">Ressources</p>
       <a href="/faq" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}" {{ 'aria-current="page"' if (request.url.path.startswith('/faq') or request.url.path.startswith('/feedback')) else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Aide &amp; Avis</a>
       <a href="/mode-emploi" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mode-emploi' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mode-emploi' else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Mode d'emploi</a>
+      {% endif %}
       <a href="/cadre-legal" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path in ['/cadre-legal', '/conditions-utilisation', '/charte-ethique', '/confidentialite', '/mentions-legales'] else '' }}" {{ 'aria-current="page"' if request.url.path in ['/cadre-legal', '/conditions-utilisation', '/charte-ethique', '/confidentialite', '/mentions-legales'] else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Conditions &amp; charte éthique</a>
       <a href="/universites" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/universites') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/universites') else '' }}><span class="tb-icone">{{ icone("universites", 17) }}</span> Universites</a>
       <a href="/a-propos" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/a-propos' else '' }}" {{ 'aria-current="page"' if request.url.path == '/a-propos' else '' }}><span class="tb-icone">{{ icone("a-propos", 17) }}</span> A propos</a>
@@ -263,7 +270,7 @@
         {{ avatar_utilisateur(utilisateur, taille=30) }}
         <span class="tb-sidebar-compte-identite">
           <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
-          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% else %}Mon compte{% endif %}</span>
+          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% elif utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable" %}Responsable légal{% else %}Mon compte{% endif %}</span>
           {% set jours_compte = calculer_jours_inactivite(utilisateur) %}
           <span class="tb-sidebar-compte-activite">{{ jours_compte }} j. inactif</span>
         </span>
@@ -282,6 +289,15 @@
           <span>Actions rapides</span>
         </div>
 
+        {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or (utilisateur.profil_souhaite == "responsable" and utilisateur.role != "admin")) %}
+        <p class="tb-menu-compte-groupe">Mon espace</p>
+        <a class="tb-menu-compte-item" href="/famille"><span class="tb-menu-compte-icone">👨‍👩‍👧</span><span>Espace famille</span></a>
+        <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
+        <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Sécurité du compte</span></a>
+        <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
+        <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
+        <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
+        {% else %}
         <p class="tb-menu-compte-groupe">Mon espace</p>
         <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord</span></a>
         <a class="tb-menu-compte-item" href="/mes-revisions"><span class="tb-menu-compte-icone">{{ icone("quiz", 16) }}</span><span>Mes révisions</span></a>
@@ -309,6 +325,7 @@
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
         {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
         <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %} · {{ nb_admin_notifs }} nouvelles{% endif %}</span></a>
+        {% endif %}
         {% endif %}
 
         <div class="tb-menu-compte-separateur"></div>
