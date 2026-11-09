@@ -625,3 +625,125 @@ def test_fermer_sondages_ouverts_est_une_mise_a_jour_unique_et_scopee():
         assert par_question["Sondage autre séance"].date_cloture is None
 
     engine.dispose()
+
+
+def test_retrait_document_partage_est_reserve_au_professeur(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.routers import classe_interactions_router
+
+    utilisateur = SimpleNamespace(id=42)
+    seance = SimpleNamespace(id=7)
+    cours = SimpleNamespace(id=3)
+
+    class FausseSession:
+        executions = 0
+        commits = 0
+
+        def exec(self, _requete):
+            self.executions += 1
+            return SimpleNamespace(rowcount=1)
+
+        def commit(self):
+            self.commits += 1
+
+    monkeypatch.setattr(
+        classe_interactions_router,
+        "_contexte_seance",
+        lambda *_args: (utilisateur, seance, cours, False),
+    )
+    session = FausseSession()
+    response = classe_interactions_router.retirer_document_partage_seance(
+        SimpleNamespace(), seance.id, 15, session
+    )
+
+    assert response.status_code == 403
+    assert session.executions == 0
+    assert session.commits == 0
+
+
+def test_professeur_peut_retirer_un_document_de_la_seance_sans_supprimer_le_support(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.routers import classe_interactions_router
+
+    professeur = SimpleNamespace(id=10)
+    seance = SimpleNamespace(id=7)
+    cours = SimpleNamespace(id=3)
+
+    class FausseSession:
+        executions = 0
+        commits = 0
+        rollbacks = 0
+
+        def exec(self, _requete):
+            self.executions += 1
+            return SimpleNamespace(rowcount=1)
+
+        def commit(self):
+            self.commits += 1
+
+        def rollback(self):
+            self.rollbacks += 1
+
+    monkeypatch.setattr(
+        classe_interactions_router,
+        "_contexte_seance",
+        lambda *_args: (professeur, seance, cours, True),
+    )
+    session = FausseSession()
+    response = classe_interactions_router.retirer_document_partage_seance(
+        SimpleNamespace(), seance.id, 15, session
+    )
+
+    assert response.status_code == 200
+    assert response.body == b'{"ok":true}'
+    assert session.executions == 1
+    assert session.commits == 1
+    assert session.rollbacks == 0
+
+
+def test_retrait_document_partage_absent_retourne_404_et_annule_la_transaction(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.routers import classe_interactions_router
+
+    professeur = SimpleNamespace(id=10)
+    seance = SimpleNamespace(id=7)
+    cours = SimpleNamespace(id=3)
+
+    class FausseSession:
+        commits = 0
+        rollbacks = 0
+
+        def exec(self, _requete):
+            return SimpleNamespace(rowcount=0)
+
+        def commit(self):
+            self.commits += 1
+
+        def rollback(self):
+            self.rollbacks += 1
+
+    monkeypatch.setattr(
+        classe_interactions_router,
+        "_contexte_seance",
+        lambda *_args: (professeur, seance, cours, True),
+    )
+    session = FausseSession()
+    response = classe_interactions_router.retirer_document_partage_seance(
+        SimpleNamespace(), seance.id, 15, session
+    )
+
+    assert response.status_code == 404
+    assert session.commits == 0
+    assert session.rollbacks == 1
+
+
+def test_interface_salle_permet_au_professeur_de_retirer_un_document_partage():
+    source = (ROOT / "app" / "static" / "classe_interactions.js").read_text(encoding="utf-8")
+
+    assert 'creerElement(ligne, "button", "Retirer"' in source
+    assert 'window.confirm("Retirer ce document de la séance ?' in source
+    assert '"/documents/"' in source
+    assert '"/retirer"' in source
