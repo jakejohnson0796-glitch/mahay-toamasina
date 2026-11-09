@@ -446,17 +446,27 @@ def exporter_pack_cours_hors_ligne(
     session: Session = Depends(get_session),
 ):
     """Exporte uniquement le contenu pédagogique partagé d'un cours autorisé."""
+    def erreur_acces(code: int, detail: str):
+        reponse = JSONResponse({"detail": detail}, status_code=code)
+        reponse.headers.update({
+            "Cache-Control": "private, no-store",
+            "Pragma": "no-cache",
+            "Vary": "Cookie",
+            "X-Content-Type-Options": "nosniff",
+        })
+        return reponse
+
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
-        return JSONResponse({"detail": "Connexion requise."}, status_code=401)
+        return erreur_acces(401, "Connexion requise.")
 
     cours = session.get(Cours, cours_id)
     if not cours:
-        return JSONResponse({"detail": "Cours introuvable."}, status_code=404)
+        return erreur_acces(404, "Cours introuvable.")
 
     peut_gerer = _peut_gerer_cours(cours, utilisateur)
     if not peut_gerer and not _est_inscrit(session, cours_id, utilisateur.id):
-        return JSONResponse({"detail": "Tu n'es pas inscrit à ce cours."}, status_code=403)
+        return erreur_acces(403, "Tu n'es pas inscrit à ce cours.")
 
     seances = session.exec(
         select(Seance)
