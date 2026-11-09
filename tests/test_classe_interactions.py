@@ -103,7 +103,7 @@ def test_un_eleve_ne_peut_pas_repondre_deux_fois_au_meme_sondage():
         session.refresh(sondage)
         session.add(ReponseSondageSeance(
             sondage_id=sondage.id,
-            utilisateur_id=eleve_a_id,
+            utilisateur_id=eleve_a.id,
             option_index=1,
         ))
         session.commit()
