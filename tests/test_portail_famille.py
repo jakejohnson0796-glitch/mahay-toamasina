@@ -21,11 +21,18 @@ from app.models import (
 )
 from app.routers.famille_router import construire_portail_famille
 from app.admin_security import action_admin_protegee
+from app.responsable_portal import chemin_autorise_responsable
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _utilisateur(nom, telephone, role=RoleUtilisateur.ETUDIANT, profil="eleve"):
+def _utilisateur(nom, telephone, role=None, profil="eleve"):
+    if role is None:
+        role = (
+            RoleUtilisateur.RESPONSABLE
+            if profil == "responsable"
+            else RoleUtilisateur.ETUDIANT
+        )
     return Utilisateur(
         nom=nom,
         telephone=telephone,
@@ -220,7 +227,7 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
 
     assert 'mode_responsable: str = Form("")' in auth
     assert 'profil_demande = "responsable"' in auth
-    assert 'utilisateur.profil_souhaite != "responsable"' in auth
+    assert "role = RoleUtilisateur.RESPONSABLE" in auth
     assert 'return RedirectResponse("/famille", status_code=303)' in auth
     assert 'id="mode_responsable"' in register
     assert 'modeResponsable.addEventListener("change", actualiser)' in ui
@@ -229,7 +236,7 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert 'class EvenementLienResponsableEleve' in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
     assert "EvenementLienResponsableEleve" in family_router
     assert 'eleve.profil_souhaite != "eleve"' in family_router
-    assert "responsable.role != RoleUtilisateur.ETUDIANT" in family_router
+    assert "responsable.role != RoleUtilisateur.RESPONSABLE" in family_router
     assert action_admin_protegee("/admin/responsables-eleves/associer") is True
     assert action_admin_protegee("/famille") is False
 
@@ -283,3 +290,13 @@ def test_les_references_famille_sont_anonymisables_lors_d_une_suppression_de_com
     assert "PointagePresence.utilisateur_id == utilisateur_id" in admin_router
     assert "PointagePresence.saisi_par_id == utilisateur_id" in admin_router
     assert 'action="revocation"' in admin_router
+
+
+def test_compte_responsable_est_cloisonne_aux_routes_famille_et_securite():
+    assert chemin_autorise_responsable("GET", "/famille", 42) is True
+    assert chemin_autorise_responsable("GET", "/securite", 42) is True
+    assert chemin_autorise_responsable("POST", "/deconnexion", 42) is True
+    assert chemin_autorise_responsable("GET", "/static/auth.css", 42) is True
+    assert chemin_autorise_responsable("GET", "/classe", 42) is False
+    assert chemin_autorise_responsable("POST", "/classe/devoirs/rendus/1/corriger", 42) is False
+    assert chemin_autorise_responsable("GET", "/famille/42", 42) is False
