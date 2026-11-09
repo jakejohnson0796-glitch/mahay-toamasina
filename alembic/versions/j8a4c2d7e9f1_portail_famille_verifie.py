@@ -58,6 +58,40 @@ def upgrade() -> None:
         ["eleve_id", "statut"],
     )
 
+    op.create_table(
+        "evenementlienresponsableeleve",
+        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
+        sa.Column("lien_id", sa.Integer(), sa.ForeignKey("lienresponsableeleve.id"), nullable=False),
+        sa.Column("acteur_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=False),
+        sa.Column("action", sa.String(length=16), nullable=False),
+        sa.Column("type_lien", sa.String(length=24), nullable=False),
+        sa.Column("date_evenement", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
+        sa.CheckConstraint(
+            "action IN ('validation', 'reactivation', 'revocation')",
+            name="ck_evenementlienresponsable_action",
+        ),
+    )
+    op.create_index(
+        "ix_evenementlienresponsableeleve_lien_id",
+        "evenementlienresponsableeleve",
+        ["lien_id"],
+    )
+    op.create_index(
+        "ix_evenementlienresponsableeleve_acteur_id",
+        "evenementlienresponsableeleve",
+        ["acteur_id"],
+    )
+    op.create_index(
+        "ix_evenementlienresponsableeleve_action",
+        "evenementlienresponsableeleve",
+        ["action"],
+    )
+    op.create_index(
+        "ix_evenementlienresponsableeleve_date_evenement",
+        "evenementlienresponsableeleve",
+        ["date_evenement"],
+    )
+
     # Aucun accès direct à cette table via la Data API Supabase.
     # Les vérifications d'autorisation sont faites par l'application serveur.
     bind = op.get_bind()
