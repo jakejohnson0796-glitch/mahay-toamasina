@@ -158,6 +158,109 @@ def page_carnet_notes(cours_id: int, request: Request, session: Session = Depend
         "utilisateur": utilisateur, "cours": cours, "peut_gerer": professeur, **carnet,
     })
 
+def construire_actions_suivi_classe(lignes: list[dict], pointages: list[PointagePresence]) -> dict:
+    """Prépare une liste d'actions factuelles pour l'enseignant.
+
+    Aucun score prédictif ou diagnostic automatique n'est calculé :
+    les actions reposent uniquement sur les copies effectivement déposées
+    sans correction publiée et les pointages explicitement enregistrés.
+    """
+    statuts_connus = {
+        StatutPointage.PRESENT.value,
+        StatutPointage.ABSENT.value,
+        StatutPointage.RETARD.value,
+        StatutPointage.EXCUSE.value,
+    }
+    par_eleve: dict[int, dict[str, int]] = {}
+    for ligne in lignes:
+        utilisateur = ligne["utilisateur"]
+        par_eleve[utilisateur.id] = {
+            "present": 0,
+            "absent": 0,
+            "retard": 0,
+            "excuse": 0,
+        }
+
+    for pointage in pointages:
+        compteurs = par_eleve.get(pointage.utilisateur_id)
+        if compteurs is None:
+            continue
+        statut = (
+            pointage.statut.value
+            if hasattr(pointage.statut, "value")
+            else str(pointage.statut)
+        )
+        if statut in statuts_connus:
+            compteurs[statut] += 1
+
+    resultats = []
+    for ligne in lignes:
+        utilisateur = ligne["utilisateur"]
+        copies_a_corriger = sum(
+            1
+            for item in ligne.get("notes", [])
+            if item.get("rendu") is not None
+            and not getattr(item.get("devoir"), "archive", False)
+            and (
+                item["rendu"].note is None
+                or item["rendu"].date_correction is None
+            )
+        )
+        presences = par_eleve.get(
+            utilisateur.id,
+            {"present": 0, "absent": 0, "retard": 0, "excuse": 0},
+        )
+        absence_retard = presences["absent"] + presences["retard"]
+
+        actions = []
+        if copies_a_corriger:
+            actions.append("Corriger les copies déposées")
+        if absence_retard:
+            actions.append("Revoir les pointages d'absence ou de retard")
+        if not actions:
+            actions.append("Aucun élément prioritaire enregistré dans ce rapport")
+
+        resultats.append({
+            "utilisateur": utilisateur,
+            "moyenne": ligne.get("moyenne"),
+            "copies_a_corriger": copies_a_corriger,
+            "presences": presences,
+            "action": " · ".join(actions),
+            "a_suivre": bool(copies_a_corriger or absence_retard),
+        })
+
+    resultats.sort(
+        key=lambda item: (
+            not item["a_suivre"],
+            -item["copies_a_corriger"],
+            -(item["presences"]["absent"] + item["presences"]["retard"]),
+            (item["utilisateur"].nom or "").casefold(),
+        )
+    )
+    totaux = {
+        "nb_eleves": len(resultats),
+        "nb_eleves_a_suivre": sum(1 for item in resultats if item["a_suivre"]),
+        "nb_eleves_copies_a_corriger": sum(
+            1 for item in resultats if item["copies_a_corriger"] > 0
+        ),
+        "nb_copies_a_corriger": sum(
+            item["copies_a_corriger"] for item in resultats
+        ),
+        "nb_eleves_absence_retard": sum(
+            1
+            for item in resultats
+            if item["presences"]["absent"] or item["presences"]["retard"]
+        ),
+        "nb_absences_enregistrees": sum(
+            item["presences"]["absent"] for item in resultats
+        ),
+        "nb_retards_enregistres": sum(
+            item["presences"]["retard"] for item in resultats
+        ),
+    }
+    return {"lignes": resultats, "totaux": totaux}
+
+
 @router.get("/classe/{cours_id}/rapport-academique")
 def page_rapport_academique(cours_id: int, request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
@@ -181,9 +284,11 @@ def page_rapport_academique(cours_id: int, request: Request, session: Session = 
         r = [item["rendu"] for line in carnet["lignes"] for item in line["notes"] if item["devoir"].id == d.id and item["rendu"]]
         notes = [x.note / d.bareme * 20 for x in r if x.note is not None]
         stats_devoirs.append({"devoir": d, "nb_rendus": len(r), "nb_corriges": len(notes), "moyenne": round(sum(notes)/len(notes), 2) if notes else None})
+    suivi = construire_actions_suivi_classe(carnet["lignes"], pointages)
     return templates.TemplateResponse(request, "rapport_academique.html", {
         "utilisateur": utilisateur, "cours": cours, "carnet": carnet,
-        "stats_presence": stats_presence, "stats_devoirs": stats_devoirs, "nb_seances": len(seances),
+        "stats_presence": stats_presence, "stats_devoirs": stats_devoirs,
+        "nb_seances": len(seances), "suivi": suivi,
     })
 
 @router.get("/classe/seances/{seance_id}/registre-presences")
