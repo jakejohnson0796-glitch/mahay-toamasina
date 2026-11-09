@@ -97,7 +97,9 @@ def upgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         bind.exec_driver_sql("ALTER TABLE public.lienresponsableeleve ENABLE ROW LEVEL SECURITY")
+        bind.exec_driver_sql("ALTER TABLE public.evenementlienresponsableeleve ENABLE ROW LEVEL SECURITY")
         bind.exec_driver_sql("REVOKE ALL PRIVILEGES ON TABLE public.lienresponsableeleve FROM PUBLIC")
+        bind.exec_driver_sql("REVOKE ALL PRIVILEGES ON TABLE public.evenementlienresponsableeleve FROM PUBLIC")
         roles = bind.execute(
             sa.text("SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated')")
         ).scalars().all()
@@ -106,6 +108,9 @@ def upgrade() -> None:
             if role in {"anon", "authenticated"}:
                 bind.exec_driver_sql(
                     "REVOKE ALL PRIVILEGES ON TABLE public.lienresponsableeleve FROM " + quote(role)
+                )
+                bind.exec_driver_sql(
+                    "REVOKE ALL PRIVILEGES ON TABLE public.evenementlienresponsableeleve FROM " + quote(role)
                 )
 
 
