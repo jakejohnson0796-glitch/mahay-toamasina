@@ -222,7 +222,7 @@ def inscription(
     # Le portail est accessible uniquement après rattachement vérifié.
     est_responsable = mode_responsable == "oui"
     if est_responsable:
-        role = RoleUtilisateur.ETUDIANT
+        role = RoleUtilisateur.RESPONSABLE
         profil_demande = "responsable"
         est_demande_enseignant = False
 
@@ -254,7 +254,7 @@ def inscription(
     option_scolaire_obj = None
     etablissement_scolaire_obj = None
 
-    if role == RoleUtilisateur.SPONSOR or est_responsable:
+    if role in (RoleUtilisateur.SPONSOR, RoleUtilisateur.RESPONSABLE):
         # Les comptes sponsor et responsable n'ont pas de rattachement pédagogique.
         universite_id_nettoye = None
         composante_id_nettoye = None
@@ -485,7 +485,7 @@ def inscription(
     session.commit()
     session.refresh(utilisateur)
 
-    if utilisateur.role == RoleUtilisateur.ETUDIANT and utilisateur.profil_souhaite != "responsable":
+    if utilisateur.role == RoleUtilisateur.ETUDIANT:
         subscription.creer_essai_gratuit(session, utilisateur)
 
     # Notification interne : chaque administrateur recoit une alerte.
