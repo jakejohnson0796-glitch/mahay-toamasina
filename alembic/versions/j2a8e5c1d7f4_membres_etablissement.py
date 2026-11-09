@@ -20,6 +20,7 @@ def upgrade() -> None:
         sa.Column("role", sa.String(length=20), nullable=False, server_default="etudiant"),
         sa.Column("statut", sa.String(length=16), nullable=False, server_default="actif"),
         sa.Column("cree_par_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=True),
+        sa.Column("modifie_par_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=True),
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column("date_modification", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.UniqueConstraint(
@@ -55,6 +56,11 @@ def upgrade() -> None:
         "ix_fk_membre_etablissement_cree_par_id",
         "membre_etablissement",
         ["cree_par_id"],
+    )
+    op.create_index(
+        "ix_fk_membre_etablissement_modifie_par_id",
+        "membre_etablissement",
+        ["modifie_par_id"],
     )
 
     # Reprise rétrocompatible des comptes déjà rattachés à un établissement.
@@ -94,6 +100,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.drop_index("ix_fk_membre_etablissement_modifie_par_id", table_name="membre_etablissement")
     op.drop_index("ix_fk_membre_etablissement_cree_par_id", table_name="membre_etablissement")
     op.drop_index("ix_fk_membre_etablissement_utilisateur_id", table_name="membre_etablissement")
     op.drop_index("ix_fk_membre_etablissement_institution_id", table_name="membre_etablissement")
