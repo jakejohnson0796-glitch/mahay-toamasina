@@ -10,7 +10,7 @@ from app import quiz
 def _question(enonce, notion):
     return {
         "question": enonce,
-        "choix": ["Réponse incorrecte", "Réponse correcte"],
+        "choix": ["Réponse incorrecte", "Réponse correcte", "Autre possibilité"],
         "index_bonne_reponse": 1,
         "explication": "Explication de test.",
         "notion": notion,
