@@ -291,6 +291,8 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
             ),
         ])
         session.commit()
+        session.refresh(sondage_ouvert)
+        session.refresh(quiz_cloture)
 
         event.listen(engine, "before_cursor_execute", compter_selects)
         try:
