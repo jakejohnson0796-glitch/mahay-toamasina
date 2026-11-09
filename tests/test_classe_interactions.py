@@ -348,16 +348,17 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
 
     with Session(engine) as session:
         professeur, eleve_a, eleve_b, _cours, seance = creer_seance(session)
+        seance_id = seance_id
         professeur_id = professeur.id
         eleve_a_id = eleve_a.id
         eleve_b_id = eleve_b.id
         groupe_a = GroupeSousSalle(
-            seance_id=seance.id,
+            seance_id=seance_id,
             nom="Groupe 1",
             nom_salle_livekit="sous-salle-batch-1",
         )
         groupe_b = GroupeSousSalle(
-            seance_id=seance.id,
+            seance_id=seance_id,
             nom="Groupe 2",
             nom_salle_livekit="sous-salle-batch-2",
         )
@@ -369,17 +370,17 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
         groupe_b_id = groupe_b.id
         session.add_all([
             AffectationSousSalle(
-                seance_id=seance.id,
+                seance_id=seance_id,
                 groupe_id=groupe_a_id,
                 utilisateur_id=eleve_a_id,
             ),
             AffectationSousSalle(
-                seance_id=seance.id,
+                seance_id=seance_id,
                 groupe_id=groupe_a_id,
                 utilisateur_id=eleve_b_id,
             ),
             AffectationSousSalle(
-                seance_id=seance.id,
+                seance_id=seance_id,
                 groupe_id=groupe_b_id,
                 utilisateur_id=eleve_b_id,
             ),
@@ -387,7 +388,7 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
         session.commit()
         groupes = session.exec(
             select(GroupeSousSalle)
-            .where(GroupeSousSalle.seance_id == seance.id)
+            .where(GroupeSousSalle.seance_id == seance_id)
             .order_by(GroupeSousSalle.id)
         ).all()
 
@@ -395,7 +396,7 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
         try:
             resultats_prof = _resultats_groupes_sous_salles(
                 session,
-                seance.id,
+                seance_id,
                 groupes,
                 professeur_id,
                 True,
@@ -407,7 +408,7 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
 
             resultats_eleve = _resultats_groupes_sous_salles(
                 session,
-                seance.id,
+                seance_id,
                 groupes,
                 eleve_a_id,
                 False,
