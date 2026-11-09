@@ -125,6 +125,6 @@ def test_seances_terminees_sans_fiche_sont_filtrees_en_une_requete_sql():
 
             assert manquantes == [seance_fiche_autre_id, seance_sans_fiche_id]
             assert len(requetes) == 1
-            assert "not exists" in requetes[0].casefold()
+            assert "not (exists" in requetes[0].casefold()
     finally:
         engine.dispose()
