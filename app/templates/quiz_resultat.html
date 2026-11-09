@@ -24,6 +24,9 @@
         <a class="bouton bouton-primaire" href="/quiz">Nouveau quiz</a>
         <a class="bouton bouton-secondaire" href="/quiz/historique">Voir mon historique</a>
         <a class="bouton bouton-secondaire" href="/tuteur">Demander une explication au Tuteur IA</a>
+        {% if tentative.mode_examen %}
+        <a class="bouton bouton-secondaire" href="/objectif-examen">Retour à Objectif Examen</a>
+        {% endif %}
         {% if tentative.document_id %}
         <a class="bouton bouton-secondaire" href="/documents/{{ tentative.document_id }}/apprendre">Retour au cours source</a>
         {% endif %}
