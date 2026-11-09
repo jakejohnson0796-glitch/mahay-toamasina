@@ -1410,14 +1410,25 @@ async def supprimer_utilisateur(
         )
     ).all()
     for lien_famille in liens_famille:
+        relation_impactee = (
+            lien_famille.responsable_id == utilisateur_id
+            or lien_famille.eleve_id == utilisateur_id
+        )
         if lien_famille.responsable_id == utilisateur_id:
             lien_famille.responsable_id = None
-            lien_famille.statut = "revoque"
-            lien_famille.date_revocation = lien_famille.date_revocation or maintenant_suppression
         if lien_famille.eleve_id == utilisateur_id:
             lien_famille.eleve_id = None
+        if relation_impactee and lien_famille.statut == "actif":
             lien_famille.statut = "revoque"
             lien_famille.date_revocation = maintenant_suppression
+            lien_famille.revoque_par_id = admin.id
+            session.add(EvenementLienResponsableEleve(
+                lien_id=lien_famille.id,
+                acteur_id=admin.id,
+                action="revocation",
+                type_lien=lien_famille.type_lien,
+                date_evenement=maintenant_suppression,
+            ))
         if lien_famille.verifie_par_id == utilisateur_id:
             lien_famille.verifie_par_id = None
         if lien_famille.revoque_par_id == utilisateur_id:
