@@ -1,7 +1,7 @@
 """Tests des analyses pedagogiques detaillees des quiz."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from types import SimpleNamespace
 
 from app import quiz
