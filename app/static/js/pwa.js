@@ -134,7 +134,7 @@
 (function packsCoursHorsLigne() {
   "use strict";
   var DB_NAME="mitaridala-offline", DB_VERSION=1, STORE="cours";
-  var LIMITE_OCTETS=2*1024*1024;
+  var LIMITE_OCTETS=2*1024*1024, DUREE_PACK_MS=7*24*60*60*1000;
 
   function annoncer(carte,texte){var zone=carte.querySelector("[data-offline-status]");if(zone)zone.textContent=texte;}
   function ouvrirBase(){
@@ -179,13 +179,16 @@
     if(!/^\d+$/.test(userId)||!/^\d+$/.test(courseId)||!save||!del||!open)return;
 
     function setPack(pack){
-      var ok=Boolean(pack&&pack.userId===userId&&String(pack.courseId)===courseId);
+      var expiration=pack&&Date.parse(pack.expires_le||"");
+      var ok=Boolean(pack&&pack.userId===userId&&String(pack.courseId)===courseId&&Number.isFinite(expiration)&&expiration>Date.now());
       open.hidden=!ok;del.hidden=!ok;
       if(ok)open.href="/static/offline.html#u="+encodeURIComponent(userId)+"&c="+encodeURIComponent(courseId);
+      else if(pack)supprimer(cle).catch(function(){});
+      return ok;
     }
     lire(cle).then(function(pack){
-      setPack(pack);
-      annoncer(carte,pack?"Ce cours est enregistré sur cet appareil.":"Aucun pack hors connexion enregistré.");
+      var disponible=setPack(pack);
+      annoncer(carte,disponible?"Ce cours est enregistré sur cet appareil (expiration dans 7 jours).":(pack?"Ce pack a expiré. Télécharge-le à nouveau en étant connecté.":"Aucun pack hors connexion enregistré."));
     }).catch(function(erreur){save.disabled=true;annoncer(carte,erreur.message||"Stockage local indisponible.");});
 
     save.addEventListener("click",function(){
@@ -203,6 +206,7 @@
         .then(function(data){
           if(!data||data.schema_version!==1||!data.cours||String(data.cours.id)!==courseId)throw new Error("Le contenu reçu ne correspond pas à ce cours.");
           var pack={cle:cle,userId:userId,courseId:courseId,enregistre_le:new Date().toISOString(),
+            expires_le:new Date(Date.now()+DUREE_PACK_MS).toISOString(),
             cours:data.cours,seances:data.seances||[],devoirs:data.devoirs||[],limites:data.limites||{}};
           if(new TextEncoder().encode(JSON.stringify(pack)).byteLength>LIMITE_OCTETS)throw new Error("Ce pack dépasse la limite de 2 Mo.");
           return ecrire(pack).then(function(){setPack(pack);annoncer(carte,"Cours enregistré. Tu peux maintenant l'ouvrir sans connexion.");});
