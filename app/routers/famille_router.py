@@ -299,6 +299,8 @@ def associer_responsable_eleve(
     ).first()
     if not responsable or not eleve:
         return RedirectResponse("/admin/responsables-eleves?erreur=comptes", status_code=303)
+    if responsable.role != RoleUtilisateur.ETUDIANT:
+        return RedirectResponse("/admin/responsables-eleves?erreur=profil", status_code=303)
     if (
         responsable.banni
         or eleve.banni
