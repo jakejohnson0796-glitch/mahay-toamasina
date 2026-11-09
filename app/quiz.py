@@ -1418,8 +1418,9 @@ def creer_tentative_examen(
     cycle_education: Optional[str] = None,
     niveau_scolaire_id: Optional[int] = None,
     option_scolaire_id: Optional[int] = None,
+    sujet_cible: Optional[str] = None,
 ) -> TentativeQuiz:
-    """Cree une tentative en 'mode examen' avec un niveau validé par le routeur."""
+    """Cree un examen blanc court dans le contexte scolaire deja valide."""
     tentative = creer_tentative(
         session,
         utilisateur,
@@ -1430,6 +1431,7 @@ def creer_tentative_examen(
         cycle_education=cycle_education,
         niveau_scolaire_id=niveau_scolaire_id,
         option_scolaire_id=option_scolaire_id,
+        sujet_cible=sujet_cible,
     )
     tentative.mode_examen = True
     tentative.duree_secondes = NB_QUESTIONS_EXAMEN * SECONDES_PAR_QUESTION_EXAMEN
