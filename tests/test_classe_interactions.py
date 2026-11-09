@@ -90,7 +90,7 @@ def test_un_eleve_ne_peut_pas_repondre_deux_fois_au_meme_sondage():
     with Session(engine) as session:
         _prof, eleve_a, _eleve_b, cours, seance = creer_seance(session)
         sondage = SondageSeance(
-            seance_id=seance.id,
+            seance_id=seance_id,
             cours_id=cours.id,
             createur_id=1,
             question="Combien font 2 + 2 ?",
@@ -122,12 +122,12 @@ def test_un_eleve_ne_peut_appartenir_qu_a_une_sous_salle_par_seance():
     with Session(engine) as session:
         _prof, eleve_a, _eleve_b, _cours, seance = creer_seance(session)
         groupe_a = GroupeSousSalle(
-            seance_id=seance.id,
+            seance_id=seance_id,
             nom="Groupe 1",
             nom_salle_livekit="interactions-test-groupe-a",
         )
         groupe_b = GroupeSousSalle(
-            seance_id=seance.id,
+            seance_id=seance_id,
             nom="Groupe 2",
             nom_salle_livekit="interactions-test-groupe-b",
         )
@@ -136,13 +136,13 @@ def test_un_eleve_ne_peut_appartenir_qu_a_une_sous_salle_par_seance():
         session.refresh(groupe_a)
         session.refresh(groupe_b)
         session.add(AffectationSousSalle(
-            seance_id=seance.id,
+            seance_id=seance_id,
             groupe_id=groupe_a.id,
             utilisateur_id=eleve_a.id,
         ))
         session.commit()
         session.add(AffectationSousSalle(
-            seance_id=seance.id,
+            seance_id=seance_id,
             groupe_id=groupe_b.id,
             utilisateur_id=eleve_a.id,
         ))
@@ -156,13 +156,13 @@ def test_consentement_et_transcription_sont_uniques_par_seance():
     with Session(engine) as session:
         professeur, _eleve_a, _eleve_b, _cours, seance = creer_seance(session)
         session.add(ConsentementTranscription(
-            seance_id=seance.id,
+            seance_id=seance_id,
             utilisateur_id=professeur.id,
             consenti=True,
         ))
         session.commit()
         session.add(ConsentementTranscription(
-            seance_id=seance.id,
+            seance_id=seance_id,
             utilisateur_id=professeur.id,
             consenti=False,
         ))
@@ -170,12 +170,12 @@ def test_consentement_et_transcription_sont_uniques_par_seance():
             session.commit()
         session.rollback()
         session.add(TranscriptionSeance(
-            seance_id=seance.id,
+            seance_id=seance_id,
             demarree_par_id=professeur.id,
         ))
         session.commit()
         session.add(TranscriptionSeance(
-            seance_id=seance.id,
+            seance_id=seance_id,
             demarree_par_id=professeur.id,
         ))
         with pytest.raises(IntegrityError):
@@ -254,7 +254,7 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
         eleve_a_id = eleve_a.id
         eleve_b_id = eleve_b.id
         sondage_ouvert = SondageSeance(
-            seance_id=seance.id,
+            seance_id=seance_id,
             cours_id=cours.id,
             createur_id=professeur_id,
             question="Question ouverte",
@@ -263,7 +263,7 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
             ouvert=True,
         )
         quiz_cloture = SondageSeance(
-            seance_id=seance.id,
+            seance_id=seance_id,
             cours_id=cours.id,
             createur_id=professeur.id,
             question="Question terminée",
@@ -448,14 +448,19 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
 
     with Session(engine) as session:
         _prof, eleve_a, eleve_b, _cours, seance = creer_seance(session)
+        seance_id = seance.id
+        nom_salle_livekit = seance.nom_salle_livekit
+        eleve_a_id = eleve_a.id
+        eleve_b_id = eleve_b.id
         eleve_c = creer_utilisateur("Élève C", "+261340000905", RoleUtilisateur.ETUDIANT)
         session.add(eleve_c)
         session.commit()
         session.refresh(eleve_c)
+        eleve_c_id = eleve_c.id
 
         anciens = [
             GroupeSousSalle(
-                seance_id=seance.id,
+                seance_id=seance_id,
                 nom=f"Ancien {index + 1}",
                 nom_salle_livekit=f"ancienne-salle-{index + 1}",
             )
@@ -467,19 +472,19 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
             session.refresh(ancien)
         session.add_all([
             AffectationSousSalle(
-                seance_id=seance.id,
+                seance_id=seance_id,
                 groupe_id=anciens[0].id,
-                utilisateur_id=eleve_a.id,
+                utilisateur_id=eleve_a_id,
             ),
             AffectationSousSalle(
-                seance_id=seance.id,
+                seance_id=seance_id,
                 groupe_id=anciens[1].id,
-                utilisateur_id=eleve_b.id,
+                utilisateur_id=eleve_b_id,
             ),
             AffectationSousSalle(
-                seance_id=seance.id,
+                seance_id=seance_id,
                 groupe_id=anciens[2].id,
-                utilisateur_id=eleve_c.id,
+                utilisateur_id=eleve_c_id,
             ),
         ])
         session.commit()
@@ -488,10 +493,10 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
         try:
             _remplacer_groupes_sous_salles(
                 session,
-                seance.id,
-                seance.nom_salle_livekit,
+                seance_id,
+                nom_salle_livekit,
                 2,
-                [eleve_a.id, eleve_b.id, eleve_c.id],
+                [eleve_a_id, eleve_b_id, eleve_c_id],
             )
         finally:
             event.remove(engine, "before_cursor_execute", compter_lectures_et_suppressions)
@@ -499,12 +504,12 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
         assert compteurs == {"select": 0, "delete": 2}
         nouveaux_groupes = session.exec(
             select(GroupeSousSalle)
-            .where(GroupeSousSalle.seance_id == seance.id)
+            .where(GroupeSousSalle.seance_id == seance_id)
             .order_by(GroupeSousSalle.id)
         ).all()
         affectations = session.exec(
             select(AffectationSousSalle).where(
-                AffectationSousSalle.seance_id == seance.id
+                AffectationSousSalle.seance_id == seance_id
             )
         ).all()
 
@@ -514,7 +519,7 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
             groupe.id for groupe in nouveaux_groupes
         }
         assert {affectation.utilisateur_id for affectation in affectations} == {
-            eleve_a.id, eleve_b.id, eleve_c.id
+            eleve_a_id, eleve_b_id, eleve_c_id
         }
         assert {affectation.groupe_id for affectation in affectations}.isdisjoint(
             {ancien.id for ancien in anciens}
