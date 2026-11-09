@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% from "components/icone.html" import icone %}
+
+{% block titre %}Objectif Examen — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+
+{% block contenu %}
+<link rel="stylesheet" href="/static/objectif-examen.css?v={{ version_asset('objectif-examen.css') }}">
+<div class="ai-learning-page objectif-examen-page">
+  <section class="ai-hero objectif-examen-hero" aria-labelledby="objectif-examen-title">
+    <div>
+      <span class="ai-kicker">MITARIDALA · Préparation scolaire</span>
+      <h1 id="objectif-examen-title">Ton objectif. Ton programme. Ta progression.</h1>
+      <p>Prépare tes épreuves avec des entraînements ciblés sur ton niveau, ton programme et les matières validées dans ton profil scolaire.</p>
+      <div class="ai-hero-actions">
+        <a href="#choisir-examen">Commencer un entraînement</a>
+        <a href="/mes-revisions">Voir mes notions à revoir</a>
+      </div>
+    </div>
+    <div class="ai-hero-side">
+      <div class="objectif-examen-stat">
+        <span>Ton parcours scolaire vérifié</span>
+        <strong>{{ niveau or "Profil à compléter" }}</strong>
+        <small>{{ "Collège" if cycle == "college" else ("Lycée" if cycle == "lycee" else "Parcours scolaire") }}</small>
+      </div>
+      <div class="objectif-examen-stat">
+        <span>Matières disponibles dans ton programme</span>
+        <strong>{{ matieres|length }}</strong>
+        <small>matière{{ "s" if matieres|length != 1 else "" }} vérifiée{{ "s" if matieres|length != 1 else "" }}</small>
+      </div>
+    </div>
+  </section>
+
+  <aside class="objectif-examen-notice" role="note">
+    <strong>Entraînement pédagogique, pas sujet officiel</strong>
+    <p>Les questions de cette première version sont générées pour t'entraîner. Elles ne remplacent ni les sujets publiés par les autorités, ni les cours, ni les corrections validées par ton enseignant. Vérifie toujours le programme suivi dans ton établissement.</p>
+  </aside>
+
+  <section class="objectif-examen-section" id="choisir-examen" aria-labelledby="choisir-examen-title">
+    <div class="objectif-examen-heading">
+      <span class="ai-kicker">Choisir un parcours</span>
+      <h2 id="choisir-examen-title">Quel examen prépares-tu ?</h2>
+      <p>Le niveau et les matières sont contrôlés côté serveur à partir de ton profil scolaire.</p>
+    </div>
+
+    <div class="objectif-examen-grid">
+      {% if bepc_disponible %}
+      <article class="objectif-examen-card">
+        <div class="objectif-examen-card-icon" aria-hidden="true">📘</div>
+        <span class="objectif-examen-tag">BEPC · Session 2027</span>
+        <h3>Ancien programme scolaire (PS)</h3>
+        <p>Choisis l'option A ou B correspondant au programme réellement suivi dans ton établissement.</p>
+        {% if matieres %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="bepc_ps">
+          <label for="bepc-ps-option">Option</label>
+          <select id="bepc-ps-option" name="option_ps" required>
+            <option value="">Choisir une option</option>
+            <option value="A">Option A</option>
+            <option value="B">Option B</option>
+          </select>
+          <label for="bepc-ps-matiere">Matière</label>
+          <select id="bepc-ps-matiere" name="matiere" required>
+            <option value="">Choisir une matière</option>
+            {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
+          </select>
+          <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement</button>
+        </form>
+        {% else %}
+        <p class="objectif-examen-empty">Aucune matière vérifiée n'est encore disponible pour cette classe.</p>
+        {% endif %}
+      </article>
+
+      <article class="objectif-examen-card">
+        <div class="objectif-examen-card-icon" aria-hidden="true">📗</div>
+        <span class="objectif-examen-tag">BEPC · Session 2027</span>
+        <h3>Nouveau programme d'études (PE)</h3>
+        <p>Un entraînement distinct pour les élèves dont l'établissement applique le nouveau programme d'études.</p>
+        {% if matieres %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="bepc_pe">
+          <label for="bepc-pe-matiere">Matière</label>
+          <select id="bepc-pe-matiere" name="matiere" required>
+            <option value="">Choisir une matière</option>
+            {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
+          </select>
+          <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement</button>
+        </form>
+        {% else %}
+        <p class="objectif-examen-empty">Aucune matière vérifiée n'est encore disponible pour cette classe.</p>
+        {% endif %}
+      </article>
+      {% elif cycle == "college" %}
+      <article class="objectif-examen-card objectif-examen-card-muted">
+        <div class="objectif-examen-card-icon" aria-hidden="true">📘</div>
+        <span class="objectif-examen-tag">BEPC</span>
+        <h3>Préparation disponible en classe de 3e</h3>
+        <p>Ton profil indique actuellement {{ niveau or "une classe non renseignée" }}. Tu peux déjà poursuivre tes quiz et tes révisions, puis revenir à Objectif Examen lorsque ton profil sera à jour.</p>
+        <a class="bouton bouton-secondaire" href="/profil/academique">Vérifier mon profil scolaire</a>
+      </article>
+      {% endif %}
+
+      {% if bacc_disponible %}
+      <article class="objectif-examen-card">
+        <div class="objectif-examen-card-icon" aria-hidden="true">🎓</div>
+        <span class="objectif-examen-tag">Baccalauréat</span>
+        <h3>Préparation par série</h3>
+        <p>Ton profil indique la série vérifiée : <strong>{{ serie_label }}</strong>. Choisis une matière de ton programme.</p>
+        {% if matieres %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="baccalaureat">
+          <label for="bacc-matiere">Matière</label>
+          <select id="bacc-matiere" name="matiere" required>
+            <option value="">Choisir une matière</option>
+            {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
+          </select>
+          <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement</button>
+        </form>
+        {% else %}
+        <p class="objectif-examen-empty">Aucune matière vérifiée n'est encore disponible pour cette série.</p>
+        {% endif %}
+      </article>
+      {% elif cycle == "lycee" and niveau and niveau|lower == "terminale" %}
+      <article class="objectif-examen-card objectif-examen-card-muted">
+        <div class="objectif-examen-card-icon" aria-hidden="true">🎓</div>
+        <span class="objectif-examen-tag">Baccalauréat</span>
+        <h3>Renseigne ta série</h3>
+        <p>Ton profil indique Terminale, mais aucune série vérifiée n'est sélectionnée. Ajoute-la dans ton profil pour recevoir des entraînements cohérents.</p>
+        <a class="bouton bouton-secondaire" href="/profil/academique">Compléter mon profil</a>
+      </article>
+      {% elif cycle == "lycee" %}
+      <article class="objectif-examen-card objectif-examen-card-muted">
+        <div class="objectif-examen-card-icon" aria-hidden="true">🎓</div>
+        <span class="objectif-examen-tag">Baccalauréat</span>
+        <h3>Préparation disponible en Terminale</h3>
+        <p>Ton profil indique actuellement {{ niveau or "une classe non renseignée" }}. Tu peux déjà consolider tes matières avec les quiz et les révisions.</p>
+        <a class="bouton bouton-secondaire" href="/profil/academique">Vérifier mon profil scolaire</a>
+      </article>
+      {% endif %}
+
+      {% if cycle not in ["college", "lycee"] %}
+      <article class="objectif-examen-card objectif-examen-card-muted">
+        <div class="objectif-examen-card-icon" aria-hidden="true">📚</div>
+        <span class="objectif-examen-tag">Prochaine extension</span>
+        <h3>Autres examens et concours</h3>
+        <p>La première version commence par le BEPC et le Baccalauréat. Les parcours CEPE et universitaires seront ajoutés avec leurs référentiels et leurs formats vérifiés.</p>
+        <a class="bouton bouton-secondaire" href="/quiz">Continuer avec les quiz</a>
+      </article>
+      {% endif %}
+
+      {% if cycle == "college" or cycle == "lycee" %}
+      <article class="objectif-examen-card objectif-examen-card-muted objectif-examen-cepe">
+        <div class="objectif-examen-card-icon" aria-hidden="true">📖</div>
+        <span class="objectif-examen-tag">Extension à venir</span>
+        <h3>CEPE et primaire</h3>
+        <p>Le parcours CEPE sera activé lorsque le référentiel primaire et ses matières seront intégrés et vérifiés.</p>
+      </article>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="objectif-examen-section objectif-examen-priorites" aria-labelledby="objectif-priorites-title">
+    <div class="objectif-examen-heading">
+      <span class="ai-kicker">Travail personnalisé</span>
+      <h2 id="objectif-priorites-title">Tes priorités de révision</h2>
+      <p>MITARIDALA reprend les notions réellement repérées dans tes quiz ; aucune faiblesse n'est inventée.</p>
+    </div>
+    {% if priorites %}
+    <div class="objectif-examen-priorites-list">
+      {% for notion in priorites %}
+      <article>
+        <div>
+          <span>{{ notion.matiere }}</span>
+          <strong>{{ notion.notion }}</strong>
+          <small>{{ notion.nb_erreurs }} erreur{{ "s" if notion.nb_erreurs != 1 else "" }} · maîtrise {{ notion.score_maitrise }}%</small>
+        </div>
+        <a href="/mes-revisions">Réviser →</a>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="objectif-examen-empty-state">
+      <strong>Ton diagnostic commencera avec ton premier quiz.</strong>
+      <p>Après quelques entraînements, cette zone affichera les notions à consolider en priorité.</p>
+      <a class="bouton bouton-secondaire" href="/quiz">Faire un premier quiz</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
