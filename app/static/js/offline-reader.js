@@ -11,6 +11,8 @@ r.onsuccess=function(){resolve(r.result);};r.onerror=function(){reject(r.error||
 function readPack(key){return openDb().then(function(db){return new Promise(function(resolve,reject){var tx=db.transaction(STORE,"readonly"),r=tx.objectStore(STORE).get(key);
 r.onsuccess=function(){resolve(r.result||null);};r.onerror=function(){reject(r.error||new Error("Lecture impossible."));};
 tx.oncomplete=function(){db.close();};tx.onerror=function(){db.close();};});});}
+function deletePack(key){return openDb().then(function(db){return new Promise(function(resolve,reject){var tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(key);
+tx.oncomplete=function(){db.close();resolve();};tx.onerror=function(){db.close();reject(tx.error||new Error("Suppression impossible."));};});});}
 function listBlock(label,items,type){
 var section=el("section","offline-section");section.appendChild(el("h2","",label));
 if(!items.length)section.appendChild(el("p","offline-empty","Aucun élément enregistré."));
@@ -33,6 +35,7 @@ if(pack.limites&&(pack.limites.seances_tronquees||pack.limites.devoirs_tronques)
 }
 var params=new URLSearchParams(window.location.hash.replace(/^#/,"")),uid=params.get("u")||"",cid=params.get("c")||"";
 if(!/^\d+$/.test(uid)||!/^\d+$/.test(cid)){title.textContent="Aucun cours sélectionné";status.textContent="Ouvre un cours téléchargé depuis ton espace MITARIDALA.";return;}
-readPack(uid+":"+cid).then(function(pack){if(!pack||pack.userId!==uid||String(pack.courseId)!==cid||!pack.cours){title.textContent="Cours non disponible";status.textContent="Ce cours n'a pas été téléchargé sur cet appareil ou son pack a été supprimé.";return;}render(pack);})
+readPack(uid+":"+cid).then(function(pack){if(!pack||pack.userId!==uid||String(pack.courseId)!==cid||!pack.cours){title.textContent="Cours non disponible";status.textContent="Ce cours n'a pas été téléchargé sur cet appareil ou son pack a été supprimé.";return;}
+var expiration=Date.parse(pack.expires_le||"");if(!Number.isFinite(expiration)||expiration<=Date.now()){deletePack(uid+":"+cid).catch(function(){});title.textContent="Pack expiré";status.textContent="Ce téléchargement a expiré après sept jours. Reconnecte-toi pour le renouveler.";return;}render(pack);})
 .catch(function(error){title.textContent="Stockage indisponible";status.textContent=error&&error.message?error.message:"Impossible de lire le cours.";});
 })();
