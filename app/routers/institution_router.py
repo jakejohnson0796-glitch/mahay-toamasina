@@ -17,7 +17,10 @@ from sqlmodel import Session, func, select
 from ..auth import hacher_mot_de_passe, utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
-from ..models import (\n    EtablissementPartenaire, MembreEtablissement, RoleMembreEtablissement,\n    RoleUtilisateur, StatutMembreEtablissement, Utilisateur,\n)
+from ..models import (
+    EtablissementPartenaire, MembreEtablissement, RoleMembreEtablissement,
+    RoleUtilisateur, StatutMembreEtablissement, Utilisateur,
+)
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
 from ..subscription import creer_essais_gratuits_en_masse
