@@ -576,6 +576,23 @@ class LienResponsableEleve(SQLModel, table=True):
     )
 
 
+class EvenementLienResponsableEleve(SQLModel, table=True):
+    """Journal append-only des validations et révocations du lien famille."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    lien_id: int = Field(foreign_key="lienresponsableeleve.id", index=True)
+    acteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    action: str = Field(max_length=16, index=True)
+    type_lien: str = Field(max_length=24)
+    date_evenement: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('validation', 'reactivation', 'revocation')",
+            name="ck_evenementlienresponsable_action",
+        ),
+    )
+
+
 class CodeSecours2FA(SQLModel, table=True):
     """Codes de secours a usage unique, generes a l'activation de la 2FA,
     pour se reconnecter si l'utilisateur perd l'acces a son application
