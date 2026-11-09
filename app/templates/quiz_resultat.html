@@ -167,6 +167,35 @@
   </section>
   {% endif %}
 
+
+  {% if analyse_quiz.notions %}
+  <section class="ai-section ai-topic-analytics" aria-labelledby="quiz-topic-title">
+    <div class="ai-section-head">
+      <div>
+        <span class="ai-kicker">Lecture de tes réponses</span>
+        <h2 id="quiz-topic-title">Résultats par thème dans ce quiz</h2>
+        <p>Le taux de réussite est calculé à partir des réponses de cette tentative, sans extrapoler à tout ton parcours.</p>
+      </div>
+      <span class="ai-badge">{{ analyse_quiz.nb_notions }} notions</span>
+    </div>
+    <div class="ai-remediation-result-list">
+      {% for n in analyse_quiz.notions %}
+      <article class="ai-remediation-result-item">
+        <div>
+          <span>{{ n.matiere }} · {{ n.niveau }}</span>
+          <strong>{{ n.notion }}</strong>
+          <small>{{ n.nb_reussites }}/{{ n.nb_questions }} bonnes réponses · {{ n.nb_erreurs }} erreur{{ "s" if n.nb_erreurs != 1 else "" }} · {{ n.nb_sans_reponse }} sans réponse</small>
+        </div>
+        <div class="ai-topic-analytics-score">
+          <strong>{{ n.taux_reussite }}%</strong>
+          <progress max="100" value="{{ n.taux_reussite }}" aria-label="Taux de réussite pour {{ n.notion }}">{{ n.taux_reussite }}%</progress>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {% if notions_detectees %}
   <section class="ai-section ai-remediation-result" aria-labelledby="remediation-result-title">
     <div class="ai-section-head">
