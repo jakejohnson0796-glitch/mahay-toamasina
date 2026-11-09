@@ -36,6 +36,27 @@
     <p>Les questions de cette première version sont générées pour t'entraîner. Elles ne remplacent ni les sujets publiés par les autorités, ni les cours, ni les corrections validées par ton enseignant. Vérifie toujours le programme suivi dans ton établissement.</p>
   </aside>
 
+  {% if request.query_params.get("erreur") %}
+  <div class="erreur" role="alert">
+    {% set erreur = request.query_params.get("erreur") %}
+    {% if erreur == "trop_de_generations" %}
+      Trop d'entraînements ont été lancés récemment. Réessaie un peu plus tard.
+    {% elif erreur == "parcours_indisponible" %}
+      Ce parcours ne correspond pas au niveau vérifié dans ton profil.
+    {% elif erreur == "option_invalide" %}
+      Pour le BEPC ancien programme, sélectionne l'option A ou B.
+    {% elif erreur == "serie_manquante" %}
+      La série du Baccalauréat doit être active et vérifiée dans ton profil.
+    {% elif erreur == "matiere_indisponible" %}
+      Cette matière ne fait pas partie des matières validées pour ton profil.
+    {% elif erreur == "generation_invalide" %}
+      L'entraînement n'a pas pu être généré. Vérifie les matières disponibles puis réessaie.
+    {% else %}
+      Une erreur a empêché le lancement de cet entraînement.
+    {% endif %}
+  </div>
+  {% endif %}
+
   <section class="objectif-examen-section" id="choisir-examen" aria-labelledby="choisir-examen-title">
     <div class="objectif-examen-heading">
       <span class="ai-kicker">Choisir un parcours</span>
