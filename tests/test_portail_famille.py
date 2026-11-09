@@ -300,6 +300,7 @@ def test_compte_responsable_est_cloisonne_aux_routes_famille_et_securite():
     assert chemin_autorise_responsable("GET", "/securite", 42) is True
     assert chemin_autorise_responsable("POST", "/deconnexion", 42) is True
     assert chemin_autorise_responsable("GET", "/static/auth.css", 42) is True
+    assert chemin_autorise_responsable("GET", "/sw.js", 42) is True
     assert chemin_autorise_responsable("GET", "/classe", 42) is False
     assert chemin_autorise_responsable("POST", "/classe/devoirs/rendus/1/corriger", 42) is False
     assert chemin_autorise_responsable("GET", "/famille/42", 42) is False
