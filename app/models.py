@@ -1889,6 +1889,7 @@ class FAQ(SQLModel, table=True):
     est_active: bool = Field(default=True, index=True)
     ordre_affichage: int = Field(default=0)
     cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    modifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_modification: datetime = Field(default_factory=datetime.utcnow)
 
@@ -2251,4 +2252,5 @@ class MembreEtablissement(SQLModel, table=True):
         Index("ix_fk_membre_etablissement_institution_id", "institution_id"),
         Index("ix_fk_membre_etablissement_utilisateur_id", "utilisateur_id"),
         Index("ix_fk_membre_etablissement_cree_par_id", "cree_par_id"),
+        Index("ix_fk_membre_etablissement_modifie_par_id", "modifie_par_id"),
     )
