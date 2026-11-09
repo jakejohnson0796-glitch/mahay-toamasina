@@ -136,4 +136,4 @@ def test_language_smoke_exercises_settings_selection_and_translation_fallback():
     assert "select-langue-mobile" not in smoke
     assert "fallbackEnglish.textContent !== 'Search for a document in approved documents'" in smoke
     assert "locales: ['fr', 'mg', 'en']" in smoke
-    assert 'const CACHE_NOM = "mahay-static-v3";' in service_worker
+    assert 'const CACHE_NOM = "mahay-static-v4";' in service_worker
