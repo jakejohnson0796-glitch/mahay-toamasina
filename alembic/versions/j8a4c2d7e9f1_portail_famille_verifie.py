@@ -115,6 +115,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.drop_index("ix_evenementlienresponsableeleve_date_evenement", table_name="evenementlienresponsableeleve")
+    op.drop_index("ix_evenementlienresponsableeleve_action", table_name="evenementlienresponsableeleve")
+    op.drop_index("ix_evenementlienresponsableeleve_acteur_id", table_name="evenementlienresponsableeleve")
+    op.drop_index("ix_evenementlienresponsableeleve_lien_id", table_name="evenementlienresponsableeleve")
+    op.drop_table("evenementlienresponsableeleve")
     op.drop_index("ix_lienresponsableeleve_eleve_statut", table_name="lienresponsableeleve")
     op.drop_index("ix_lienresponsableeleve_responsable_statut", table_name="lienresponsableeleve")
     op.drop_index("ix_lienresponsableeleve_statut", table_name="lienresponsableeleve")
