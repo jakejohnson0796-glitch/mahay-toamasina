@@ -171,6 +171,7 @@ def test_portail_famille_regroupe_les_lectures_sql_pour_plusieurs_enfants_et_cou
     assert sum(enfant["cours"][0]["nb_seances"] for enfant in resultats) == 2
     assert len(requetes_select) <= 8
 
+
 def test_portail_exclut_les_liens_revoques(db):
     admin = _utilisateur("Admin", "03400000011", RoleUtilisateur.ADMIN)
     parent = _utilisateur("Parent", "03400000012", profil="responsable")
