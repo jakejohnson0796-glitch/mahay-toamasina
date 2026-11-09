@@ -150,6 +150,27 @@ def _page_admin(request: Request, session: Session, admin: Utilisateur, *, erreu
     liens = session.exec(
         select(LienResponsableEleve).order_by(LienResponsableEleve.date_creation.desc()).limit(150)
     ).all()
+    evenements_bruts = session.exec(
+        select(EvenementLienResponsableEleve)
+        .order_by(EvenementLienResponsableEleve.date_evenement.desc())
+        .limit(100)
+    ).all()
+    evenements = []
+    for evenement in evenements_bruts:
+        lien_evenement = session.get(LienResponsableEleve, evenement.lien_id)
+        responsable_evenement = (
+            session.get(Utilisateur, lien_evenement.responsable_id) if lien_evenement else None
+        )
+        eleve_evenement = (
+            session.get(Utilisateur, lien_evenement.eleve_id) if lien_evenement else None
+        )
+        acteur_evenement = session.get(Utilisateur, evenement.acteur_id)
+        evenements.append({
+            "evenement": evenement,
+            "responsable": responsable_evenement,
+            "eleve": eleve_evenement,
+            "acteur": acteur_evenement,
+        })
     lignes = []
     for lien in liens:
         responsable = session.get(Utilisateur, lien.responsable_id)
@@ -165,7 +186,13 @@ def _page_admin(request: Request, session: Session, admin: Utilisateur, *, erreu
     return templates.TemplateResponse(
         request,
         "admin_responsables_eleves.html",
-        {"utilisateur": admin, "liens": lignes, "erreur": erreur, "succes": succes},
+        {
+            "utilisateur": admin,
+            "liens": lignes,
+            "evenements": evenements,
+            "erreur": erreur,
+            "succes": succes,
+        },
         headers={"Cache-Control": "no-store, private", "Pragma": "no-cache", "X-Robots-Tag": "noindex, nofollow"},
     )
 
