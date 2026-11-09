@@ -241,7 +241,9 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert 'identifiant_eleve: str = Form("")' in family_router
     assert 'Utilisateur.identifiant_connexion == identifiant_eleve_nettoye' in family_router
     assert "RoleUtilisateur.RESPONSABLE" in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
-    assert "ResponsablePortalMiddleware" in (ROOT / "app" / "main.py").read_text(encoding="utf-8")
+    assert "chemin_autorise_responsable" in (
+        ROOT / "app" / "force_password_change.py"
+    ).read_text(encoding="utf-8")
     assert action_admin_protegee("/admin/responsables-eleves/associer") is True
     assert action_admin_protegee("/famille") is False
 
