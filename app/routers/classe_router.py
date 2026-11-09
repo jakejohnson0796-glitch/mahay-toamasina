@@ -17,6 +17,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Response
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from ..database import get_session, engine
@@ -62,6 +63,18 @@ def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
             InscriptionCours.utilisateur_id == utilisateur_id,
         )
     ).first() is not None
+
+
+def _compter_inscrits_cours(session: Session, cours_id: int) -> int:
+    """Compte les inscriptions directement en SQL, sans charger les lignes ORM."""
+    return int(
+        session.exec(
+            select(func.count())
+            .select_from(InscriptionCours)
+            .where(InscriptionCours.cours_id == cours_id)
+        ).one()
+        or 0
+    )
 
 
 def _generer_nom_salle(cours_id: int) -> str:
@@ -404,7 +417,7 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
         fiches_revision_par_seance = {
             fiche.seance_id: fiche for fiche in fiches_revision
         }
-    nb_etudiants = len(session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all())
+    nb_etudiants = _compter_inscrits_cours(session, cours_id)
     requete_devoirs = select(Devoir).where(Devoir.cours_id == cours_id)
     if not peut_gerer:
         requete_devoirs = requete_devoirs.where(Devoir.archive == False)  # noqa: E712
