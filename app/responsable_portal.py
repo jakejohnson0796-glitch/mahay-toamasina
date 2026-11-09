@@ -69,7 +69,10 @@ class ResponsablePortalMiddleware(BaseHTTPMiddleware):
 
             est_responsable = (
                 utilisateur.role == RoleUtilisateur.RESPONSABLE
-                or utilisateur.profil_souhaite == "responsable"
+                or (
+                    utilisateur.profil_souhaite == "responsable"
+                    and utilisateur.role != RoleUtilisateur.ADMIN
+                )
             )
             if est_responsable and not chemin_autorise_responsable(
                 request.method, request.url.path, int(user_id)
