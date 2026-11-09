@@ -260,6 +260,27 @@ def _derniere_tentative_utilisateur(session: Session, utilisateur_id: int) -> Op
         return None
 
 
+def _libelle_serie_baccalaureat(session: Session, option: Optional[OptionScolaire]) -> Optional[str]:
+    """Retourne uniquement une série active et vérifiée du profil scolaire."""
+    if not option or not option.est_active or option.statut_validation != "verifie":
+        return None
+    if option.type_option == "serie":
+        return f"{option.code} · {option.libelle}"
+
+    if option.type_option == "option" and option.parent_option_id:
+        parent = session.get(OptionScolaire, option.parent_option_id)
+        if (
+            parent
+            and parent.referentiel_id == option.referentiel_id
+            and parent.niveau_id == option.niveau_id
+            and parent.type_option == "serie"
+            and parent.est_active
+            and parent.statut_validation == "verifie"
+        ):
+            return f"{parent.code} · {parent.libelle} — {option.code} · {option.libelle}"
+    return None
+
+
 @router.get("/objectif-examen")
 def page_objectif_examen(request: Request, session: Session = Depends(get_session)):
     """Centre de préparation initial BEPC/Baccalauréat, basé sur le profil vérifié."""
@@ -296,17 +317,12 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
         session.get(OptionScolaire, contexte["option_scolaire_id"])
         if contexte and contexte.get("option_scolaire_id") else None
     )
+    serie_label = _libelle_serie_baccalaureat(session, option_profil)
     bacc_disponible = bool(
         contexte
         and cycle == "lycee"
         and str(niveau or "").strip().casefold() == "terminale"
-        and option_profil is not None
-        and option_profil.est_active
-        and option_profil.statut_validation == "verifie"
-    )
-    serie_label = (
-        f"{option_profil.code} · {option_profil.libelle}"
-        if bacc_disponible and option_profil else None
+        and serie_label
     )
     priorites = quiz_module.plan_revision_du_jour(
         session, utilisateur.id, limit=5
@@ -394,15 +410,15 @@ def lancer_objectif_examen(
             not option_profil
             or option_profil.referentiel_id != contexte.get("referentiel_id")
             or option_profil.niveau_id != contexte.get("niveau_scolaire_id")
-            or not option_profil.est_active
-            or option_profil.statut_validation != "verifie"
         ):
+            return RedirectResponse("/objectif-examen?erreur=serie_manquante", status_code=303)
+        serie = _libelle_serie_baccalaureat(session, option_profil)
+        if not serie:
             return RedirectResponse("/objectif-examen?erreur=serie_manquante", status_code=303)
         cycle = contexte["cycle_education"]
         niveau = contexte["niveau"]
         niveau_scolaire_id = contexte["niveau_scolaire_id"]
         option_scolaire_id = option_profil.id
-        serie = f"{option_profil.code} · {option_profil.libelle}"
         try:
             contexte_examen = objectif_examen.construire_contexte_examen(
                 objectif, serie=serie
