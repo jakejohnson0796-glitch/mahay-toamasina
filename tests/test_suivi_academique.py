@@ -155,7 +155,11 @@ def test_actions_suivi_enseignant_s_appuient_uniquement_sur_les_donnees_enregist
         {
             "utilisateur": eleve_a,
             "moyenne": 16.0,
-            "notes": [{"rendu": corrige}, {"rendu": en_attente}],
+            "notes": [
+                {"rendu": corrige},
+                {"rendu": en_attente},
+                {"devoir": SimpleNamespace(archive=True), "rendu": en_attente},
+            ],
         },
         {
             "utilisateur": eleve_b,
