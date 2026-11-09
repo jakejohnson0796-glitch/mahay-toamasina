@@ -493,6 +493,8 @@ def inscription(
     session.commit()
 
     _ouvrir_session_authentifiee(request, utilisateur)
+    if utilisateur.profil_souhaite == "responsable":
+        return RedirectResponse("/famille", status_code=303)
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         return RedirectResponse("/bienvenue", status_code=303)
     return RedirectResponse("/", status_code=303)
