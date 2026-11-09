@@ -352,6 +352,11 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
         professeur_id = professeur.id
         eleve_a_id = eleve_a.id
         eleve_b_id = eleve_b.id
+        eleve_c = creer_utilisateur("Élève C", "+261340000904", RoleUtilisateur.ETUDIANT)
+        session.add(eleve_c)
+        session.commit()
+        session.refresh(eleve_c)
+        eleve_c_id = eleve_c.id
         groupe_a = GroupeSousSalle(
             seance_id=seance_id,
             nom="Groupe 1",
@@ -382,7 +387,7 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
             AffectationSousSalle(
                 seance_id=seance_id,
                 groupe_id=groupe_b_id,
-                utilisateur_id=eleve_b_id,
+                utilisateur_id=eleve_c_id,
             ),
         ])
         session.commit()
@@ -404,7 +409,7 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
             assert nombre_selects["total"] == 2
             assert [g["nombre_membres"] for g in resultats_prof] == [2, 1]
             assert resultats_prof[0]["membres"] == ["Élève A", "Élève B"]
-            assert resultats_prof[1]["membres"] == ["Élève B"]
+            assert resultats_prof[1]["membres"] == ["Élève C"]
 
             resultats_eleve = _resultats_groupes_sous_salles(
                 session,
