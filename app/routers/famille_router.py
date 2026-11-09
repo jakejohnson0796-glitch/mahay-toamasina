@@ -14,6 +14,7 @@ from ..database import get_session
 from ..models import (
     Cours,
     Devoir,
+    EvenementLienResponsableEleve,
     InscriptionCours,
     LienResponsableEleve,
     PointagePresence,
@@ -256,7 +257,13 @@ def associer_responsable_eleve(
     ).first()
     if not responsable or not eleve:
         return RedirectResponse("/admin/responsables-eleves?erreur=comptes", status_code=303)
-    if responsable.id == eleve.id or eleve.role != RoleUtilisateur.ETUDIANT or eleve.profil_souhaite == "responsable":
+    if (
+        responsable.banni
+        or eleve.banni
+        or responsable.id == eleve.id
+        or eleve.role != RoleUtilisateur.ETUDIANT
+        or eleve.profil_souhaite != "eleve"
+    ):
         return RedirectResponse("/admin/responsables-eleves?erreur=eleve", status_code=303)
 
     lien = session.exec(
@@ -269,17 +276,17 @@ def associer_responsable_eleve(
     if lien and lien.statut == "actif":
         return RedirectResponse("/admin/responsables-eleves?erreur=existant", status_code=303)
 
+    action_auditee = "reactivation" if lien else "validation"
     if lien:
         lien.type_lien = type_lien
         lien.statut = "actif"
         lien.verifie_par_id = admin.id
         lien.date_verification = maintenant
-        lien.date_creation = maintenant
-        lien.revoque_par_id = None
-        lien.date_revocation = None
+        # Conserver la date de création et les champs de dernière révocation :
+        # l'historique append-only ci-dessous garde chaque décision.
         session.add(lien)
     else:
-        session.add(LienResponsableEleve(
+        lien = LienResponsableEleve(
             responsable_id=responsable.id,
             eleve_id=eleve.id,
             type_lien=type_lien,
@@ -287,7 +294,16 @@ def associer_responsable_eleve(
             verifie_par_id=admin.id,
             date_verification=maintenant,
             date_creation=maintenant,
-        ))
+        )
+        session.add(lien)
+    session.flush()
+    session.add(EvenementLienResponsableEleve(
+        lien_id=lien.id,
+        acteur_id=admin.id,
+        action=action_auditee,
+        type_lien=type_lien,
+        date_evenement=maintenant,
+    ))
     try:
         session.commit()
     except IntegrityError:
@@ -314,5 +330,12 @@ def revoquer_lien_responsable_eleve(
         lien.revoque_par_id = admin.id
         lien.date_revocation = datetime.utcnow()
         session.add(lien)
+        session.add(EvenementLienResponsableEleve(
+            lien_id=lien.id,
+            acteur_id=admin.id,
+            action="revocation",
+            type_lien=lien.type_lien,
+            date_evenement=lien.date_revocation,
+        ))
         session.commit()
     return RedirectResponse("/admin/responsables-eleves?ok=revoque", status_code=303)
