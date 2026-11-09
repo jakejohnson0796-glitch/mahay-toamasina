@@ -103,7 +103,6 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         ).all()
         if ids_cours else []
     )
-    cours_par_id = {cours.id: cours for cours in cours_liste}
     cours_par_eleve = {
         eleve_id: [
             cours for cours in cours_liste
@@ -123,10 +122,8 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         ).all()
         if ids_cours else []
     )
-    devoirs_par_cours: dict[int, list[Devoir]] = {}
     devoirs_par_id = {}
     for devoir in devoirs:
-        devoirs_par_cours.setdefault(devoir.cours_id, []).append(devoir)
         devoirs_par_id[devoir.id] = devoir
 
     ids_devoirs = sorted(devoirs_par_id)
