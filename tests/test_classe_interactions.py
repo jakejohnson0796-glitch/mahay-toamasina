@@ -235,3 +235,101 @@ def test_templates_groupes_et_consentement_compilent():
     env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
     assert env.get_template("classe_sous_salle.html") is not None
     assert env.get_template("classe_transcription_consentement.html") is not None
+
+def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ouverts():
+    from sqlalchemy import event
+
+    from app.routers.classe_interactions_router import _resultats_sondages
+
+    engine = creer_base()
+    nombre_selects = {"total": 0}
+
+    def compter_selects(_connexion, _curseur, instruction, _parametres, _contexte, _executemany):
+        if instruction.lstrip().upper().startswith("SELECT"):
+            nombre_selects["total"] += 1
+
+    with Session(engine) as session:
+        professeur, eleve_a, eleve_b, cours, seance = creer_seance(session)
+        professeur_id = professeur.id
+        eleve_a_id = eleve_a.id
+        eleve_b_id = eleve_b.id
+        sondage_ouvert = SondageSeance(
+            seance_id=seance.id,
+            cours_id=cours.id,
+            createur_id=professeur_id,
+            question="Question ouverte",
+            options_json='["A", "B"]',
+            type_sondage="sondage",
+            ouvert=True,
+        )
+        quiz_cloture = SondageSeance(
+            seance_id=seance.id,
+            cours_id=cours.id,
+            createur_id=professeur.id,
+            question="Question terminée",
+            options_json='["Faux", "Vrai"]',
+            type_sondage="quiz",
+            bonne_option=1,
+            ouvert=False,
+        )
+        session.add_all([sondage_ouvert, quiz_cloture])
+        session.commit()
+        session.refresh(sondage_ouvert)
+        session.refresh(quiz_cloture)
+        session.add_all([
+            ReponseSondageSeance(
+                sondage_id=sondage_ouvert.id,
+                utilisateur_id=eleve_a_id,
+                option_index=0,
+            ),
+            ReponseSondageSeance(
+                sondage_id=sondage_ouvert.id,
+                utilisateur_id=eleve_b_id,
+                option_index=1,
+            ),
+            ReponseSondageSeance(
+                sondage_id=quiz_cloture.id,
+                utilisateur_id=eleve_a.id,
+                option_index=1,
+            ),
+        ])
+        session.commit()
+        session.refresh(sondage_ouvert)
+        session.refresh(quiz_cloture)
+
+        event.listen(engine, "before_cursor_execute", compter_selects)
+        try:
+            resultats_eleve = _resultats_sondages(
+                session,
+                [sondage_ouvert, quiz_cloture],
+                eleve_a_id,
+                False,
+            )
+            assert nombre_selects["total"] == 2
+
+            ouvert, cloture = resultats_eleve
+            assert ouvert["a_repondu"] is True
+            assert ouvert["ma_reponse"] == 0
+            assert ouvert["nombre_reponses"] == 2
+            assert ouvert["comptes"] is None
+            assert ouvert["bonne_option"] is None
+
+            assert cloture["a_repondu"] is True
+            assert cloture["ma_reponse"] == 1
+            assert cloture["nombre_reponses"] == 1
+            assert cloture["comptes"] == [0, 1]
+            assert cloture["bonne_option"] == 1
+
+            resultats_prof = _resultats_sondages(
+                session,
+                [sondage_ouvert, quiz_cloture],
+                professeur_id,
+                True,
+            )
+            assert nombre_selects["total"] == 4
+            assert resultats_prof[0]["comptes"] == [1, 1]
+            assert resultats_prof[1]["bonne_option"] == 1
+        finally:
+            event.remove(engine, "before_cursor_execute", compter_selects)
+
+    engine.dispose()

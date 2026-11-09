@@ -7,6 +7,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
@@ -86,31 +87,91 @@ def _options_sondage(sondage: SondageSeance) -> list[str]:
     return [str(item) for item in options if isinstance(item, str)]
 
 
-def _resultats_sondage(session: Session, sondage: SondageSeance, utilisateur_id: int, gerant: bool) -> dict:
-    options = _options_sondage(sondage)
-    reponses = session.exec(
-        select(ReponseSondageSeance).where(ReponseSondageSeance.sondage_id == sondage.id)
-    ).all()
-    compte = [0 for _ in options]
-    for reponse in reponses:
-        if 0 <= reponse.option_index < len(compte):
-            compte[reponse.option_index] += 1
-    ma_reponse = next((r.option_index for r in reponses if r.utilisateur_id == utilisateur_id), None)
-    resultat_visible = gerant or not sondage.ouvert
-    donnees = {
-        "id": sondage.id,
-        "question": sondage.question,
-        "options": options,
-        "type": sondage.type_sondage,
-        "ouvert": sondage.ouvert,
-        "a_repondu": ma_reponse is not None,
-        "ma_reponse": ma_reponse,
-        "nombre_reponses": len(reponses),
-        "comptes": compte if resultat_visible else None,
-        "bonne_option": sondage.bonne_option if resultat_visible and sondage.type_sondage == "quiz" else None,
-        "date_creation": sondage.date_creation.isoformat(),
-    }
-    return donnees
+def _resultats_sondages(
+    session: Session,
+    sondages: list[SondageSeance],
+    utilisateur_id: int,
+    gerant: bool,
+) -> list[dict]:
+    """Construit les résultats de plusieurs sondages avec deux lectures groupées."""
+    if not sondages:
+        return []
+
+    sondage_ids = [sondage.id for sondage in sondages if sondage.id is not None]
+    reponses_par_sondage: dict[int, dict[int, int]] = {sondage_id: {} for sondage_id in sondage_ids}
+    totaux_par_sondage: dict[int, int] = {sondage_id: 0 for sondage_id in sondage_ids}
+    mes_reponses: dict[int, int] = {}
+
+    if sondage_ids:
+        # Une seule agrégation remplace une requête par sondage. Les totaux
+        # incluent toutes les lignes, même si une ancienne réponse est invalide.
+        lignes_comptees = session.exec(
+            select(
+                ReponseSondageSeance.sondage_id,
+                ReponseSondageSeance.option_index,
+                func.count(ReponseSondageSeance.id),
+            )
+            .where(ReponseSondageSeance.sondage_id.in_(sondage_ids))
+            .group_by(
+                ReponseSondageSeance.sondage_id,
+                ReponseSondageSeance.option_index,
+            )
+        ).all()
+        for sondage_id, option_index, nombre in lignes_comptees:
+            totaux_par_sondage[sondage_id] = totaux_par_sondage.get(sondage_id, 0) + nombre
+            reponses_par_sondage.setdefault(sondage_id, {})[option_index] = nombre
+
+        lignes_personnelles = session.exec(
+            select(
+                ReponseSondageSeance.sondage_id,
+                ReponseSondageSeance.option_index,
+            ).where(
+                ReponseSondageSeance.sondage_id.in_(sondage_ids),
+                ReponseSondageSeance.utilisateur_id == utilisateur_id,
+            )
+        ).all()
+        mes_reponses = {
+            sondage_id: option_index
+            for sondage_id, option_index in lignes_personnelles
+        }
+
+    resultats = []
+    for sondage in sondages:
+        options = _options_sondage(sondage)
+        comptes = [0 for _ in options]
+        for option_index, nombre in reponses_par_sondage.get(sondage.id, {}).items():
+            if 0 <= option_index < len(comptes):
+                comptes[option_index] += nombre
+
+        ma_reponse = mes_reponses.get(sondage.id)
+        resultat_visible = gerant or not sondage.ouvert
+        resultats.append({
+            "id": sondage.id,
+            "question": sondage.question,
+            "options": options,
+            "type": sondage.type_sondage,
+            "ouvert": sondage.ouvert,
+            "a_repondu": ma_reponse is not None,
+            "ma_reponse": ma_reponse,
+            "nombre_reponses": totaux_par_sondage.get(sondage.id, 0),
+            "comptes": comptes if resultat_visible else None,
+            "bonne_option": (
+                sondage.bonne_option
+                if resultat_visible and sondage.type_sondage == "quiz"
+                else None
+            ),
+            "date_creation": sondage.date_creation.isoformat(),
+        })
+    return resultats
+
+
+def _resultats_sondage(
+    session: Session,
+    sondage: SondageSeance,
+    utilisateur_id: int,
+    gerant: bool,
+) -> dict:
+    return _resultats_sondages(session, [sondage], utilisateur_id, gerant)[0]
 
 
 @router.get("/classe/seances/{seance_id}/sondages")
@@ -126,10 +187,7 @@ def lister_sondages_seance(request: Request, seance_id: int, session: Session = 
         .limit(20)
     ).all()
     return JSONResponse({
-        "sondages": [
-            _resultats_sondage(session, sondage, utilisateur.id, gerant)
-            for sondage in sondages
-        ]
+        "sondages": _resultats_sondages(session, sondages, utilisateur.id, gerant)
     })
 
 
