@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.models import (
     AffectationSousSalle,
@@ -348,7 +348,7 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
 
     with Session(engine) as session:
         professeur, eleve_a, eleve_b, _cours, seance = creer_seance(session)
-        seance_id = seance_id
+        seance_id = seance.id
         professeur_id = professeur.id
         eleve_a_id = eleve_a.id
         eleve_b_id = eleve_b.id
