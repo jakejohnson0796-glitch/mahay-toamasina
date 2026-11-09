@@ -39,6 +39,8 @@ def chemin_autorise_responsable(method: str, path: str, user_id: int) -> bool:
         "/securite/mot-de-passe",
     }:
         return True
+    if method in {"GET", "POST"} and path.startswith("/securite/2fa/"):
+        return True
     if method in {"GET", "HEAD"} and path == f"/profil/photo/{user_id}":
         return True
     return False
