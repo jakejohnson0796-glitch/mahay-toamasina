@@ -27,7 +27,6 @@ from .static_cache import VersionedStaticAssetCacheMiddleware
 from .request_limits import RequestSizeLimitMiddleware
 from .admin_security import AdminActionConfirmationMiddleware
 from .force_password_change import ForcePasswordChangeMiddleware
-from .responsable_portal import ResponsablePortalMiddleware
 from .production_guard import valider_configuration_production
 from .seed_faq import peupler_faq_initiale
 from .admin_init import assurer_compte_admin
@@ -69,8 +68,6 @@ if parametres.environnement == "production" and parametres.session_secret_key ==
 app.add_middleware(AdminActionConfirmationMiddleware)
 # Le garde-fou est placé sous SessionMiddleware pour pouvoir lire la session.
 app.add_middleware(ForcePasswordChangeMiddleware)
-# Les comptes responsables sont cloisonnés au portail famille et à la sécurité.
-app.add_middleware(ResponsablePortalMiddleware)
 
 # Cle de session : lue depuis SESSION_SECRET_KEY (.env) si presente, sinon
 # retombe sur la valeur de demo. A REMPLACER avant toute mise en ligne
