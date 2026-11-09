@@ -103,7 +103,7 @@ def test_un_eleve_ne_peut_pas_repondre_deux_fois_au_meme_sondage():
         session.refresh(sondage)
         session.add(ReponseSondageSeance(
             sondage_id=sondage.id,
-            utilisateur_id=eleve_a.id,
+            utilisateur_id=eleve_a_id,
             option_index=1,
         ))
         session.commit()
@@ -273,6 +273,9 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
         session.commit()
         session.refresh(sondage_ouvert)
         session.refresh(quiz_cloture)
+        professeur_id = professeur.id
+        eleve_a_id = eleve_a.id
+        eleve_b_id = eleve_b.id
         session.add_all([
             ReponseSondageSeance(
                 sondage_id=sondage_ouvert.id,
@@ -281,7 +284,7 @@ def test_resultats_sondages_agreges_en_deux_requetes_sans_divulguer_les_votes_ou
             ),
             ReponseSondageSeance(
                 sondage_id=sondage_ouvert.id,
-                utilisateur_id=eleve_b.id,
+                utilisateur_id=eleve_b_id,
                 option_index=1,
             ),
             ReponseSondageSeance(
