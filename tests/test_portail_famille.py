@@ -244,6 +244,8 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert "chemin_autorise_responsable" in (
         ROOT / "app" / "force_password_change.py"
     ).read_text(encoding="utf-8")
+    force_middleware = (ROOT / "app" / "force_password_change.py").read_text(encoding="utf-8")
+    assert force_middleware.index("utilisateur.doit_changer_mot_de_passe") < force_middleware.index("est_responsable")
     assert action_admin_protegee("/admin/responsables-eleves/associer") is True
     assert action_admin_protegee("/famille") is False
 
