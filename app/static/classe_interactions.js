@@ -257,11 +257,31 @@
         creerElement(listeDocuments, "p", "Aucun document partagé.", "stat-label");
       }
       data.partages.forEach(function (documentPartage) {
-        const ligne = creerElement(listeDocuments, "p", null, "classe-interaction-lien");
+        const ligne = creerElement(listeDocuments, "div", null, "classe-interaction-lien");
         const lien = creerElement(ligne, "a", documentPartage.titre);
         lien.href = documentPartage.ouvrir_url;
         lien.target = "_blank";
         lien.rel = "noopener";
+
+        if (peutGerer) {
+          const retirer = creerElement(ligne, "button", "Retirer", "bouton bouton-secondaire");
+          retirer.type = "button";
+          retirer.addEventListener("click", async function () {
+            if (!window.confirm("Retirer ce document de la séance ? Les participants ne pourront plus l'ouvrir depuis cette salle.")) {
+              return;
+            }
+            try {
+              await envoyerFormulaire(
+                base + "/documents/" + encodeURIComponent(documentPartage.id) + "/retirer",
+                {}
+              );
+              await actualiserDocuments();
+              notifier("Document retiré de la séance.");
+            } catch (erreur) {
+              notifier(erreur.message);
+            }
+          });
+        }
       });
       if (selectDocument) {
         selectDocument.replaceChildren();
