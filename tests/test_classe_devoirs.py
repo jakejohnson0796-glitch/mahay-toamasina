@@ -420,6 +420,28 @@ class TestClasseDevoirs(unittest.TestCase):
         self.assertIn("'=HYPERLINK", reponse.text)
 
 
+    def test_comptage_inscrits_utilise_une_agregation_sql(self):
+        from sqlalchemy import event
+
+        from app.routers.classe_router import _compter_inscrits_cours
+
+        requetes_inscriptions = []
+
+        def capturer_requete(_connexion, _curseur, instruction, _parametres, _contexte, _executemany):
+            if "inscriptioncours" in instruction.casefold():
+                requetes_inscriptions.append(instruction)
+
+        event.listen(engine, "before_cursor_execute", capturer_requete)
+        try:
+            with Session(engine) as session:
+                nombre = _compter_inscrits_cours(session, self.cours_id)
+        finally:
+            event.remove(engine, "before_cursor_execute", capturer_requete)
+
+        self.assertEqual(nombre, 1)
+        self.assertEqual(len(requetes_inscriptions), 1)
+        self.assertIn("count(", requetes_inscriptions[0].casefold())
+
     def test_templates_classe_compilent(self):
         env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
         for nom in ("classe_liste.html", "classe_detail.html", "classe_devoir.html"):
