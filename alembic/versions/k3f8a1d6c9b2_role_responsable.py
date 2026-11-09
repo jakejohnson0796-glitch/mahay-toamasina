@@ -21,13 +21,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    bind = op.get_bind()
-    if bind.dialect.name != "postgresql":
-        return
-    # PostgreSQL ne permet pas de retirer une valeur d'un enum natif sans
-    # recréer le type et migrer toutes ses colonnes. Le rollback doit être
-    # réalisé explicitement après réaffectation des comptes RESPONSABLE.
-    raise NotImplementedError(
-        "PostgreSQL ne permet pas de supprimer directement une valeur enum. "
-        "Réaffecter les comptes RESPONSABLE puis recréer roleutilisateur manuellement."
-    )
+    # PostgreSQL ne sait pas retirer une valeur d'un enum natif. On la laisse
+    # disponible après downgrade : sans ligne ni code qui l'utilise, elle est
+    # inoffensive et permet les downgrades contrôlés des révisions suivantes.
+    return
