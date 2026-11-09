@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block titre %}Espace famille — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="classe-page">
+  <p class="classe-breadcrumb"><a href="/dashboard">Tableau de bord</a> / Espace famille</p>
+  <header class="classe-detail-head">
+    <div>
+      <h1>Espace famille</h1>
+      <p class="classe-detail-meta">Suivez les résultats publiés et les présences des enfants rattachés à votre compte.</p>
+    </div>
+  </header>
+
+  <section class="classe-section-card" role="note">
+    <h2>Accès vérifié</h2>
+    <p>Les informations visibles ici sont limitées aux enfants dont le lien familial a été vérifié par un administrateur. Les notes personnelles, les brouillons, les messages privés et les documents déposés ne sont pas partagés.</p>
+  </section>
+
+  {% for enfant in enfants %}
+    <section class="classe-section-card">
+      <div class="classe-form-head">
+        <div>
+          <h2>{{ enfant.eleve.nom }}</h2>
+          <p>{{ enfant.type_lien }} · suivi scolaire</p>
+        </div>
+        <span class="classe-course-badge">Lien actif</span>
+      </div>
+
+      {% if enfant.cours %}
+        {% for info in enfant.cours %}
+          <article class="classe-section-card">
+            <div class="classe-form-head">
+              <div>
+                <h3>{{ info.cours.nom }}</h3>
+                <p>{{ info.cours.matiere }} · {{ info.cours.niveau }}</p>
+              </div>
+              <strong>
+                {% if info.moyenne is not none %}{{ "%.2f"|format(info.moyenne) }} / 20{% else %}Pas encore de note publiée{% endif %}
+              </strong>
+            </div>
+            <p class="classe-section-card-intro">Moyenne pondérée calculée uniquement à partir des corrections publiées par l’enseignant.</p>
+
+            <div class="classe-list">
+              <div class="classe-row">
+                <span>Présences enregistrées</span>
+                <strong>{{ info.presences.present }}</strong>
+              </div>
+              <div class="classe-row">
+                <span>Absences</span>
+                <strong>{{ info.presences.absent }}</strong>
+              </div>
+              <div class="classe-row">
+                <span>Retards</span>
+                <strong>{{ info.presences.retard }}</strong>
+              </div>
+              <div class="classe-row">
+                <span>Absences excusées</span>
+                <strong>{{ info.presences.excuse }}</strong>
+              </div>
+            </div>
+
+            <h4>Dernières évaluations publiées</h4>
+            {% if info.notes %}
+              <div class="classe-table-scroll">
+                <table class="classe-table">
+                  <thead><tr><th>Évaluation</th><th>Note</th><th>Période</th><th>Appréciation</th></tr></thead>
+                  <tbody>
+                  {% for item in info.notes %}
+                    <tr>
+                      <th>{{ item.devoir.titre }}</th>
+                      <td>{{ "%.2f"|format(item.note) }} / {{ "%.2f"|format(item.devoir.bareme) }} <small>({{ "%.2f"|format(item.note_sur_20) }}/20)</small></td>
+                      <td>{{ item.devoir.periode or "—" }}</td>
+                      <td>{{ item.appreciation or "—" }}</td>
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="classe-empty-stage">Aucune note publiée pour ce cours.</p>
+            {% endif %}
+            <p class="classe-section-card-intro">Pointages connus : {{ info.nb_pointages }} sur {{ info.nb_seances }} séances recensées. Une séance sans pointage n’est pas considérée comme une absence.</p>
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="classe-empty-stage">Aucun cours virtuel n’est associé à cet élève pour le moment.</p>
+      {% endif %}
+    </section>
+  {% else %}
+    <section class="classe-empty-stage">
+      <div>
+        <h2>Aucun enfant rattaché pour le moment</h2>
+        <p>Votre compte responsable est prêt. Contactez l’administration de l’établissement ou le support MITARIDALA pour faire vérifier votre lien avec l’élève. Aucun accès ne sera accordé sur la seule base d’un numéro de téléphone.</p>
+      </div>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}
