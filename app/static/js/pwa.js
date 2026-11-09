@@ -174,6 +174,7 @@
   function initialiser(carte){
     var userId=(carte.dataset.userId||"").trim(), courseId=(carte.dataset.courseId||"").trim();
     var url=carte.dataset.exportUrl||"", cle=userId+":"+courseId;
+    try { localStorage.setItem("mitaridala:offline:last-user", userId); } catch (_) {}
     var save=carte.querySelector("[data-offline-save]"), del=carte.querySelector("[data-offline-delete]");
     var open=carte.querySelector("[data-offline-open]");
     if(!/^\d+$/.test(userId)||!/^\d+$/.test(courseId)||!save||!del||!open)return;
@@ -227,7 +228,7 @@
     document.querySelectorAll('form[action="/deconnexion"]').forEach(function(form){
       form.addEventListener("submit",function(event){
         event.preventDefault();
-        supprimerTous().catch(function(){}).finally(function(){form.submit();});
+        supprimerTous().catch(function(){}).finally(function(){try { localStorage.removeItem("mitaridala:offline:last-user"); } catch (_) {} form.submit();});
       });
     });
   }

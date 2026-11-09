@@ -92,3 +92,17 @@ def test_les_packs_hors_ligne_expirent_et_sont_verifies_a_ouverture():
     assert "expires_le:" in pwa
     assert "Date.parse(pack.expires_le" in lecteur
     assert 'deletePack(uid+":"+cid)' in lecteur
+
+
+def test_la_bibliotheque_hors_ligne_liste_les_packs_du_dernier_compte():
+    lecteur = (ROOT / "app" / "static" / "js" / "offline-reader.js").read_text(encoding="utf-8")
+    pwa = (ROOT / "app" / "static" / "js" / "pwa.js").read_text(encoding="utf-8")
+    assert "mitaridala:offline:last-user" in lecteur
+    assert "mitaridala:offline:last-user" in pwa
+    assert "readAllPacks()" in lecteur
+    assert "Mes cours téléchargés" in lecteur
+
+
+def test_la_deconnexion_efface_aussi_le_dernier_compte_hors_ligne():
+    pwa = (ROOT / "app" / "static" / "js" / "pwa.js").read_text(encoding="utf-8")
+    assert 'localStorage.removeItem("mitaridala:offline:last-user")' in pwa
