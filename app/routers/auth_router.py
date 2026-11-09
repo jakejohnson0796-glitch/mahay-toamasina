@@ -485,7 +485,7 @@ def inscription(
     session.commit()
     session.refresh(utilisateur)
 
-    if utilisateur.role == RoleUtilisateur.ETUDIANT:
+    if utilisateur.role == RoleUtilisateur.ETUDIANT and utilisateur.profil_souhaite != "responsable":
         subscription.creer_essai_gratuit(session, utilisateur)
 
     # Notification interne : chaque administrateur recoit une alerte.
