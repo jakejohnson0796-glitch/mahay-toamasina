@@ -7,7 +7,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
-from sqlalchemy import delete, func
+from sqlalchemy import delete, func, update
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
@@ -191,6 +191,20 @@ def lister_sondages_seance(request: Request, seance_id: int, session: Session = 
     })
 
 
+def _fermer_sondages_ouverts(session: Session, seance_id: int) -> int:
+    """Ferme en une seule requête les sondages encore ouverts de cette séance."""
+    resultat = session.exec(
+        update(SondageSeance)
+        .where(
+            SondageSeance.seance_id == seance_id,
+            SondageSeance.ouvert.is_(True),
+        )
+        .values(ouvert=False, date_cloture=datetime.utcnow())
+        .execution_options(synchronize_session=False)
+    )
+    return int(resultat.rowcount or 0)
+
+
 @router.post("/classe/seances/{seance_id}/sondages")
 def creer_sondage_seance(
     request: Request,
@@ -222,16 +236,8 @@ def creer_sondage_seance(
     if type_sondage == "sondage":
         bonne_option = None
     # Une seule interaction reste ouverte à la fois dans une séance.
-    anciennes = session.exec(
-        select(SondageSeance).where(
-            SondageSeance.seance_id == seance_id,
-            SondageSeance.ouvert == True,  # noqa: E712
-        )
-    ).all()
-    for ancienne in anciennes:
-        ancienne.ouvert = False
-        ancienne.date_cloture = datetime.utcnow()
-        session.add(ancienne)
+    # La mise à jour groupée évite de charger puis modifier chaque ancien sondage.
+    _fermer_sondages_ouverts(session, seance_id)
     sondage = SondageSeance(
         seance_id=seance.id,
         cours_id=cours.id,
