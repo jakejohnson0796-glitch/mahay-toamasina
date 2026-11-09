@@ -203,10 +203,19 @@
     });
   }
 
+  // Les rafraîchissements sont limités aux panneaux visibles et dédupliqués
+  // pour éviter plusieurs requêtes simultanées si le réseau est lent.
+  const rafraichissementsEnCours = {
+    groupes: false,
+    documents: false,
+    transcription: false
+  };
+
   // --- Répartition en sous-salles : seul le serveur choisit les affectations.
   const listeGroupes = document.getElementById("liste-groupes");
   async function actualiserGroupes() {
-    if (!listeGroupes) return;
+    if (!listeGroupes || rafraichissementsEnCours.groupes) return;
+    rafraichissementsEnCours.groupes = true;
     try {
       const data = await obtenirJson(base + "/groupes");
       listeGroupes.replaceChildren();
@@ -229,6 +238,8 @@
     } catch (erreur) {
       listeGroupes.replaceChildren();
       creerElement(listeGroupes, "p", erreur.message, "erreur");
+    } finally {
+      rafraichissementsEnCours.groupes = false;
     }
   }
 
@@ -249,7 +260,8 @@
   const listeDocuments = document.getElementById("liste-documents-partages");
   const selectDocument = document.getElementById("document-a-partager");
   async function actualiserDocuments() {
-    if (!listeDocuments) return;
+    if (!listeDocuments || rafraichissementsEnCours.documents) return;
+    rafraichissementsEnCours.documents = true;
     try {
       const data = await obtenirJson(base + "/documents");
       listeDocuments.replaceChildren();
@@ -257,11 +269,31 @@
         creerElement(listeDocuments, "p", "Aucun document partagé.", "stat-label");
       }
       data.partages.forEach(function (documentPartage) {
-        const ligne = creerElement(listeDocuments, "p", null, "classe-interaction-lien");
+        const ligne = creerElement(listeDocuments, "div", null, "classe-interaction-lien");
         const lien = creerElement(ligne, "a", documentPartage.titre);
         lien.href = documentPartage.ouvrir_url;
         lien.target = "_blank";
         lien.rel = "noopener";
+
+        if (peutGerer) {
+          const retirer = creerElement(ligne, "button", "Retirer", "bouton bouton-secondaire");
+          retirer.type = "button";
+          retirer.addEventListener("click", async function () {
+            if (!window.confirm("Retirer ce document de la séance ? Les participants ne pourront plus l'ouvrir depuis cette salle.")) {
+              return;
+            }
+            try {
+              await envoyerFormulaire(
+                base + "/documents/" + encodeURIComponent(documentPartage.id) + "/retirer",
+                {}
+              );
+              await actualiserDocuments();
+              notifier("Document retiré de la séance.");
+            } catch (erreur) {
+              notifier(erreur.message);
+            }
+          });
+        }
       });
       if (selectDocument) {
         selectDocument.replaceChildren();
@@ -278,6 +310,8 @@
     } catch (erreur) {
       listeDocuments.replaceChildren();
       creerElement(listeDocuments, "p", erreur.message, "erreur");
+    } finally {
+      rafraichissementsEnCours.documents = false;
     }
   }
 
@@ -363,7 +397,8 @@
   }
 
   async function actualiserTranscription() {
-    if (!transcriptionStatut) return;
+    if (!transcriptionStatut || rafraichissementsEnCours.transcription) return;
+    rafraichissementsEnCours.transcription = true;
     try {
       etatTranscription = await obtenirJson(base + "/transcription");
       const consent = etatTranscription.consenti;
@@ -395,6 +430,8 @@
       }
     } catch (erreur) {
       transcriptionStatut.textContent = erreur.message;
+    } finally {
+      rafraichissementsEnCours.transcription = false;
     }
   }
 
@@ -486,6 +523,14 @@
   window.setInterval(function () {
     if (panels.sondages && !panels.sondages.hidden) actualiserSondages();
   }, 5000);
+
+  // Les autres panneaux suivent aussi l'état partagé tant qu'ils sont visibles.
+  // Les appels sont espacés et dédupliqués pour limiter la charge serveur.
+  window.setInterval(function () {
+    if (panels.groupes && !panels.groupes.hidden) actualiserGroupes();
+    if (panels.documents && !panels.documents.hidden) actualiserDocuments();
+    if (panels.transcription && !panels.transcription.hidden) actualiserTranscription();
+  }, 10000);
 
   afficherSegments();
 })();

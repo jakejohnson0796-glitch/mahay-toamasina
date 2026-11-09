@@ -602,6 +602,38 @@ def partager_document_seance(
     return JSONResponse({"ok": True})
 
 
+@router.post("/classe/seances/{seance_id}/documents/{document_id}/retirer")
+def retirer_document_partage_seance(
+    request: Request,
+    seance_id: int,
+    document_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Retire un support de la séance sans supprimer le document de la bibliothèque."""
+    contexte = _contexte_seance(request, session, seance_id)
+    if isinstance(contexte, JSONResponse):
+        return contexte
+    _utilisateur, _seance, _cours, gerant = contexte
+    if not gerant:
+        return JSONResponse({"erreur": "Seul le professeur peut retirer un document partagé."}, status_code=403)
+
+    resultat = session.exec(
+        delete(DocumentPartageSeance)
+        .where(
+            DocumentPartageSeance.seance_id == seance_id,
+            DocumentPartageSeance.document_id == document_id,
+        )
+        .execution_options(synchronize_session=False)
+    )
+    if not int(resultat.rowcount or 0):
+        session.rollback()
+        return JSONResponse({"erreur": "Ce document n'est pas partagé dans cette séance."}, status_code=404)
+
+    session.commit()
+    return JSONResponse({"ok": True})
+
+
 @router.get("/classe/seances/{seance_id}/documents/{document_id}/ouvrir")
 def ouvrir_document_partage(request: Request, seance_id: int, document_id: int, session: Session = Depends(get_session)):
     contexte = _contexte_seance(request, session, seance_id)
