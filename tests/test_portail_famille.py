@@ -240,7 +240,7 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert "responsable.role != RoleUtilisateur.RESPONSABLE" in family_router
     assert 'identifiant_eleve: str = Form("")' in family_router
     assert 'Utilisateur.identifiant_connexion == identifiant_eleve_nettoye' in family_router
-    assert "RoleUtilisateur.RESPONSABLE" in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
+    assert 'RESPONSABLE = "responsable"' in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
     assert "chemin_autorise_responsable" in (
         ROOT / "app" / "force_password_change.py"
     ).read_text(encoding="utf-8")
@@ -310,8 +310,7 @@ def test_compte_responsable_est_cloisonne_aux_routes_famille_et_securite():
     assert chemin_autorise_responsable("GET", "/static/auth.css", 42) is True
     assert chemin_autorise_responsable("GET", "/sw.js", 42) is True
     assert chemin_autorise_responsable("GET", "/classe", 42) is False
-    assert "utilisateur.role != RoleUtilisateur.ADMIN" in (
-        ROOT / "app" / "responsable_portal.py"
-    ).read_text(encoding="utf-8")
+    force_middleware = (ROOT / "app" / "force_password_change.py").read_text(encoding="utf-8")
+    assert "utilisateur.role != RoleUtilisateur.ADMIN" in force_middleware
     assert chemin_autorise_responsable("POST", "/classe/devoirs/rendus/1/corriger", 42) is False
     assert chemin_autorise_responsable("GET", "/famille/42", 42) is False
