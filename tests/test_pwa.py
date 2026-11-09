@@ -83,3 +83,12 @@ def test_quitter_le_compte_nettoie_les_packs_locaux():
     pwa = (ROOT / "app" / "static" / "js" / "pwa.js").read_text(encoding="utf-8")
     assert 'form[action="/deconnexion"]' in pwa
     assert "supprimerTous()" in pwa
+
+
+def test_les_packs_hors_ligne_expirent_et_sont_verifies_a_ouverture():
+    pwa = (ROOT / "app" / "static" / "js" / "pwa.js").read_text(encoding="utf-8")
+    lecteur = (ROOT / "app" / "static" / "js" / "offline-reader.js").read_text(encoding="utf-8")
+    assert "DUREE_PACK_MS=7*24*60*60*1000" in pwa
+    assert "expires_le:" in pwa
+    assert "Date.parse(pack.expires_le" in lecteur
+    assert "deletePack(uid+':'+cid)" not in lecteur  # suppression utilise les chaînes exactes du JS sans interpolation
