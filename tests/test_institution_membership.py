@@ -10,6 +10,7 @@ def test_membre_etablissement_est_unique_par_institution_et_compte():
 def test_membre_etablissement_expose_un_index_de_recherche_par_role_et_statut():
     indexes = {index.name for index in MembreEtablissement.__table__.indexes}
     assert "ix_membre_etablissement_institution_role_statut" in indexes
+    assert "ix_fk_membre_etablissement_modifie_par_id" in indexes
 
 
 def test_roles_locaux_ne_donnent_pas_de_droits_administrateur_global():
