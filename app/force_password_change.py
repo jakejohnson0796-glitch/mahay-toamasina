@@ -45,14 +45,6 @@ class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
         ):
             return await call_next(request)
 
-        # Les routes de la liste blanche sont sûres pour tous les rôles :
-        # le portail vérifie lui-même le rôle et les autres routes portent
-        # uniquement sur la sécurité du compte courant ou des ressources publiques.
-        if chemin_autorise_responsable(
-            request.method, request.url.path, user_id_int
-        ):
-            return await call_next(request)
-
         with Session(engine) as session:
             utilisateur = session.get(Utilisateur, user_id_int)
             if (
@@ -60,15 +52,8 @@ class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
                 and not utilisateur.banni
                 and session_utilisateur_valide(request.session, utilisateur)
             ):
-                est_responsable = (
-                    utilisateur.role == RoleUtilisateur.RESPONSABLE
-                    or (
-                        utilisateur.profil_souhaite == "responsable"
-                        and utilisateur.role != RoleUtilisateur.ADMIN
-                    )
-                )
-                if est_responsable:
-                    return RedirectResponse("/famille", status_code=303)
+                # La politique de changement obligatoire reste prioritaire
+                # sur le cloisonnement du portail responsable.
                 if (
                     utilisateur.doit_changer_mot_de_passe
                     and not chemin_autorise_pendant_changement(
@@ -76,5 +61,17 @@ class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
                     )
                 ):
                     return RedirectResponse("/securite?obligatoire=1", status_code=303)
+
+                est_responsable = (
+                    utilisateur.role == RoleUtilisateur.RESPONSABLE
+                    or (
+                        utilisateur.profil_souhaite == "responsable"
+                        and utilisateur.role != RoleUtilisateur.ADMIN
+                    )
+                )
+                if est_responsable and not chemin_autorise_responsable(
+                    request.method, request.url.path, user_id_int
+                ):
+                    return RedirectResponse("/famille", status_code=303)
 
         return await call_next(request)
