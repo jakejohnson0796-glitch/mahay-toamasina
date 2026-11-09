@@ -155,32 +155,47 @@ def _page_admin(request: Request, session: Session, admin: Utilisateur, *, erreu
         .order_by(EvenementLienResponsableEleve.date_evenement.desc())
         .limit(100)
     ).all()
+    liens_evenements = []
+    ids_liens_evenements = sorted({evenement.lien_id for evenement in evenements_bruts})
+    if ids_liens_evenements:
+        liens_evenements = session.exec(
+            select(LienResponsableEleve).where(
+                LienResponsableEleve.id.in_(ids_liens_evenements)
+            )
+        ).all()
+    liens_par_id = {lien.id: lien for lien in [*liens, *liens_evenements]}
+    ids_utilisateurs = {
+        identifiant
+        for lien in liens_par_id.values()
+        for identifiant in (lien.responsable_id, lien.eleve_id, lien.verifie_par_id)
+        if identifiant is not None
+    }
+    ids_utilisateurs.update(evenement.acteur_id for evenement in evenements_bruts)
+    utilisateurs = {}
+    if ids_utilisateurs:
+        utilisateurs = {
+            utilisateur.id: utilisateur
+            for utilisateur in session.exec(
+                select(Utilisateur).where(Utilisateur.id.in_(sorted(ids_utilisateurs)))
+            ).all()
+        }
+
     evenements = []
     for evenement in evenements_bruts:
-        lien_evenement = session.get(LienResponsableEleve, evenement.lien_id)
-        responsable_evenement = (
-            session.get(Utilisateur, lien_evenement.responsable_id) if lien_evenement else None
-        )
-        eleve_evenement = (
-            session.get(Utilisateur, lien_evenement.eleve_id) if lien_evenement else None
-        )
-        acteur_evenement = session.get(Utilisateur, evenement.acteur_id)
+        lien_evenement = liens_par_id.get(evenement.lien_id)
         evenements.append({
             "evenement": evenement,
-            "responsable": responsable_evenement,
-            "eleve": eleve_evenement,
-            "acteur": acteur_evenement,
+            "responsable": utilisateurs.get(lien_evenement.responsable_id) if lien_evenement else None,
+            "eleve": utilisateurs.get(lien_evenement.eleve_id) if lien_evenement else None,
+            "acteur": utilisateurs.get(evenement.acteur_id),
         })
     lignes = []
     for lien in liens:
-        responsable = session.get(Utilisateur, lien.responsable_id)
-        eleve = session.get(Utilisateur, lien.eleve_id)
-        verificateur = session.get(Utilisateur, lien.verifie_par_id)
         lignes.append({
             "lien": lien,
-            "responsable": responsable,
-            "eleve": eleve,
-            "verificateur": verificateur,
+            "responsable": utilisateurs.get(lien.responsable_id),
+            "eleve": utilisateurs.get(lien.eleve_id),
+            "verificateur": utilisateurs.get(lien.verifie_par_id),
             "type_lien": _TYPES_LIEN.get(lien.type_lien, lien.type_lien),
         })
     return templates.TemplateResponse(
