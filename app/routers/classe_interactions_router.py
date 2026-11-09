@@ -7,7 +7,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
-from sqlalchemy import func
+from sqlalchemy import delete, func
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
@@ -387,6 +387,51 @@ def lister_groupes_sous_salles(request: Request, seance_id: int, session: Sessio
     return JSONResponse({"groupes": resultats, "peut_gerer": gerant})
 
 
+def _remplacer_groupes_sous_salles(
+    session: Session,
+    seance_id: int,
+    nom_salle_livekit: str,
+    nombre_groupes: int,
+    eleves: list[int],
+) -> None:
+    """Remplace les sous-salles et leurs affectations en une transaction."""
+    # Supprimer d'abord toutes les affectations de la séance, puis les groupes.
+    # Ces deux DELETE remplacent une lecture d'affectations par ancien groupe.
+    session.exec(
+        delete(AffectationSousSalle)
+        .where(AffectationSousSalle.seance_id == seance_id)
+        .execution_options(synchronize_session=False)
+    )
+    session.exec(
+        delete(GroupeSousSalle)
+        .where(GroupeSousSalle.seance_id == seance_id)
+        .execution_options(synchronize_session=False)
+    )
+
+    groupes = [
+        GroupeSousSalle(
+            seance_id=seance_id,
+            nom=f"Groupe {index + 1}",
+            nom_salle_livekit=f"{nom_salle_livekit[:100]}-sous-{secrets.token_hex(10)}",
+        )
+        for index in range(nombre_groupes)
+    ]
+    session.add_all(groupes)
+    # Récupérer les identifiants avant de construire les affectations, sans
+    # valider prématurément la transaction.
+    session.flush()
+
+    session.add_all([
+        AffectationSousSalle(
+            seance_id=seance_id,
+            groupe_id=groupes[index % nombre_groupes].id,
+            utilisateur_id=utilisateur_id,
+        )
+        for index, utilisateur_id in enumerate(eleves)
+    ])
+    session.commit()
+
+
 @router.post("/classe/seances/{seance_id}/groupes")
 def creer_groupes_sous_salles(
     request: Request,
@@ -412,37 +457,13 @@ def creer_groupes_sous_salles(
     if not 2 <= nombre_groupes <= min(12, len(eleves)):
         return JSONResponse({"erreur": f"Choisis de 2 à {min(12, len(eleves))} groupes."}, status_code=422)
 
-    anciens_groupes = session.exec(
-        select(GroupeSousSalle).where(GroupeSousSalle.seance_id == seance_id)
-    ).all()
-    for ancien in anciens_groupes:
-        affectations = session.exec(
-            select(AffectationSousSalle).where(AffectationSousSalle.groupe_id == ancien.id)
-        ).all()
-        for affectation in affectations:
-            session.delete(affectation)
-        session.delete(ancien)
-    session.commit()
-
-    groupes = []
-    for index in range(nombre_groupes):
-        groupe = GroupeSousSalle(
-            seance_id=seance_id,
-            nom=f"Groupe {index + 1}",
-            nom_salle_livekit=f"{seance.nom_salle_livekit[:100]}-sous-{secrets.token_hex(10)}",
-        )
-        session.add(groupe)
-        groupes.append(groupe)
-    session.commit()
-    for groupe in groupes:
-        session.refresh(groupe)
-    for index, utilisateur_id in enumerate(eleves):
-        session.add(AffectationSousSalle(
-            seance_id=seance_id,
-            groupe_id=groupes[index % nombre_groupes].id,
-            utilisateur_id=utilisateur_id,
-        ))
-    session.commit()
+    _remplacer_groupes_sous_salles(
+        session,
+        seance_id,
+        seance.nom_salle_livekit,
+        nombre_groupes,
+        eleves,
+    )
     return JSONResponse({"ok": True, "nombre_groupes": nombre_groupes, "nombre_eleves_affectes": len(eleves)})
 
 

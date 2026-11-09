@@ -427,3 +427,107 @@ def test_lister_sous_salles_charge_affectations_et_noms_en_lot():
             event.remove(engine, "before_cursor_execute", compter_selects)
 
     engine.dispose()
+
+
+
+def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
+    from sqlalchemy import event
+
+    from app.routers.classe_interactions_router import _remplacer_groupes_sous_salles
+
+    engine = creer_base()
+    compteurs = {"select": 0, "delete": 0}
+
+    def compter_lectures_et_suppressions(
+        _connexion, _curseur, instruction, _parametres, _contexte, _executemany
+    ):
+        commande = instruction.lstrip().split(None, 1)[0].upper()
+        if commande == "SELECT":
+            compteurs["select"] += 1
+        elif commande == "DELETE":
+            compteurs["delete"] += 1
+
+    with Session(engine) as session:
+        _prof, eleve_a, eleve_b, _cours, seance = creer_seance(session)
+        seance_id = seance.id
+        nom_salle_livekit = seance.nom_salle_livekit
+        eleve_a_id = eleve_a.id
+        eleve_b_id = eleve_b.id
+        eleve_c = creer_utilisateur("Élève C", "+261340000905", RoleUtilisateur.ETUDIANT)
+        session.add(eleve_c)
+        session.commit()
+        session.refresh(eleve_c)
+        eleve_c_id = eleve_c.id
+
+        anciens = [
+            GroupeSousSalle(
+                seance_id=seance_id,
+                nom=f"Ancien {index + 1}",
+                nom_salle_livekit=f"ancienne-salle-{index + 1}",
+            )
+            for index in range(3)
+        ]
+        session.add_all(anciens)
+        session.commit()
+        for ancien in anciens:
+            session.refresh(ancien)
+        anciens_ids = {ancien.id for ancien in anciens}
+        session.add_all([
+            AffectationSousSalle(
+                seance_id=seance_id,
+                groupe_id=anciens[0].id,
+                utilisateur_id=eleve_a_id,
+            ),
+            AffectationSousSalle(
+                seance_id=seance_id,
+                groupe_id=anciens[1].id,
+                utilisateur_id=eleve_b_id,
+            ),
+            AffectationSousSalle(
+                seance_id=seance_id,
+                groupe_id=anciens[2].id,
+                utilisateur_id=eleve_c_id,
+            ),
+        ])
+        session.commit()
+
+        event.listen(engine, "before_cursor_execute", compter_lectures_et_suppressions)
+        try:
+            _remplacer_groupes_sous_salles(
+                session,
+                seance_id,
+                nom_salle_livekit,
+                2,
+                [eleve_a_id, eleve_b_id, eleve_c_id],
+            )
+        finally:
+            event.remove(engine, "before_cursor_execute", compter_lectures_et_suppressions)
+
+        assert compteurs == {"select": 0, "delete": 2}
+        nouveaux_groupes = session.exec(
+            select(GroupeSousSalle)
+            .where(GroupeSousSalle.seance_id == seance_id)
+            .order_by(GroupeSousSalle.id)
+        ).all()
+        affectations = session.exec(
+            select(AffectationSousSalle).where(
+                AffectationSousSalle.seance_id == seance_id
+            )
+        ).all()
+
+        assert [groupe.nom for groupe in nouveaux_groupes] == ["Groupe 1", "Groupe 2"]
+        assert len(affectations) == 3
+        assert {affectation.groupe_id for affectation in affectations} == {
+            groupe.id for groupe in nouveaux_groupes
+        }
+        assert {affectation.utilisateur_id for affectation in affectations} == {
+            eleve_a_id, eleve_b_id, eleve_c_id
+        }
+        # SQLite peut réutiliser les mêmes clés primaires après un DELETE.
+        # Vérifier l'identité métier des salles, pas la valeur de leur ID.
+        anciennes_salles = {f"ancienne-salle-{index}" for index in range(1, 4)}
+        assert {
+            groupe.nom_salle_livekit for groupe in nouveaux_groupes
+        }.isdisjoint(anciennes_salles)
+
+    engine.dispose()
