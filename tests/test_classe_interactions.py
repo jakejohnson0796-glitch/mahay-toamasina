@@ -523,8 +523,11 @@ def test_recreer_sous_salles_remplace_groupes_et_affectations_en_lot():
         assert {affectation.utilisateur_id for affectation in affectations} == {
             eleve_a_id, eleve_b_id, eleve_c_id
         }
-        assert {affectation.groupe_id for affectation in affectations}.isdisjoint(
-            anciens_ids
-        )
+        # SQLite peut réutiliser les mêmes clés primaires après un DELETE.
+        # Vérifier l'identité métier des salles, pas la valeur de leur ID.
+        anciennes_salles = {f"ancienne-salle-{index}" for index in range(1, 4)}
+        assert {
+            groupe.nom_salle_livekit for groupe in nouveaux_groupes
+        }.isdisjoint(anciennes_salles)
 
     engine.dispose()
