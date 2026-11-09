@@ -1,0 +1,318 @@
+"""Portail famille : accès borné aux rattachements vérifiés."""
+
+from datetime import datetime
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import RedirectResponse
+from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
+
+from ..auth import utilisateur_courant
+from ..csrf import verifier_csrf
+from ..database import get_session
+from ..models import (
+    Cours,
+    Devoir,
+    InscriptionCours,
+    LienResponsableEleve,
+    PointagePresence,
+    RoleUtilisateur,
+    RenduDevoir,
+    Seance,
+    StatutPointage,
+    Utilisateur,
+)
+from ..telephone import TelephoneInvalide, normaliser_telephone
+from ..templating import templates
+
+router = APIRouter()
+
+_TYPES_LIEN = {
+    "parent": "Parent",
+    "tuteur_legal": "Tuteur légal",
+    "responsable_autorise": "Responsable autorisé",
+}
+_STATUTS_PRESENCE = ("present", "absent", "retard", "excuse")
+
+
+def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
+    admin = utilisateur_courant(request, session)
+    if not admin or admin.role != RoleUtilisateur.ADMIN:
+        return None
+    return admin
+
+
+def construire_portail_famille(session: Session, responsable_id: int) -> list[dict]:
+    """Construit les seules données accessibles via les liens actifs du compte."""
+    liens = session.exec(
+        select(LienResponsableEleve)
+        .where(
+            LienResponsableEleve.responsable_id == responsable_id,
+            LienResponsableEleve.statut == "actif",
+        )
+        .order_by(LienResponsableEleve.date_creation.desc())
+    ).all()
+
+    enfants = []
+    for lien in liens:
+        eleve = session.get(Utilisateur, lien.eleve_id)
+        if not eleve or eleve.banni:
+            continue
+
+        inscriptions = session.exec(
+            select(InscriptionCours).where(InscriptionCours.utilisateur_id == eleve.id)
+        ).all()
+        cours_ids = sorted({ligne.cours_id for ligne in inscriptions})
+        cours_liste = (
+            session.exec(select(Cours).where(Cours.id.in_(cours_ids)).order_by(Cours.nom)).all()
+            if cours_ids else []
+        )
+        cours_infos = []
+
+        for cours in cours_liste:
+            devoirs = session.exec(
+                select(Devoir).where(
+                    Devoir.cours_id == cours.id,
+                    Devoir.archive == False,  # noqa: E712
+                ).order_by(Devoir.date_creation.desc())
+            ).all()
+            devoirs_par_id = {devoir.id: devoir for devoir in devoirs}
+            rendus = []
+            if devoirs_par_id:
+                rendus = session.exec(
+                    select(RenduDevoir)
+                    .where(
+                        RenduDevoir.utilisateur_id == eleve.id,
+                        RenduDevoir.devoir_id.in_(list(devoirs_par_id)),
+                        RenduDevoir.note.is_not(None),
+                    )
+                    .order_by(RenduDevoir.date_rendu.desc())
+                ).all()
+
+            notes = []
+            total_pondere = 0.0
+            poids_total = 0.0
+            for rendu in rendus:
+                devoir = devoirs_par_id.get(rendu.devoir_id)
+                if not devoir or devoir.bareme <= 0 or rendu.note is None:
+                    continue
+                sur_vingt = round(float(rendu.note) / float(devoir.bareme) * 20, 2)
+                poids = max(float(devoir.coefficient or 1), 0.1)
+                total_pondere += sur_vingt * poids
+                poids_total += poids
+                notes.append({
+                    "devoir": devoir,
+                    "note": rendu.note,
+                    "note_sur_20": sur_vingt,
+                    "appreciation": rendu.appreciation_prof,
+                    "date_correction": rendu.date_correction,
+                })
+
+            seances = session.exec(
+                select(Seance).where(Seance.cours_id == cours.id)
+            ).all()
+            seance_ids = [seance.id for seance in seances]
+            pointages = []
+            if seance_ids:
+                pointages = session.exec(
+                    select(PointagePresence).where(
+                        PointagePresence.utilisateur_id == eleve.id,
+                        PointagePresence.seance_id.in_(seance_ids),
+                    )
+                ).all()
+            compteurs = {statut: 0 for statut in _STATUTS_PRESENCE}
+            for pointage in pointages:
+                statut = pointage.statut.value if hasattr(pointage.statut, "value") else str(pointage.statut)
+                if statut in compteurs:
+                    compteurs[statut] += 1
+
+            cours_infos.append({
+                "cours": cours,
+                "notes": notes[:8],
+                "moyenne": round(total_pondere / poids_total, 2) if poids_total else None,
+                "nb_notes": len(notes),
+                "nb_seances": len(seances),
+                "nb_pointages": sum(compteurs.values()),
+                "presences": compteurs,
+            })
+
+        enfants.append({
+            "eleve": eleve,
+            "type_lien": _TYPES_LIEN.get(lien.type_lien, "Responsable"),
+            "cours": cours_infos,
+        })
+    return enfants
+
+
+def _page_admin(request: Request, session: Session, admin: Utilisateur, *, erreur: str | None = None, succes: str | None = None):
+    liens = session.exec(
+        select(LienResponsableEleve).order_by(LienResponsableEleve.date_creation.desc()).limit(150)
+    ).all()
+    lignes = []
+    for lien in liens:
+        responsable = session.get(Utilisateur, lien.responsable_id)
+        eleve = session.get(Utilisateur, lien.eleve_id)
+        verificateur = session.get(Utilisateur, lien.verifie_par_id)
+        lignes.append({
+            "lien": lien,
+            "responsable": responsable,
+            "eleve": eleve,
+            "verificateur": verificateur,
+            "type_lien": _TYPES_LIEN.get(lien.type_lien, lien.type_lien),
+        })
+    return templates.TemplateResponse(
+        request,
+        "admin_responsables_eleves.html",
+        {"utilisateur": admin, "liens": lignes, "erreur": erreur, "succes": succes},
+        headers={"Cache-Control": "no-store, private", "Pragma": "no-cache", "X-Robots-Tag": "noindex, nofollow"},
+    )
+
+
+@router.get("/famille")
+def portail_famille(request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.profil_souhaite != "responsable":
+        # Un lien actif reste une autorisation explicite, mais le profil
+        # responsable garde un parcours d'interface distinct.
+        possede_lien = session.exec(
+            select(LienResponsableEleve.id).where(
+                LienResponsableEleve.responsable_id == utilisateur.id,
+                LienResponsableEleve.statut == "actif",
+            )
+        ).first()
+        if not possede_lien:
+            return RedirectResponse("/dashboard", status_code=303)
+
+    enfants = construire_portail_famille(session, utilisateur.id)
+    return templates.TemplateResponse(
+        request,
+        "famille_portail.html",
+        {"utilisateur": utilisateur, "enfants": enfants},
+        headers={"Cache-Control": "no-store, private", "Pragma": "no-cache", "X-Robots-Tag": "noindex, nofollow"},
+    )
+
+
+@router.get("/admin/responsables-eleves")
+def page_admin_responsables_eleves(request: Request, session: Session = Depends(get_session)):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/connexion", status_code=303)
+    erreurs = {
+        "telephone": "Les deux numéros doivent être des mobiles malgaches valides.",
+        "comptes": "Compte responsable ou compte élève introuvable.",
+        "profil": "Le compte parent doit avoir été créé avec le profil responsable légal.",
+        "eleve": "Le compte ciblé doit être un compte élève distinct du responsable.",
+        "preuve": "Confirmez que l'autorité légale a été vérifiée auprès de l'établissement.",
+        "existant": "Ce rattachement est déjà actif.",
+        "integrite": "Le rattachement n'a pas pu être enregistré. Vérifiez les comptes et réessayez.",
+        "lien": "Le rattachement demandé est introuvable.",
+    }
+    succes = {
+        "actif": "Le rattachement vérifié est actif.",
+        "revoque": "L'accès du responsable a été révoqué.",
+    }
+    return _page_admin(
+        request, session, admin,
+        erreur=erreurs.get(request.query_params.get("erreur", "")),
+        succes=succes.get(request.query_params.get("ok", "")),
+    )
+
+
+@router.post("/admin/responsables-eleves/associer")
+def associer_responsable_eleve(
+    request: Request,
+    telephone_responsable: str = Form(...),
+    telephone_eleve: str = Form(...),
+    type_lien: str = Form("parent"),
+    verification_confirmee: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/connexion", status_code=303)
+    if verification_confirmee != "oui":
+        return RedirectResponse("/admin/responsables-eleves?erreur=preuve", status_code=303)
+    if type_lien not in _TYPES_LIEN:
+        return RedirectResponse("/admin/responsables-eleves?erreur=integrite", status_code=303)
+
+    try:
+        telephone_parent = normaliser_telephone(telephone_responsable)
+        telephone_enfant = normaliser_telephone(telephone_eleve)
+    except TelephoneInvalide:
+        return RedirectResponse("/admin/responsables-eleves?erreur=telephone", status_code=303)
+
+    responsable = session.exec(
+        select(Utilisateur).where(
+            Utilisateur.telephone == telephone_parent,
+            Utilisateur.profil_souhaite == "responsable",
+        )
+    ).first()
+    eleve = session.exec(
+        select(Utilisateur).where(Utilisateur.telephone == telephone_enfant)
+    ).first()
+    if not responsable or not eleve:
+        return RedirectResponse("/admin/responsables-eleves?erreur=comptes", status_code=303)
+    if responsable.id == eleve.id or eleve.role != RoleUtilisateur.ETUDIANT or eleve.profil_souhaite == "responsable":
+        return RedirectResponse("/admin/responsables-eleves?erreur=eleve", status_code=303)
+
+    lien = session.exec(
+        select(LienResponsableEleve).where(
+            LienResponsableEleve.responsable_id == responsable.id,
+            LienResponsableEleve.eleve_id == eleve.id,
+        )
+    ).first()
+    maintenant = datetime.utcnow()
+    if lien and lien.statut == "actif":
+        return RedirectResponse("/admin/responsables-eleves?erreur=existant", status_code=303)
+
+    if lien:
+        lien.type_lien = type_lien
+        lien.statut = "actif"
+        lien.verifie_par_id = admin.id
+        lien.date_verification = maintenant
+        lien.date_creation = maintenant
+        lien.revoque_par_id = None
+        lien.date_revocation = None
+        session.add(lien)
+    else:
+        session.add(LienResponsableEleve(
+            responsable_id=responsable.id,
+            eleve_id=eleve.id,
+            type_lien=type_lien,
+            statut="actif",
+            verifie_par_id=admin.id,
+            date_verification=maintenant,
+            date_creation=maintenant,
+        ))
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        return RedirectResponse("/admin/responsables-eleves?erreur=integrite", status_code=303)
+    return RedirectResponse("/admin/responsables-eleves?ok=actif", status_code=303)
+
+
+@router.post("/admin/responsables-eleves/{lien_id}/revoquer")
+def revoquer_lien_responsable_eleve(
+    lien_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/connexion", status_code=303)
+    lien = session.get(LienResponsableEleve, lien_id)
+    if not lien:
+        return RedirectResponse("/admin/responsables-eleves?erreur=lien", status_code=303)
+    if lien.statut == "actif":
+        lien.statut = "revoque"
+        lien.revoque_par_id = admin.id
+        lien.date_revocation = datetime.utcnow()
+        session.add(lien)
+        session.commit()
+    return RedirectResponse("/admin/responsables-eleves?ok=revoque", status_code=303)
