@@ -49,7 +49,7 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation.js?v={{ version_asset('js/admin-confirmation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/pwa.js?v={{ version_asset('js/pwa.js') }}" defer></script>
 {% if request.url.path in ["/notifications", "/mes-revisions", "/dashboard"] %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
-{% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences", "/famille", "/admin/responsables-eleves"] %}
+{% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences"] or request.url.path in ["/famille", "/admin/responsables-eleves"] %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
 {% endif %}
 {% if request.url.path in ["/connexion", "/inscription", "/mot-de-passe-oublie", "/mot-de-passe-oublie/code", "/connexion/2fa"] %}
