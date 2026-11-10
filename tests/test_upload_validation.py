@@ -38,6 +38,17 @@ def test_rejects_wrong_real_image_format():
         raise AssertionError("Une image PNG renommee en JPG doit etre rejetee.")
 
 
+def _webp_bytes() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (2, 2), "white").save(buf, format="WEBP")
+    return buf.getvalue()
+
+
+def test_accepts_real_webp():
+    mime = valider_upload(_webp_bytes(), "support.webp", 1024 * 1024, {".webp"})
+    assert mime == "image/webp"
+
+
 def test_accepts_real_docx():
     mime = valider_upload(_docx_bytes(), "support.docx", 1024 * 1024, {".docx"})
     assert mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
