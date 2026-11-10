@@ -24,11 +24,11 @@
       <div class="tb-hero-texte">
         <p class="eyebrow">Bonjour, {{ utilisateur.nom.split(" ")[0] }} <span aria-hidden="true">👋</span></p>
         <h1 class="tb-titre">{% if alertes_harmonisation is not none %}Espace enseignant · Harmonisation des cours{% else %}Pret a continuer ton apprentissage ?{% endif %}</h1>
-        <p class="tb-sous-titre">{% if alertes_harmonisation is defined %}Participe à l'amélioration collaborative des cours de référence.{% else %}Chaque session te rapproche de ton objectif.{% endif %}</p>
+        <p class="tb-sous-titre">{% if alertes_harmonisation is not none %}Participe à l'amélioration collaborative des cours de référence.{% else %}Chaque session te rapproche de ton objectif.{% endif %}</p>
       </div>
     </section>
 
-    {% if alertes_harmonisation is defined %}
+    {% if alertes_harmonisation is not none %}
     <section class="tb-harmonisation" aria-labelledby="tb-harmonisation-titre">
       <div class="tb-harmonisation-entete">
         <div>
