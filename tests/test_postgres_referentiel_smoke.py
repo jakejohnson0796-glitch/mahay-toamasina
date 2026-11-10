@@ -978,7 +978,47 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
-    # Retourne au parent immédiat de la migration de notes afin de tester sa réapplication concurrente.
+    # Simule la base Render avant cette fonctionnalité : elle est à l'ancienne
+    # tête c3e8. La nouvelle branche n'est pas une installation neuve : Alembic
+    # doit appliquer la migration professeur manquante puis réunifier les têtes.
+    retour_tete_render = subprocess.run(
+        [*alembic, "downgrade", "c3e8f1a6b9d2"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert retour_tete_render.returncode == 0, (
+        "Le retour simulé à la tête Render actuelle a échoué :\\n"
+        f"{retour_tete_render.stdout}\\n{retour_tete_render.stderr}"
+    )
+    with engine.connect() as connection:
+        revision_render = connection.execute(
+            text("SELECT version_num FROM public.alembic_version")
+        ).scalar_one()
+    assert revision_render == "c3e8f1a6b9d2"
+
+    upgrade_depuis_render = subprocess.run(
+        [*alembic, "upgrade", "head"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert upgrade_depuis_render.returncode == 0, (
+        "La mise à niveau depuis la tête Render a échoué :\\n"
+        f"{upgrade_depuis_render.stdout}\\n{upgrade_depuis_render.stderr}"
+    )
+    with engine.connect() as connection:
+        revision_apres_render = connection.execute(
+            text("SELECT version_num FROM public.alembic_version")
+        ).scalar_one()
+    assert revision_apres_render == "p4a1d7c8e2f9"
+
+    # Retourne ensuite à un parent commun afin de tester la réapplication
+    # concurrente des migrations sur deux connexions indépendantes.
     # Cela teste la synchronisation de l'application de la nouvelle migration
     # sans devoir dérouler les downgrade historiques de branches anciennes.
     downgrade = subprocess.run(
