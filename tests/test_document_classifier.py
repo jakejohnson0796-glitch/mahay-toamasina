@@ -49,6 +49,7 @@ def test_classification_conserve_les_valeurs_fournies_quand_aucun_signal_fort(mo
     assert resultat.type_document == TypeDocument.COURS
     assert resultat.annee == 2026
     assert resultat.filiere_id == 7
+    assert resultat.confiance == 0.0
 
 
 def test_router_expose_l_option_de_detection_auto():
@@ -151,3 +152,22 @@ def test_alias_matiere_est_rattache_a_la_matiere_officielle_du_referentiel(monke
     )
     assert resultat.matiere == "Mathématiques"
     assert resultat.filiere_id == 22
+
+
+def test_score_de_confiance_ne_compte_pas_les_champs_manuels():
+    resultat = classifier_document(
+        nom_fichier="document.pdf",
+        texte="Quelques lignes sans métadonnées suffisantes.",
+        filieres=[Filiere(id=7, nom="Sciences économiques")],
+        titre_fourni="Mon cours",
+        matiere_fourni="Économie générale",
+        type_fourni=TypeDocument.COURS,
+        annee_fournie=2026,
+        filiere_id_fournie=7,
+    )
+    assert resultat.titre == "Mon cours"
+    assert resultat.matiere == "Économie générale"
+    assert resultat.type_document == TypeDocument.COURS
+    assert resultat.annee == 2026
+    assert resultat.filiere_id == 7
+    assert resultat.confiance == 0.0
