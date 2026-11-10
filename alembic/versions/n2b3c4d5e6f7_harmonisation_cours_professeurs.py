@@ -15,6 +15,21 @@ depends_on = None
 def upgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
+
+    # Notification.type_notification peut être un enum natif PostgreSQL
+    # selon le schéma déjà déployé. Ajouter la valeur uniquement si ce type
+    # existe ; les bases où la colonne est un VARCHAR ne nécessitent rien.
+    if bind.dialect.name == "postgresql":
+        enum_exists = bind.execute(
+            sa.text("SELECT 1 FROM pg_type WHERE typname = :name"),
+            {"name": "typenotification"},
+        ).scalar_one_or_none()
+        if enum_exists is not None:
+            with op.get_context().autocommit_block():
+                op.execute(
+                    "ALTER TYPE typenotification "
+                    "ADD VALUE IF NOT EXISTS 'HARMONISATION_COURS'"
+                )
     document_columns = {
         column["name"] for column in inspector.get_columns("document")
     }
