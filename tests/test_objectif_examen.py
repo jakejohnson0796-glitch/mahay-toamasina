@@ -114,3 +114,46 @@ def test_serie_baccalaureat_refuse_option_avec_parent_non_verifie():
         parent_option_id=10,
     )
     assert _libelle_serie_baccalaureat(_SessionOptions({10: parent}), enfant) is None
+
+def test_ressources_externes_sont_filtrees_pour_le_college():
+    from app.ressources_examens import ressources_pour_cycle
+
+    ressources = ressources_pour_cycle("college")
+
+    assert [item["id"] for item in ressources] == ["laza-adina"]
+    assert all(item["examens_affiches"] == ("bepc",) for item in ressources)
+
+
+def test_ressources_externes_sont_filtrees_pour_le_lycee():
+    from app.ressources_examens import ressources_pour_cycle
+
+    ressources = ressources_pour_cycle("lycee")
+
+    assert {item["id"] for item in ressources} == {"laza-adina", "madagasy-exams"}
+    assert all(item["examens_affiches"] == ("baccalaureat",) for item in ressources)
+
+
+def test_ressources_externes_restent_explicitement_non_validees_par_mitaridala():
+    from app.ressources_examens import ressources_pour_cycle
+
+    ressources = ressources_pour_cycle(None)
+
+    assert len(ressources) == 2
+    for ressource in ressources:
+        assert ressource["url"].startswith("https://")
+        assert ressource["description"]
+        assert ressource["limites"]
+        assert ressource["source_note"]
+
+
+def test_page_objectif_examen_presente_les_sources_externes_avec_liens_proteges():
+    template = lire("app/templates/objectif_examen.html")
+    route = lire("app/routers/quiz_router.py")
+    module = lire("app/ressources_examens.py")
+
+    assert "ressources_examens.ressources_pour_cycle(cycle)" in route
+    assert "Annales et ressources externes" in template
+    assert 'target="_blank" rel="noopener noreferrer"' in template
+    assert "ne validons pas individuellement chaque sujet ou corrigé" in template
+    assert "Nous ne recopions pas leurs fichiers" in template
+    assert "contenus de tiers comme vérifiés ou officiels" in module

@@ -183,6 +183,40 @@
     </div>
   </section>
 
+  <section class="objectif-examen-section objectif-examen-ressources" aria-labelledby="objectif-ressources-title">
+    <div class="objectif-examen-heading">
+      <span class="ai-kicker">Pour aller plus loin</span>
+      <h2 id="objectif-ressources-title">Annales et ressources externes</h2>
+      <p>Retrouve aussi des ressources publiées par des plateformes éducatives malgaches, en complément de tes entraînements.</p>
+    </div>
+    <aside class="objectif-examen-notice objectif-examen-notice-compact" role="note">
+      <strong>À propos de ces liens</strong>
+      <p>Ces sites sont indépendants de MITARIDALA. Nous ne recopions pas leurs fichiers et ne validons pas individuellement chaque sujet ou corrigé. Avant de réviser, vérifie l'année, la matière, la série et la version du programme applicable à ton établissement.</p>
+    </aside>
+    <div class="objectif-examen-grid">
+      {% for source in ressources_externes %}
+      <article class="objectif-examen-card objectif-examen-source-card">
+        <span class="objectif-examen-tag">
+          {% if "bepc" in source.examens_affiches and "baccalaureat" in source.examens_affiches %}
+            BEPC · Baccalauréat
+          {% elif "bepc" in source.examens_affiches %}
+            BEPC
+          {% else %}
+            Baccalauréat
+          {% endif %}
+          · Source externe
+        </span>
+        <h3>{{ source.nom }}</h3>
+        <strong class="objectif-examen-source-type">{{ source.type_contenu }}</strong>
+        <p>{{ source.description }}</p>
+        <p class="objectif-examen-source-note">{{ source.source_note }}</p>
+        <p class="objectif-examen-source-limit">{{ source.limites }}</p>
+        <a class="bouton bouton-secondaire" href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.url_label }}</a>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
   <section class="objectif-examen-section objectif-examen-priorites" aria-labelledby="objectif-priorites-title">
     <div class="objectif-examen-heading">
       <span class="ai-kicker">Travail personnalisé</span>
