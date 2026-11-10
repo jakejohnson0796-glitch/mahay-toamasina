@@ -69,6 +69,30 @@ def _titre_depuis_nom(nom_fichier: str) -> Optional[str]:
     return _nettoyer_titre(stem)
 
 
+def _titre_depuis_texte(texte: str) -> Optional[str]:
+    """Cherche un titre plausible dans les premières lignes du contenu."""
+    prefixes = (
+        "universite", "faculte", "republique", "ministere", "annee academique",
+        "annee scolaire", "annee universitaire", "session", "matiere", "discipline",
+        "module", "unite d enseignement", "epreuve", "examen", "annale", "corrige",
+        "nom et prenom", "enseignant", "professeur", "departement", "adresse",
+    )
+    for ligne in (texte or "")[:MAX_TEXTE_IA].splitlines()[:35]:
+        valeur = " ".join(str(ligne or "").split()).strip(" •-*\\t")
+        normalisee = _normaliser(valeur)
+        mots = normalisee.split()
+        if len(normalisee) < 4 or len(valeur) > MAX_TITRE or len(mots) > 16:
+            continue
+        if any(normalisee.startswith(prefixe) for prefixe in prefixes):
+            continue
+        if re.fullmatch(r"(?:page\\s*)?\\d+(?:\\s*/\\s*\\d+)?", normalisee):
+            continue
+        if re.fullmatch(r"[\\W\\d_]+", valeur):
+            continue
+        return _nettoyer_titre(valeur)
+    return None
+
+
 def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
     """Extrait une matière courte et plausible depuis le nom du fichier."""
     stem = Path(nom_fichier or "").stem
@@ -93,8 +117,28 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
 
 
 def _annee_depuis_texte(*sources: str) -> Optional[int]:
+    """Priorise la session explicite, puis l'année scolaire/académique."""
+    textes = [_normaliser(source or "") for source in sources]
+    for texte in textes:
+        match = re.search(
+            r"\\bsession\\s*(?:normale|rattrapage|extraordinaire)?\\s*[:=-]?\\s*((?:19|20)\\d{2})\\b",
+            texte,
+        )
+        if match:
+            annee = int(match.group(1))
+            if 2000 <= annee <= 2100:
+                return annee
+    for texte in textes:
+        match = re.search(
+            r"\\bannee(?: scolaire| academique| universitaire)?\\s*[:=-]?\\s*((?:19|20)\\d{2})(?:\\s*[-/]\\s*((?:19|20)\\d{2}))?\\b",
+            texte,
+        )
+        if match:
+            annee = int(match.group(2) or match.group(1))
+            if 2000 <= annee <= 2100:
+                return annee
     for source in sources:
-        for valeur in re.findall(r"\b(?:19|20)\d{2}\b", source or ""):
+        for valeur in re.findall(r"\\b(?:19|20)\\d{2}\\b", source or ""):
             annee = int(valeur)
             if 2000 <= annee <= 2100:
                 return annee
@@ -102,24 +146,26 @@ def _annee_depuis_texte(*sources: str) -> Optional[int]:
 
 
 def _type_local(texte: str) -> Optional[TypeDocument]:
-    normalise = _normaliser(texte)
-    if any(x in normalise for x in (
-        "corrige", "correction", "solution", "corrigé", "solutions"
-    )):
+    """Reconnaît des expressions complètes sans faux positifs par sous-chaîne."""
+    normalise = f" {_normaliser(texte)} "
+
+    def contient(*expressions: str) -> bool:
+        return any(f" {expression} " in normalise for expression in expressions)
+
+    if contient("corrige", "correction", "corrige type", "solution", "solutions", "reponse type"):
         return TypeDocument.CORRIGE
-    if any(x in normalise for x in (
-        "annale", "examen", "ancien examen", "sujet examen", "epreuve", "partiel",
-        "examen session", "session normale", "session rattrapage",
-    )):
+    if contient(
+        "annale", "examen", "ancien examen", "sujet examen", "epreuve",
+        "epreuve finale", "partiel", "examen session", "session normale",
+        "session rattrapage", "devoir surveille", "composition", "controle continu",
+    ):
         return TypeDocument.ANNALE
-    if any(x in normalise for x in (
-        "fiche de revision", "fiche revision", "resume", "synthese",
-        "memo revision", "cheat sheet",
-    )):
+    if contient("fiche de revision", "fiche revision", "resume", "synthese", "memo revision", "cheat sheet"):
         return TypeDocument.FICHE
-    if any(x in normalise for x in (
+    if contient(
         "cours", "chapitre", "support de cours", "polycopie", "notes de cours",
-    )):
+        "travaux diriges", "travaux pratiques", "td", "tp",
+    ):
         return TypeDocument.COURS
     return None
 
@@ -277,35 +323,50 @@ def classifier_document(
     La valeur fournie par l'utilisateur reste le fallback. Les déductions
     automatiques ne remplacent une valeur que lorsqu'elles sont exploitables.
     """
-    texte_reference = f"{nom_fichier}\n{texte or ''}"
+    texte_reference = f"{nom_fichier}\\n{texte or ''}"
     titre_local = _titre_depuis_nom(nom_fichier)
-    matiere_local = _matiere_locale(texte_reference)
+    titre_texte = _titre_depuis_texte(texte)
+    matiere_local = _matiere_locale(texte)
     matiere_local_nom = _matiere_depuis_nom_fichier(nom_fichier)
     type_local_nom = _type_local(nom_fichier)
     type_local_texte = _type_local(texte)
-    type_local = type_local_nom or type_local_texte
-    annee_local = _annee_depuis_texte(nom_fichier, texte)
+    type_local = type_local_texte or type_local_nom
+    annee_local = _annee_depuis_texte(texte, nom_fichier)
 
     candidats = _candidats_filieres(texte_reference, filieres)
     meilleur_filiere = candidats[0] if candidats else None
     if meilleur_filiere and _normaliser(meilleur_filiere.nom) not in _normaliser(texte_reference):
         meilleur_filiere = None
 
-    resultat_ia = _classification_ia(nom_fichier, texte, candidats)
+    informations_locales_suffisantes = all((
+        titre_texte or titre_local,
+        matiere_local or matiere_local_nom,
+        type_local,
+        annee_local,
+        meilleur_filiere or filiere_id_fournie,
+    ))
+    resultat_ia = {} if informations_locales_suffisantes else _classification_ia(
+        nom_fichier, texte, candidats
+    )
     confiance_ia = float(resultat_ia.get("confiance") or 0.0)
     confiance_ia = max(0.0, min(1.0, confiance_ia))
 
-    titre = _nettoyer_titre(resultat_ia.get("titre") or "") or titre_local or _nettoyer_titre(titre_fourni)
+    titre = (
+        _nettoyer_titre(resultat_ia.get("titre") or "")
+        or titre_texte
+        or titre_local
+        or _nettoyer_titre(titre_fourni)
+    )
 
     # L'IA peut parfois recopier une phrase du cours comme "matière".
     # On refuse ces sorties trop longues/phrastiques et on utilise le nom
     # du fichier comme signal de secours (ex. "Cours-algèbre.pdf" -> "algèbre").
     matiere_ia = _matiere_auto_valide(resultat_ia.get("matiere") or "")
     matiere = (
-        matiere_local_nom
+        matiere_local
         or matiere_ia
-        or matiere_local
-        or _matiere_auto_valide(titre_local or "")
+        or matiere_local_nom
+        or _matiere_auto_valide(titre_texte or "")
         or _nettoyer_titre(matiere_fourni)
     )
 
@@ -316,7 +377,7 @@ def classifier_document(
     except (ValueError, TypeError):
         type_auto = None
 
-    type_document = type_local_nom or type_local_texte or type_auto or type_fourni
+    type_document = type_local_texte or type_local_nom or type_auto or type_fourni
 
     annee = None
     try:
@@ -351,12 +412,12 @@ def classifier_document(
     # Une confiance IA explicitement basse n'autorise pas une réécriture
     # agressive du choix utilisateur pour les champs ambigus.
     if resultat_ia and confiance_ia < 0.55:
-        titre = _nettoyer_titre(titre_fourni) or titre_local
+        titre = _nettoyer_titre(titre_fourni) or titre_texte or titre_local
         matiere = (
             _nettoyer_titre(matiere_fourni)
-            or matiere_local_nom
             or matiere_local
-            or _matiere_auto_valide(titre_local or "")
+            or matiere_local_nom
+            or _matiere_auto_valide(titre_texte or "")
         )
         type_document = type_local_nom or type_local_texte or type_fourni
         annee = annee_local or annee_fournie
@@ -368,8 +429,16 @@ def classifier_document(
         type_document=type_document,
         annee=annee,
         filiere_id=filiere_id,
-        confiance=confiance_ia if auto_utilisee and resultat_ia else (
-            0.75 if meilleur_filiere or type_local or annee_local or titre_local else 0.0
-        ),
+        confiance=round(max(
+            confiance_ia if auto_utilisee and resultat_ia else 0.0,
+            sum((
+                0.18 if (titre_texte or titre_local) else 0.0,
+                0.22 if (matiere_local or matiere_local_nom) else 0.0,
+                0.18 if type_local else 0.0,
+                0.14 if annee_local else 0.0,
+                0.18 if (meilleur_filiere or filiere_id_fournie) else 0.0,
+                0.10 if (texte or "").strip() else 0.0,
+            )),
+        ), 3),
         source="groq+locale" if resultat_ia else "locale",
     )
