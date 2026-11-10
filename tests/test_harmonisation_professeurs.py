@@ -130,7 +130,9 @@ def _rendre_bloc_harmonisation_du_dashboard(alertes_harmonisation):
     debut = source.index(
         "{% if alertes_harmonisation is not none %}Espace enseignant"
     )
-    marqueur_fin = '    {% endif %}\\n\\n    <section class="tb-routine"'
+    marqueur_fin = '    {% endif %}
+
+    <section class="tb-routine"'
     fin = source.index(marqueur_fin, debut)
     bloc = source[debut:fin + len("    {% endif %}")]
     environnement = Environment(autoescape=True)
