@@ -120,7 +120,7 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
 
     # Les marqueurs de type ne font pas partie de la matière.
     stem = re.sub(
-        r"^(?:cours|support|annale|corrig[ée]|corrige|fiche|td|tp|examen|épreuve|epreuve|partiel|devoir)\s*[-_: ]*",
+        r"^(?:cours|support|annale|corrig[ée]|corrige|fiche|td|tp|examen|épreuve|epreuve|partiel|devoir|scan|scanne|scanned)\s*[-_: ]*",
         "",
         stem,
         flags=re.I,
@@ -131,6 +131,16 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
     stem = re.sub(r"\s+", " ", stem).strip(" .:-_")
 
     if not stem:
+        return None
+    stem_normalise = _normaliser(stem)
+    alias_generiques = {
+        _normaliser(alias)
+        for alias_liste in ALIASES_MATIERES.values()
+        for alias in alias_liste
+    }
+    if stem_normalise in alias_generiques:
+        # "scan_maths.pdf" doit devenir la matière canonique, pas "maths"
+        # ou "scan maths" déduit mécaniquement du nom du fichier.
         return None
     return _matiere_auto_valide(stem)
 
