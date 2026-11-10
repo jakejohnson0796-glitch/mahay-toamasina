@@ -23,7 +23,7 @@
     <section class="tb-hero">
       <div class="tb-hero-texte">
         <p class="eyebrow">Bonjour, {{ utilisateur.nom.split(" ")[0] }} <span aria-hidden="true">👋</span></p>
-        <h1 class="tb-titre">{% if alertes_harmonisation is defined %}Espace enseignant · Harmonisation des cours{% else %}Pret a continuer ton apprentissage ?{% endif %}</h1>
+        <h1 class="tb-titre">{% if alertes_harmonisation is not none %}Espace enseignant · Harmonisation des cours{% else %}Pret a continuer ton apprentissage ?{% endif %}</h1>
         <p class="tb-sous-titre">{% if alertes_harmonisation is defined %}Participe à l'amélioration collaborative des cours de référence.{% else %}Chaque session te rapproche de ton objectif.{% endif %}</p>
       </div>
     </section>
