@@ -26,7 +26,7 @@ def _admin(request: Request, session: Session):
 def _source_http_valide(url: str) -> bool:
     try:
         parsed = urlsplit((url or "").strip())
-        return parsed.scheme in {"http", "https"} and bool(parsed.hostname)
+        return parsed.scheme in {"http", "https"} and bool(parsed.hostname) and len(url.strip()) <= 1000
     except ValueError:
         return False
 
