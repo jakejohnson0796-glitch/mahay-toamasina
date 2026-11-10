@@ -24,7 +24,7 @@ def test_espace_enseignant_refuse_un_eleve(monkeypatch):
 def test_espace_enseignant_refuse_un_professeur_non_verifie(monkeypatch):
     professeur = SimpleNamespace(
         id=8,
-        role=RoleUtilisateur.ETUDIANT,
+        role=RoleUtilisateur.PROFESSEUR,
         statut_verification_enseignant="en_attente",
     )
     monkeypatch.setattr(harmonisation_router, "utilisateur_courant", lambda request, session: professeur)
@@ -120,5 +120,22 @@ def test_dashboard_conditionne_les_alertes_aux_professeurs_valides():
 
     template = Path(__file__).resolve().parents[1] / "app" / "templates" / "dashboard_etudiant.html"
     contenu = template.read_text(encoding="utf-8")
-    assert "alertes_harmonisation is defined" in contenu
+    assert "alertes_harmonisation is not none" in contenu
     assert "/enseignant/harmonisation/demandes/" in contenu
+
+def test_professeur_verifie_uniquement_si_role_et_validation_sont_conformes():
+    professeur = SimpleNamespace(
+        role=RoleUtilisateur.PROFESSEUR,
+        statut_verification_enseignant="approuve",
+    )
+    professeur_en_attente = SimpleNamespace(
+        role=RoleUtilisateur.PROFESSEUR,
+        statut_verification_enseignant="en_attente",
+    )
+    eleve = SimpleNamespace(
+        role=RoleUtilisateur.ETUDIANT,
+        statut_verification_enseignant="approuve",
+    )
+    assert harmonisation_router.professeur_verifie(professeur)
+    assert not harmonisation_router.professeur_verifie(professeur_en_attente)
+    assert not harmonisation_router.professeur_verifie(eleve)
