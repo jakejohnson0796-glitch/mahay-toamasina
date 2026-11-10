@@ -80,6 +80,8 @@ def test_page_objectif_examen_propose_cepe_en_t5_et_modification_profil_scolaire
     assert 'href="/profil/scolaire"' in template
     assert 'contexte.get("cycle_education") != "primaire"' in route
     assert '@router.get("/profil/scolaire")' in profil
+    assert '@router.post("/profil/scolaire")' in profil
+    assert 'option_scolaire_id: Optional[str] = Form(None)' in profil
     assert '"/profil/scolaire?erreur=profil_scolaire_incomplet"' in route
     assert '"T1"' in lire("app/quiz.py")
     assert "10 questions et 15 minutes" in template
