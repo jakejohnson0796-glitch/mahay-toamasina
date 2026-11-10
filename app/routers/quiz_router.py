@@ -395,7 +395,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
         and not _enseignant_sans_classe_scolaire(utilisateur)
     ):
         return RedirectResponse(
-            "/profil/academique?erreur=profil_scolaire_incomplet",
+            "/profil/scolaire?erreur=profil_scolaire_incomplet",
             status_code=303,
         )
 
