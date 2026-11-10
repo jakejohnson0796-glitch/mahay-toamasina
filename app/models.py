@@ -449,6 +449,9 @@ class Utilisateur(SQLModel, table=True):
     niveau_scolaire_id: Optional[int] = Field(default=None, foreign_key="niveauscolaire.id", index=True)
     option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
+    # Choix déclaré du programme BEPC 2027 pour les élèves de 3e : pe / ps_a / ps_b.
+    # Null pour les anciens profils et les comptes qui n’ont pas encore choisi.
+    bepc_2027_parcours: Optional[str] = Field(default=None, max_length=8, index=True)
     statut_verification_enseignant: str = Field(default="non_concerne", index=True, max_length=20)
     demande_enseignant_le: Optional[datetime] = None
     verification_enseignant_le: Optional[datetime] = None
