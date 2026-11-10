@@ -84,3 +84,41 @@ def test_lecture_anciens_formats_office_utilise_un_timeout(monkeypatch, tmp_path
     assert text_extraction._extraire_texte_bureautique_ancien(chemin, "antiword") == "Document Office"
     assert appels["timeout"] == 25
     assert appels["check"] is False
+
+
+def test_pdf_mixte_ocr_uniquement_les_pages_pauvres_en_texte(monkeypatch, tmp_path):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    import pdf2image
+
+    chemin = tmp_path / "mixte.pdf"
+    chemin.write_bytes(b"%PDF-test")
+    pages = [
+        SimpleNamespace(extract_text=lambda: "Texte sélectionnable " * 12),
+        SimpleNamespace(extract_text=lambda: "En-tête court"),
+        SimpleNamespace(extract_text=lambda: ""),
+    ]
+
+    @contextmanager
+    def faux_pdf(_chemin):
+        yield SimpleNamespace(pages=pages)
+
+    appels_ocr = []
+
+    def faux_conversion(_chemin, **kwargs):
+        appels_ocr.append((kwargs["first_page"], kwargs["last_page"]))
+        return [Image.new("RGB", (100, 100), "white")]
+
+    monkeypatch.setattr(text_extraction.pdfplumber, "open", faux_pdf)
+    monkeypatch.setattr(pdf2image, "convert_from_path", faux_conversion)
+    monkeypatch.setattr(
+        text_extraction,
+        "_ocr_image",
+        lambda _image, _pytesseract: "Contenu OCR détecté",
+    )
+
+    resultat = text_extraction._extraire_texte_pdf(chemin)
+
+    assert "Texte sélectionnable" in resultat
+    assert resultat.count("Contenu OCR détecté") == 2
+    assert appels_ocr == [(2, 2), (3, 3)]
