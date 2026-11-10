@@ -156,4 +156,4 @@ def test_page_objectif_examen_presente_les_sources_externes_avec_liens_proteges(
     assert 'target="_blank" rel="noopener noreferrer"' in template
     assert "ne validons pas individuellement chaque sujet ou corrigé" in template
     assert "Nous ne recopions pas leurs fichiers" in template
-    assert "ne les présente pas vérifiés ou officiels" in module
+    assert "contenus de tiers comme vérifiés ou officiels" in module
