@@ -53,7 +53,7 @@
 
     async function loadLevels() {
       const requestId = ++niveauxRequest;
-      const active = activeSchoolProfile() && ["college", "lycee"].includes(cycle.value);
+      const active = activeSchoolProfile() && ["primaire", "college", "lycee"].includes(cycle.value);
       reset(level, active ? "Chargement des classes…" : "— Choisissez d’abord votre cycle —", true);
       reset(option, "— Choisissez d’abord une classe —", true);
 
@@ -137,7 +137,7 @@
       }
     });
 
-    if (cycle.value === "college" || cycle.value === "lycee") loadLevels();
+    if (["primaire", "college", "lycee"].includes(cycle.value)) loadLevels();
     loadEstablishments();
   }
 

@@ -63,14 +63,14 @@ def _matieres_disponibles(session: Session) -> List[str]:
 def _enseignant_sans_classe_scolaire(utilisateur) -> bool:
     return (
         getattr(utilisateur, "profil_souhaite", None) == "professeur"
-        and getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"}
         and not getattr(utilisateur, "niveau_scolaire_id", None)
     )
 
 
 def _contexte_scolaire_quiz(utilisateur, session: Session) -> Optional[dict]:
     """Retourne une classe scolaire validée ou refuse le profil scolaire incomplet."""
-    if getattr(utilisateur, "cycle_education", None) not in {"college", "lycee"}:
+    if getattr(utilisateur, "cycle_education", None) not in {"primaire", "college", "lycee"}:
         return None
     niveau_id = getattr(utilisateur, "niveau_scolaire_id", None)
     if not niveau_id:
@@ -279,7 +279,7 @@ def _niveau_quiz_par_defaut(utilisateur, contexte_scolaire=None, progressions=No
         return contexte_scolaire["niveau"]
 
     cycle = getattr(utilisateur, "cycle_education", None)
-    if cycle in {"college", "lycee"}:
+    if cycle in {"primaire", "college", "lycee"}:
         niveaux_scolaires = quiz_module.NIVEAUX_SCOLAIRES_NORMALISES
         if historique_niveau and str(historique_niveau).casefold() in niveaux_scolaires:
             return historique_niveau
@@ -289,7 +289,7 @@ def _niveau_quiz_par_defaut(utilisateur, contexte_scolaire=None, progressions=No
                 return niveau
         # Les enseignants du secondaire peuvent s'entraîner sans classe
         # individuelle. Le cycle suffit pour éviter de leur attribuer L1.
-        return "6e" if cycle == "college" else "Seconde"
+        return "T1" if cycle == "primaire" else ("6e" if cycle == "college" else "Seconde")
 
     niveau_profil = getattr(utilisateur, "niveau", None)
     if niveau_profil in quiz_module.NIVEAUX:
@@ -390,7 +390,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
     contexte = _contexte_scolaire_quiz(utilisateur, session)
     cycle_profil = getattr(utilisateur, "cycle_education", None)
     if (
-        cycle_profil in {"college", "lycee"}
+        cycle_profil in {"primaire", "college", "lycee"}
         and not contexte
         and not _enseignant_sans_classe_scolaire(utilisateur)
     ):
@@ -429,13 +429,18 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
         and str(niveau or "").strip().casefold() == "terminale"
         and serie_label
     )
+    cepe_disponible = bool(
+        contexte
+        and cycle == "primaire"
+        and str(niveau or "").strip().casefold() == "t5"
+    )
     annales_disponibles = (
         _annales_scolaires_objectif_examen(
             session,
             contexte,
             bepc_parcours=bepc_programme_actuel,
         )
-        if bepc_disponible or bacc_disponible else []
+        if bepc_disponible or bacc_disponible or cepe_disponible else []
     )
     priorites = quiz_module.plan_revision_du_jour(
         session, utilisateur.id, limit=5
@@ -452,6 +457,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "bepc_programme_actuel": bepc_programme_actuel,
             "bepc_programme_libelle": bepc_programme_libelle,
             "bacc_disponible": bacc_disponible,
+            "cepe_disponible": cepe_disponible,
             "serie_label": serie_label,
             "priorites": priorites,
             "ressources_externes": ressources_examens.ressources_pour_cycle(cycle),
@@ -509,7 +515,7 @@ def lancer_objectif_examen(
 
     contexte = _contexte_scolaire_quiz(utilisateur, session)
     if (
-        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"}
         and not contexte
         and not _enseignant_sans_classe_scolaire(utilisateur)
     ):
@@ -562,6 +568,23 @@ def lancer_objectif_examen(
             )
         except ValueError:
             return RedirectResponse("/objectif-examen?erreur=option_invalide", status_code=303)
+        matieres_disponibles = _matieres_scolaires_disponibles(session, contexte)
+
+    elif objectif == "cepe":
+        if (
+            not contexte
+            or contexte.get("cycle_education") != "primaire"
+            or str(contexte.get("niveau") or "").strip().casefold() != "t5"
+        ):
+            return RedirectResponse("/objectif-examen?erreur=parcours_indisponible", status_code=303)
+        cycle = contexte["cycle_education"]
+        niveau = contexte["niveau"]
+        niveau_scolaire_id = contexte["niveau_scolaire_id"]
+        option_scolaire_id = contexte.get("option_scolaire_id")
+        try:
+            contexte_examen = objectif_examen.construire_contexte_examen("cepe")
+        except ValueError:
+            return RedirectResponse("/objectif-examen?erreur=parcours_indisponible", status_code=303)
         matieres_disponibles = _matieres_scolaires_disponibles(session, contexte)
 
     elif objectif == "baccalaureat":

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block titre %}Mon profil scolaire — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair{% endblock %}
+{% block contenu %}
+<div class="contenu-clair">
+  <h1>Mon profil scolaire</h1>
+  <p class="stat-label">Choisis le cycle et la classe réellement suivis. Les matières, quiz et objectifs d’examen proposés dépendent du référentiel scolaire vérifié.</p>
+  {% if erreur %}<div class="erreur" role="alert">{{ erreur }}</div>{% endif %}
+  {% if request.query_params.get("ok") == "profil_scolaire_actualise" %}
+    <div class="info" role="status">Ton profil scolaire a été actualisé.</div>
+  {% endif %}
+  {% if not referentiel %}
+    <div class="erreur" role="alert">Le référentiel scolaire courant n’est pas disponible. Réessaie plus tard.</div>
+  {% else %}
+  <div class="carte-formulaire">
+    <form method="post" action="/profil/scolaire" id="profil-scolaire-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="cycle_education">Cycle</label>
+      <select id="cycle_education" name="cycle_education" required>
+        <option value="">Choisir un cycle</option>
+        <option value="primaire" {% if utilisateur.cycle_education == "primaire" %}selected{% endif %}>Primaire · T1 à T5</option>
+        <option value="college" {% if utilisateur.cycle_education == "college" %}selected{% endif %}>Collège · 6e à 3e</option>
+        <option value="lycee" {% if utilisateur.cycle_education == "lycee" %}selected{% endif %}>Lycée · Seconde à Terminale</option>
+      </select>
+      <label for="niveau_scolaire_id">Classe</label>
+      <select id="niveau_scolaire_id" name="niveau_scolaire_id" required>
+        <option value="">Choisir une classe</option>
+        {% for niveau in niveaux %}
+          <option value="{{ niveau.id }}" data-cycle="{{ niveau.cycle }}" {% if utilisateur.niveau_scolaire_id == niveau.id %}selected{% endif %}>{{ niveau.libelle }}</option>
+        {% endfor %}
+      </select>
+      <label for="option_scolaire_id">Série / option (obligatoire en Terminale pour le Baccalauréat)</label>
+      <select id="option_scolaire_id" name="option_scolaire_id">
+        <option value="">Aucune série / option</option>
+        {% for option in options %}
+          <option value="{{ option.id }}" data-niveau="{{ option.niveau_id }}" {% if utilisateur.option_scolaire_id == option.id %}selected{% endif %}>{{ option.libelle }}</option>
+        {% endfor %}
+      </select>
+      <p class="stat-label">CEPE : préparation en classe T5. BEPC : préparation en 3e. Baccalauréat : préparation en Terminale avec une série vérifiée.</p>
+      <button class="bouton bouton-primaire bouton-form" type="submit">Enregistrer mon profil scolaire</button>
+    </form>
+  </div>
+  {% endif %}
+  <p><a href="/objectif-examen">Retour aux objectifs d’examen</a></p>
+</div>
+<script nonce="{{ csp_nonce(request) }}">
+(function () {
+  const cycle = document.getElementById("cycle_education");
+  const level = document.getElementById("niveau_scolaire_id");
+  const option = document.getElementById("option_scolaire_id");
+  if (!cycle || !level || !option) return;
+  function filterOptions() {
+    Array.from(option.options).forEach((item) => { if (item.value) item.hidden = item.dataset.niveau !== level.value; });
+    const selected = option.selectedOptions[0];
+    if (selected && selected.value && selected.dataset.niveau !== level.value) option.value = "";
+  }
+  function filterLevels() {
+    Array.from(level.options).forEach((item) => { if (item.value) item.hidden = item.dataset.cycle !== cycle.value; });
+    const selected = level.selectedOptions[0];
+    if (selected && selected.value && selected.dataset.cycle !== cycle.value) level.value = "";
+    filterOptions();
+  }
+  cycle.addEventListener("change", filterLevels);
+  level.addEventListener("change", filterOptions);
+  filterLevels();
+})();
+</script>
+{% endblock %}

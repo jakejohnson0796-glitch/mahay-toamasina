@@ -31,6 +31,15 @@ def construire_contexte_examen(
         instruction = "BEPC Madagascar 2027, nouveau Programme d'études (PE)"
         return {"code": code, "label": label, "instruction": instruction}
 
+    if code == "cepe":
+        label = "CEPE · Classe T5"
+        instruction = (
+            "CEPE Madagascar, niveau primaire T5. Prépare un entraînement pédagogique "
+            "non officiel portant uniquement sur la matière choisie et les apprentissages "
+            "du référentiel MEN RAPE T5 validé. Ne prétends jamais reproduire un sujet officiel."
+        )
+        return {"code": code, "label": label, "instruction": instruction}
+
     if code == "baccalaureat":
         serie_validee = str(serie or "").strip()
         if not serie_validee or len(serie_validee) > 60:

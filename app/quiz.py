@@ -30,7 +30,7 @@ DIFFICULTES = ["Facile", "Moyen", "Difficile"]
 NB_QUESTIONS_POSSIBLES = [5, 10, 15, 20]
 # Libellés des classes du référentiel scolaire versionné. Ils sont acceptés
 # par le moteur IA sans les mélanger à la liste universitaire NIVEAUX.
-NIVEAUX_SCOLAIRES = {"6e", "5e", "4e", "3e", "Seconde", "Première", "Terminale"}
+NIVEAUX_SCOLAIRES = {"T1", "T2", "T3", "T4", "T5", "6e", "5e", "4e", "3e", "Seconde", "Première", "Terminale"}
 NIVEAUX_SCOLAIRES_NORMALISES = {niveau.casefold() for niveau in NIVEAUX_SCOLAIRES}
 
 
