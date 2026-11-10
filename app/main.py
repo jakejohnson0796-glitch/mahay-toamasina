@@ -218,9 +218,10 @@ async def au_demarrage() -> None:
         worker_ia.start()
         app.state.ai_worker_stop = arret_worker
         app.state.ai_worker_thread = worker_ia
+        backend_file = "redis" if parametres.redis_url else "postgresql"
         print(
             "[DEBUG AI QUEUE] Worker IA integre au Web demarre — "
-            f"redis=True cle={ai_worker.ai_queue.CLE_FILE_REDIS}."
+            f"backend={backend_file} cle={ai_worker.ai_queue.CLE_FILE_REDIS}."
         )
     else:
         app.state.ai_worker_stop = None
