@@ -423,33 +423,17 @@
     <a href="/dashboard" class="navigation-mobile-lien{{ ' actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
       {{ icone("dashboard", 20) }}<span>Accueil</span>
     </a>
-    {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}
-    {% if utilisateur.statut_verification_enseignant == "approuve" %}
-    <a href="/classe" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}>
-      {{ icone("classe", 20) }}<span>Classes</span>
+    <a {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}{% if utilisateur.statut_verification_enseignant == "approuve" %}href="/classe"{% else %}href="/dashboard#verification"{% endif %}{% else %}href="/documents"{% endif %} class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/classe') or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/documents')) else '' }}">
+      {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}{{ icone("classe", 20) }}<span>{% if utilisateur.statut_verification_enseignant == "approuve" %}Mes classes{% else %}Vérification{% endif %}</span>{% else %}{{ icone("documents", 20) }}<span>Docs</span>{% endif %}
     </a>
-    <a href="/enseignant/harmonisation" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/enseignant/harmonisation') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/enseignant/harmonisation') else '' }}>
-      <span aria-hidden="true">📚</span><span>Harmonisation</span>
+    <a {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}{% if utilisateur.statut_verification_enseignant == "approuve" %}href="/enseignant/harmonisation"{% else %}href="/notifications"{% endif %}{% else %}href="/quiz"{% endif %} class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/enseignant/harmonisation') or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/quiz')) else '' }}">
+      {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}<span aria-hidden="true">{% if utilisateur.statut_verification_enseignant == "approuve" %}📚{% else %}🔔{% endif %}</span><span>{% if utilisateur.statut_verification_enseignant == "approuve" %}Harmonisation{% else %}Notifications{% endif %}</span>{% else %}{{ icone("quiz", 20) }}<span>Quiz</span>{% endif %}
     </a>
-    {% else %}
-    <a href="/dashboard#verification" class="navigation-mobile-lien"><span aria-hidden="true">🎓</span><span>Vérification</span></a>
-    {% endif %}
-    {% else %}
-    <a href="/documents" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}>
-      {{ icone("documents", 20) }}<span>Docs</span>
+    <a {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}{% if utilisateur.statut_verification_enseignant == "approuve" %}href="/notifications"{% else %}href="/faq"{% endif %}{% else %}href="/jeu-cerebral"{% endif %} class="navigation-mobile-lien{{ ' actif' if (utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and request.url.path.startswith('/notifications')) or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/jeu-cerebral')) else '' }}">
+      {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}<span aria-hidden="true">{% if utilisateur.statut_verification_enseignant == "approuve" %}🔔{% else %}❔{% endif %}</span><span>{% if utilisateur.statut_verification_enseignant == "approuve" %}Alertes{% else %}Aide{% endif %}</span>{% else %}<span class="navigation-mobile-icone" aria-hidden="true">🧠</span><span>Jeu</span>{% endif %}
     </a>
-    <a href="/quiz" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}>
-      {{ icone("quiz", 20) }}<span>Quiz</span>
-    </a>
-    <a href="/jeu-cerebral" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}>
-      <span class="navigation-mobile-icone" aria-hidden="true">🧠</span><span>Jeu</span>
-    </a>
-    <a href="/cercles" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
-      {{ icone("cercles", 20) }}<span>Cercles</span>
-    </a>
-    {% endif %}
-    <a href="/notifications" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/notifications') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/notifications') else '' }}>
-      {{ icone("aide", 20) }}<span>Alertes</span>
+    <a {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}{% if utilisateur.statut_verification_enseignant == "approuve" %}href="/faq"{% else %}href="/contact"{% endif %}{% else %}href="/cercles"{% endif %} class="navigation-mobile-lien{{ ' actif' if (utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and (request.url.path.startswith('/faq') or request.url.path == '/contact')) or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/cercles')) else '' }}">
+      {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}<span aria-hidden="true">{% if utilisateur.statut_verification_enseignant == "approuve" %}❔{% else %}✉️{% endif %}</span><span>{% if utilisateur.statut_verification_enseignant == "approuve" %}Aide{% else %}Contact{% endif %}</span>{% else %}{{ icone("cercles", 20) }}<span>Cercles</span>{% endif %}
     </a>
     <a href="/securite" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}>
       {{ icone("securite", 20) }}<span>Profil</span>
