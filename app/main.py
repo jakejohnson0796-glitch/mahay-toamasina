@@ -207,7 +207,7 @@ async def au_demarrage() -> None:
     # est configure, la boucle IA tourne donc dans un thread interne au Web
     # service. Les appels IA restent hors de la boucle asyncio HTTP, tandis
     # que Redis absorbe les rafales et PostgreSQL reste le filet de securite.
-    if parametres.redis_url:
+    if parametres.redis_url or parametres.ai_worker_inline_enabled:
         arret_worker = threading.Event()
         worker_ia = threading.Thread(
             target=ai_worker.boucle_worker,
@@ -448,7 +448,10 @@ def health() -> dict:
         "status": "ok",
         "release": parametres.release_commit,
         "renderer": "direct-katex-v3",
-        "ai_worker_configured": bool(parametres.redis_url),
+        "ai_worker_configured": bool(parametres.redis_url or parametres.ai_worker_inline_enabled),
+        "ai_queue_backend": "redis" if parametres.redis_url else (
+            "postgresql" if parametres.ai_worker_inline_enabled else "disabled"
+        ),
         "ai_worker_alive": bool(thread and thread.is_alive()),
         "initialisation_etat": getattr(app.state, "initialisation_etat", "inconnu"),
         "initialisation_etape": getattr(app.state, "initialisation_etape", "inconnu"),
