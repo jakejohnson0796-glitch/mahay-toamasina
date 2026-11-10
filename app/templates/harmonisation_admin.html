@@ -26,7 +26,7 @@
   <p>Aucune demande d'harmonisation pour le moment.</p>
   {% endfor %}
 </div>
-<style>
+<style nonce="{{ csp_nonce(request) }}">
 .espace-harmonisation{max-width:1120px;margin:0 auto}
 .harmonisation-demande{margin:.7rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-surface)}
 .harmonisation-demande p{font-size:.83rem;line-height:1.55}
