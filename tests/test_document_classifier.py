@@ -65,11 +65,11 @@ def test_classification_extrait_titre_matiere_type_et_session_du_contenu(monkeyp
     resultat = classifier_document(
         nom_fichier="document.pdf",
         texte=(
-            "Université de Toamasina\\n"
-            "Année académique 2025-2026\\n"
-            "Épreuve finale\\n"
-            "Matière : Mathématiques\\n"
-            "ALGÈBRE LINÉAIRE\\n"
+            "Université de Toamasina\n"
+            "Année académique 2025-2026\n"
+            "Épreuve finale\n"
+            "Matière : Mathématiques\n"
+            "ALGÈBRE LINÉAIRE\n"
             "Session 2026"
         ),
         filieres=[],
