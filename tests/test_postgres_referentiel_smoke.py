@@ -510,14 +510,14 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
                 for row in imported_rows
             )
 
-        # Couverture exacte attendue : 4 × 11 au collège, 12 en seconde,
-        # 3 × 13 en première et 3 × 11 en terminale = 128 associations.
+        # Couverture exacte attendue : 38 associations pour T1-T5
+        # ajoutées aux 128 associations collège/lycée = 166 associations.
         nb_programmes_2026 = session.exec(
             select(ProgrammeMatiereScolaire.id).where(
                 ProgrammeMatiereScolaire.referentiel_id == rape_courant.id
             )
         ).all()
-        assert len(nb_programmes_2026) == 128
+        assert len(nb_programmes_2026) == 166
 
         # Le catalogue canonique des matières pointe vers l'index MEN ; les
         # sources précises par niveau/série restent sur chaque programme.
