@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titre %}{{ document.titre }} — Cours harmonisé{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<article class="contenu-clair cours-harmonise-public">
+  <p class="eyebrow">MITARIDALA · Cours de référence harmonisé</p>
+  <a href="/documents">← Retour à la bibliothèque Documents</a>
+  <header>
+    <h1>{{ document.titre }}</h1>
+    <p>{{ document.matiere }} · {{ document.annee }} · Référence {{ document.reference }}</p>
+    <p class="cours-harmonise-version">Version harmonisée {{ document.version_harmonisee }}</p>
+    {% if document.date_mise_a_jour_harmonisee %}<p class="cours-harmonise-date">Document mis à jour le {{ document.date_mise_a_jour_harmonisee.strftime("%d/%m/%Y à %H:%M") }}</p>{% endif %}
+  </header>
+  <section class="cours-harmonise-contenu">{{ document.contenu_harmonise }}</section>
+  <p class="stat-label">Cette version a été publiée après validation administrative. Les contributions et documents de travail originaux ne sont pas exposés dans cette page.</p>
+</article>
+<style nonce="{{ csp_nonce(request) }}">
+.cours-harmonise-public{max-width:960px;margin:0 auto}
+.cours-harmonise-public header{margin:1.5rem 0;padding-bottom:1rem;border-bottom:1px solid var(--content-border)}
+.cours-harmonise-public header h1{margin:.35rem 0;font-size:clamp(1.5rem,4vw,2.3rem)}
+.cours-harmonise-public header p{color:var(--content-text-muted)}
+.cours-harmonise-version{font-weight:700;color:var(--content-text)!important}
+.cours-harmonise-date{font-size:.84rem}
+.cours-harmonise-contenu{white-space:pre-wrap;overflow-wrap:anywhere;font-size:1rem;line-height:1.8;color:var(--content-text);padding:clamp(.8rem,3vw,1.5rem);border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}
+</style>
+{% endblock %}

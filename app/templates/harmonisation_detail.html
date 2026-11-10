@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titre %}Détail de la proposition — Harmonisation{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair harmonisation-detail">
+  <p class="eyebrow">{% if is_admin %}Administration{% else %}Espace enseignant{% endif %} · Harmonisation des cours</p>
+  <a href="{{ '/admin/harmonisation-cours' if is_admin else '/enseignant/harmonisation' }}">← Retour à la liste</a>
+  {% if request.query_params.get("erreur") == "version_deja_modifiee" %}
+  <div class="erreur" role="alert">Une autre version a été publiée entre-temps. Cette proposition est suspendue pour éviter d'écraser une modification plus récente.</div>
+  {% elif request.query_params.get("erreur") == "motif_decision_invalide" %}
+  <div class="erreur" role="alert">La décision doit être accompagnée d'une explication d'au moins 20 caractères.</div>
+  {% endif %}
+  <header class="tb-panneau-entete">
+    <div>
+      <h1>{{ document.titre if document else "Cours indisponible" }}</h1>
+      <p class="stat-label">{{ document.matiere if document else "—" }} · {{ document.annee if document else "—" }} · Demande #{{ demande.id }}</p>
+      <p>Proposée par <strong>{{ auteur.nom if auteur else "Enseignant" }}</strong> le {{ demande.date_creation.strftime("%d/%m/%Y à %H:%M") }}.</p>
+    </div>
+    <span class="harmonisation-statut">{{ demande.statut.replace("_", " ") }}</span>
+  </header>
+  <section class="harmonisation-detail-section">
+    <h2>Justification et éléments de preuve</h2>
+    <p><strong>Passage concerné :</strong> {{ demande.passage_concerne }}</p>
+    <p><strong>Justification détaillée :</strong></p><div class="harmonisation-texte">{{ demande.justification }}</div>
+    <p><strong>Source ou preuve :</strong></p><div class="harmonisation-texte">{{ demande.source_justificative }}</div>
+    <p><strong>Impact pédagogique :</strong></p><div class="harmonisation-texte">{{ demande.impact_pedagogique }}</div>
+    <p><strong>Version source examinée :</strong> {{ demande.version_source }}</p>
+    {% if demande.motif_decision %}<p><strong>Dernière décision :</strong> {{ demande.motif_decision }}</p>{% endif %}
+  </section>
+  <section class="harmonisation-comparaison">
+    <div><h2>Version actuellement publiée</h2><div class="harmonisation-texte">{{ demande.contenu_actuel or "Aucune version harmonisée n'était publiée au moment de la proposition." }}</div></div>
+    <div><h2>Nouvelle version proposée</h2><div class="harmonisation-texte">{{ demande.contenu_propose }}</div></div>
+  </section>
+  <section class="harmonisation-detail-section">
+    <h2>Discussion pédagogique</h2>
+    <p>Les échanges restent attachés à cette demande et sont conservés dans son historique.</p>
+    {% for item in echanges %}
+    <article class="harmonisation-echange">
+      <strong>{{ item.auteur.nom if item.auteur else "Compte désactivé" }}</strong>
+      <small>{{ item.echange.date_creation.strftime("%d/%m/%Y à %H:%M") }}</small>
+      <p>{{ item.echange.message }}</p>
+    </article>
+    {% else %}<p>Aucun commentaire pour le moment.</p>{% endfor %}
+    {% if demande.statut not in ["validee", "refusee"] %}
+    <form method="post" action="{{ '/admin/harmonisation-cours/demandes/' ~ demande.id ~ '/commenter' if is_admin else '/enseignant/harmonisation/demandes/' ~ demande.id ~ '/commenter' }}" class="harmonisation-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label>Ajouter un commentaire ou une question<textarea name="message" rows="3" minlength="10" maxlength="3000" required placeholder="Explique précisément ton observation pédagogique."></textarea></label>
+      <button class="bouton bouton-secondaire" type="submit">Envoyer le commentaire</button>
+    </form>
+    {% else %}<p class="stat-label">Cette demande est clôturée ; la discussion reste consultable.</p>{% endif %}
+  </section>
+  {% if is_admin and demande.statut not in ["validee", "refusee"] %}
+  <section class="harmonisation-detail-section harmonisation-decision">
+    <h2>Décision de l'administrateur</h2>
+    <form method="post" action="/admin/harmonisation-cours/demandes/{{ demande.id }}/decision" class="harmonisation-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label>Décision<select name="decision" required><option value="valider">Accepter et publier cette version</option><option value="demander_precisions">Demander des précisions</option><option value="refuser">Refuser la proposition</option></select></label>
+      <label>Motif de décision détaillé (minimum 20 caractères)<textarea name="motif_decision" rows="3" minlength="20" maxlength="5000" required placeholder="Explique la décision, les corrections attendues ou les raisons du refus."></textarea></label>
+      <button class="bouton bouton-primaire" type="submit">Enregistrer la décision</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+<style nonce="{{ csp_nonce(request) }}">
+.harmonisation-detail{max-width:1160px;margin:0 auto}
+.harmonisation-detail-section{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}
+.harmonisation-texte{white-space:pre-wrap;overflow-wrap:anywhere;padding:.85rem;border-radius:10px;background:var(--content-bg);border:1px solid var(--content-border);font-size:.83rem;line-height:1.65}
+.harmonisation-comparaison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.harmonisation-comparaison>div{min-width:0}
+.harmonisation-comparaison h2,.harmonisation-detail-section h2{font-size:1rem}
+.harmonisation-echange{margin:.7rem 0;padding:.8rem;border-left:3px solid var(--content-link);background:var(--content-bg);border-radius:8px}
+.harmonisation-echange small{margin-left:.6rem;color:var(--content-text-muted)}
+.harmonisation-echange p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}
+.harmonisation-form{display:grid;gap:.75rem;margin-top:1rem}
+.harmonisation-form label{display:grid;gap:.35rem;font-size:.82rem;font-weight:650}
+.harmonisation-form textarea,.harmonisation-form select{width:100%;box-sizing:border-box;padding:.7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}
+.harmonisation-statut{padding:.25rem .65rem;border:1px solid var(--content-border);border-radius:999px;font-size:.72rem}
+@media(max-width:760px){.harmonisation-comparaison{grid-template-columns:1fr}.harmonisation-detail-section{padding:.75rem}}
+</style>
+{% endblock %}

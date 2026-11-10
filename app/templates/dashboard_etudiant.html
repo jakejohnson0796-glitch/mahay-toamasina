@@ -23,10 +23,53 @@
     <section class="tb-hero">
       <div class="tb-hero-texte">
         <p class="eyebrow">Bonjour, {{ utilisateur.nom.split(" ")[0] }} <span aria-hidden="true">👋</span></p>
-        <h1 class="tb-titre">Pret a continuer ton apprentissage ?</h1>
-        <p class="tb-sous-titre">Chaque session te rapproche de ton objectif.</p>
+        <h1 class="tb-titre">{% if alertes_harmonisation is not none %}Espace enseignant · Harmonisation des cours{% else %}Pret a continuer ton apprentissage ?{% endif %}</h1>
+        <p class="tb-sous-titre">{% if alertes_harmonisation is defined %}Participe à l'amélioration collaborative des cours de référence.{% else %}Chaque session te rapproche de ton objectif.{% endif %}</p>
       </div>
     </section>
+
+    {% if alertes_harmonisation is defined %}
+    <section class="tb-harmonisation" aria-labelledby="tb-harmonisation-titre">
+      <div class="tb-harmonisation-entete">
+        <div>
+          <p class="eyebrow">Espace professionnel réservé</p>
+          <h2 id="tb-harmonisation-titre">Alertes d'harmonisation des cours</h2>
+          <p>Chaque proposition contient sa justification, ses sources, son impact et la version proposée. Tu peux participer à la relecture ; seul l'administrateur valide et publie.</p>
+        </div>
+        <a class="bouton bouton-primaire" href="/enseignant/harmonisation">Ouvrir l'espace enseignant</a>
+      </div>
+      {% for item in alertes_harmonisation %}
+      <article class="tb-harmonisation-demande">
+        <div class="tb-harmonisation-ligne">
+          <strong>{{ item.document.titre }}</strong>
+          <span>{{ item.demande.statut.replace("_", " ") }}</span>
+        </div>
+        <p><strong>Matière :</strong> {{ item.document.matiere }} · <strong>Proposée par :</strong> {{ item.auteur.nom if item.auteur else "Enseignant" }} · {{ item.demande.date_creation.strftime("%d/%m/%Y à %H:%M") }}</p>
+        <p><strong>Passage concerné :</strong> {{ item.demande.passage_concerne }}</p>
+        <p><strong>Justification :</strong> {{ item.demande.justification }}</p>
+        <p><strong>Source :</strong> {{ item.demande.source_justificative }}</p>
+        <p><strong>Impact pédagogique :</strong> {{ item.demande.impact_pedagogique }}</p>
+        <p><strong>Version examinée :</strong> {{ item.demande.version_source }}</p>
+        <p class="tb-harmonisation-extrait"><strong>Proposition :</strong> {{ item.demande.contenu_propose[:520] }}{% if item.demande.contenu_propose|length > 520 %}…{% endif %}</p>
+        <a href="/enseignant/harmonisation/demandes/{{ item.demande.id }}">Consulter la demande et participer à la discussion →</a>
+      </article>
+      {% else %}
+      <p>Aucune proposition récente. Tu peux ouvrir l'espace enseignant pour proposer une amélioration.</p>
+      {% endfor %}
+    </section>
+    <style nonce="{{ csp_nonce(request) }}">
+      .tb-harmonisation{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:18px;background:var(--content-surface)}
+      .tb-harmonisation-entete{display:flex;gap:1rem;justify-content:space-between;align-items:center;flex-wrap:wrap}
+      .tb-harmonisation-entete h2{margin:.2rem 0;font-size:1.1rem}
+      .tb-harmonisation-entete p{font-size:.8rem;line-height:1.55;color:var(--content-text-muted)}
+      .tb-harmonisation-demande{padding:.8rem 0;border-top:1px solid var(--content-border)}
+      .tb-harmonisation-demande p{font-size:.78rem;line-height:1.55;overflow-wrap:anywhere}
+      .tb-harmonisation-ligne{display:flex;justify-content:space-between;gap:.6rem;align-items:center;flex-wrap:wrap}
+      .tb-harmonisation-ligne span{font-size:.67rem;padding:.15rem .45rem;border:1px solid var(--content-border);border-radius:999px}
+      .tb-harmonisation-demande>a{font-size:.78rem;font-weight:700;color:var(--content-link)}
+      @media(max-width:600px){.tb-harmonisation{padding:.75rem}.tb-harmonisation-entete .bouton{width:100%;text-align:center}}
+    </style>
+    {% endif %}
 
     <section class="tb-routine" id="routine-du-jour" aria-labelledby="routine-du-jour-titre" data-complete="{{ 'true' if routine_du_jour.complete else 'false' }}">
       <div class="tb-routine-entete">
