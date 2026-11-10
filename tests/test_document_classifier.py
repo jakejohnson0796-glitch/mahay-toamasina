@@ -57,3 +57,26 @@ def test_router_expose_l_option_de_detection_auto():
     code = upload_document.__annotations__
     assert "classification_auto" in code
     assert code["classification_auto"] is bool
+
+
+
+def test_classification_extrait_titre_matiere_type_et_session_du_contenu(monkeypatch):
+    monkeypatch.setattr("app.document_classifier.parametres.groq_api_key", "")
+    resultat = classifier_document(
+        nom_fichier="document.pdf",
+        texte=(
+            "Université de Toamasina\\n"
+            "Année académique 2025-2026\\n"
+            "Épreuve finale\\n"
+            "Matière : Mathématiques\\n"
+            "ALGÈBRE LINÉAIRE\\n"
+            "Session 2026"
+        ),
+        filieres=[],
+    )
+
+    assert resultat.titre == "ALGÈBRE LINÉAIRE"
+    assert resultat.matiere == "Mathématiques"
+    assert resultat.type_document == TypeDocument.ANNALE
+    assert resultat.annee == 2026
+    assert resultat.confiance >= 0.6
