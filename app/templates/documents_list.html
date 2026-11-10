@@ -402,7 +402,7 @@ session dediee, avec sa propre verification desktop+mobile.
       {% endif %}
     </section>
     {% endif %}
-    {% if doc.contenu_harmonise %}
+    {% if doc.contenu_harmonise and utilisateur and (utilisateur.role.value == "admin" or (utilisateur.role.value == "professeur" and utilisateur.statut_verification_enseignant == "approuve")) %}
     <section class="doc-harmonise-public" aria-label="Cours harmonisé validé">
       <div>
         <strong>Cours harmonisé · Version {{ doc.version_harmonisee }}</strong>
