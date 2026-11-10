@@ -96,3 +96,25 @@ def test_titre_est_retrouve_dans_le_contenu_quand_le_nom_est_generique(monkeypat
 
     assert resultat.titre == "Analyse des fonctions et applications"
     assert resultat.annee == 2026
+
+
+
+def test_annee_de_session_prime_sur_l_annee_dans_le_nom_du_fichier(monkeypatch):
+    monkeypatch.setattr("app.document_classifier.parametres.groq_api_key", "")
+    resultat = classifier_document(
+        nom_fichier="Annale_Droit_civil_2024.pdf",
+        texte=(
+            "Université de Toamasina\n"
+            "Matière : Droit civil\n"
+            "Épreuve finale\n"
+            "Session normale 2026"
+        ),
+        filieres=[Filiere(id=1, nom="Droit")],
+    )
+    assert resultat.annee == 2026
+
+
+def test_annee_academique_retient_la_fin_de_la_periode():
+    from app.document_classifier import _annee_depuis_texte
+
+    assert _annee_depuis_texte("Année académique 2025-2026", "cours_2024.pdf") == 2026
