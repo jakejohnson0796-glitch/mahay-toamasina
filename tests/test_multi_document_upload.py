@@ -49,7 +49,7 @@ def test_batch_upload_classifies_each_file_and_preserves_moderation():
 def test_multiple_selection_requires_auto_mode_and_shows_per_file_results():
     template = UPLOAD_TEMPLATE.read_text(encoding="utf-8")
     assert "activez la détection automatique pour classer chaque fichier séparément" in template
-    assert "Chaque fichier sera classé séparément" in template
+    assert "Chaque document sera analysé séparément" in template
     assert "{% if erreurs_batch %}" in template
     assert "{% for detail in erreurs_batch %}" in template
     assert "20 Mo maximum par fichier" in template
