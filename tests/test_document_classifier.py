@@ -133,10 +133,10 @@ def test_titre_ocr_ignore_les_entetes_administratifs():
     from app.document_classifier import _titre_depuis_texte
 
     texte = (
-        "UNIVERSITÉ DE TOAMASINA\\n"
-        "ANNÉE UNIVERSITAIRE 2025-2026\\n"
-        "SESSION NORMALE 2026\\n"
-        "ÉPREUVE FINALE\\n"
+        "UNIVERSITÉ DE TOAMASINA\n"
+        "ANNÉE UNIVERSITAIRE 2025-2026\n"
+        "SESSION NORMALE 2026\n"
+        "ÉPREUVE FINALE\n"
         "Analyse des fonctions et applications"
     )
     assert _titre_depuis_texte(texte) == "Analyse des fonctions et applications"
@@ -146,7 +146,7 @@ def test_alias_matiere_est_rattache_a_la_matiere_officielle_du_referentiel(monke
     monkeypatch.setattr("app.document_classifier.parametres.groq_api_key", "")
     resultat = classifier_document(
         nom_fichier="scan_maths_2026_annale.pdf",
-        texte="Session normale 2026\\nSujet de l'examen final",
+        texte="Session normale 2026\nSujet de l'examen final",
         filieres=[Filiere(id=22, nom="Mathématiques")],
     )
     assert resultat.matiere == "Mathématiques"
