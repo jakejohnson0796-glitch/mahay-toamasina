@@ -554,6 +554,7 @@ def consulter_cours_harmonise_public(
         not document
         or document.statut != StatutDocument.APPROUVE
         or document.type_document != TypeDocument.COURS
+        or document.cercle_id is not None
         or not (document.contenu_harmonise or "").strip()
     ):
         return RedirectResponse("/documents", status_code=303)
