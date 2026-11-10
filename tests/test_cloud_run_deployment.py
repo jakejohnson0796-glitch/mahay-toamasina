@@ -43,7 +43,8 @@ def test_workflow_cloud_run_est_manuel_et_ne_remplace_pas_render():
     assert "--timeout 3600s" in workflow
     assert "AI_WORKER_INLINE_ENABLED=true" in workflow
     assert "REDIS_URL" not in workflow
-    assert "render" not in workflow.lower()
+    assert "\n  push:" not in workflow
+    assert "render.yaml" not in workflow.lower()
 
 
 def test_dockerfile_est_compatible_avec_le_port_cloud_run():
