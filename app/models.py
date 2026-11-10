@@ -2353,8 +2353,8 @@ class DemandeMiseAJourCours(SQLModel, table=True):
     """Proposition motivée d'évolution d'un cours public."""
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    document_id: int = Field(foreign_key="document.id", index=True)
-    auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    document_id: int = Field(foreign_key="document.id")
+    auteur_id: int = Field(foreign_key="utilisateur.id")
     version_source: int = Field(default=0)
     passage_concerne: str = Field(max_length=2000)
     contenu_actuel: str = Field(default="", max_length=100000)
@@ -2366,7 +2366,7 @@ class DemandeMiseAJourCours(SQLModel, table=True):
         default=StatutDemandeMiseAJourCours.EN_ATTENTE.value,
         max_length=32,
     )
-    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_modification: datetime = Field(default_factory=datetime.utcnow)
     traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     date_traitement: Optional[datetime] = None
