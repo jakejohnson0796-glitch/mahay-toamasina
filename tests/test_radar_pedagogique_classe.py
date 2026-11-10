@@ -124,8 +124,8 @@ def test_template_radar_compile_et_contient_les_gardes_de_confidentialite():
 
 def test_radar_professeur_limite_au_proprietaire_du_cours_ou_admin():
     cours = SimpleNamespace(professeur_id=41)
-    proprietaire = SimpleNamespace(id=41, role=RoleUtilisateur.PROFESSEUR)
-    autre_professeur = SimpleNamespace(id=42, role=RoleUtilisateur.PROFESSEUR)
+    proprietaire = SimpleNamespace(id=41, role=RoleUtilisateur.PROFESSEUR, statut_verification_enseignant="approuve")
+    autre_professeur = SimpleNamespace(id=42, role=RoleUtilisateur.PROFESSEUR, statut_verification_enseignant="approuve")
     etudiant = SimpleNamespace(id=43, role=RoleUtilisateur.ETUDIANT)
     administrateur = SimpleNamespace(id=99, role=RoleUtilisateur.ADMIN)
 
