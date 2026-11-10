@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titre %}Opportunités académiques — MITARIDALA{% endblock %}
+{% block meta_description %}Découvre des bourses, concours, admissions, stages et formations. Chaque opportunité publiée renvoie vers sa source officielle vérifiée par MITARIDALA.{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair opportunites-page">
+  <header class="opportunites-hero">
+    <p class="eyebrow">Parcours scolaire et universitaire</p>
+    <h1>Les opportunités à ne pas manquer</h1>
+    <p>Retrouve des bourses, concours, admissions, stages et formations. Consulte toujours les conditions sur le site de l'organisme responsable.</p>
+  </header>
+  <form class="opportunites-filtres" method="get" action="/opportunites">
+    <label>Catégorie
+      <select name="categorie">
+        <option value="">Toutes les catégories</option>
+        {% for categorie in categories %}<option value="{{ categorie }}" {% if categorie_active == categorie %}selected{% endif %}>{{ categorie|capitalize }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Niveau d'études
+      <input name="niveau" value="{{ niveau_actif }}" maxlength="80" placeholder="Ex. Licence, Master, Lycée">
+    </label>
+    <button class="bouton bouton-primaire" type="submit">Filtrer</button>
+    <a class="bouton bouton-secondaire" href="/opportunites">Effacer</a>
+  </form>
+  <p class="opportunites-note">Les annonces affichées ont été vérifiées par l'équipe MITARIDALA. La candidature se fait auprès de l'organisme source, pas sur MITARIDALA.</p>
+  <section class="opportunites-liste" aria-live="polite">
+    {% for offre in opportunites %}
+    <article class="opportunite-carte">
+      <div class="opportunite-meta"><span>{{ offre.categorie|capitalize }}</span>{% if offre.niveau_cible %}<span>{{ offre.niveau_cible }}</span>{% endif %}{% if offre.region %}<span>{{ offre.region }}</span>{% endif %}</div>
+      <h2>{{ offre.titre }}</h2>
+      <p>{{ offre.description }}</p>
+      {% if offre.date_limite %}<p class="opportunite-echeance">Date limite : <strong>{{ offre.date_limite.strftime("%d/%m/%Y") }}</strong></p>{% else %}<p class="opportunite-echeance">Date limite non précisée — consulte la source.</p>{% endif %}
+      <p class="opportunite-source">Source : {{ offre.source_nom }} · Vérifiée le {{ offre.verifiee_le.strftime("%d/%m/%Y") if offre.verifiee_le else "date non disponible" }}</p>
+      <a class="bouton bouton-primaire" href="{{ offre.source_url }}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a>
+    </article>
+    {% else %}
+    <div class="opportunites-vide"><h2>Aucune opportunité publiée pour le moment</h2><p>De nouvelles annonces seront ajoutées après vérification de leurs sources et de leurs conditions.</p></div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}
