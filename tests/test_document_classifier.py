@@ -65,9 +65,9 @@ def test_detection_recupere_matiere_canonique_et_filiere_avec_une_legere_faute(m
     resultat = classifier_document(
         nom_fichier="scan_maths_2026_annale.pdf",
         texte=(
-            "UNIVERSITE DE TOAMASINA\\n"
-            "UFR Sciences economques\\n"
-            "Session normale 2026\\n"
+            "UNIVERSITE DE TOAMASINA\n"
+            "UFR Sciences economques\n"
+            "Session normale 2026\n"
             "Sujet de l'examen final"
         ),
         filieres=[Filiere(id=12, nom="Sciences économiques")],
@@ -85,9 +85,9 @@ def test_titre_est_retrouve_dans_le_contenu_quand_le_nom_est_generique(monkeypat
     resultat = classifier_document(
         nom_fichier="scan_2026.pdf",
         texte=(
-            "UNIVERSITE DE TOAMASINA\\n"
-            "FACULTE DES SCIENCES\\n"
-            "Analyse des fonctions et applications\\n"
+            "UNIVERSITE DE TOAMASINA\n"
+            "FACULTE DES SCIENCES\n"
+            "Analyse des fonctions et applications\n"
             "Ce cours présente les fonctions."
         ),
         filieres=[],
