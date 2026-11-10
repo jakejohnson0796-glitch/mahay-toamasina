@@ -139,3 +139,36 @@ def test_professeur_verifie_uniquement_si_role_et_validation_sont_conformes():
     assert harmonisation_router.professeur_verifie(professeur)
     assert not harmonisation_router.professeur_verifie(professeur_en_attente)
     assert not harmonisation_router.professeur_verifie(eleve)
+
+def test_consultation_cours_harmonise_refuse_un_eleve(monkeypatch):
+    eleve = SimpleNamespace(
+        id=7,
+        role=RoleUtilisateur.ETUDIANT,
+        statut_verification_enseignant="non_concerne",
+    )
+    monkeypatch.setattr(
+        harmonisation_router,
+        "utilisateur_courant",
+        lambda request, session: eleve,
+    )
+    response = harmonisation_router.consulter_cours_harmonise_public(
+        123,
+        SimpleNamespace(),
+        session=SimpleNamespace(),
+    )
+    assert isinstance(response, RedirectResponse)
+    assert response.status_code == 303
+
+
+def test_carte_cours_harmonise_est_reservee_aux_professeurs_et_admins():
+    from pathlib import Path
+
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "templates"
+        / "documents_list.html"
+    )
+    contenu = template.read_text(encoding="utf-8")
+    assert 'utilisateur.role.value == "professeur"' in contenu
+    assert 'utilisateur.role.value == "admin"' in contenu
