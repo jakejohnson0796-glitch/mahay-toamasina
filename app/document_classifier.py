@@ -109,7 +109,7 @@ def _titre_depuis_texte(texte: str) -> Optional[str]:
     for ligne in (texte or "").splitlines()[:35]:
         ligne_brute = " ".join(str(ligne or "").split())
         # Une phrase explicative terminée par une ponctuation n'est pas un titre.
-        if re.search(r"[.!?;:]\\s*$", ligne_brute):
+        if re.search(r"[.!?;:]\s*$", ligne_brute):
             continue
         valeur = _nettoyer_titre(ligne_brute)
         if not valeur or len(valeur) < 8 or len(valeur) > 120:
