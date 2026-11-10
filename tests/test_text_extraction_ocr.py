@@ -122,3 +122,37 @@ def test_pdf_mixte_ocr_uniquement_les_pages_pauvres_en_texte(monkeypatch, tmp_pa
     assert "Texte sélectionnable" in resultat
     assert resultat.count("Contenu OCR détecté") == 2
     assert appels_ocr == [(2, 2), (3, 3)]
+
+
+def test_pretraitement_refuse_les_images_demensuree(monkeypatch):
+    image = Image.new("RGB", (7000, 7000), "white")
+    try:
+        try:
+            text_extraction._preparer_image_ocr(image)
+        except ValueError as erreur:
+            assert "trop grande" in str(erreur).lower()
+        else:
+            raise AssertionError("Une image démesurée ne doit pas être copiée en mémoire")
+    finally:
+        image.close()
+
+
+def test_ocr_applique_un_delai_maximal(monkeypatch):
+    appels = {}
+
+    class FauxTesseract:
+        @staticmethod
+        def get_languages(config=""):
+            return ["fra", "eng"]
+
+        @staticmethod
+        def image_to_string(image, **kwargs):
+            appels.update(kwargs)
+            return "Texte"
+
+    image = Image.new("RGB", (100, 60), "white")
+    try:
+        assert text_extraction._ocr_image(image, FauxTesseract) == "Texte"
+        assert appels["timeout"] == 25
+    finally:
+        image.close()
