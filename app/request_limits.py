@@ -11,7 +11,7 @@ from typing import Any
 MIB = 1024 * 1024
 DEFAULT_MAX_BODY_SIZE = 2 * MIB
 SINGLE_DOCUMENT_BODY_LIMIT = 21 * MIB  # 20 MiB de fichier + marge multipart
-MULTIPLE_DOCUMENT_BODY_LIMIT = 102 * MIB  # jusqu'à 5 fichiers de 20 MiB + marge
+MULTIPLE_DOCUMENT_BODY_LIMIT = 122 * MIB  # 120 MiB de fichiers + marge multipart
 AVATAR_BODY_LIMIT = 6 * MIB  # 5 MiB de photo + marge
 
 
