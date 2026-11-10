@@ -21,12 +21,28 @@
 <link rel="alternate icon" type="image/svg+xml" href="/static/images/site/mitaridala-icon.svg">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
 <meta name="theme-color" content="#0D4645">
-<meta name="description" content="MITARIDALA — plateforme éducative malgache pour apprendre, réviser et collaborer. Documents, cercles d’étude, universités et outils d’apprentissage réunis au même endroit.">
-<meta property="og:title" content="MITARIDALA — Madagascar">
-<meta property="og:description" content="Ton chemin vers la réussite : apprendre, réviser et collaborer.">
+<meta name="robots" content="{{ seo_robots(request) }}">
+<link rel="canonical" href="{{ seo_canonical_url(request) }}">
+<meta name="description" content="{% block meta_description %}MITARIDALA est une plateforme éducative malgache pour apprendre, réviser et collaborer. Cours, documents, universités, quiz et outils pédagogiques réunis au même endroit.{% endblock %}">
+<meta property="og:title" content="{% block og_title %}MITARIDALA — plateforme éducative à Madagascar{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Apprendre, réviser et collaborer avec une plateforme éducative pensée pour les élèves, étudiants et enseignants de Madagascar.{% endblock %}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="{{ request.url }}">
+<meta property="og:url" content="{{ seo_canonical_url(request) }}">
 <meta name="twitter:card" content="summary">
+{% if google_site_verification() %}
+<meta name="google-site-verification" content="{{ google_site_verification() }}">
+{% endif %}
+{% if request.url.path == "/" and seo_robots(request) == "index, follow" %}
+<script type="application/ld+json" nonce="{{ csp_nonce(request) }}">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "MITARIDALA",
+  "alternateName": "MITARIDALA Madagascar",
+  "url": "https://mitaridala.onrender.com/"
+}
+</script>
+{% endif %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">

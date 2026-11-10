@@ -66,6 +66,21 @@ class Parametres:
         or "unknown"
     )
 
+    # --- Référencement public / Google Search Console ---
+    # MITARIDALA est le seul hôte canonique indexable. Les autres sous-domaines
+    # qui servent le même code publient une URL canonique vers ce site.
+    seo_canonical_base_url: str = field(
+        default_factory=lambda: (
+            os.getenv("SEO_CANONICAL_BASE_URL", "https://mitaridala.onrender.com").strip().rstrip("/")
+            or "https://mitaridala.onrender.com"
+        )
+    )
+    # Valeur "content" fournie par Google Search Console (balise HTML).
+    # Elle reste vide tant que la propriété n'a pas été créée et vérifiée.
+    google_site_verification: str = field(
+        default_factory=lambda: os.getenv("GOOGLE_SITE_VERIFICATION", "").strip()
+    )
+
     # --- Compte admin auto-initialise (voir app/admin_init.py) ---
     # ADMIN_PHONE absent => aucune initialisation automatique (comportement
     # inchange pour qui n'utilise pas cette fonctionnalite). ADMIN_PHONE

@@ -9,6 +9,7 @@ global separement dans chacune, avec le risque d'en oublier une.
 from pathlib import Path
 import hashlib
 from functools import lru_cache
+from urllib.parse import urlsplit
 
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
@@ -251,3 +252,49 @@ def avatar_taille_classe(taille: int) -> int:
 
 templates.env.globals["couleur_avatar_index"] = couleur_avatar_index
 templates.env.globals["avatar_taille_classe"] = avatar_taille_classe
+
+
+# Seules ces pages d'information, consultables sans compte, sont candidates
+# à l'indexation. Les autres écrans (compte, activité, administration, etc.)
+# restent hors des résultats de recherche.
+_SEO_PUBLIC_PATHS = frozenset({
+    "/",
+    "/a-propos",
+    "/universites",
+    "/documents",
+    "/cercles",
+    "/faq",
+    "/mode-emploi",
+    "/contact",
+    "/cadre-legal",
+})
+
+
+def _seo_canonical_url(request) -> str:
+    """URL canonique absolue, indépendante du sous-domaine utilisé pour la requête."""
+    base = parametres.seo_canonical_base_url.rstrip("/")
+    chemin = request.url.path or "/"
+    return f"{base}{chemin}"
+
+
+def _seo_robots(request) -> str:
+    """N'indexe que les pages publiques de MITARIDALA sur son hôte canonique."""
+    hote_canonique = (urlsplit(parametres.seo_canonical_base_url).hostname or "").casefold()
+    hote_requete = (request.url.hostname or "").casefold()
+    if not hote_canonique or hote_requete != hote_canonique:
+        return "noindex, follow"
+    if request.session.get("user_id"):
+        return "noindex, nofollow"
+    if request.url.path not in _SEO_PUBLIC_PATHS or request.url.query:
+        return "noindex, follow"
+    return "index, follow"
+
+
+def _google_site_verification() -> str:
+    """Jeton facultatif fourni par Google Search Console, jamais codé en dur."""
+    return parametres.google_site_verification
+
+
+templates.env.globals["seo_canonical_url"] = _seo_canonical_url
+templates.env.globals["seo_robots"] = _seo_robots
+templates.env.globals["google_site_verification"] = _google_site_verification
