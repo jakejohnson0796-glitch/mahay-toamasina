@@ -13,7 +13,7 @@ def test_upload_form_allows_multiple_selection_but_keeps_single_upload_contract(
     assert 'action="/documents/upload"' in template
     assert 'form.action = "/documents/upload-multiple"' in template
     assert 'input.name = "fichiers"' in template
-    assert "fichiers.length > 5" in template
+    assert "fichiers.length > MAX_FILES" in template
 
 
 def test_batch_upload_requires_automatic_classification_and_csrf():
@@ -24,7 +24,9 @@ def test_batch_upload_requires_automatic_classification_and_csrf():
     assert "fichiers: list[UploadFile] = File(...)" in batch
     assert "classification_auto: bool = Form(default=False)" in batch
     assert "_csrf: None = Depends(verifier_csrf)" in batch
-    assert "if len(fichiers) > 5:" in batch
+    assert "if len(fichiers) > MAX_DOCUMENTS_PAR_LOT:" in batch
+    assert "TAILLE_MAX_LOT_DOCUMENTS" in router
+    assert "La taille totale du lot ne doit pas dépasser 100 Mo." in router
     assert "if not classification_auto:" in batch
 
 
@@ -40,6 +42,8 @@ def test_batch_upload_classifies_each_file_and_preserves_moderation():
     assert "_notifier_admins_nouveau_document" in batch
     assert "gamification.enregistrer_action" in batch
     assert "erreurs_batch.append" in batch
+    assert "resultats_batch.append" in batch
+    assert "caracteres_extraits" in batch
 
 
 def test_multiple_selection_requires_auto_mode_and_shows_per_file_results():
@@ -49,6 +53,9 @@ def test_multiple_selection_requires_auto_mode_and_shows_per_file_results():
     assert "{% if erreurs_batch %}" in template
     assert "{% for detail in erreurs_batch %}" in template
     assert "20 Mo maximum par fichier" in template
+    assert "100 Mo pour le lot complet" in template
+    assert "15 fichiers par envoi" in template
+    assert ".webp" in template
 
 
 def test_document_upload_template_inline_script_braces_are_balanced():
@@ -59,3 +66,13 @@ def test_document_upload_template_inline_script_braces_are_balanced():
     assert "fichiersSelectionnes()" in script
     assert "form.addEventListener(\"submit\"" in script
     assert "input.dispatchEvent(new Event(\"change\"" in script
+
+
+
+def test_dockerfile_installe_ocr_multilingue_et_convertisseurs_office_anciens():
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert "tesseract-ocr-fra" in dockerfile
+    assert "tesseract-ocr-eng" in dockerfile
+    assert "poppler-utils" in dockerfile
+    assert "antiword" in dockerfile
+    assert "catdoc" in dockerfile
