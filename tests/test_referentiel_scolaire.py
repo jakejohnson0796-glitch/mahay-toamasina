@@ -651,6 +651,7 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
     session.refresh(user)
 
     session.add_all([
+        CycleEnseigne(utilisateur_id=user.id, cycle_education="primaire"),
         CycleEnseigne(utilisateur_id=user.id, cycle_education="college"),
         CycleEnseigne(utilisateur_id=user.id, cycle_education="lycee"),
         CycleEnseigne(utilisateur_id=user.id, cycle_education="universite"),
@@ -661,7 +662,7 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
         select(CycleEnseigne).where(CycleEnseigne.utilisateur_id == user.id)
     ).all()
     assert {row.cycle_education for row in cycles} == {
-        "college", "lycee", "universite"
+        "primaire", "college", "lycee", "universite"
     }
     session.refresh(user)
     assert user.role == RoleUtilisateur.ETUDIANT
@@ -676,7 +677,7 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
 
     with pytest.raises(IntegrityError):
         session.add(
-            CycleEnseigne(utilisateur_id=user.id, cycle_education="primaire")
+            CycleEnseigne(utilisateur_id=user.id, cycle_education="maternelle")
         )
         session.commit()
     session.rollback()
@@ -686,15 +687,15 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
 def test_normaliser_cycles_enseignes_inclut_le_cycle_principal_et_dedoublonne():
     cycles = auth_router.normaliser_cycles_enseignes(
         " college ",
-        ["LYCEE", "lycee", " universite ", ""],
+        ["LYCEE", "lycee", " universite ", "primaire", ""],
     )
-    assert cycles == {"college", "lycee", "universite"}
+    assert cycles == {"college", "lycee", "universite", "primaire"}
 
 
 def test_normaliser_cycles_enseignes_refuse_une_valeur_inconnue():
     assert auth_router.normaliser_cycles_enseignes(
         "lycee",
-        ["college", "primaire"],
+        ["college", "maternelle"],
     ) is None
 
 

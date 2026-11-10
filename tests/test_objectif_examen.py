@@ -35,6 +35,15 @@ def test_bepc_nouveau_programme_est_distinct_de_ps():
     assert "Programme scolaire (PS)" not in pe["instruction"]
 
 
+def test_cepe_est_un_objectif_pedagogique_non_officiel_pour_t5():
+    resultat = construire_contexte_examen("CEPE")
+
+    assert resultat["code"] == "cepe"
+    assert resultat["label"] == "CEPE · Classe T5"
+    assert "entraînement pédagogique" in resultat["instruction"]
+    assert "sujet officiel" in resultat["instruction"]
+
+
 def test_baccalaureat_exige_une_serie_renseignee():
     resultat = construire_contexte_examen("baccalaureat", serie="Série D")
 
@@ -61,11 +70,17 @@ def test_objectif_examen_reste_un_enchainement_des_moteurs_existants():
     assert 'href="/objectif-examen"' in base
 
 
-def test_page_objectif_examen_signale_le_perimetre_cepe_non_raccorde():
+def test_page_objectif_examen_propose_cepe_en_t5_et_modification_profil_scolaire():
     template = lire("app/templates/objectif_examen.html")
+    route = lire("app/routers/quiz_router.py")
+    profil = lire("app/routers/auth_router.py")
 
-    assert "CEPE et primaire" in template
-    assert "référentiel primaire" in template
+    assert "CEPE · Classe T5" in template
+    assert 'name="objectif" value="cepe"' in template
+    assert 'href="/profil/scolaire"' in template
+    assert 'contexte.get("cycle_education") != "primaire"' in route
+    assert '@router.get("/profil/scolaire")' in profil
+    assert '"T1"' in lire("app/quiz.py")
     assert "10 questions et 15 minutes" in template
     assert "ne reproduit pas la durée" in template
     assert "BEPC · Session 2027" in template
@@ -114,6 +129,16 @@ def test_serie_baccalaureat_refuse_option_avec_parent_non_verifie():
         parent_option_id=10,
     )
     assert _libelle_serie_baccalaureat(_SessionOptions({10: parent}), enfant) is None
+
+def test_ressources_externes_sont_filtrees_pour_le_primaire():
+    from app.ressources_examens import ressources_pour_cycle
+
+    ressources = ressources_pour_cycle("primaire")
+
+    assert [item["id"] for item in ressources] == ["men-rape-t5-cepe"]
+    assert all(item["examens_affiches"] == ("cepe",) for item in ressources)
+    assert ressources[0]["url"].endswith("/RAPE_T5.pdf")
+
 
 def test_ressources_externes_sont_filtrees_pour_le_college():
     from app.ressources_examens import ressources_pour_cycle
