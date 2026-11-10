@@ -78,7 +78,7 @@
     {% endfor %}
   </section>
 </div>
-<style>
+<style nonce="{{ csp_nonce(request) }}">
 .espace-harmonisation{max-width:1120px;margin:0 auto}
 .harmonisation-intro,.harmonisation-list{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}
 .harmonisation-document,.harmonisation-demande{padding:.9rem 0;border-top:1px solid var(--content-border)}
