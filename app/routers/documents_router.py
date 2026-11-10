@@ -24,7 +24,12 @@ from ..models import (Document, Filiere, NiveauScolaire, OptionScolaire, Etablis
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte
-from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
+from ..storage import (
+    sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local,
+    stockage_distant_actif, FichierInvalide, supprimer_fichier,
+    EXTENSIONS_AUTORISEES, TAILLE_MAX_DOCUMENT,
+)
+from ..upload_validation import valider_upload
 from ..dependencies import acces_ia_ou_redirection, acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
 from .. import gamification
@@ -36,6 +41,25 @@ from ..document_classifier import classifier_document
 from ..quiz_validation import QuizValidationError, valider_questions
 
 router = APIRouter()
+
+MAX_DOCUMENTS_PAR_LOT = 15
+TAILLE_MAX_LOT_DOCUMENTS = 100 * 1024 * 1024
+
+
+def _taille_upload(fichier: UploadFile) -> int:
+    """Mesure le fichier sans consommer son flux avant son enregistrement."""
+    taille = getattr(fichier, "size", None)
+    if isinstance(taille, int) and taille >= 0:
+        return taille
+    flux = fichier.file
+    try:
+        position = flux.tell()
+        flux.seek(0, 2)
+        taille = flux.tell()
+        flux.seek(position)
+        return int(taille)
+    except Exception:
+        return TAILLE_MAX_DOCUMENT + 1
 
 
 def _est_membre_cercle(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
@@ -473,17 +497,18 @@ async def detect_document_automatique(
 
     nom_fichier = fichier.filename or "document"
     suffixe = Path(nom_fichier).suffix.lower()
-    extensions = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"}
-    if suffixe not in extensions:
+    if suffixe not in EXTENSIONS_AUTORISEES:
         return JSONResponse({"ok": False, "erreur": "Format de fichier non pris en charge."}, status_code=400)
 
-    # Ne conserve jamais plus que la limite + 1 octet en mémoire, même si
-    # la requête contourne la limite HTTP côté proxy.
-    contenu = await fichier.read(20 * 1024 * 1024 + 1)
+    # Lecture bornée puis validation de la signature réelle : un fichier HTML
+    # renommé en PDF ne doit jamais être présenté au moteur de détection.
+    contenu = await fichier.read(TAILLE_MAX_DOCUMENT + 1)
     if not contenu:
         return JSONResponse({"ok": False, "erreur": "Le fichier est vide."}, status_code=400)
-    if len(contenu) > 20 * 1024 * 1024:
-        return JSONResponse({"ok": False, "erreur": "Le fichier dépasse 20 Mo."}, status_code=413)
+    try:
+        valider_upload(contenu, nom_fichier, TAILLE_MAX_DOCUMENT, EXTENSIONS_AUTORISEES)
+    except ValueError as erreur:
+        return JSONResponse({"ok": False, "erreur": str(erreur)}, status_code=400)
 
     filieres = session.exec(select(Filiere)).all()
     if not filieres:
@@ -518,6 +543,12 @@ async def detect_document_automatique(
                 "filiere_nom": filiere_nom,
                 "confiance": round(float(classification.confiance or 0.0), 3),
                 "source": classification.source,
+                "caracteres_extraits": len(texte.strip()),
+                "statut_analyse": "texte_extrait" if texte.strip() else "nom_fichier_seulement",
+                "avertissement": (
+                    "" if texte.strip()
+                    else "Aucun texte exploitable extrait. Vérifiez la netteté, l’orientation et la lisibilité du scan."
+                ),
             },
         })
     except Exception:
@@ -899,7 +930,7 @@ def upload_documents_multiples(
     filieres_disponibles = session.exec(select(Filiere)).all()
     cercle = session.get(CercleEtude, cercle_id) if cercle_id is not None else None
 
-    def afficher_erreur(message: str, status_code: int = 400, details=None):
+    def afficher_erreur(message: str, status_code: int = 400, details=None, resultats=None):
         return templates.TemplateResponse(
             "document_upload.html",
             {
@@ -909,6 +940,7 @@ def upload_documents_multiples(
                 "erreur": message,
                 "message": "",
                 "erreurs_batch": details or [],
+                "resultats_batch": resultats or [],
                 "utilisateur": utilisateur,
             },
             status_code=status_code,
@@ -916,8 +948,18 @@ def upload_documents_multiples(
 
     if not fichiers:
         return afficher_erreur("Sélectionnez au moins un fichier.")
-    if len(fichiers) > 5:
-        return afficher_erreur("Un envoi est limité à 5 fichiers. Sélectionnez un lot plus petit.")
+    if len(fichiers) > MAX_DOCUMENTS_PAR_LOT:
+        return afficher_erreur(
+            f"Un envoi est limité à {MAX_DOCUMENTS_PAR_LOT} fichiers. Sélectionnez un lot plus petit."
+        )
+
+    tailles_fichiers = [_taille_upload(fichier) for fichier in fichiers]
+    if any(taille <= 0 for taille in tailles_fichiers):
+        return afficher_erreur("Un ou plusieurs fichiers sont vides.")
+    if any(taille > TAILLE_MAX_DOCUMENT for taille in tailles_fichiers):
+        return afficher_erreur("Chaque fichier doit faire 20 Mo maximum.")
+    if sum(tailles_fichiers) > TAILLE_MAX_LOT_DOCUMENTS:
+        return afficher_erreur("La taille totale du lot ne doit pas dépasser 100 Mo.")
     if not classification_auto:
         return afficher_erreur("Activez la détection automatique pour classer chaque fichier séparément.")
     if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(
@@ -937,6 +979,7 @@ def upload_documents_multiples(
 
     nombre_envoyes = 0
     erreurs_batch = []
+    resultats_batch = []
     for fichier in fichiers:
         nom_fichier = Path(fichier.filename or "document").name
         chemin_stocke = None
@@ -982,9 +1025,13 @@ def upload_documents_multiples(
                 manquants.append("filière")
             if manquants:
                 supprimer_fichier(chemin_stocke)
+                detail_texte = (
+                    " Aucun texte exploitable n’a été extrait : vérifiez le scan ou réessayez avec un PDF plus net."
+                    if not (texte_document or "").strip() else ""
+                )
                 erreurs_batch.append(
-                    f"{nom_fichier} : informations insuffisantes ({', '.join(manquants)}). "
-                    "Renommez le fichier avec la matière ou renseignez des informations communes, puis réessayez."
+                    f"{nom_fichier} : informations insuffisantes ({', '.join(manquants)})."
+                    f"{detail_texte} Le fichier n’a pas été enregistré."
                 )
                 continue
 
@@ -1016,6 +1063,17 @@ def upload_documents_multiples(
                 continue
 
             nombre_envoyes += 1
+            resultats_batch.append({
+                "nom_fichier": nom_fichier,
+                "titre": document.titre,
+                "matiere": document.matiere,
+                "type_document": document.type_document.value,
+                "annee": document.annee,
+                "filiere": filiere_finale.nom,
+                "confiance": round(float(classification.confiance or 0.0), 3),
+                "source": classification.source,
+                "caracteres_extraits": len((texte_document or "").strip()),
+            })
             try:
                 _notifier_admins_nouveau_document(session, document, utilisateur)
                 gamification.enregistrer_action(
@@ -1058,6 +1116,7 @@ def upload_documents_multiples(
             "erreur": "",
             "message": message,
             "erreurs_batch": erreurs_batch,
+            "resultats_batch": resultats_batch,
             "utilisateur": utilisateur,
         },
     )
