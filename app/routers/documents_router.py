@@ -893,8 +893,14 @@ def upload_documents_multiples(
     matiere: Optional[str] = Form(default=""),
     type_document: Optional[TypeDocument] = Form(default=None),
     annee: Optional[int] = Form(default=None),
+    bepc_session_2027_parcours: Optional[str] = Form(default=None),
     filiere_id: Optional[int] = Form(default=None),
     portee_academique: str = Form(default="universitaire"),
+    cycle_scolaire: Optional[str] = Form(default=None),
+    niveau_scolaire_id: Optional[int] = Form(default=None),
+    option_scolaire_id: Optional[int] = Form(default=None),
+    matiere_scolaire_id: Optional[int] = Form(default=None),
+    etablissement_scolaire_id: Optional[int] = Form(default=None),
     cercle_id: Optional[int] = Form(default=None),
     classification_auto: bool = Form(default=False),
     session: Session = Depends(get_session),
@@ -908,12 +914,6 @@ def upload_documents_multiples(
     portee = (portee_academique or "universitaire").strip().lower()
     if portee not in {"universitaire", "scolaire"}:
         return RedirectResponse("/documents?erreur=portee_invalide", status_code=303)
-    if portee == "scolaire":
-        # Tant que le moteur ne relie pas les signaux aux matières/classes
-        # validées du référentiel scolaire, aucun classement auto scolaire
-        # n'est accepté. Cela évite les faux rattachements universitaires.
-        return RedirectResponse("/documents?erreur=depot_scolaire_mono_fichier", status_code=303)
-
     filieres_disponibles = session.exec(select(Filiere)).all()
     cercle = session.get(CercleEtude, cercle_id) if cercle_id is not None else None
 
@@ -939,7 +939,7 @@ def upload_documents_multiples(
         return afficher_erreur(
             f"Un envoi est limité à {MAX_DOCUMENTS_PAR_LOT} fichiers. Sélectionnez un lot plus petit."
         )
-    if not classification_auto:
+    if portee == "universitaire" and not classification_auto:
         return afficher_erreur("Activez la détection automatique pour classer chaque fichier séparément.")
 
     tailles = [_taille_upload(fichier) for fichier in fichiers]
@@ -961,6 +961,176 @@ def upload_documents_multiples(
             return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
         if cercle.portee_academique in {"universitaire", "scolaire"} and cercle.portee_academique != portee:
             return afficher_erreur("La portée du cercle ne correspond pas au dépôt.")
+
+    niveau_scolaire = None
+    option_scolaire = None
+    matiere_scolaire = None
+    etablissement_scolaire = None
+    referentiel_courant = None
+    matieres_scolaires_candidates = []
+
+    if portee == "scolaire":
+        if filiere_id is not None:
+            return afficher_erreur("Un document scolaire ne peut pas être lié à une filière universitaire.")
+        cycle_scolaire = (cycle_scolaire or "").strip().lower()
+        if cycle_scolaire not in {"primaire", "college", "lycee"} or niveau_scolaire_id is None:
+            return afficher_erreur("Choisissez le cycle et la classe avant l'envoi du lot.")
+
+        niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)
+        referentiel_courant = (
+            session.get(ReferentielScolaire, niveau_scolaire.referentiel_id)
+            if niveau_scolaire is not None else None
+        )
+        if (
+            not referentiel_courant
+            or not niveau_scolaire
+            or niveau_scolaire.referentiel_id != referentiel_courant.id
+            or not niveau_scolaire.est_actif
+            or niveau_scolaire.statut_validation != "verifie"
+            or niveau_scolaire.cycle != cycle_scolaire
+        ):
+            return afficher_erreur("La classe choisie n'est pas valide dans le référentiel scolaire vérifié.")
+
+        options_compatibles = []
+        if option_scolaire_id is not None:
+            option_scolaire = session.get(OptionScolaire, option_scolaire_id)
+            parent_option = (
+                session.get(OptionScolaire, option_scolaire.parent_option_id)
+                if option_scolaire and option_scolaire.parent_option_id else None
+            )
+            if (
+                not option_scolaire
+                or option_scolaire.referentiel_id != referentiel_courant.id
+                or option_scolaire.niveau_id != niveau_scolaire.id
+                or not option_scolaire.est_active
+                or option_scolaire.statut_validation != "verifie"
+                or (
+                    option_scolaire.parent_option_id is not None
+                    and (
+                        not parent_option
+                        or parent_option.referentiel_id != referentiel_courant.id
+                        or parent_option.niveau_id != niveau_scolaire.id
+                        or parent_option.parent_option_id is not None
+                        or not parent_option.est_active
+                        or parent_option.statut_validation != "verifie"
+                    )
+                )
+            ):
+                return afficher_erreur("La série ou option choisie n'est pas valide pour cette classe.")
+            options_compatibles.append(option_scolaire.id)
+            if option_scolaire.parent_option_id:
+                options_compatibles.append(option_scolaire.parent_option_id)
+
+        if matiere_scolaire_id is not None:
+            matiere_scolaire = session.get(MatiereScolaire, matiere_scolaire_id)
+            association = session.exec(
+                select(ProgrammeMatiereScolaire).where(
+                    ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                    ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                    ProgrammeMatiereScolaire.matiere_id == matiere_scolaire_id,
+                    ProgrammeMatiereScolaire.statut_validation == "verifie",
+                    or_(
+                        ProgrammeMatiereScolaire.option_id.is_(None),
+                        ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                    ),
+                )
+            ).first()
+            if (
+                not matiere_scolaire
+                or not matiere_scolaire.est_active
+                or matiere_scolaire.statut_validation != "verifie"
+                or not association
+            ):
+                return afficher_erreur("La matière choisie n'est pas vérifiée pour cette classe/option.")
+            matiere = matiere_scolaire.libelle
+
+        if etablissement_scolaire_id is not None:
+            etablissement_scolaire = session.get(EtablissementScolaire, etablissement_scolaire_id)
+            if (
+                not etablissement_scolaire
+                or not etablissement_scolaire.est_actif
+                or not etablissement_scolaire.est_verifie
+            ):
+                return afficher_erreur("L'établissement choisi n'est pas vérifié.")
+
+        if cercle:
+            if cercle.niveau_scolaire_id and cercle.niveau_scolaire_id != niveau_scolaire.id:
+                return afficher_erreur("La classe choisie ne correspond pas au cercle.")
+            if cercle.option_scolaire_id:
+                options_compatibles_cercle = set(options_compatibles)
+                if cercle.option_scolaire_id not in options_compatibles_cercle:
+                    return afficher_erreur("La série ou option choisie ne correspond pas au cercle.")
+            if cercle.etablissement_scolaire_id:
+                if etablissement_scolaire and etablissement_scolaire.id != cercle.etablissement_scolaire_id:
+                    return afficher_erreur("L'établissement choisi ne correspond pas au cercle.")
+                etablissement_scolaire = session.get(EtablissementScolaire, cercle.etablissement_scolaire_id)
+                if (
+                    not etablissement_scolaire
+                    or not etablissement_scolaire.est_actif
+                    or not etablissement_scolaire.est_verifie
+                ):
+                    return afficher_erreur("L'établissement du cercle n'est plus vérifié.")
+                etablissement_scolaire_id = etablissement_scolaire.id
+            if cercle.matiere_scolaire_id:
+                if not _matiere_cercle_coherente(cercle, matiere_scolaire_id):
+                    return afficher_erreur("La matière choisie ne correspond pas au cercle.")
+                if matiere_scolaire_id is None:
+                    matiere_scolaire = session.get(MatiereScolaire, cercle.matiere_scolaire_id)
+                    association = session.exec(
+                        select(ProgrammeMatiereScolaire).where(
+                            ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                            ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                            ProgrammeMatiereScolaire.matiere_id == cercle.matiere_scolaire_id,
+                            ProgrammeMatiereScolaire.statut_validation == "verifie",
+                            or_(
+                                ProgrammeMatiereScolaire.option_id.is_(None),
+                                ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                            ),
+                        )
+                    ).first()
+                    if (
+                        not matiere_scolaire
+                        or not matiere_scolaire.est_active
+                        or matiere_scolaire.statut_validation != "verifie"
+                        or not association
+                    ):
+                        return afficher_erreur("La matière ciblée par le cercle n'est plus disponible.")
+                    matiere_scolaire_id = matiere_scolaire.id
+                    matiere = matiere_scolaire.libelle
+
+        # Le moteur compare les matières extraites avec le programme vérifié
+        # de cette classe et de cette option. Il ne peut proposer que des IDs
+        # issus des associations officielles/validées.
+        associations = session.exec(
+            select(ProgrammeMatiereScolaire).where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+                or_(
+                    ProgrammeMatiereScolaire.option_id.is_(None),
+                    ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                ),
+            )
+        ).all()
+        ids_matieres = {association.matiere_id for association in associations}
+        if matiere_scolaire_id is not None:
+            ids_matieres.add(matiere_scolaire_id)
+        if ids_matieres:
+            matieres_scolaires_candidates = session.exec(
+                select(MatiereScolaire).where(
+                    MatiereScolaire.id.in_(sorted(ids_matieres)),
+                    MatiereScolaire.est_active == True,  # noqa: E712
+                    MatiereScolaire.statut_validation == "verifie",
+                )
+            ).all()
+
+    else:
+        if any(value is not None for value in (
+            niveau_scolaire_id, option_scolaire_id, matiere_scolaire_id, etablissement_scolaire_id
+        )):
+            return afficher_erreur("Retirez les filtres scolaires d'un dépôt universitaire.")
+        if not filieres_disponibles:
+            return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
 
     if not filieres_disponibles:
         return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
