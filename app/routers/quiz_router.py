@@ -14,7 +14,7 @@ from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
 from ..dependencies import acces_ia_ou_redirection
 from ..models import (
-    Document, MembreCercle, MissionApprentissage, StatutDocument, TentativeQuiz, ProgressionNotion,
+    Document, MembreCercle, MissionApprentissage, StatutDocument, TypeDocument, TentativeQuiz, ProgressionNotion,
     NiveauScolaire, OptionScolaire, ReferentielScolaire, MatiereScolaire,
     ProgrammeMatiereScolaire,
 )
@@ -169,6 +169,65 @@ def _matieres_scolaires_disponibles(session: Session, contexte: dict) -> List[st
         if matiere and matiere.strip()
     )
     return sorted(valeurs, key=str.casefold)
+
+
+
+def _annales_scolaires_objectif_examen(
+    session: Session,
+    contexte: Optional[dict],
+    *,
+    limite: int = 8,
+) -> List[Document]:
+    """Liste les annales/corrigés scolaires publics compatibles avec le profil.
+
+    Seuls les documents approuvés et hors cercle sont exposés. Une approbation
+    de publication ne vaut pas certification pédagogique du contenu.
+    """
+    if not contexte or not contexte.get("niveau_scolaire_id"):
+        return []
+
+    requete = select(Document).where(
+        Document.statut == StatutDocument.APPROUVE,
+        Document.portee_academique == "scolaire",
+        Document.niveau_scolaire_id == contexte["niveau_scolaire_id"],
+        Document.type_document.in_([TypeDocument.ANNALE, TypeDocument.CORRIGE]),
+        Document.cercle_id.is_(None),
+    )
+
+    option_ids = set()
+    option_id = contexte.get("option_scolaire_id")
+    if option_id:
+        option_ids.add(option_id)
+        option = session.get(OptionScolaire, option_id)
+        if option and option.parent_option_id:
+            option_ids.add(option.parent_option_id)
+
+    if option_ids:
+        requete = requete.where(
+            or_(
+                Document.option_scolaire_id.is_(None),
+                Document.option_scolaire_id.in_(option_ids),
+            )
+        )
+    else:
+        requete = requete.where(Document.option_scolaire_id.is_(None))
+
+    etablissement_id = contexte.get("etablissement_scolaire_id")
+    if etablissement_id:
+        requete = requete.where(
+            or_(
+                Document.etablissement_scolaire_id.is_(None),
+                Document.etablissement_scolaire_id == etablissement_id,
+            )
+        )
+    else:
+        requete = requete.where(Document.etablissement_scolaire_id.is_(None))
+
+    limite_securisee = max(1, min(int(limite or 8), 20))
+    return session.exec(
+        requete.order_by(Document.annee.desc(), Document.date_upload.desc())
+        .limit(limite_securisee)
+    ).all()
 
 
 def _niveau_quiz_par_defaut(utilisateur, contexte_scolaire=None, progressions=None, historique_niveau=None) -> str:
