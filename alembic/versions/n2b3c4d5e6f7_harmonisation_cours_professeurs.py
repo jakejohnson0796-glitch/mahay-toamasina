@@ -33,6 +33,9 @@ def upgrade() -> None:
             "document",
             sa.Column("date_mise_a_jour_harmonisee", sa.DateTime(), nullable=True),
         )
+    document_indexes = {index["name"] for index in sa.inspect(bind).get_indexes("document")}
+    if "ix_document_version_harmonisee" not in document_indexes:
+        op.create_index("ix_document_version_harmonisee", "document", ["version_harmonisee"], unique=False)
 
     if not inspector.has_table("demandemiseajourcours"):
         op.create_table(
@@ -87,8 +90,9 @@ def upgrade() -> None:
         index["name"] for index in sa.inspect(bind).get_indexes("echangedemandemiseajourcours")
     }
     for name, columns in (
-        ("ix_echange_demande_mise_a_jour_demande", ["demande_id"]),
-        ("ix_echange_demande_mise_a_jour_auteur", ["auteur_id"]),
+        ("ix_echangedemandemiseajourcours_demande_id", ["demande_id"]),
+        ("ix_echangedemandemiseajourcours_auteur_id", ["auteur_id"]),
+        ("ix_echangedemandemiseajourcours_date_creation", ["date_creation"]),
     ):
         if name not in index_names:
             op.create_index(name, "echangedemandemiseajourcours", columns, unique=False)
