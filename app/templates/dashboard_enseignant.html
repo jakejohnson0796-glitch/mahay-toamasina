@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block titre %}Espace enseignant — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<main class="de-page" data-role-workspace="enseignant">
+  <header class="de-hero">
+    <div class="de-hero-copy">
+      <span class="de-kicker">MITARIDALA · Espace professionnel</span>
+      <h1>Bonjour {{ utilisateur.nom.split(" ")[0] }}.</h1>
+      <p>Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.</p>
+    </div>
+    {% if statut_enseignant == "approuve" %}
+    <span class="de-status de-status-ok">Compte enseignant vérifié</span>
+    {% else %}
+    <span class="de-status de-status-pending">Vérification du compte</span>
+    {% endif %}
+  </header>
+
+  {% if statut_enseignant != "approuve" %}
+  <section class="de-verification" id="verification" aria-labelledby="de-verification-title">
+    <div class="de-verification-icon" aria-hidden="true">🎓</div>
+    {% if statut_enseignant == "en_attente" %}
+    <div>
+      <p class="de-kicker">Demande reçue</p>
+      <h2 id="de-verification-title">Ton profil enseignant est en cours de vérification.</h2>
+      <p>Les outils de gestion des cours seront activés dès que ton compte sera approuvé. Tu peux consulter tes notifications ou contacter l’équipe MITARIDALA en cas de besoin.</p>
+    </div>
+    {% elif statut_enseignant == "rejete" %}
+    <div>
+      <p class="de-kicker">Vérification nécessaire</p>
+      <h2 id="de-verification-title">Ta demande d’accès enseignant n’a pas été approuvée.</h2>
+      <p>Consulte les notifications ou contacte l’équipe MITARIDALA pour connaître les démarches possibles.</p>
+    </div>
+    {% else %}
+    <div>
+      <p class="de-kicker">Accès professionnel</p>
+      <h2 id="de-verification-title">Ton espace enseignant n’est pas encore activé.</h2>
+      <p>Les fonctions de création et de gestion des cours sont réservées aux comptes enseignants vérifiés.</p>
+    </div>
+    {% endif %}
+    <a class="bouton bouton-primaire" href="/notifications">Voir mes notifications</a>
+  </section>
+  {% else %}
+  <section class="de-stats" aria-label="Indicateurs de mon enseignement">
+    <article class="de-stat">
+      <span class="de-stat-icon" aria-hidden="true">📚</span>
+      <span class="de-stat-label">Mes cours</span>
+      <strong>{{ statistiques_enseignant.cours }}</strong>
+      <small>Cours créés par toi</small>
+    </article>
+    <article class="de-stat">
+      <span class="de-stat-icon" aria-hidden="true">👥</span>
+      <span class="de-stat-label">Inscriptions</span>
+      <strong>{{ statistiques_enseignant.inscriptions }}</strong>
+      <small>Apprenants inscrits à tes cours</small>
+    </article>
+    <article class="de-stat">
+      <span class="de-stat-icon" aria-hidden="true">🗓️</span>
+      <span class="de-stat-label">Séances à venir</span>
+      <strong>{{ statistiques_enseignant.seances_planifiees }}</strong>
+      <small>Séances planifiées</small>
+    </article>
+    <article class="de-stat">
+      <span class="de-stat-icon" aria-hidden="true">📝</span>
+      <span class="de-stat-label">Corrections</span>
+      <strong>{{ statistiques_enseignant.copies_a_corriger }}</strong>
+      <small>Rendus sans note enregistrée</small>
+    </article>
+  </section>
+
+  <section class="de-actions" aria-label="Actions d’enseignement">
+    <a class="de-action de-action-primary" href="/classe#nouveau-cours">
+      <span aria-hidden="true">＋</span>
+      <span><strong>Créer un cours</strong><small>Préparer un nouvel espace de classe</small></span>
+    </a>
+    <a class="de-action" href="/classe">
+      <span aria-hidden="true">🏫</span>
+      <span><strong>Gérer mes classes</strong><small>Étudiants, séances et devoirs</small></span>
+    </a>
+    <a class="de-action" href="/enseignant/harmonisation">
+      <span aria-hidden="true">📖</span>
+      <span><strong>Harmonisation des cours</strong><small>Relire et proposer des améliorations</small></span>
+    </a>
+  </section>
+
+  <section class="de-courses" aria-labelledby="de-courses-title">
+    <div class="de-section-heading">
+      <div><p class="de-kicker">Gestion pédagogique</p><h2 id="de-courses-title">Mes cours et mes classes</h2><p>Chaque espace est limité aux cours dont tu es le professeur.</p></div>
+      <a class="de-text-link" href="/classe">Ouvrir tous mes cours →</a>
+    </div>
+    {% if cours_enseignes %}
+    <div class="de-course-grid">
+      {% for item in cours_enseignes %}
+      <article class="de-course-card">
+        <div class="de-course-top"><span class="de-course-chip">{{ item.cours.niveau }}</span><span class="de-course-id">Cours #{{ item.cours.id }}</span></div>
+        <h3>{{ item.cours.nom }}</h3>
+        <p>{{ item.cours.matiere }}</p>
+        {% if item.cours.description %}<p class="de-course-description">{{ item.cours.description }}</p>{% endif %}
+        <div class="de-course-bottom"><span>👥 {{ item.inscrits }} inscription{{ "s" if item.inscrits != 1 else "" }}</span><a href="/classe/{{ item.cours.id }}">Gérer ce cours →</a></div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="de-empty">
+      <span aria-hidden="true">📘</span>
+      <h3>Ton premier cours commence ici.</h3>
+      <p>Crée un cours pour inviter tes élèves ou étudiants, planifier des séances et publier des devoirs.</p>
+      <a class="bouton bouton-primaire" href="/classe#nouveau-cours">Créer mon premier cours</a>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+</main>
+{% endblock %}
