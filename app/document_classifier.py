@@ -163,8 +163,34 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
 
 
 def _annee_depuis_texte(*sources: str) -> Optional[int]:
-    for source in sources:
-        for valeur in re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", source or ""):
+    """Privilégie la session, puis l'année scolaire, au nom du fichier."""
+    textes = [_normaliser(source or "") for source in sources]
+
+    # La session est plus précise qu'une année dans le nom ou un copyright.
+    for texte in textes:
+        correspondance = re.search(
+            r"\bsession\s*(?:normale|rattrapage|extraordinaire)?\s*(?:de\s*)?((?:19|20)\d{2})\b",
+            texte,
+        )
+        if correspondance:
+            annee = int(correspondance.group(1))
+            if 2000 <= annee <= 2100:
+                return annee
+
+    # Pour 2025-2026, on retient l'année de fin : 2026.
+    for texte in textes:
+        correspondance = re.search(
+            r"\bannee(?: scolaire| academique| universitaire)?\s*"
+            r"((?:19|20)\d{2})(?:\s+((?:19|20)\d{2}))?\b",
+            texte,
+        )
+        if correspondance:
+            annee = int(correspondance.group(2) or correspondance.group(1))
+            if 2000 <= annee <= 2100:
+                return annee
+
+    for texte in textes:
+        for valeur in re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", texte):
             annee = int(valeur)
             if 2000 <= annee <= 2100:
                 return annee
@@ -412,7 +438,7 @@ def classifier_document(
     type_local_nom = _type_local(nom_fichier)
     type_local_texte = _type_local(texte)
     type_local = type_local_nom or type_local_texte
-    annee_local = _annee_depuis_texte(nom_fichier, texte)
+    annee_local = _annee_depuis_texte(texte, nom_fichier)
 
     candidats = _candidats_filieres(texte_reference, filieres)
     meilleur_filiere = candidats[0] if candidats else None
@@ -518,8 +544,16 @@ def classifier_document(
         type_document=type_document,
         annee=annee,
         filiere_id=filiere_id,
-        confiance=confiance_ia if auto_utilisee and resultat_ia else (
-            0.75 if meilleur_filiere or type_local or annee_local or titre_local else 0.0
-        ),
+        confiance=round(max(
+            confiance_ia if auto_utilisee and resultat_ia else 0.0,
+            sum((
+                0.18 if titre else 0.0,
+                0.25 if matiere else 0.0,
+                0.18 if type_document else 0.0,
+                0.15 if annee else 0.0,
+                0.16 if filiere_id else 0.0,
+                0.08 if len((texte or "").strip()) >= 120 else 0.0,
+            )),
+        ), 3),
         source="groq+locale" if resultat_ia else "locale",
     )
