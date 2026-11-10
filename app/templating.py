@@ -267,6 +267,7 @@ _SEO_PUBLIC_PATHS = frozenset({
     "/mode-emploi",
     "/contact",
     "/cadre-legal",
+    "/opportunites",
 })
 
 
