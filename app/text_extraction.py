@@ -23,6 +23,7 @@ MAX_PAGES_PDF_TEXTE = 60
 MAX_PAGES_PDF_OCR = 15
 MAX_TEXTE_EXTRAIT = 300_000
 MAX_OCR_DPI = 160
+MAX_PIXELS_IMAGE_OCR = 40_000_000
 
 
 def extraire_texte(chemin_fichier: str) -> str:
@@ -174,9 +175,18 @@ def _extraire_texte_pdf(chemin: Path) -> str:
                             use_pdftocairo=True,
                         )
                         if images:
-                            morceau_ocr = _ocr_image(images[0], pytesseract)
-                            if len(morceau_ocr) > len(morceau):
-                                morceau = morceau_ocr
+                            try:
+                                morceau_ocr = _ocr_image(images[0], pytesseract)
+                                if len(morceau_ocr) > len(morceau):
+                                    morceau = morceau_ocr
+                            finally:
+                                # Une seule page est rendue par itération :
+                                # libère immédiatement ses pixels après l'OCR.
+                                for image_rendue in images:
+                                    try:
+                                        image_rendue.close()
+                                    except Exception:
+                                        pass
                         nombre_pages_ocr += 1
                     except Exception:
                         # Une page endommagée ne doit pas empêcher la lecture
@@ -206,6 +216,10 @@ def _preparer_image_ocr(image):
     """Améliore le contraste et la lisibilité des scans avant l'OCR."""
     from PIL import Image, ImageFilter, ImageOps
 
+    largeur, hauteur = image.size
+    if largeur <= 0 or hauteur <= 0 or largeur * hauteur > MAX_PIXELS_IMAGE_OCR:
+        raise ValueError("Image trop grande pour l'OCR")
+    image = ImageOps.exif_transpose(image)
     image = image.convert("RGB") if image.mode not in {"RGB", "L"} else image.copy()
     image = ImageOps.grayscale(image)
     image = ImageOps.autocontrast(image, cutoff=1)
@@ -225,6 +239,7 @@ def _ocr_image(image, pytesseract) -> str:
         image_preparee,
         lang=_langue_tesseract(pytesseract),
         config="--oem 1 --psm 3 -c preserve_interword_spaces=1",
+        timeout=25,
     ) or "").strip()
 
 
