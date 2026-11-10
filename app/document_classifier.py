@@ -86,9 +86,14 @@ def _nettoyer_titre(texte: str) -> Optional[str]:
 
 
 def _titre_depuis_nom(nom_fichier: str) -> Optional[str]:
-    stem = Path(nom_fichier or "").stem
-    stem = re.sub(r"\b(20\d{2}|19\d{2})\b", " ", stem)
-    return _nettoyer_titre(stem)
+    stem = Path(nom_fichier or "").stem.replace("_", " ").replace("-", " ")
+    stem = re.sub(r"(?<!\d)(?:20\d{2}|19\d{2})(?!\d)", " ", stem)
+    valeur = _nettoyer_titre(stem)
+    if not valeur or not any(char.isalpha() for char in valeur):
+        return None
+    if _normaliser(valeur) in {"document", "fichier", "scan", "scanne", "cours", "annale"}:
+        return None
+    return valeur
 
 
 def _titre_depuis_texte(texte: str) -> Optional[str]:
@@ -115,7 +120,7 @@ def _titre_depuis_texte(texte: str) -> Optional[str]:
 
 def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
     """Extrait une matière courte et plausible depuis le nom du fichier."""
-    stem = Path(nom_fichier or "").stem
+    stem = Path(nom_fichier or "").stem.replace("_", " ").replace("-", " ")
     if not stem:
         return None
 
@@ -126,10 +131,10 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
         stem,
         flags=re.I,
     )
-    stem = re.sub(r"\b(?:19|20)\d{2}\b", " ", stem)
-    stem = re.sub(r"\b(?:s[1-9]|l[1-3]|m[1-2])\b", " ", stem, flags=re.I)
+    stem = re.sub(r"(?<!\d)(?:19|20)\d{2}(?!\d)", " ", stem)
+    stem = re.sub(r"(?<![a-z0-9])(?:s[1-9]|l[1-3]|m[1-2])(?![a-z0-9])", " ", stem, flags=re.I)
     stem = re.sub(
-        r"\b(?:annale|corrige|corrigé|fiche|cours|support|examen|epreuve|épreuve|scan|scanne)\b$",
+        r"(?:annale|corrige|corrigé|fiche|cours|support|examen|epreuve|épreuve|scan|scanne)$",
         " ",
         stem,
         flags=re.I,
@@ -159,7 +164,7 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
 
 def _annee_depuis_texte(*sources: str) -> Optional[int]:
     for source in sources:
-        for valeur in re.findall(r"\b(?:19|20)\d{2}\b", source or ""):
+        for valeur in re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", source or ""):
             annee = int(valeur)
             if 2000 <= annee <= 2100:
                 return annee
@@ -427,8 +432,8 @@ def classifier_document(
     titre = (
         _nettoyer_titre(resultat_ia.get("titre") or "")
         or titre_local
-        or _titre_depuis_texte(texte)
         or _nettoyer_titre(titre_fourni)
+        or _titre_depuis_texte(texte)
     )
 
     # L'IA peut parfois recopier une phrase du cours comme "matière".
