@@ -150,6 +150,7 @@ def test_dashboard_et_navigation_ont_deux_experiences_distinctes():
     teacher_template = (ROOT / "app" / "templates" / "dashboard_enseignant.html").read_text(encoding="utf-8")
     base = (ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
     style = (ROOT / "app" / "static" / "dashboard-enseignant.css").read_text(encoding="utf-8")
+    classe_template = (ROOT / "app" / "templates" / "classe_liste.html").read_text(encoding="utf-8")
 
     assert '"dashboard_enseignant.html"' in dashboard_router_source
     assert 'utilisateur.role == RoleUtilisateur.PROFESSEUR' in dashboard_router_source
@@ -160,3 +161,8 @@ def test_dashboard_et_navigation_ont_deux_experiences_distinctes():
     assert 'href="/mon-parcours"' in base
     assert "@media(max-width:560px)" in style
     assert "prefers-reduced-motion:reduce" in style
+    assert "Espace enseignant · Gestion pédagogique" in classe_template
+    assert "Organise tes cours et accompagne tes classes." in classe_template
+    assert "Guide enseignant" in classe_template
+    assert 'href="/quiz"' in classe_template
+    assert "Mes cours" not in classe_template
