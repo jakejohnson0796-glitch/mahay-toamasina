@@ -24,6 +24,7 @@ from .. import ai_queue
 from .. import theme_service
 from .. import gamification
 from .. import objectif_examen
+from .. import ressources_examens
 from .. import quiz_calibration
 from ..rate_limit import limite_depassee
 
@@ -339,6 +340,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "bacc_disponible": bacc_disponible,
             "serie_label": serie_label,
             "priorites": priorites,
+            "ressources_externes": ressources_examens.ressources_pour_cycle(cycle),
         },
     )
 
