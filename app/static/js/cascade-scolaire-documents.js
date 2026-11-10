@@ -41,6 +41,10 @@
     const subjectId = document.getElementById("matiere_scolaire_id");
     const subjectText = document.getElementById("matiere");
     const block = document.getElementById("bloc-cible-scolaire");
+    const bepcBlock = document.getElementById("bloc-bepc-session-2027");
+    const bepcParcours = document.getElementById("bepc_session_2027_parcours");
+    const documentType = document.getElementById("type_document");
+    const documentYear = document.getElementById("annee");
     if (!scope || !cycle || !level || !option || !establishment || !block) return;
 
     const currentLevel = block.dataset.currentLevel || "";
@@ -54,12 +58,28 @@
       return scope.value === "scolaire";
     }
 
+    function updateBepcProgrammeField() {
+      if (!bepcBlock || !bepcParcours || !documentType || !documentYear) return;
+      const selectedLevel = level.selectedOptions && level.selectedOptions[0];
+      const levelLabel = selectedLevel ? selectedLevel.textContent.trim().toLocaleLowerCase("fr") : "";
+      const visible = isSchoolScope()
+        && cycle.value === "college"
+        && levelLabel === "3e"
+        && ["annale", "corrige"].includes(documentType.value)
+        && documentYear.value === "2027";
+      bepcBlock.hidden = !visible;
+      bepcParcours.disabled = !visible;
+      bepcParcours.required = visible;
+      if (!visible) bepcParcours.value = "";
+    }
+
     async function loadLevels() {
       const id = ++levelsRequest;
       const school = isSchoolScope();
       const cycleValue = cycle.value;
       reset(level, school && cycleValue ? "Chargement des classes…" : "Choisissez d’abord le cycle", true);
       reset(option, "Choisissez d’abord la classe", true);
+      updateBepcProgrammeField();
       if (!school || !["college", "lycee"].includes(cycleValue)) return;
 
       const rows = await getJSON("/api/scolaire/niveaux?cycle=" + encodeURIComponent(cycleValue));
@@ -78,6 +98,7 @@
       });
       if (!currentWasAdded) level.value = "";
       level.disabled = false;
+      updateBepcProgrammeField();
       if (level.value) await loadOptions();
     }
 
@@ -163,9 +184,11 @@
         reset(option, "Choisissez d’abord la classe", true);
         reset(subjectSelect, "Disponible pour les parcours collège/lycée", true);
         if (subjectId) subjectId.value = "";
+        updateBepcProgrammeField();
         return;
       }
       if (cycle.value) loadLevels();
+      updateBepcProgrammeField();
     }
 
     scope.addEventListener("change", applyScope);
@@ -174,11 +197,18 @@
       option.value = "";
       if (subjectId) subjectId.value = "";
       loadLevels();
+      updateBepcProgrammeField();
     });
     level.addEventListener("change", function () {
       if (subjectId) subjectId.value = "";
       loadOptions();
+      updateBepcProgrammeField();
     });
+    if (documentType) documentType.addEventListener("change", updateBepcProgrammeField);
+    if (documentYear) {
+      documentYear.addEventListener("input", updateBepcProgrammeField);
+      documentYear.addEventListener("change", updateBepcProgrammeField);
+    }
     option.addEventListener("change", loadSubjects);
     if (subjectSelect) {
       subjectSelect.addEventListener("change", function () {
@@ -207,6 +237,7 @@
       level.required = true;
       if (cycle.value) loadLevels();
     }
+    updateBepcProgrammeField();
     loadEstablishments();
   }
 
