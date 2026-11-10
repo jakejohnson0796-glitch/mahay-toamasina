@@ -3,12 +3,13 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
+from ..models import DemandeMiseAJourCours, Document, RoleUtilisateur, Utilisateur
 from .. import dashboard as dashboard_module
 from .. import learning_recap
 
@@ -25,10 +26,29 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
     dashboard_module.notifier_echeances_proches(session, utilisateur.id)
     donnees = dashboard_module.donnees_dashboard(session, utilisateur)
 
+    alertes_harmonisation = None
+    if (
+        utilisateur.role == RoleUtilisateur.PROFESSEUR
+        and utilisateur.statut_verification_enseignant == "approuve"
+    ):
+        demandes_harmonisation = session.exec(
+            select(DemandeMiseAJourCours)
+            .order_by(DemandeMiseAJourCours.date_creation.desc())
+            .limit(12)
+        ).all()
+        alertes_harmonisation = []
+        for demande in demandes_harmonisation:
+            document = session.get(Document, demande.document_id)
+            auteur = session.get(Utilisateur, demande.auteur_id)
+            if document:
+                alertes_harmonisation.append(
+                    {"demande": demande, "document": document, "auteur": auteur}
+                )
+
     return templates.TemplateResponse(
         request,
         "dashboard_etudiant.html",
-        {"utilisateur": utilisateur, **donnees},
+        {"utilisateur": utilisateur, **donnees, "alertes_harmonisation": alertes_harmonisation},
     )
 
 
