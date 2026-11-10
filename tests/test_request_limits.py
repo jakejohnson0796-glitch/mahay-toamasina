@@ -120,5 +120,6 @@ def test_upload_routes_have_explicit_limits_and_other_routes_stay_small():
     assert limite_corps_requete("POST", "/classe/devoirs/123/rendre") == SINGLE_DOCUMENT_BODY_LIMIT
     assert limite_corps_requete("POST", "/profil/photo") == AVATAR_BODY_LIMIT
     assert limite_corps_requete("POST", "/documents/upload-multiple") == MULTIPLE_DOCUMENT_BODY_LIMIT
+    assert MULTIPLE_DOCUMENT_BODY_LIMIT == 122 * 1024 * 1024
     assert limite_corps_requete("POST", "/connexion") == DEFAULT_MAX_BODY_SIZE
     assert limite_corps_requete("GET", "/documents/upload") == DEFAULT_MAX_BODY_SIZE
