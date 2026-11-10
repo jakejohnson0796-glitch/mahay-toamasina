@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titre %}Mon parcours d’apprentissage — MITARIDALA{% endblock %}
+{% block contenu %}
+<main class="mp-page" aria-labelledby="mp-titre">
+  <header class="mp-hero">
+    <div>
+      <p class="eyebrow">Ton espace personnel</p>
+      <h1 id="mp-titre">Mon parcours d’apprentissage</h1>
+      <p>Une vue claire de tes progrès, de tes acquis et de ce que tu peux travailler ensuite.</p>
+      <span class="mp-periode">Bilan d’activité : 30 derniers jours · Données enregistrées sur ton compte</span>
+    </div>
+    <a class="bouton bouton-primaire" href="/quiz">Commencer un quiz</a>
+  </header>
+  <section class="mp-stats" aria-label="Résumé de ma progression">
+    <article class="mp-stat"><span>Quiz terminés</span><strong>{{ bilan.stats.quiz }}</strong><small>sur les 30 derniers jours</small></article>
+    <article class="mp-stat"><span>Notions suivies</span><strong>{{ notions|length }}</strong><small>avec au moins une question enregistrée</small></article>
+    <article class="mp-stat"><span>Maîtrise confirmée</span><strong>{{ notions_confirmees }}</strong><small>notions ayant passé les critères de preuve</small></article>
+    <article class="mp-stat"><span>Niveau moyen</span><strong>{% if score_global is not none %}{{ score_global }}%{% else %}—{% endif %}</strong><small>sur les notions évaluées</small></article>
+  </section>
+  <section class="mp-panel" aria-labelledby="mp-cours">
+    <div class="mp-section-head"><div><p class="eyebrow">Cours encadrés</p><h2 id="mp-cours">Mes cours suivis</h2></div><a href="/classe">Ouvrir mes classes →</a></div>
+    {% if cours_suivis %}
+    <div class="mp-cours-grid">
+      {% for item in cours_suivis %}
+      <article class="mp-cours"><strong>{{ item.cours.nom }}</strong><span>{{ item.cours.matiere }} · {{ item.cours.niveau }}</span><small>Inscription le {{ item.date_inscription.strftime("%d/%m/%Y") }}</small></article>
+      {% endfor %}
+    </div>
+    {% else %}<p class="mp-empty">Aucun cours de classe n’est encore associé à ton compte. Les cours apparaîtront ici après ton inscription par un enseignant.</p>{% endif %}
+  </section>
+  <div class="mp-columns">
+    <section class="mp-panel" aria-labelledby="mp-notions">
+      <div class="mp-section-head"><div><p class="eyebrow">Acquis</p><h2 id="mp-notions">Mes notions évaluées</h2></div><a href="/carte-connaissances">Carte de connaissances →</a></div>
+      {% if notions %}
+      <div class="mp-list">
+        {% for n in notions %}
+        <article class="mp-notion">
+          <div class="mp-notion-head"><div><strong>{{ n.notion }}</strong><span>{{ n.matiere }}</span></div><b>{{ n.score }}%</b></div>
+          <div class="mp-track" role="progressbar" aria-label="Maîtrise de {{ n.notion }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ n.score }}"><span style="width: {{ n.score }}%"></span></div>
+          <small>{{ n.libelle }} · {{ n.questions }} question{{ "s" if n.questions != 1 else "" }} · {{ n.erreurs }} erreur{{ "s" if n.erreurs != 1 else "" }}</small>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}<p class="mp-empty">Tes notions apparaîtront ici après tes premiers quiz évaluant des notions précises.</p>{% endif %}
+    </section>
+    <div class="mp-side">
+      <section class="mp-panel" aria-labelledby="mp-renforcer">
+        <div class="mp-section-head"><div><p class="eyebrow">Priorités</p><h2 id="mp-renforcer">À renforcer</h2></div></div>
+        {% if a_renforcer %}
+        <div class="mp-compact-list">{% for n in a_renforcer %}<article><strong>{{ n.notion }}</strong><span>{{ n.matiere }} · {{ n.score }}%</span><small>{{ n.erreurs }} erreur{{ "s" if n.erreurs != 1 else "" }} enregistrée{{ "s" if n.erreurs != 1 else "" }}</small></article>{% endfor %}</div>
+        <a class="mp-action" href="/mes-revisions">Voir mes révisions →</a>
+        {% else %}<p class="mp-empty">Aucune priorité de renforcement détectée dans les notions suivies.</p>{% endif %}
+      </section>
+      <section class="mp-panel" aria-labelledby="mp-revisions">
+        <div class="mp-section-head"><div><p class="eyebrow">Rappel intelligent</p><h2 id="mp-revisions">Révisions programmées</h2></div></div>
+        {% if revisions %}
+        <div class="mp-compact-list">{% for n in revisions %}<article><strong>{{ n.notion }}</strong><span>{{ n.matiere }}</span><small>{% if n.revision_due %}À réviser maintenant{% else %}Prévue le {{ n.prochaine_revision.strftime("%d/%m/%Y") }}{% endif %}</small></article>{% endfor %}</div>
+        {% else %}<p class="mp-empty">Aucune révision programmée pour le moment. Tes prochaines dates seront calculées à partir de tes entraînements.</p>{% endif %}
+      </section>
+    </div>
+  </div>
+  <section class="mp-panel" aria-labelledby="mp-activites">
+    <div class="mp-section-head"><div><p class="eyebrow">Historique</p><h2 id="mp-activites">Activités récentes</h2></div></div>
+    {% if bilan.activites %}
+    <div class="mp-activity-list">
+      {% for a in bilan.activites %}
+      <article><span class="mp-activity-type">{% if a.type == "quiz" %}Quiz{% elif a.type == "document" %}Document{% elif a.type == "tuteur" %}Tuteur IA{% elif a.type == "jeu" %}Jeu{% else %}Collaboration{% endif %}</span><div><strong>{% if a.type == "quiz" %}{{ a.matiere }}{% elif a.type == "document" %}{{ a.titre }}{% elif a.type == "tuteur" %}{{ a.notion or "Question au Tuteur IA" }}{% elif a.type == "jeu" %}{{ a.theme }}{% else %}Activité collaborative{% endif %}</strong><small>{% if a.type == "quiz" %}Score : {{ a.score }}/{{ a.nb_questions }}{% elif a.type == "jeu" %}Score : {{ a.score }}{% else %}Activité enregistrée{% endif %}</small></div><time datetime="{{ a.date }}">{{ a.date[:10] }}</time></article>
+      {% endfor %}
+    </div>
+    {% else %}<p class="mp-empty">Aucune activité enregistrée sur les 30 derniers jours. Commence par un quiz ou consulte une ressource approuvée.</p>{% endif %}
+  </section>
+  <section class="mp-next">
+    <div><p class="eyebrow">Prochaine étape</p><h2>{{ bilan.mission.titre }}</h2><p>{{ bilan.mission.objectif }}</p></div>
+    <a class="bouton bouton-primaire" href="{{ bilan.mission.lien }}">{{ bilan.mission.libelle_action }}</a>
+  </section>
+</main>
+{% endblock %}
