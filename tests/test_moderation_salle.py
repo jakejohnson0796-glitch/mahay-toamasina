@@ -60,7 +60,7 @@ class TestModerationSalle(unittest.TestCase):
                     session.delete(ligne)
             session.commit()
 
-            prof = Utilisateur(nom="Prof Rakoto", telephone="0341100001", mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"), role=RoleUtilisateur.PROFESSEUR)
+            prof = Utilisateur(nom="Prof Rakoto", telephone="0341100001", mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"), role=RoleUtilisateur.PROFESSEUR, statut_verification_enseignant="approuve")
             autre_prof = Utilisateur(nom="Prof Rasoa", telephone="0341100002", mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"), role=RoleUtilisateur.PROFESSEUR)
             etudiant = Utilisateur(nom="Etudiant Jean", telephone="0341100003", mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"), role=RoleUtilisateur.ETUDIANT)
             session.add_all([prof, autre_prof, etudiant])
