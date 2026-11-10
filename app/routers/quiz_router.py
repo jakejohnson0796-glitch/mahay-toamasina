@@ -384,6 +384,10 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
         and str(niveau or "").strip().casefold() == "terminale"
         and serie_label
     )
+    annales_disponibles = (
+        _annales_scolaires_objectif_examen(session, contexte)
+        if bepc_disponible or bacc_disponible else []
+    )
     priorites = quiz_module.plan_revision_du_jour(
         session, utilisateur.id, limit=5
     )
@@ -400,6 +404,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "serie_label": serie_label,
             "priorites": priorites,
             "ressources_externes": ressources_examens.ressources_pour_cycle(cycle),
+            "annales_disponibles": annales_disponibles,
         },
     )
 
