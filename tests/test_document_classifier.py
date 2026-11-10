@@ -57,3 +57,41 @@ def test_router_expose_l_option_de_detection_auto():
     code = upload_document.__annotations__
     assert "classification_auto" in code
     assert code["classification_auto"] is bool
+
+
+def test_detection_recupere_matiere_canonique_et_filiere_avec_une_legere_faute(monkeypatch):
+    monkeypatch.setattr("app.document_classifier.parametres.groq_api_key", "")
+
+    resultat = classifier_document(
+        nom_fichier="scan_maths_2026_annale.pdf",
+        texte=(
+            "UNIVERSITE DE TOAMASINA\\n"
+            "UFR Sciences economques\\n"
+            "Session normale 2026\\n"
+            "Sujet de l'examen final"
+        ),
+        filieres=[Filiere(id=12, nom="Sciences économiques")],
+    )
+
+    assert resultat.matiere == "Mathématiques"
+    assert resultat.type_document == TypeDocument.ANNALE
+    assert resultat.annee == 2026
+    assert resultat.filiere_id == 12
+
+
+def test_titre_est_retrouve_dans_le_contenu_quand_le_nom_est_generique(monkeypatch):
+    monkeypatch.setattr("app.document_classifier.parametres.groq_api_key", "")
+
+    resultat = classifier_document(
+        nom_fichier="scan_2026.pdf",
+        texte=(
+            "UNIVERSITE DE TOAMASINA\\n"
+            "FACULTE DES SCIENCES\\n"
+            "Analyse des fonctions et applications\\n"
+            "Ce cours présente les fonctions."
+        ),
+        filieres=[],
+    )
+
+    assert resultat.titre == "Analyse des fonctions et applications"
+    assert resultat.annee == 2026
