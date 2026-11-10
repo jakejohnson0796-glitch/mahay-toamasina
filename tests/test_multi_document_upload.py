@@ -33,6 +33,7 @@ def test_batch_upload_requires_automatic_classification_and_csrf():
     assert 'portee == "scolaire" and not' not in batch
     assert "ProgrammeMatiereScolaire" in batch
     assert "matiere_scolaire_id" in batch
+    assert "matiere_scolaire_finale.libelle if matiere_scolaire_finale else \"\"" in batch
     assert "if portee == \"universitaire\" and not classification_auto:" in batch
 
 
