@@ -24,7 +24,7 @@ def upgrade() -> None:
         sa.Column("date_limite", sa.Date(), nullable=True),
         sa.Column("source_nom", sa.String(length=180), nullable=False),
         sa.Column("source_url", sa.String(length=1000), nullable=False),
-        sa.Column("statut", sa.String(length=16), nullable=False, server_default="brouillon"),
+        sa.Column("statut", sa.String(length=16), nullable=False),
         sa.Column("cree_par_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=False),
         sa.Column("verifie_par_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=True),
         sa.Column("verifiee_le", sa.DateTime(), nullable=True),
