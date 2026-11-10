@@ -10,17 +10,21 @@ Utiliser la propriété de type **Préfixe d'URL** :
 
 Ne pas déclarer `mahay-toamasina.onrender.com` comme propriété principale : le site MITARIDALA indique déjà son adresse canonique et l'autre sous-domaine ne doit pas créer un doublon dans Google.
 
-## Vérification de propriété
+## Vérification de propriété avec le fichier HTML
 
-1. Ouvrir [Google Search Console](https://search.google.com/search-console/).
-2. Ajouter une propriété de type **Préfixe d'URL** et saisir `https://mitaridala.onrender.com/`.
-3. Choisir la méthode **Balise HTML**.
-4. Google fournit une balise ressemblant à `<meta name="google-site-verification" content="VALEUR_DU_JETON">`.
-5. Copier uniquement la valeur de l'attribut `content`, sans les guillemets et sans la balise complète.
-6. Dans Render, ouvrir le service **mitaridala** puis **Environment**. Ajouter la variable `GOOGLE_SITE_VERIFICATION` avec cette valeur et enregistrer. Render redéploiera/redémarrera le service selon sa configuration.
-7. Revenir dans Search Console et cliquer sur **Valider**.
+1. Dans Google Search Console, sélectionner la méthode **Fichier HTML**.
+2. Télécharger le fichier Google fourni pour cette propriété.
+3. Conserver exactement son nom et son contenu. Ne pas le renommer, ne pas le modifier et ne pas le placer dans un sous-dossier.
+4. Ajouter le fichier à la racine du dépôt GitHub. L'application doit le servir à la racine du site, à l'URL exacte affichée par Google. Pour le fichier actuellement fourni, l'URL est :
+   `https://mitaridala.onrender.com/google8d625d7edf0d28f9.html`
+5. Fusionner la modification après validation CI et attendre que le déploiement Render soit terminé.
+6. Ouvrir l'URL du fichier dans un navigateur : elle doit afficher le texte de vérification Google, sans page 404 ni redirection.
+7. Revenir dans Search Console et cliquer sur **Vérifier**.
 
-Le jeton est injecté dans le HTML par l'application depuis une variable Render. Il n'a pas besoin d'être commité dans le dépôt GitHub. Ne pas le publier dans un fichier source.
+**Important :** laisser le fichier à la racine du dépôt et ne pas le supprimer après validation. Google peut refaire la vérification ultérieurement.
+
+Une méthode alternative reste disponible dans le code : la balise HTML `google-site-verification` peut être ajoutée via la variable Render `GOOGLE_SITE_VERIFICATION`. Pour le fichier fourni ici, il n'est pas nécessaire de configurer cette variable.
+
 
 ## Envoyer le sitemap
 
