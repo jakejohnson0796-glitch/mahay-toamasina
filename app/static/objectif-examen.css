@@ -42,3 +42,25 @@
 
 .objectif-examen-annale-card{height:100%}
 .objectif-examen-annale-card .bouton{align-self:flex-start;margin-top:auto}
+
+
+/* Diagnostic personnalisé par matière — partage le même référentiel que les parcours CEPE, BEPC et BAC. */
+.objectif-examen-diagnostics{scroll-margin-top:5rem}
+.objectif-examen-diagnostic-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.objectif-examen-diagnostic-card{display:flex;flex-direction:column;gap:.7rem;min-width:0;padding:1.05rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}
+.objectif-examen-diagnostic-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.7rem}
+.objectif-examen-diagnostic-top h3{margin:.35rem 0 0;color:var(--content-text);font-size:1.05rem;overflow-wrap:anywhere}
+.objectif-examen-diagnostic-score{color:var(--content-text);font-size:1.35rem;font-variant-numeric:tabular-nums}
+.objectif-examen-diagnostic-score--vide{color:var(--content-muted)}
+.objectif-examen-diagnostic-track{height:.55rem;overflow:hidden;border-radius:999px;background:var(--content-bg)}
+.objectif-examen-diagnostic-track span{display:block;height:100%;border-radius:inherit;background:var(--color-accent,var(--accent))}
+.objectif-examen-diagnostic-summary,.objectif-examen-diagnostic-focus,.objectif-examen-diagnostic-empty{margin:0;color:var(--content-muted);font-size:.8rem;line-height:1.5}
+.objectif-examen-diagnostic-focus{font-weight:700}
+.objectif-examen-diagnostic-action{margin-top:auto}
+.objectif-examen-diagnostic-action button,.objectif-examen-diagnostic-link{width:100%;justify-content:center}
+.objectif-examen-diagnostic-note{margin-top:1rem;padding:.9rem 1rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);color:var(--content-text)}
+.objectif-examen-diagnostic-note p{margin:.3rem 0 0;color:var(--content-muted);font-size:.82rem;line-height:1.55}
+.objectif-examen-plan-actions{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.6rem}
+.objectif-examen-plan-actions .bouton{align-self:flex-start}
+@media(max-width:980px){.objectif-examen-diagnostic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.objectif-examen-diagnostic-grid{grid-template-columns:1fr}.objectif-examen-plan-actions{flex-direction:column}.objectif-examen-plan-actions .bouton{width:100%;justify-content:center}}

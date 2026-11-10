@@ -26,6 +26,7 @@ from .. import gamification
 from .. import objectif_examen
 from .. import ressources_examens
 from .. import quiz_calibration
+from .. import preparation_intelligente
 from ..rate_limit import limite_depassee
 
 router = APIRouter()
@@ -442,9 +443,37 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
         )
         if bepc_disponible or bacc_disponible or cepe_disponible else []
     )
-    priorites = quiz_module.plan_revision_du_jour(
-        session, utilisateur.id, limit=5
+    progressions_utilisateur = session.exec(
+        select(ProgressionNotion).where(
+            ProgressionNotion.utilisateur_id == utilisateur.id
+        )
+    ).all()
+    bilans_matieres = preparation_intelligente.construire_bilans_matieres(
+        matieres,
+        progressions_utilisateur,
+        niveau=niveau,
     )
+
+    # Le plan affiché sur cette page reste strictement lié au niveau et aux
+    # matières du profil courant : les résultats d'une ancienne classe ne
+    # doivent pas fausser la préparation de l'examen actuel.
+    matieres_cibles = {
+        str(matiere).strip().casefold()
+        for matiere in matieres
+        if str(matiere).strip()
+    }
+    niveau_cible = str(niveau or "").strip().casefold()
+    priorites_candidates = quiz_module.plan_revision_du_jour(
+        session, utilisateur.id, limit=100
+    )
+    priorites = [
+        progression for progression in priorites_candidates
+        if str(progression.matiere or "").strip().casefold() in matieres_cibles
+        and (
+            not niveau_cible
+            or str(progression.niveau or "").strip().casefold() == niveau_cible
+        )
+    ][:5]
     return templates.TemplateResponse(
         request,
         "objectif_examen.html",
@@ -460,6 +489,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "cepe_disponible": cepe_disponible,
             "serie_label": serie_label,
             "priorites": priorites,
+            "bilans_matieres": bilans_matieres,
             "ressources_externes": ressources_examens.ressources_pour_cycle(cycle),
             "annales_disponibles": annales_disponibles,
         },

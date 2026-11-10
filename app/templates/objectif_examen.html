@@ -13,8 +13,9 @@
       <h1 id="objectif-examen-title">Ton objectif. Ton programme. Ta progression.</h1>
       <p>Prépare tes épreuves avec des entraînements ciblés sur ton niveau, ton programme et les matières validées dans ton profil scolaire.</p>
       <div class="ai-hero-actions">
-        <a href="#choisir-examen">Commencer un entraînement</a>
-        <a href="/mes-revisions">Voir mes notions à revoir</a>
+        <a href="#diagnostic-matieres">Faire mon diagnostic</a>
+        <a href="/session-apprentissage">Lancer ma mission adaptative</a>
+        <a href="/mes-revisions">Voir mes révisions</a>
       </div>
     </div>
     <div class="ai-hero-side">
@@ -307,11 +308,93 @@
     </div>
   </section>
 
+
+  {% if bilans_matieres %}
+  <section class="objectif-examen-section objectif-examen-diagnostics" id="diagnostic-matieres" aria-labelledby="objectif-diagnostic-title">
+    <div class="objectif-examen-heading">
+      <span class="ai-kicker">Diagnostic personnalisé · {{ niveau }}</span>
+      <h2 id="objectif-diagnostic-title">Ton niveau, matière par matière</h2>
+      <p>Le bilan utilise uniquement les réponses déjà enregistrées dans ton profil et le programme de ta classe. Une matière sans historique est marquée « à évaluer », jamais considérée comme faible.</p>
+    </div>
+    <div class="objectif-examen-diagnostic-grid">
+      {% for bilan in bilans_matieres %}
+      <article class="objectif-examen-diagnostic-card objectif-examen-diagnostic-card--{{ bilan.statut }}">
+        <div class="objectif-examen-diagnostic-top">
+          <div>
+            <span class="objectif-examen-tag">{{ bilan.libelle_statut }}</span>
+            <h3>{{ bilan.matiere }}</h3>
+          </div>
+          {% if bilan.score is not none %}
+          <strong class="objectif-examen-diagnostic-score">{{ bilan.score }}%</strong>
+          {% else %}
+          <strong class="objectif-examen-diagnostic-score objectif-examen-diagnostic-score--vide">—</strong>
+          {% endif %}
+        </div>
+        {% if bilan.score is not none %}
+        <div class="objectif-examen-diagnostic-track" role="progressbar" aria-valuenow="{{ bilan.score }}" aria-valuemin="0" aria-valuemax="100" aria-label="Progression en {{ bilan.matiere }}">
+          <span style="width: {{ bilan.score }}%"></span>
+        </div>
+        {% else %}
+        <p class="objectif-examen-diagnostic-empty">Aucune réponse analysée pour cette matière.</p>
+        {% endif %}
+        <p class="objectif-examen-diagnostic-summary">{{ bilan.resume }}</p>
+        {% if bilan.nb_a_revoir %}
+        <p class="objectif-examen-diagnostic-focus">{{ bilan.nb_a_revoir }} notion{{ "s" if bilan.nb_a_revoir != 1 else "" }} à retravailler ou à confirmer.</p>
+        {% endif %}
+
+        {% if cycle == "primaire" and cepe_disponible %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-diagnostic-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="cepe">
+          <input type="hidden" name="matiere" value="{{ bilan.matiere }}">
+          <button class="bouton bouton-secondaire" type="submit">{{ bilan.libelle_action }}</button>
+        </form>
+        {% elif bepc_disponible and bepc_programme_actuel == "pe" %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-diagnostic-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="bepc_pe">
+          <input type="hidden" name="matiere" value="{{ bilan.matiere }}">
+          <button class="bouton bouton-secondaire" type="submit">{{ bilan.libelle_action }}</button>
+        </form>
+        {% elif bepc_disponible and bepc_programme_actuel in ["ps_a", "ps_b"] %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-diagnostic-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="bepc_ps">
+          <input type="hidden" name="option_ps" value="{{ 'A' if bepc_programme_actuel == 'ps_a' else 'B' }}">
+          <input type="hidden" name="matiere" value="{{ bilan.matiere }}">
+          <button class="bouton bouton-secondaire" type="submit">{{ bilan.libelle_action }}</button>
+        </form>
+        {% elif bacc_disponible %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-diagnostic-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="baccalaureat">
+          <input type="hidden" name="matiere" value="{{ bilan.matiere }}">
+          <button class="bouton bouton-secondaire" type="submit">{{ bilan.libelle_action }}</button>
+        </form>
+        {% elif bepc_disponible %}
+        <a class="bouton bouton-secondaire objectif-examen-diagnostic-link" href="#choisir-examen">Enregistrer d'abord ton programme BEPC</a>
+        {% else %}
+        <a class="bouton bouton-secondaire objectif-examen-diagnostic-link" href="/quiz">Faire un quiz adaptatif</a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    <aside class="objectif-examen-diagnostic-note" role="note">
+      <strong>Comment lire ce bilan ?</strong>
+      <p>Un diagnostic par matière est un entraînement court de 10 questions. Le résultat complète progressivement les notions suivies ; une maîtrise n'est confirmée qu'après plusieurs preuves distinctes, pas sur une seule note.</p>
+    </aside>
+  </section>
+  {% endif %}
+
   <section class="objectif-examen-section objectif-examen-priorites" aria-labelledby="objectif-priorites-title">
     <div class="objectif-examen-heading">
       <span class="ai-kicker">Travail personnalisé</span>
-      <h2 id="objectif-priorites-title">Tes priorités de révision</h2>
-      <p>MITARIDALA reprend les notions réellement repérées dans tes quiz ; aucune faiblesse n'est inventée.</p>
+      <h2 id="objectif-priorites-title">Ton plan de révision du jour</h2>
+      <p>Le plan du jour est recalculé à partir de tes réponses, des notions fragiles et des révisions arrivées à échéance dans ta classe actuelle.</p>
+      <div class="objectif-examen-plan-actions">
+        <a class="bouton bouton-primaire" href="/session-apprentissage">Lancer ma mission ciblée</a>
+        <a class="bouton bouton-secondaire" href="/quiz">Quiz recommandé</a>
+      </div>
     </div>
     {% if priorites %}
     <div class="objectif-examen-priorites-list">

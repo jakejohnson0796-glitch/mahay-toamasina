@@ -87,6 +87,10 @@ def test_page_objectif_examen_propose_cepe_en_t5_et_modification_profil_scolaire
     assert "10 questions et 15 minutes" in template
     assert "ne reproduit pas la durée" in template
     assert "BEPC · Session 2027" in template
+    assert "Ton niveau, matière par matière" in template
+    assert "Commencer le diagnostic" in lire("app/preparation_intelligente.py")
+    assert "Lancer ma mission ciblée" in template
+    assert '"bilans_matieres": bilans_matieres' in route
 
 
 class _SessionOptions:
