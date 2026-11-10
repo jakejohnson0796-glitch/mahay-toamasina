@@ -640,6 +640,7 @@ def test_fiche_de_cours_integre_le_tutorat_recent_de_son_etudiant(monkeypatch):
             telephone="+261340000201",
             mot_de_passe_hash="prof-hash",
             role=RoleUtilisateur.PROFESSEUR,
+            statut_verification_enseignant="approuve",
         )
         etudiant = Utilisateur(
             nom="Étudiant Mémoire",
