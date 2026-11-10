@@ -98,6 +98,10 @@
 {% endif %}
 {% endif %}
 
+{% if request.query_params.get("erreur") == "programme_bepc_invalide" %}
+<div class="erreur" role="alert">Pour une annale ou un corrigé BEPC de 3e daté de 2027, choisissez le PE, le PS option A ou le PS option B. Vérifiez la version indiquée sur le document.</div>
+{% endif %}
+
 <form class="filtres" method="get" action="/documents">
   <input type="hidden" name="q" id="doc-filtre-q" value="{{ request.query_params.get('q', '') }}">
   <input type="hidden" name="sort" id="doc-filtre-sort" value="{{ request.query_params.get('sort', 'recent') }}">
@@ -169,6 +173,14 @@
         {% for niveau_scolaire in niveaux_scolaires %}{% if niveau_scolaire.id == doc.niveau_scolaire_id %}{{ niveau_scolaire.libelle }}{% endif %}{% endfor %}
         {% for option_scolaire in options_scolaires %}{% if option_scolaire.id == doc.option_scolaire_id %} · {{ option_scolaire.libelle }}{% endif %}{% endfor %}
       </p>
+      {% if doc.bepc_session_2027_parcours %}
+      <p class="doc-depot-personnel-meta">BEPC 2027 :
+        {% if doc.bepc_session_2027_parcours == "pe" %}Programme d’études (PE)
+        {% elif doc.bepc_session_2027_parcours == "ps_a" %}Programme scolaire (PS) · Option A
+        {% elif doc.bepc_session_2027_parcours == "ps_b" %}Programme scolaire (PS) · Option B
+        {% endif %}
+      </p>
+      {% endif %}
     {% endif %}
     {% set fiche_mg = fiches_documents_mg.get(doc.id, {}) %}
     <details class="doc-fiche">
@@ -290,6 +302,14 @@ session dediee, avec sa propre verification desktop+mobile.
         {% for option_scolaire in options_scolaires %}{% if option_scolaire.id == doc.option_scolaire_id %} · {{ option_scolaire.libelle }}{% endif %}{% endfor %}
         {% for etablissement in etablissements_scolaires %}{% if etablissement.id == doc.etablissement_scolaire_id %} · {{ etablissement.nom }}{% endif %}{% endfor %}
       </p>
+    {% endif %}
+    {% if doc.bepc_session_2027_parcours %}
+    <p class="doc-ref">BEPC 2027 ·
+      {% if doc.bepc_session_2027_parcours == "pe" %}Programme d’études (PE)
+      {% elif doc.bepc_session_2027_parcours == "ps_a" %}Programme scolaire (PS) · Option A
+      {% elif doc.bepc_session_2027_parcours == "ps_b" %}Programme scolaire (PS) · Option B
+      {% endif %}
+    </p>
     {% endif %}
     <p class="doc-ref" title="{{ doc.reference }}">Réf. {{ doc.reference }}</p>
     {% set fiche = fiches_documents.get(doc.id, {}) %}
