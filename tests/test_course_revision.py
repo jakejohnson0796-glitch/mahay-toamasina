@@ -454,6 +454,7 @@ def test_planification_est_idempotente_et_reservee_aux_etudiants_inscrits(monkey
             telephone="+261340000001",
             mot_de_passe_hash="test-hash",
             role=RoleUtilisateur.PROFESSEUR,
+            statut_verification_enseignant="approuve",
         )
         etudiant = Utilisateur(
             nom="Étudiant Test",
