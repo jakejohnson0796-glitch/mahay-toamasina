@@ -329,7 +329,14 @@
         </div>
 
         {% if utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or (utilisateur.profil_souhaite == "responsable" and utilisateur.role != "admin")) %}
-        {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}
+        <p class="tb-menu-compte-groupe">Mon espace</p>
+        <a class="tb-menu-compte-item" href="/famille"><span class="tb-menu-compte-icone">👨‍👩‍👧</span><span>Espace famille</span></a>
+        <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
+        <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Paramètres du compte</span></a>
+        <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
+        <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
+        <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
+        {% elif utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}
         <p class="tb-menu-compte-groupe">Espace enseignant</p>
         <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord enseignant</span></a>
         {% if utilisateur.statut_verification_enseignant == "approuve" %}
@@ -367,7 +374,6 @@
         <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
         <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
         <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Mode d'emploi</span></a>
-
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
         {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
         <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %} · {{ nb_admin_notifs }} nouvelles{% endif %}</span></a>
