@@ -120,7 +120,9 @@ def test_dashboard_conditionne_les_alertes_aux_professeurs_valides():
 
     template = Path(__file__).resolve().parents[1] / "app" / "templates" / "dashboard_etudiant.html"
     contenu = template.read_text(encoding="utf-8")
-    assert "alertes_harmonisation is not none" in contenu
+    assert contenu.count("{% if alertes_harmonisation is not none %}") == 3
+    assert "alertes_harmonisation is defined" not in contenu
+    assert "{% for item in alertes_harmonisation %}" in contenu
     assert "/enseignant/harmonisation/demandes/" in contenu
 
 def test_professeur_verifie_uniquement_si_role_et_validation_sont_conformes():
