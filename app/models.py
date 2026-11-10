@@ -1435,7 +1435,7 @@ class MessageCercle(SQLModel, table=True):
     relu a chaque ouverture du salon en plus du flux temps reel)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     cercle_id: int = Field(foreign_key="cercleetude.id")
-    auteur_id: int = Field(foreign_key="utilisateur.id")
+    auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
     contenu: str
     date_envoi: datetime = Field(default_factory=datetime.utcnow)
     # Partage de fichier (PDF) : optionnel, un message peut etre texte
@@ -1586,7 +1586,7 @@ class Notification(SQLModel, table=True):
     message_id: Optional[int] = Field(default=None, foreign_key="messagecercle.id")
     url_destination: Optional[str] = Field(default=None, max_length=300)
     lu: bool = Field(default=False)
-    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 
 class AbonnementEtudiant(SQLModel, table=True):
@@ -1986,7 +1986,7 @@ class Feedback(SQLModel, table=True):
     categorie: CategorieFeedback = Field(default=CategorieFeedback.GENERAL)
     statut: StatutFeedback = Field(default=StatutFeedback.NOUVEAU, index=True)
     est_public: bool = Field(default=False)
-    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
     date_modification: datetime = Field(default_factory=datetime.utcnow)
 
     __table_args__ = (
@@ -2223,7 +2223,7 @@ class DocumentPartageSeance(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     seance_id: int = Field(foreign_key="seance.id", index=True)
     cours_id: int = Field(foreign_key="cours.id", index=True)
-    document_id: int = Field(foreign_key="document.id")
+    document_id: int = Field(foreign_key="document.id", index=True)
     partage_par_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
