@@ -490,6 +490,18 @@ def classifier_document(
         or _nettoyer_titre(matiere_fourni)
     )
 
+    # Une matière canonique reconnue par alias (par ex. "maths" ->
+    # "Mathématiques") doit aussi retrouver son entrée exacte dans le
+    # référentiel. C'est essentiel pour ne pas rejeter un lot scolaire valide
+    # lorsque le nom du fichier emploie une abréviation.
+    if matiere:
+        correspondances_matiere = [
+            filiere for filiere in filieres
+            if _normaliser(filiere.nom) == _normaliser(matiere)
+        ]
+        if len(correspondances_matiere) == 1:
+            meilleur_filiere = correspondances_matiere[0]
+
     type_auto = None
     try:
         if resultat_ia.get("type_document"):
