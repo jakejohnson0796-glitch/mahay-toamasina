@@ -650,6 +650,9 @@ class Document(SQLModel, table=True):
     matiere: str
     type_document: TypeDocument
     annee: int
+    # Sous-parcours explicitement choisi pour les annales BEPC de la session 2027.
+    # None pour les autres documents/années ou les anciennes lignes sans classement.
+    bepc_session_2027_parcours: Optional[str] = Field(default=None, max_length=8, index=True)
     # Nullable pour autoriser les ressources scolaires : une ressource doit
     # désormais être classée par le référentiel universitaire OU scolaire.
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id", index=True)

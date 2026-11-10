@@ -25,6 +25,7 @@
   {% set type_actuel = valeurs.type_document if valeurs else document.type_document.value %}
   {% set annee_actuelle = valeurs.annee if valeurs else document.annee %}
   {% set filiere_actuelle = valeurs.filiere_id if valeurs else document.filiere_id %}
+  {% set bepc_parcours_actuel = valeurs.bepc_session_2027_parcours if valeurs else document.bepc_session_2027_parcours %}
 
   <form class="metadata-edit-form" method="post" action="/moderation/{{ document.id }}/modifier">
     <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -54,9 +55,11 @@
         <input id="annee" name="annee" type="number" min="1900" max="2100" step="1" required value="{{ annee_actuelle }}">
       </div>
 
+      {% if document.portee_academique == "universitaire" %}
       <div class="metadata-edit-field">
         <label for="filiere_id">Filière / parcours académique</label>
         <select id="filiere_id" name="filiere_id" required>
+          <option value="">Choisir une filière</option>
           {% for filiere in filieres %}
           <option value="{{ filiere.id }}" {% if filiere.id|string == filiere_actuelle|string %}selected{% endif %}>
             {{ filiere.nom }}{% if filiere.niveau %} — {{ filiere.niveau }}{% endif %}
@@ -64,6 +67,23 @@
           {% endfor %}
         </select>
       </div>
+      {% else %}
+      <div class="metadata-edit-field">
+        <label>Référentiel scolaire</label>
+        <p>Document scolaire{% if niveau_scolaire %} · {{ niveau_scolaire.libelle }}{% endif %}. La classe, l'option et l'établissement d'origine sont conservés.</p>
+        <input type="hidden" name="filiere_id" value="">
+      </div>
+      <div class="metadata-edit-field metadata-edit-field-wide">
+        <label for="bepc_session_2027_parcours">Programme du BEPC · session 2027</label>
+        <select id="bepc_session_2027_parcours" name="bepc_session_2027_parcours">
+          <option value="" {% if not bepc_parcours_actuel %}selected{% endif %}>Non applicable / non précisé</option>
+          <option value="pe" {% if bepc_parcours_actuel == "pe" %}selected{% endif %}>Nouveau Programme d’études (PE)</option>
+          <option value="ps_a" {% if bepc_parcours_actuel == "ps_a" %}selected{% endif %}>Programme scolaire (PS) · Option A</option>
+          <option value="ps_b" {% if bepc_parcours_actuel == "ps_b" %}selected{% endif %}>Programme scolaire (PS) · Option B</option>
+        </select>
+        <small>Obligatoire uniquement pour une annale ou un corrigé de 3e daté de 2027. Pour les autres documents, laisser « Non applicable ».</small>
+      </div>
+      {% endif %}
     </div>
 
     <div class="metadata-edit-status">

@@ -73,6 +73,48 @@ def _charger_fiche_pedagogique(document: Document) -> dict:
     return _charger_fiche_pedagogique_json(document.fiche_pedagogique_json)
 
 
+BEPC_SESSION_2027_PARCOURS = {
+    "pe": "Programme d'études (PE)",
+    "ps_a": "Programme scolaire (PS) · Option A",
+    "ps_b": "Programme scolaire (PS) · Option B",
+}
+
+
+def _normaliser_bepc_session_2027_parcours(
+    valeur: Optional[str],
+    *,
+    portee_academique: str,
+    niveau_scolaire: Optional[NiveauScolaire],
+    type_document: Optional[TypeDocument],
+    annee: Optional[int],
+) -> tuple[Optional[str], Optional[str]]:
+    """Valide la variante PE/PS-A/PS-B uniquement pour les annales BEPC 2027."""
+    normalisee = str(valeur or "").strip().casefold()
+    applicable = bool(
+        portee_academique == "scolaire"
+        and niveau_scolaire
+        and niveau_scolaire.cycle == "college"
+        and str(niveau_scolaire.libelle or "").strip().casefold() == "3e"
+        and type_document in {TypeDocument.ANNALE, TypeDocument.CORRIGE}
+        and annee == 2027
+    )
+
+    if not applicable:
+        if normalisee:
+            return None, (
+                "Le classement PE/PS du BEPC ne s'applique qu'aux annales et corrigés "
+                "scolaires de 3e pour la session 2027."
+            )
+        return None, None
+
+    if normalisee not in BEPC_SESSION_2027_PARCOURS:
+        return None, (
+            "Pour une annale ou un corrigé BEPC 2027 de 3e, sélectionnez le PE, "
+            "le PS option A ou le PS option B."
+        )
+    return normalisee, None
+
+
 def _fiche_pedagogique_peut_etre_validee(document: Document) -> bool:
     statut = str(getattr(document, "resume_statut_ia", "") or "")
     resume = str(getattr(document, "resume_ia", "") or "").strip()
@@ -498,6 +540,7 @@ def upload_document(
     matiere: Optional[str] = Form(default=""),
     type_document: Optional[TypeDocument] = Form(default=None),
     annee: Optional[int] = Form(default=None),
+    bepc_session_2027_parcours: Optional[str] = Form(default=None),
     filiere_id: Optional[int] = Form(default=None),
     portee_academique: str = Form(default="universitaire"),
     cycle_scolaire: Optional[str] = Form(default=None),
@@ -699,6 +742,19 @@ def upload_document(
         if annee < 2000 or annee > 2100:
             return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
 
+    bepc_parcours_valide, erreur_bepc_parcours = _normaliser_bepc_session_2027_parcours(
+        bepc_session_2027_parcours,
+        portee_academique=portee,
+        niveau_scolaire=niveau_scolaire,
+        type_document=type_document,
+        annee=annee,
+    )
+    if erreur_bepc_parcours:
+        return RedirectResponse(
+            "/documents?erreur=programme_bepc_invalide",
+            status_code=303,
+        )
+
     filieres_disponibles = session.exec(select(Filiere)).all()
     if portee == "universitaire" and not filieres_disponibles:
         return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
@@ -780,6 +836,7 @@ def upload_document(
         option_scolaire_id=option_scolaire.id if option_scolaire else None,
         matiere_scolaire_id=matiere_scolaire.id if matiere_scolaire else None,
         etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+        bepc_session_2027_parcours=bepc_parcours_valide,
         cercle_id=cercle_id,
         uploader_id=utilisateur.id,
         chemin_fichier=chemin_stocke,
@@ -1824,6 +1881,8 @@ def _normaliser_metadonnees_document(
     type_document: str,
     annee: str,
     filiere_id: str,
+    *,
+    filiere_requise: bool = True,
 ) -> tuple[Optional[dict], Optional[str]]:
     """Valide et normalise les champs éditables par un administrateur."""
     titre_normalise = " ".join(str(titre or "").split()).strip()
@@ -1853,12 +1912,20 @@ def _normaliser_metadonnees_document(
     if not 1900 <= annee_validee <= 2100:
         return None, "L'année doit être comprise entre 1900 et 2100."
 
-    try:
-        filiere_validee = int(filiere_normalisee)
-    except (TypeError, ValueError):
+    if filiere_normalisee:
+        try:
+            filiere_validee = int(filiere_normalisee)
+        except (TypeError, ValueError):
+            return None, "Choisissez une filière valide."
+        if filiere_validee < 1:
+            return None, "Choisissez une filière valide."
+    else:
+        filiere_validee = None
+
+    if filiere_requise and filiere_validee is None:
         return None, "Choisissez une filière valide."
-    if filiere_validee < 1:
-        return None, "Choisissez une filière valide."
+    if not filiere_requise and filiere_validee is not None:
+        return None, "Un document scolaire ne peut pas être rattaché à une filière universitaire."
 
     return {
         "titre": titre_normalise,
@@ -1885,7 +1952,7 @@ def formulaire_modifier_document(
         return _rediriger_moderation("introuvable")
 
     filieres = session.exec(select(Filiere).order_by(Filiere.nom)).all()
-    champs_formulaire = ("titre", "matiere", "type_document", "annee", "filiere_id")
+    champs_formulaire = ("titre", "matiere", "type_document", "annee", "filiere_id", "bepc_session_2027_parcours")
     valeurs = (
         {champ: request.query_params.get(champ, "") for champ in champs_formulaire}
         if any(champ in request.query_params for champ in champs_formulaire)
@@ -1897,6 +1964,7 @@ def formulaire_modifier_document(
             "request": request,
             "document": document,
             "filieres": filieres,
+            "niveau_scolaire": session.get(NiveauScolaire, document.niveau_scolaire_id) if document.niveau_scolaire_id else None,
             "types_document": list(TypeDocument),
             "utilisateur": utilisateur,
             "erreur": request.query_params.get("erreur"),
@@ -1915,6 +1983,7 @@ def enregistrer_modification_document(
     type_document: str = Form(default=""),
     annee: str = Form(default=""),
     filiere_id: str = Form(default=""),
+    bepc_session_2027_parcours: str = Form(default=""),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -1934,6 +2003,7 @@ def enregistrer_modification_document(
         "type_document": type_document or "",
         "annee": annee or "",
         "filiere_id": filiere_id or "",
+        "bepc_session_2027_parcours": bepc_session_2027_parcours or "",
     }
 
     def afficher_erreur(message: str) -> RedirectResponse:
@@ -1946,6 +2016,7 @@ def enregistrer_modification_document(
             "type_document": valeurs["type_document"][:40],
             "annee": valeurs["annee"][:4],
             "filiere_id": valeurs["filiere_id"][:12],
+            "bepc_session_2027_parcours": valeurs["bepc_session_2027_parcours"][:8],
         }
         query = urlencode({"erreur": message, **valeurs_limitees})
         return RedirectResponse(
@@ -1959,13 +2030,31 @@ def enregistrer_modification_document(
         type_document=type_document,
         annee=annee,
         filiere_id=filiere_id,
+        filiere_requise=document.portee_academique != "scolaire",
     )
     if erreur:
         return afficher_erreur(erreur)
 
-    filiere = session.get(Filiere, metadonnees["filiere_id"])
-    if not filiere:
+    filiere = (
+        session.get(Filiere, metadonnees["filiere_id"])
+        if metadonnees["filiere_id"] is not None else None
+    )
+    if document.portee_academique == "universitaire" and not filiere:
         return afficher_erreur("La filière sélectionnée n'existe plus. Choisissez-en une autre.")
+
+    niveau_document = (
+        session.get(NiveauScolaire, document.niveau_scolaire_id)
+        if document.niveau_scolaire_id else None
+    )
+    parcours_bepc_valide, erreur_parcours_bepc = _normaliser_bepc_session_2027_parcours(
+        bepc_session_2027_parcours,
+        portee_academique=document.portee_academique,
+        niveau_scolaire=niveau_document,
+        type_document=metadonnees["type_document"],
+        annee=metadonnees["annee"],
+    )
+    if erreur_parcours_bepc:
+        return afficher_erreur(erreur_parcours_bepc)
 
     ancienne_filiere_id = document.filiere_id
     anciennes_matiere = document.matiere
@@ -1974,6 +2063,7 @@ def enregistrer_modification_document(
         anciennes_matiere != metadonnees["matiere"]
         or ancien_type != metadonnees["type_document"]
         or ancienne_filiere_id != metadonnees["filiere_id"]
+        or document.bepc_session_2027_parcours != parcours_bepc_valide
     )
     modification = any((
         document.titre != metadonnees["titre"],
@@ -1981,6 +2071,7 @@ def enregistrer_modification_document(
         ancien_type != metadonnees["type_document"],
         document.annee != metadonnees["annee"],
         ancienne_filiere_id != metadonnees["filiere_id"],
+        document.bepc_session_2027_parcours != parcours_bepc_valide,
     ))
     if not modification:
         return _rediriger_moderation("inchange")
@@ -1990,6 +2081,7 @@ def enregistrer_modification_document(
     document.type_document = metadonnees["type_document"]
     document.annee = metadonnees["annee"]
     document.filiere_id = metadonnees["filiere_id"]
+    document.bepc_session_2027_parcours = parcours_bepc_valide
 
     # Une fiche IA validée avec une ancienne matière, un ancien type ou une
     # autre filière ne doit plus être considérée comme validée sans contrôle.
