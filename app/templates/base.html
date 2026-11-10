@@ -64,7 +64,7 @@
 <link rel="stylesheet" href="/static/responsive.css?v={{ version_asset('responsive.css') }}">
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation.js?v={{ version_asset('js/admin-confirmation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/pwa.js?v={{ version_asset('js/pwa.js') }}" defer></script>
-{% if request.url.path in ["/notifications", "/mes-revisions", "/dashboard"] %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
+{% if request.url.path in ["/notifications", "/mes-revisions", "/dashboard", "/mon-parcours"] %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
 {% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences"] or request.url.path in ["/famille", "/admin/responsables-eleves"] %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
 {% endif %}
@@ -118,6 +118,9 @@
 <link rel="stylesheet" href="/static/motion-polish.css?v={{ version_asset('motion-polish.css') }}">
 {% if request.url.path == "/dashboard" %}
 <link rel="stylesheet" href="/static/dashboard-polish.css?v={{ version_asset('dashboard-polish.css') }}">
+{% endif %}
+{% if request.url.path == "/mon-parcours" %}
+<link rel="stylesheet" href="/static/mon-parcours.css?v={{ version_asset('mon-parcours.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/global-design-system.css?v={{ version_asset('global-design-system.css') }}">
 {% if request.session.get("user_id") %}
@@ -235,6 +238,7 @@
       <p class="tb-sidebar-groupe">Apprendre</p>
       <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
       <a href="/quiz" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Quiz IA</a>
+      <a href="/mon-parcours" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mon-parcours' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mon-parcours' else '' }}><span class="tb-icone">📈</span> Mon parcours</a>
       <a href="/objectif-examen" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/objectif-examen') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/objectif-examen') else '' }}><span class="tb-icone">🎯</span> Objectif Examen</a>
       <a href="/jeu-cerebral" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}><span class="tb-icone">🧠</span> Jeu cérébral</a>
       <a href="/jeux-classiques" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/jeux-classiques') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeux-classiques') else '' }}><span class="tb-icone">🏆</span> Jeux classiques</a>
