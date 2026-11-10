@@ -1103,8 +1103,8 @@
     if (blocFiliere) blocFiliere.hidden = scolaire;
     if (blocScolaire) blocScolaire.hidden = !scolaire;
 
-    // Les métadonnées scolaires sont validées à la main pour éviter qu'un
-    // classifieur universitaire ne produise une fausse filière scolaire.
+    // Le parcours scolaire est rattaché au référentiel vérifié ; pour les
+    // lots, le moteur cherche chaque matière parmi les matières de la classe.
     if (input) {
       // Les lots scolaires sont autorisés aussi : leur cible commune est
       // validée côté serveur et chaque matière est rapprochée du programme.
@@ -1222,7 +1222,7 @@
       appliquerModeDetectionAuto();
       setDetection(
         valeur(fields.portee) === "scolaire"
-          ? "Pour les documents scolaires, choisissez le cycle et la classe ; la détection automatique universitaire est désactivée."
+          ? "Pour les documents scolaires, choisissez le cycle et la classe ; chaque fichier sera rapproché du programme vérifié."
           : "",
         valeur(fields.portee) === "scolaire" ? "warning" : ""
       );
