@@ -1257,7 +1257,7 @@ def creer_cercle(
     # universitaire Domaine -> Mention -> Filière -> Niveau.
     if portee == "scolaire":
         cycle_scolaire_nettoye = (cycle_scolaire or "").strip().lower()
-        if cycle_scolaire_nettoye not in {"college", "lycee"} or niveau_scolaire_id is None:
+        if cycle_scolaire_nettoye not in {"primaire", "college", "lycee"} or niveau_scolaire_id is None:
             return RedirectResponse("/cercles?erreur=classe_scolaire_requise", status_code=303)
         referentiels_scolaires = session.exec(
             select(ReferentielScolaire).order_by(

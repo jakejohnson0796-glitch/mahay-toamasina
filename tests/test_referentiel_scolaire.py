@@ -521,6 +521,25 @@ def test_quiz_cible_refuse_un_profil_scolaire_sans_classe_validee():
     engine.dispose()
 
 
+def test_tuteur_ia_reconnait_le_profil_primaire_t5():
+    engine, session = _session()
+    referentiel, _, _ = _school_catalogue(session)
+    niveau = NiveauScolaire(
+        referentiel_id=referentiel.id, code="T5", libelle="T5", cycle="primaire",
+        ordre=5, est_actif=True, source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(niveau)
+    session.commit()
+    session.refresh(niveau)
+    user = _user(session, niveau_id=niveau.id, option_id=None, cycle="primaire", telephone="0340000124")
+    contexte = tuteur_router._contexte_scolaire_tuteur(user, session)
+    assert contexte["niveau"] == "T5"
+    assert contexte["cycle_education"] == "primaire"
+    assert contexte["niveau_scolaire_id"] == niveau.id
+    session.close()
+    engine.dispose()
+
 def test_tuteur_ia_utilise_la_classe_et_refuse_un_document_d_un_autre_niveau():
     engine, session = _session()
     _, niveau, serie = _school_catalogue(session)

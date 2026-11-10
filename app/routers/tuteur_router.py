@@ -84,15 +84,15 @@ def _utilisateur_membre_cercle(session: Session, cercle_id: Optional[int], utili
 def _enseignant_sans_classe_scolaire(utilisateur) -> bool:
     return (
         getattr(utilisateur, "profil_souhaite", None) == "professeur"
-        and getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        and getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"}
         and not getattr(utilisateur, "niveau_scolaire_id", None)
     )
 
 
 def _contexte_scolaire_tuteur(utilisateur, session: Session) -> Optional[dict]:
-    """Valide le parcours collège/lycée avant de l'utiliser dans le Tuteur IA."""
+    """Valide le parcours primaire/collège/lycée dans le Tuteur IA."""
     cycle = getattr(utilisateur, "cycle_education", None)
-    if cycle not in {"college", "lycee"}:
+    if cycle not in {"primaire", "college", "lycee"}:
         return None
 
     niveau_id = getattr(utilisateur, "niveau_scolaire_id", None)
@@ -322,12 +322,12 @@ def page_tuteur(request: Request, session: Session = Depends(get_session)):
 
     contexte_scolaire = _contexte_scolaire_tuteur(utilisateur, session)
     if (
-        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"}
         and not contexte_scolaire
         and not _enseignant_sans_classe_scolaire(utilisateur)
     ):
         return RedirectResponse(
-            "/profil/academique?erreur=profil_scolaire_incomplet",
+            "/profil/scolaire?erreur=profil_scolaire_incomplet",
             status_code=303,
         )
 
@@ -367,9 +367,9 @@ def demander_tuteur(
         return redirection
 
     contexte_scolaire = _contexte_scolaire_tuteur(utilisateur, session)
-    if getattr(utilisateur, "cycle_education", None) in {"college", "lycee"} and not contexte_scolaire:
+    if getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"} and not contexte_scolaire:
         return RedirectResponse(
-            "/profil/academique?erreur=profil_scolaire_incomplet",
+            "/profil/scolaire?erreur=profil_scolaire_incomplet",
             status_code=303,
         )
 
