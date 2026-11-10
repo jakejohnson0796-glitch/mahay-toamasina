@@ -115,6 +115,32 @@ def test_carte_document_affiche_la_date_de_publication_harmonisee():
     assert "/documents/{{ doc.id }}/cours-harmonise" in contenu
 
 
+def _rendre_bloc_harmonisation_du_dashboard(alertes_harmonisation):
+    from pathlib import Path
+
+    from jinja2 import Environment
+
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "templates"
+        / "dashboard_etudiant.html"
+    )
+    source = template.read_text(encoding="utf-8")
+    debut = source.index(
+        "{% if alertes_harmonisation is not none %}Espace enseignant"
+    )
+    fin_section_suivante = source.index('    <section class="tb-routine"', debut)
+    fin = source.rfind("{% endif %}", debut, fin_section_suivante)
+    bloc = source[debut:fin + len("{% endif %}")]
+    environnement = Environment(autoescape=True)
+    return environnement.from_string(bloc).render(
+        alertes_harmonisation=alertes_harmonisation,
+        request=SimpleNamespace(),
+        csp_nonce=lambda _request: "test-nonce",
+    )
+
+
 def test_dashboard_conditionne_les_alertes_aux_professeurs_valides():
     from pathlib import Path
 
@@ -124,6 +150,22 @@ def test_dashboard_conditionne_les_alertes_aux_professeurs_valides():
     assert "alertes_harmonisation is defined" not in contenu
     assert "{% for item in alertes_harmonisation %}" in contenu
     assert "/enseignant/harmonisation/demandes/" in contenu
+
+
+def test_dashboard_eleve_ne_tente_pas_diterer_les_alertes_absentes():
+    rendu = _rendre_bloc_harmonisation_du_dashboard(None)
+
+    assert "Pret a continuer ton apprentissage ?" in rendu
+    assert "Espace enseignant" not in rendu
+    assert "tb-harmonisation" not in rendu
+
+
+def test_dashboard_professeur_sans_demande_affiche_un_etat_vide():
+    rendu = _rendre_bloc_harmonisation_du_dashboard([])
+
+    assert "Espace enseignant" in rendu
+    assert "Aucune proposition récente." in rendu
+
 
 def test_professeur_verifie_uniquement_si_role_et_validation_sont_conformes():
     professeur = SimpleNamespace(
@@ -141,6 +183,7 @@ def test_professeur_verifie_uniquement_si_role_et_validation_sont_conformes():
     assert harmonisation_router.professeur_verifie(professeur)
     assert not harmonisation_router.professeur_verifie(professeur_en_attente)
     assert not harmonisation_router.professeur_verifie(eleve)
+
 
 def test_consultation_cours_harmonise_refuse_un_eleve(monkeypatch):
     eleve = SimpleNamespace(
