@@ -37,7 +37,7 @@ DOSSIER_UPLOADS_LOCAL = Path(__file__).resolve().parent.parent / "uploads"
 # scripts, archives, HTML/SVG...) est refuse : accepter n'importe quel
 # type de fichier permettrait de stocker et redistribuer publiquement du
 # contenu dangereux via /documents/{id}/telecharger.
-EXTENSIONS_AUTORISEES = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"}
+EXTENSIONS_AUTORISEES = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png", ".webp"}
 TAILLE_MAX_DOCUMENT = 20 * 1024 * 1024  # 20 Mo
 
 # --- Photo de profil (fonctionnalite "photo de profil / avatar") :
