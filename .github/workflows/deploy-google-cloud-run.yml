@@ -1,0 +1,190 @@
+name: Deploy MITARIDALA to Google Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: "Saisis DEPLOY pour publier le commit de main sur Cloud Run"
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "DEPLOY"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: google-cloud-run-mitaridala
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && inputs.confirm_deploy == 'DEPLOY'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION || 'africa-south1' }}
+      RUNTIME_SERVICE_ACCOUNT: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+      WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      DEPLOY_SERVICE_ACCOUNT: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      AR_REPOSITORY: mitaridala
+      CLOUD_RUN_SERVICE: mitaridala
+
+    steps:
+      - name: Checkout du commit exact de main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Vérifier la configuration GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${PROJECT_ID:?Ajoute la variable GitHub GCP_PROJECT_ID}"
+          : "${REGION:?Ajoute la variable GitHub GCP_REGION}"
+          : "${RUNTIME_SERVICE_ACCOUNT:?Ajoute GCP_RUNTIME_SERVICE_ACCOUNT}"
+          : "${WIF_PROVIDER:?Ajoute le secret GCP_WORKLOAD_IDENTITY_PROVIDER}"
+          : "${DEPLOY_SERVICE_ACCOUNT:?Ajoute le secret GCP_DEPLOY_SERVICE_ACCOUNT}"
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "Déploiement autorisé uniquement depuis main." >&2
+            exit 1
+          fi
+
+      - name: Authentification Google Cloud via OIDC (sans clé JSON)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Installer Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Configurer l'accès à Artifact Registry
+        shell: bash
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Construire et publier l'image Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPOSITORY}/${CLOUD_RUN_SERVICE}:${GITHUB_SHA}"
+          docker build --pull --tag "${IMAGE}" .
+          docker push "${IMAGE}"
+          echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
+
+      - name: Vérifier les secrets requis et préparer leurs références
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_secrets=(
+            DATABASE_URL
+            SESSION_SECRET_KEY
+            SUPABASE_URL
+            SUPABASE_SERVICE_KEY
+            GROQ_API_KEY
+          )
+          optional_secrets=(
+            GEMINI_API_KEY
+            BREVO_API_KEY
+            SMTP_FROM_EMAIL
+            SMTP_HOTE
+            SMTP_UTILISATEUR
+            SMTP_MOT_DE_PASSE
+            LIVEKIT_URL
+            LIVEKIT_API_KEY
+            LIVEKIT_API_SECRET
+            ADMIN_PHONE
+            ADMIN_INITIAL_PASSWORD
+          )
+          secret_bindings=()
+          for name in "${required_secrets[@]}"; do
+            if ! gcloud secrets describe "${name}" --project "${PROJECT_ID}" >/dev/null 2>&1; then
+              echo "Secret Manager: le secret requis ${name} est absent." >&2
+              exit 1
+            fi
+            secret_bindings+=("${name}=${name}:latest")
+          done
+          for name in "${optional_secrets[@]}"; do
+            if gcloud secrets describe "${name}" --project "${PROJECT_ID}" >/dev/null 2>&1; then
+              secret_bindings+=("${name}=${name}:latest")
+            fi
+          done
+          secret_arg="$(IFS=,; echo "${secret_bindings[*]}")"
+          echo "SECRET_BINDINGS=${secret_arg}" >> "${GITHUB_ENV}"
+
+      - name: Déployer MITARIDALA sur Cloud Run (sans toucher à Render)
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy "${CLOUD_RUN_SERVICE}" \
+            --image "${IMAGE}" \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --cpu 1 \
+            --memory 1Gi \
+            --concurrency 40 \
+            --timeout 3600s \
+            --min 1 \
+            --max 1 \
+            --no-cpu-throttling \
+            --session-affinity \
+            --service-account "${RUNTIME_SERVICE_ACCOUNT}" \
+            --update-env-vars "ENVIRONNEMENT=production,GIT_COMMIT=${GITHUB_SHA},SUPABASE_BUCKET=documents,AI_WORKER_INLINE_ENABLED=true,AI_ENSEMBLE_ENABLED=true,AI_ENSEMBLE_USE_GEMINI=false,EMAIL_TRANSPORT=auto" \
+            --update-secrets "${SECRET_BINDINGS}" \
+            --quiet
+
+      - name: Vérifier la disponibilité et l'identité de la release
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe "${CLOUD_RUN_SERVICE}" \
+            --project "${PROJECT_ID}" --region "${REGION}" \
+            --format='value(status.url)')"
+          if [[ -z "${SERVICE_URL}" ]]; then
+            echo "Cloud Run n'a pas retourné d'URL de service." >&2
+            exit 1
+          fi
+          export SERVICE_URL
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error "${SERVICE_URL}/ready" -o /tmp/ready.json 2>/dev/null; then
+              if python - <<'PY'
+          import json
+          import os
+          import sys
+          with open("/tmp/ready.json", encoding="utf-8") as handle:
+              payload = json.load(handle)
+          ok = payload.get("status") == "ready" and payload.get("release") == os.environ["GITHUB_SHA"]
+          if not ok:
+              print("Readiness ou SHA inattendu:", payload)
+              sys.exit(1)
+          PY
+              then
+                break
+              fi
+            fi
+            if [[ "${attempt}" == "30" ]]; then
+              echo "Cloud Run ne devient pas ready avec le commit attendu." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          curl --fail --silent --show-error "${SERVICE_URL}/health" -o /tmp/health.json
+          python - <<'PY'
+          import json
+          with open("/tmp/health.json", encoding="utf-8") as handle:
+              health = json.load(handle)
+          if health.get("ai_queue_backend") != "postgresql" or not health.get("ai_worker_alive"):
+              raise SystemExit(f"Worker IA PostgreSQL non opérationnel: {health}")
+          print("Cloud Run prêt:", health.get("release"), "| worker:", health.get("ai_queue_backend"))
+          PY
+          echo "MITARIDALA Cloud Run: ${SERVICE_URL}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Release vérifiée: ${GITHUB_SHA}" >> "${GITHUB_STEP_SUMMARY}"
