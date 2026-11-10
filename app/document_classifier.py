@@ -141,8 +141,13 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
     stem_normalise = _normaliser(stem)
     alias_generiques = {
         _normaliser(alias)
-        for alias_liste in ALIASES_MATIERES.values()
-        for alias in alias_liste
+        for alias in (
+            "mathématiques", "mathématique", "maths", "physique", "chimie",
+            "biologie", "svt", "français", "malagasy", "malgache", "anglais",
+            "histoire", "géographie", "philosophie", "droit", "économie",
+            "comptabilité", "informatique", "gestion", "marketing",
+            "psychologie", "éducation civique",
+        )
     }
     if stem_normalise in alias_generiques:
         # "scan_maths.pdf" doit devenir la matière canonique, pas "maths"
