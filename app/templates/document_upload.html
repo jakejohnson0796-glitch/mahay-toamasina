@@ -686,6 +686,21 @@
         {% if message %}
         <div class="document-upload-info" role="status">{{ message }}</div>
         {% endif %}
+        {% if resultats_batch %}
+        <div class="document-upload-info" role="status">
+          <strong>Résultats de détection — {{ resultats_batch|length }} document(s) classé(s)</strong>
+          <ul>
+            {% for resultat in resultats_batch %}
+            <li>
+              <strong>{{ resultat.nom_fichier }}</strong> — {{ resultat.titre }} · {{ resultat.matiere }} ·
+              {{ resultat.type_document }} · {{ resultat.annee }} · {{ resultat.filiere }}.
+              <span>{{ resultat.confiance }} % de confiance · {{ resultat.caracteres_extraits }} caractères lus · {{ resultat.source }}.</span>
+              {% if resultat.confiance < 55 %}<strong>Vérification manuelle recommandée.</strong>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
         {% if erreurs_batch %}
         <div class="document-upload-warning" role="alert">
           <strong>Fichiers non envoyés</strong>
@@ -818,7 +833,7 @@
                 <span class="document-upload-file-icon" aria-hidden="true">📎</span>
                 <span class="document-upload-file-copy">
                   <strong>Choisir plusieurs fichiers ou les déposer ici</strong>
-                  <span>Jusqu’à 5 fichiers par envoi · PDF, Word, PowerPoint, JPG ou PNG · 20 Mo maximum par fichier.</span>
+                  <span>Jusqu’à 15 fichiers par envoi · 120 Mo maximum par lot · 20 Mo maximum par fichier.</span>
                   <span class="document-upload-file-name" id="nom-fichier">Aucun fichier sélectionné</span>
                 </span>
                 <input type="file" id="fichier" name="fichier" required multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
@@ -930,6 +945,8 @@
   };
 
   const MAX_FILE_BYTES = 20 * 1024 * 1024;
+  const MAX_FILES = 15;
+  const MAX_BATCH_BYTES = 120 * 1024 * 1024;
   const EXTENSIONS = new Set(["pdf","doc","docx","ppt","pptx","jpg","jpeg","png"]);
   const LABELS = {
     annale: "Annale (sujet d'examen)",
@@ -985,7 +1002,9 @@
       erreurs.push("sélectionnez au moins un fichier");
       return erreurs;
     }
-    if (fichiers.length > 5) erreurs.push("sélectionnez au maximum 5 fichiers par envoi");
+    if (fichiers.length > MAX_FILES) erreurs.push("sélectionnez au maximum 15 fichiers par envoi");
+    const tailleTotale = fichiers.reduce(function (total, fichier) { return total + fichier.size; }, 0);
+    if (tailleTotale > MAX_BATCH_BYTES) erreurs.push("le lot dépasse 120 Mo au total");
     if (fichiers.length > 1 && (!auto || scolaire)) {
       erreurs.push(scolaire
         ? "envoyez un document scolaire à la fois"
@@ -1111,7 +1130,7 @@
     if (fichiers.length > 1) {
       detectionEnCours = false;
       if (classificationAuto && classificationAuto.checked) {
-        setDetection("Chaque fichier sera classé séparément au moment de l’envoi. Le titre sera déduit de son propre nom et contenu.", "success");
+        setDetection("Chaque document sera lu individuellement (texte ou scan OCR), puis classé séparément. Les résultats détaillés seront affichés après l’envoi.", "success");
       } else {
         setDetection("Pour envoyer plusieurs documents, activez la détection automatique afin de classer chaque fichier séparément.", "warning");
       }
@@ -1277,7 +1296,7 @@
       if (fichiers.length > 1) {
         if (!classificationAuto || !classificationAuto.checked) {
           event.preventDefault();
-          setDetection("Activez la détection automatique pour envoyer plusieurs documents en un seul lot.", "warning");
+          setDetection("Activez la détection automatique pour envoyer jusqu’à 15 documents dans un même lot.", "warning");
           return;
         }
         form.action = "/documents/upload-multiple";
