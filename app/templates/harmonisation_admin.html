@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Supervision de l'harmonisation — Administration{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair espace-harmonisation">
+  <header class="tb-panneau-entete">
+    <div>
+      <p class="eyebrow">Administration · Supervision nationale</p>
+      <h1>Demandes d'harmonisation des cours</h1>
+      <p class="stat-label">Examine les justifications, les sources, les versions et les échanges. Tu peux valider et publier directement, refuser ou demander des précisions.</p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/admin">Administration</a>
+  </header>
+  {% for item in demandes %}
+  <article class="harmonisation-demande">
+    <div class="harmonisation-demande-entete">
+      <strong>{{ item.document.titre if item.document else "Cours supprimé" }}</strong>
+      <span class="harmonisation-statut">{{ item.demande.statut.replace("_", " ") }}</span>
+    </div>
+    <p>{{ item.document.matiere if item.document else "—" }} · {{ item.auteur.nom if item.auteur else "Enseignant" }} · {{ item.demande.date_creation.strftime("%d/%m/%Y à %H:%M") }}</p>
+    <p><strong>Justification :</strong> {{ item.demande.justification[:500] }}{% if item.demande.justification|length > 500 %}…{% endif %}</p>
+    <p><strong>Version examinée :</strong> {{ item.demande.version_source }}</p>
+    <a class="bouton bouton-primaire" href="/admin/harmonisation-cours/demandes/{{ item.demande.id }}">Examiner et décider</a>
+  </article>
+  {% else %}
+  <p>Aucune demande d'harmonisation pour le moment.</p>
+  {% endfor %}
+</div>
+<style>
+.espace-harmonisation{max-width:1120px;margin:0 auto}
+.harmonisation-demande{margin:.7rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:14px;background:var(--content-surface)}
+.harmonisation-demande p{font-size:.83rem;line-height:1.55}
+.harmonisation-statut{padding:.2rem .55rem;border:1px solid var(--content-border);border-radius:999px;font-size:.68rem}
+.harmonisation-demande-entete{display:flex;gap:.75rem;justify-content:space-between;align-items:center;flex-wrap:wrap}
+</style>
+{% endblock %}
