@@ -126,7 +126,7 @@
 <link rel="stylesheet" href="/static/dashboard-enseignant.css?v={{ version_asset('dashboard-enseignant.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/global-design-system.css?v={{ version_asset('global-design-system.css') }}">
-{% if request.session.get("user_id") and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur") %}
+{% if request.session.get("user_id") and utilisateur is defined and utilisateur and utilisateur.role == "etudiant" %}
 <link rel="stylesheet" href="/static/bilan-reprise.css?v={{ version_asset('bilan-reprise.css') }}">
 {% endif %}
 {% if request.url.path.startswith("/securite") %}
@@ -559,7 +559,7 @@
   </div>
 </div>
 
-{% if request.session.get("user_id") and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur") %}
+{% if request.session.get("user_id") and utilisateur is defined and utilisateur and utilisateur.role == "etudiant" %}
 <div
   class="bilan-reprise-fond"
   id="bilan-reprise-fond"
@@ -673,7 +673,7 @@
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
-{% if request.session.get("user_id") and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur") %}
+{% if request.session.get("user_id") and utilisateur is defined and utilisateur and utilisateur.role == "etudiant" %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/bilan-reprise.js?v={{ version_asset('js/bilan-reprise.js') }}" defer></script>
 {% endif %}
 {% if request.url.path == "/notifications" %}
