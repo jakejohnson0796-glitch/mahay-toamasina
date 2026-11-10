@@ -6,6 +6,10 @@
 {% block contenu %}
 <div class="contenu-clair page-bibliotheque-documents">
 <style nonce="{{ csp_nonce(request) }}">
+  .doc-harmonise-public{display:flex;gap:.8rem;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:.65rem 0;padding:.75rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-surface)}
+  .doc-harmonise-public strong{font-size:.78rem;color:var(--content-text)}
+  .doc-harmonise-public p{margin:.2rem 0 0;font-size:.68rem;color:var(--content-text-muted)}
+  .doc-harmonise-public .bouton{white-space:normal;text-align:center}
   .doc-fiche{margin:.75rem 0;padding:.72rem .78rem;border:1px solid var(--content-border);border-radius:12px;background:var(--content-bg);color:var(--content-text)}
   .doc-fiche summary{cursor:pointer;font-size:.76rem;font-weight:750;color:var(--content-text);line-height:1.45}
   .doc-fiche h5{font-size:.76rem;margin:.65rem 0 .4rem;color:var(--content-text)}
@@ -396,6 +400,17 @@ session dediee, avec sa propre verification desktop+mobile.
       <p class="doc-revision-description">Le carnet n’a pas encore été planifié. Ouvre cette action pour demander sa préparation ; le traitement se fera en arrière-plan.</p>
       <a class="bouton bouton-secondaire doc-revision-consulter" href="/documents/{{ doc.id }}/revision">Préparer ma fiche</a>
       {% endif %}
+    </section>
+    {% endif %}
+    {% if doc.contenu_harmonise %}
+    <section class="doc-harmonise-public" aria-label="Cours harmonisé validé">
+      <div>
+        <strong>Cours harmonisé · Version {{ doc.version_harmonisee }}</strong>
+        {% if doc.date_mise_a_jour_harmonisee %}
+        <p>Document mis à jour le {{ doc.date_mise_a_jour_harmonisee.strftime("%d/%m/%Y à %H:%M") }}</p>
+        {% endif %}
+      </div>
+      <a class="bouton bouton-primaire" href="/documents/{{ doc.id }}/cours-harmonise">Consulter le cours harmonisé</a>
     </section>
     {% endif %}
     <div class="doc-actions">
