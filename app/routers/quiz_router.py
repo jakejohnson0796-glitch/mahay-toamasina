@@ -520,7 +520,7 @@ def lancer_objectif_examen(
         and not _enseignant_sans_classe_scolaire(utilisateur)
     ):
         return RedirectResponse(
-            "/profil/academique?erreur=profil_scolaire_incomplet",
+            "/profil/scolaire?erreur=profil_scolaire_incomplet",
             status_code=303,
         )
 
@@ -680,7 +680,7 @@ def page_config_quiz(request: Request, session: Session = Depends(get_session)):
 
     contexte_scolaire = _contexte_scolaire_quiz(utilisateur, session)
     est_profil_scolaire = (
-        getattr(utilisateur, "cycle_education", None) in {"college", "lycee"}
+        getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"}
         and not _enseignant_sans_classe_scolaire(utilisateur)
     )
     if est_profil_scolaire and not contexte_scolaire:

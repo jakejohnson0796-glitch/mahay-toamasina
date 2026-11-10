@@ -22,16 +22,18 @@ NIVEAUX = (
 )
 
 MATIERES = {
-    "KAJY": ("Kajy", "Kajy"),
-    "CONNAISSANCES_USUELLES": ("Connaissances usuelles", "Fahalalana ankapobeny"),
+    "SCIENCES_TECHNOLOGIE": ("Sciences et technologie", "Siansa sy teknolojia"),
 }
 
+# Matières relevées dans les tableaux des RAPE MEN 2026 :
+# T1 à T3 : Malagasy, Français, FOV, Mathématiques, EPS et Arts.
+# T4 et T5 ajoutent Anglais, Sciences et technologie, Tantara et Géographie.
 PROGRAMMES = {
-    "T1": ("KAJY", "MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS"),
-    "T2": ("KAJY", "MALAGASY", "FRANCAIS"),
-    "T3": ("KAJY", "CONNAISSANCES_USUELLES", "HISTOIRE", "GEOGRAPHIE", "MALAGASY", "FRANCAIS"),
-    "T4": ("KAJY", "CONNAISSANCES_USUELLES", "HISTOIRE", "GEOGRAPHIE", "MALAGASY", "FRANCAIS"),
-    "T5": ("KAJY", "CONNAISSANCES_USUELLES", "HISTOIRE", "GEOGRAPHIE", "MALAGASY", "FRANCAIS"),
+    "T1": ("MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS"),
+    "T2": ("MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS"),
+    "T3": ("MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS"),
+    "T4": ("MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES", "SCIENCES_TECHNOLOGIE", "HISTOIRE", "GEOGRAPHIE", "FOV", "EPS", "ARTS"),
+    "T5": ("MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES", "SCIENCES_TECHNOLOGIE", "HISTOIRE", "GEOGRAPHIE", "FOV", "EPS", "ARTS"),
 }
 
 
@@ -99,7 +101,7 @@ def upgrade() -> None:
         code: _ensure_matiere(conn, code, libelle, malagasy, MEN_INDEX)
         for code, (libelle, malagasy) in MATIERES.items()
     }
-    for code in ("MALAGASY", "FRANCAIS", "MATHEMATIQUES", "FOV", "EPS", "ARTS", "HISTOIRE", "GEOGRAPHIE"):
+    for code in ("MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES", "HISTOIRE", "GEOGRAPHIE", "FOV", "EPS", "ARTS"):
         matieres[code] = _id(conn, "matierescolaire", "code=:code", {"code": code})
     for code, libelle, ordre, pdf in NIVEAUX:
         level_id = _ensure_niveau(conn, ref_id, code, libelle, ordre, pdf)
