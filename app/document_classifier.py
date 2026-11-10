@@ -198,24 +198,29 @@ def _annee_depuis_texte(*sources: str) -> Optional[int]:
 
 
 def _type_local(texte: str) -> Optional[TypeDocument]:
-    normalise = _normaliser(texte)
-    if any(x in normalise for x in (
-        "corrige", "correction", "solution", "corrigé", "solutions"
-    )):
+    """Détecte des expressions complètes pour réduire les faux positifs."""
+    normalise = f" {_normaliser(texte)} "
+
+    def contient(*expressions: str) -> bool:
+        return any(f" {expression} " in normalise for expression in expressions)
+
+    if contient("corrige", "correction", "solution", "solutions", "corrige type", "reponse type"):
         return TypeDocument.CORRIGE
-    if any(x in normalise for x in (
-        "annale", "examen", "ancien examen", "sujet examen", "epreuve", "partiel",
-        "examen session", "session normale", "session rattrapage",
-    )):
+    if contient(
+        "annale", "examen", "ancien examen", "sujet examen", "epreuve",
+        "epreuve finale", "partiel", "examen session", "session normale",
+        "session rattrapage", "devoir surveille", "composition", "controle continu",
+    ):
         return TypeDocument.ANNALE
-    if any(x in normalise for x in (
+    if contient(
         "fiche de revision", "fiche revision", "resume", "synthese",
         "memo revision", "cheat sheet",
-    )):
+    ):
         return TypeDocument.FICHE
-    if any(x in normalise for x in (
+    if contient(
         "cours", "chapitre", "support de cours", "polycopie", "notes de cours",
-    )):
+        "travaux diriges", "travaux pratiques",
+    ):
         return TypeDocument.COURS
     return None
 
@@ -437,7 +442,7 @@ def classifier_document(
     matiere_local_nom = _matiere_depuis_nom_fichier(nom_fichier)
     type_local_nom = _type_local(nom_fichier)
     type_local_texte = _type_local(texte)
-    type_local = type_local_nom or type_local_texte
+    type_local = type_local_texte or type_local_nom
     annee_local = _annee_depuis_texte(texte, nom_fichier)
 
     candidats = _candidats_filieres(texte_reference, filieres)
@@ -467,8 +472,8 @@ def classifier_document(
     # du fichier comme signal de secours (ex. "Cours-algèbre.pdf" -> "algèbre").
     matiere_ia = _matiere_auto_valide(resultat_ia.get("matiere") or "")
     matiere = (
-        matiere_local_nom
-        or matiere_local
+        matiere_local
+        or matiere_local_nom
         or _matiere_depuis_signaux(nom_fichier, texte)
         or matiere_ia
         or _matiere_auto_valide(titre_local or "")
@@ -482,7 +487,7 @@ def classifier_document(
     except (ValueError, TypeError):
         type_auto = None
 
-    type_document = type_local_nom or type_local_texte or type_auto or type_fourni
+    type_document = type_local_texte or type_local_nom or type_auto or type_fourni
 
     annee = None
     try:
@@ -524,8 +529,8 @@ def classifier_document(
         )
         matiere = (
             _nettoyer_titre(matiere_fourni)
-            or matiere_local_nom
             or matiere_local
+            or matiere_local_nom
             or _matiere_depuis_signaux(nom_fichier, texte)
             or _matiere_auto_valide(titre_local or "")
         )
