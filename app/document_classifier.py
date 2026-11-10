@@ -127,6 +127,12 @@ def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
     )
     stem = re.sub(r"\b(?:19|20)\d{2}\b", " ", stem)
     stem = re.sub(r"\b(?:s[1-9]|l[1-3]|m[1-2])\b", " ", stem, flags=re.I)
+    stem = re.sub(
+        r"\b(?:annale|corrige|corrigé|fiche|cours|support|examen|epreuve|épreuve|scan|scanne)\b$",
+        " ",
+        stem,
+        flags=re.I,
+    )
     stem = stem.replace("_", " ").replace("-", " ")
     stem = re.sub(r"\s+", " ", stem).strip(" .:-_")
 
