@@ -155,7 +155,7 @@ def test_sidebar_uses_account_settings_label_without_language_shortcut():
     assert "Changer de langue" not in base
     assert base.count('href="/securite#language-settings"') == 1
     assert base.count("Paramètres du compte</a>") == 2
-    assert "Sécurité du compte</a>" not in base
+    assert "Sécurité du compte" not in base
     assert 'id="language-settings"' in settings
     assert 'id="select-langue-parametres"' in settings
     assert '"Paramètres du compte": "Account settings"' in script
