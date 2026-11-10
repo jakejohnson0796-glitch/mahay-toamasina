@@ -32,3 +32,10 @@
 .objectif-examen-empty-state{padding:1.1rem;border:1px dashed var(--content-border);border-radius:14px;background:var(--content-surface)}
 .objectif-examen-empty-state p{color:var(--content-muted)}
 @media(max-width:760px){.objectif-examen-grid{grid-template-columns:1fr}.objectif-examen-cepe{grid-column:auto}.objectif-examen-priorites-list article{align-items:flex-start;flex-direction:column}.objectif-examen-page{padding-inline:.75rem}}
+
+.objectif-examen-notice-compact{margin:.2rem 0 1rem;padding:.85rem 1rem}
+.objectif-examen-source-card{height:100%}
+.objectif-examen-source-type{color:var(--content-text);font-size:.86rem;line-height:1.45}
+.objectif-examen-source-note{font-size:.78rem!important}
+.objectif-examen-source-limit{padding:.7rem .8rem;border-left:3px solid var(--content-border);border-radius:8px;background:var(--content-bg);font-size:.8rem!important}
+.objectif-examen-source-card .bouton{align-self:flex-start;margin-top:auto}
