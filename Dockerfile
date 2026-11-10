@@ -2,10 +2,13 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# tesseract-ocr et poppler-utils sont optionnels : ne les ajoute que si tu
-# veux l'OCR sur des documents scannes (images/PDF sans texte selectionnable).
-# Decommente la ligne suivante si besoin (augmente la taille de l'image) :
-# RUN apt-get update && apt-get install -y tesseract-ocr tesseract-ocr-fra poppler-utils && rm -rf /var/lib/apt/lists/*
+# OCR français/anglais pour les PDF scannés et images, avec extraction
+# des anciens formats Microsoft Office 97–2003.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng \
+       poppler-utils antiword catdoc \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
