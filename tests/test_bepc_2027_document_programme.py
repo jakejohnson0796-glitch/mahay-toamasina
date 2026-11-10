@@ -14,14 +14,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.mark.parametrize("parcours", ["pe", "ps_a", "ps_b"])
-def test_accepte_les_trois_parcours_bepc_2027_pour_les_annales_de_3e(parcours):
+@pytest.mark.parametrize("type_document", [TypeDocument.ANNALE, TypeDocument.CORRIGE])
+def test_accepte_les_trois_parcours_bepc_2027_pour_les_annales_de_3e(parcours, type_document):
     niveau = SimpleNamespace(cycle="college", libelle="3e")
 
     valeur, erreur = _normaliser_bepc_session_2027_parcours(
         parcours,
         portee_academique="scolaire",
         niveau_scolaire=niveau,
-        type_document=TypeDocument.ANNALE,
+        type_document=type_document,
         annee=2027,
     )
 
@@ -123,12 +124,21 @@ def test_upload_et_moderation_exposent_le_classement_bepc_2027():
 
     assert "bepc_session_2027_parcours: Optional[str] = Form(default=None)" in router
     assert "BEPC_SESSION_2027_PARCOURS" in router
+    assert "bepc_session_2027_parcours=bepc_parcours_valide" in router
+    assert "bepc_session_2027_parcours = parcours_bepc_valide" in router
     assert 'name="bepc_session_2027_parcours"' in upload
     assert 'documentYear.value === "2027"' in cascade
+    assert "bepcParcours.required = visible" in cascade
+    assert "bepcParcours.disabled = !visible" in cascade
     assert "Nouveau Programme d’études (PE)" in upload
     assert 'name="bepc_session_2027_parcours"' in moderation
     assert "Programme scolaire (PS) · Option A" in documents
     assert "Programme scolaire (PS) · Option B" in documents
+    model = (ROOT / "app/models.py").read_text(encoding="utf-8")
+    document_model = model.split("class Document(SQLModel, table=True):", 1)[1].split(
+        "class ProgressionNotion(SQLModel, table=True):", 1
+    )[0]
+    assert "bepc_session_2027_parcours" in document_model
 
 
 def test_migration_ajoute_un_champ_nullable_avec_index():
