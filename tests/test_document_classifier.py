@@ -140,3 +140,14 @@ def test_titre_ocr_ignore_les_entetes_administratifs():
         "Analyse des fonctions et applications"
     )
     assert _titre_depuis_texte(texte) == "Analyse des fonctions et applications"
+
+
+def test_alias_matiere_est_rattache_a_la_matiere_officielle_du_referentiel(monkeypatch):
+    monkeypatch.setattr("app.document_classifier.parametres.groq_api_key", "")
+    resultat = classifier_document(
+        nom_fichier="scan_maths_2026_annale.pdf",
+        texte="Session normale 2026\\nSujet de l'examen final",
+        filieres=[Filiere(id=22, nom="Mathématiques")],
+    )
+    assert resultat.matiere == "Mathématiques"
+    assert resultat.filiere_id == 22
