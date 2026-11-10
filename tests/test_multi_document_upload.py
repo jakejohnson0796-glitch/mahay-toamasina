@@ -61,6 +61,8 @@ def test_multiple_selection_requires_auto_mode_and_shows_per_file_results():
     assert "Chaque document sera lu individuellement" in template
     assert "{% if resultats_batch %}" in template
     assert "{{ resultat.confiance }}" in template
+    assert "Aucun texte n'a été extrait" in template
+    assert "caracteres_extraits == 0" in template
     assert "{% if erreurs_batch %}" in template
     assert "{% for detail in erreurs_batch %}" in template
     assert "20 Mo maximum par fichier" in template
