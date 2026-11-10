@@ -80,3 +80,15 @@ def test_search_console_token_is_configured_through_environment_only():
     env_example = (ROOT / ".env.example").read_text(encoding="utf-8")
     assert 'os.getenv("GOOGLE_SITE_VERIFICATION", "")' in config
     assert "GOOGLE_SITE_VERIFICATION=" in env_example
+
+
+def test_google_search_console_html_file_is_preserved_at_site_root():
+    verification_file = ROOT / "google8d625d7edf0d28f9.html"
+    assert verification_file.is_file()
+    assert verification_file.read_text(encoding="utf-8").strip() == (
+        "google-site-verification: google8d625d7edf0d28f9.html"
+    )
+
+    source = (ROOT / "app/main.py").read_text(encoding="utf-8")
+    assert '@app.get("/google8d625d7edf0d28f9.html", include_in_schema=False)' in source
+    assert 'FileResponse(fichier_verification, media_type="text/html")' in source
