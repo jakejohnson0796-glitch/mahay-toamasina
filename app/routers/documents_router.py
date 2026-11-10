@@ -312,7 +312,7 @@ def liste_documents(
         requete_depots = select(Document).where(
             Document.uploader_id == utilisateur.id,
             Document.statut.in_([StatutDocument.EN_ATTENTE, StatutDocument.REJETE]),
-        ).order_by(Document.date_upload.desc()).limit(10)
+        ).order_by(Document.date_upload.desc()).limit(30)
         if cercle_id is not None:
             requete_depots = requete_depots.where(Document.cercle_id == cercle_id)
         mes_depots = session.exec(requete_depots).all()
@@ -943,8 +943,10 @@ def upload_documents_multiples(
         return afficher_erreur("Activez la détection automatique pour classer chaque fichier séparément.")
 
     tailles = [_taille_upload(fichier) for fichier in fichiers]
+    if any(taille is None for taille in tailles):
+        return afficher_erreur("La taille d'un fichier n'a pas pu être vérifiée. Re-sélectionnez les documents.")
     tailles_connues = [taille for taille in tailles if taille is not None]
-    if len(tailles_connues) == len(fichiers) and sum(tailles_connues) > MAX_TAILLE_DOCUMENT_PAR_LOT:
+    if sum(tailles_connues) > MAX_TAILLE_DOCUMENT_PAR_LOT:
         return afficher_erreur("Le lot dépasse 120 Mo au total. Réduisez la taille des fichiers.")
     if any(taille is not None and taille > 20 * 1024 * 1024 for taille in tailles):
         return afficher_erreur("Chaque document doit faire 20 Mo maximum.")
