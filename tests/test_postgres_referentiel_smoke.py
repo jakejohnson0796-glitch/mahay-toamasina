@@ -978,20 +978,32 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
-    # Simule la base Render avant cette fonctionnalité : elle est à l'ancienne
-    # tête c3e8. La nouvelle branche n'est pas une installation neuve : Alembic
-    # doit appliquer la migration professeur manquante puis réunifier les têtes.
-    retour_tete_render = subprocess.run(
-        [*alembic, "downgrade", "c3e8f1a6b9d2"],
+    # Reconstitue exactement la base Render actuelle depuis l'ancêtre commun :
+    # d'abord le schéma commun m1, puis uniquement l'ancienne tête c3e8.
+    retour_ancetre = subprocess.run(
+        [*alembic, "downgrade", "m1e7b3c5d9a2"],
         env=env,
         capture_output=True,
         text=True,
         timeout=180,
         check=False,
     )
-    assert retour_tete_render.returncode == 0, (
-        "Le retour simulé à la tête Render actuelle a échoué :\\n"
-        f"{retour_tete_render.stdout}\\n{retour_tete_render.stderr}"
+    assert retour_ancetre.returncode == 0, (
+        "Le retour à l'ancêtre commun des branches a échoué :\\n"
+        f"{retour_ancetre.stdout}\\n{retour_ancetre.stderr}"
+    )
+
+    reconstruit_tete_render = subprocess.run(
+        [*alembic, "upgrade", "c3e8f1a6b9d2"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert reconstruit_tete_render.returncode == 0, (
+        "La reconstruction de la tête Render a échoué :\\n"
+        f"{reconstruit_tete_render.stdout}\\n{reconstruit_tete_render.stderr}"
     )
     with engine.connect() as connection:
         revision_render = connection.execute(
