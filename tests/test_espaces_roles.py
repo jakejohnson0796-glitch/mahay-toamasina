@@ -165,4 +165,4 @@ def test_dashboard_et_navigation_ont_deux_experiences_distinctes():
     assert "Organise tes cours et accompagne tes classes." in classe_template
     assert "Guide enseignant" in classe_template
     assert 'href="/quiz"' in classe_template
-    assert "Mes cours" not in classe_template
+    assert "Quiz IA" in classe_template
