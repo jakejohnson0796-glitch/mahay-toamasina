@@ -110,13 +110,32 @@ jobs:
             fi
             secret_bindings+=("${name}=${name}:latest")
           done
+
+          # La configuration de production refuse un LiveKit partiellement configure.
+          livekit_secrets=(LIVEKIT_URL LIVEKIT_API_KEY LIVEKIT_API_SECRET)
+          livekit_count=0
+          for name in "${livekit_secrets[@]}"; do
+            if gcloud secrets describe "${name}" --project "${PROJECT_ID}" >/dev/null 2>&1; then
+              livekit_count=$((livekit_count + 1))
+            fi
+          done
+          if [[ "${livekit_count}" != "0" && "${livekit_count}" != "3" ]]; then
+            echo "Crée les trois secrets LIVEKIT_* ou aucun : configuration incomplète." >&2
+            exit 1
+          fi
+
+          gemini_enabled=false
           for name in "${optional_secrets[@]}"; do
             if gcloud secrets describe "${name}" --project "${PROJECT_ID}" >/dev/null 2>&1; then
               secret_bindings+=("${name}=${name}:latest")
+              if [[ "${name}" == "GEMINI_API_KEY" ]]; then
+                gemini_enabled=true
+              fi
             fi
           done
           secret_arg="$(IFS=,; echo "${secret_bindings[*]}")"
           echo "SECRET_BINDINGS=${secret_arg}" >> "${GITHUB_ENV}"
+          echo "AI_ENSEMBLE_USE_GEMINI=${gemini_enabled}" >> "${GITHUB_ENV}"
 
       - name: Déployer MITARIDALA sur Cloud Run (sans toucher à Render)
         shell: bash
@@ -138,7 +157,7 @@ jobs:
             --no-cpu-throttling \
             --session-affinity \
             --service-account "${RUNTIME_SERVICE_ACCOUNT}" \
-            --update-env-vars "ENVIRONNEMENT=production,GIT_COMMIT=${GITHUB_SHA},SUPABASE_BUCKET=documents,AI_WORKER_INLINE_ENABLED=true,AI_ENSEMBLE_ENABLED=true,AI_ENSEMBLE_USE_GEMINI=false,EMAIL_TRANSPORT=auto" \
+            --update-env-vars "ENVIRONNEMENT=production,GIT_COMMIT=${GITHUB_SHA},SUPABASE_BUCKET=documents,AI_WORKER_INLINE_ENABLED=true,AI_ENSEMBLE_ENABLED=true,AI_ENSEMBLE_USE_GEMINI=${AI_ENSEMBLE_USE_GEMINI},EMAIL_TRANSPORT=auto" \
             --update-secrets "${SECRET_BINDINGS}" \
             --quiet
 
