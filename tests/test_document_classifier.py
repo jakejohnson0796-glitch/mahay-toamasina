@@ -171,3 +171,11 @@ def test_score_de_confiance_ne_compte_pas_les_champs_manuels():
     assert resultat.annee == 2026
     assert resultat.filiere_id == 7
     assert resultat.confiance == 0.0
+
+
+def test_titre_ne_reprend_pas_une_phrase_explicative():
+    from app.document_classifier import _titre_depuis_texte
+
+    assert _titre_depuis_texte(
+        "Quelques lignes générales sans métadonnées exploitables."
+    ) is None
