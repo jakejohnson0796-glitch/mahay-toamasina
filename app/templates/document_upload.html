@@ -499,6 +499,39 @@
   font-size:.68rem;
   line-height:1.45;
 }
+.document-upload-batch-results{
+  margin-top:.8rem;
+  padding:.85rem;
+  border:1px solid var(--content-border);
+  border-radius:14px;
+  background:var(--content-bg);
+}
+.document-upload-batch-results h3{
+  margin:0 0 .65rem;
+  color:var(--content-text);
+  font-size:.82rem;
+}
+.document-upload-batch-results-list{display:grid;gap:.55rem;margin:0;padding:0;list-style:none}
+.document-upload-batch-result{
+  min-width:0;
+  padding:.65rem .7rem;
+  border:1px solid var(--content-border);
+  border-radius:11px;
+  background:var(--content-surface);
+}
+.document-upload-batch-result strong{
+  display:block;
+  overflow-wrap:anywhere;
+  color:var(--content-text);
+  font-size:.72rem;
+}
+.document-upload-batch-result p{
+  margin:.25rem 0 0;
+  color:var(--content-text-muted);
+  font-size:.65rem;
+  line-height:1.45;
+}
+.document-upload-batch-result small{display:block;margin-top:.25rem;color:var(--content-text-muted);font-size:.6rem}
 @media(max-width:640px){
   .document-upload-preview-grid{
     grid-template-columns:1fr 1fr;
@@ -692,6 +725,27 @@
           <ul>{% for detail in erreurs_batch %}<li>{{ detail }}</li>{% endfor %}</ul>
         </div>
         {% endif %}
+        {% if resultats_batch %}
+        <section class="document-upload-batch-results" aria-labelledby="resultats-detection-batch">
+          <h3 id="resultats-detection-batch">Résultat de la détection · {{ resultats_batch|length }} document(s) classé(s)</h3>
+          <ul class="document-upload-batch-results-list">
+            {% for resultat in resultats_batch %}
+            <li class="document-upload-batch-result">
+              <strong>{{ resultat.nom_fichier }}</strong>
+              <p>{{ resultat.titre }} · {{ resultat.matiere }} · {{ resultat.type_document }} · {{ resultat.annee }}</p>
+              <p>Filière : {{ resultat.filiere }} · Confiance : {{ (resultat.confiance * 100)|round|int }}%</p>
+              <small>
+                {% if resultat.caracteres_extraits %}
+                  {{ resultat.caracteres_extraits }} caractères analysés · source {{ resultat.source }}
+                {% else %}
+                  Aucun texte extrait ; métadonnées à vérifier manuellement.
+                {% endif %}
+              </small>
+            </li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
 
         {% if cercle %}
         <div class="document-upload-info">📚 Ce dépôt sera rattaché directement au cercle <strong>{{ cercle.nom }}</strong>.</div>
@@ -818,10 +872,10 @@
                 <span class="document-upload-file-icon" aria-hidden="true">📎</span>
                 <span class="document-upload-file-copy">
                   <strong>Choisir plusieurs fichiers ou les déposer ici</strong>
-                  <span>Jusqu’à 5 fichiers par envoi · PDF, Word, PowerPoint, JPG ou PNG · 20 Mo maximum par fichier.</span>
+                  <span>Jusqu’à 15 fichiers par envoi · 20 Mo maximum par fichier · 100 Mo pour le lot complet. PDF, Word, PowerPoint, JPG, PNG ou WEBP.</span>
                   <span class="document-upload-file-name" id="nom-fichier">Aucun fichier sélectionné</span>
                 </span>
-                <input type="file" id="fichier" name="fichier" required multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
+                <input type="file" id="fichier" name="fichier" required multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
               </label>
             </div>
           </div>
@@ -885,7 +939,7 @@
         <h3>Formats acceptés</h3>
         <div class="document-upload-check"><b>PDF</b><span>Idéal pour les annales et supports finalisés.</span></div>
         <div class="document-upload-check"><b>DOC</b><span>Word et PowerPoint sont également acceptés.</span></div>
-        <div class="document-upload-check"><b>IMG</b><span>JPG et PNG pour les documents scannés.</span></div>
+        <div class="document-upload-check"><b>IMG</b><span>JPG, PNG et WEBP pour les documents scannés.</span></div>
       </div>
     </aside>
   </div>
@@ -930,7 +984,9 @@
   };
 
   const MAX_FILE_BYTES = 20 * 1024 * 1024;
-  const EXTENSIONS = new Set(["pdf","doc","docx","ppt","pptx","jpg","jpeg","png"]);
+  const MAX_FILES = 15;
+  const MAX_BATCH_BYTES = 100 * 1024 * 1024;
+  const EXTENSIONS = new Set(["pdf","doc","docx","ppt","pptx","jpg","jpeg","png","webp"]);
   const LABELS = {
     annale: "Annale (sujet d'examen)",
     corrige: "Corrigé",
@@ -985,7 +1041,9 @@
       erreurs.push("sélectionnez au moins un fichier");
       return erreurs;
     }
-    if (fichiers.length > 5) erreurs.push("sélectionnez au maximum 5 fichiers par envoi");
+    if (fichiers.length > MAX_FILES) erreurs.push("sélectionnez au maximum 15 fichiers par envoi");
+    const tailleLot = fichiers.reduce(function (total, fichier) { return total + fichier.size; }, 0);
+    if (tailleLot > MAX_BATCH_BYTES) erreurs.push("la taille totale du lot dépasse 100 Mo");
     if (fichiers.length > 1 && (!auto || scolaire)) {
       erreurs.push(scolaire
         ? "envoyez un document scolaire à la fois"
@@ -1111,7 +1169,7 @@
     if (fichiers.length > 1) {
       detectionEnCours = false;
       if (classificationAuto && classificationAuto.checked) {
-        setDetection("Chaque fichier sera classé séparément au moment de l’envoi. Le titre sera déduit de son propre nom et contenu.", "success");
+        setDetection("Chaque document sera analysé séparément à l’envoi. Le récapitulatif affichera les métadonnées, la confiance et le texte extrait pour chaque fichier.", "success");
       } else {
         setDetection("Pour envoyer plusieurs documents, activez la détection automatique afin de classer chaque fichier séparément.", "warning");
       }
@@ -1282,7 +1340,7 @@
         }
         form.action = "/documents/upload-multiple";
         input.name = "fichiers";
-        submit.textContent = "Classer et envoyer " + fichiers.length + " documents…";
+        submit.textContent = "Analyser et envoyer " + fichiers.length + " documents…";
       } else {
         submit.textContent = classificationAuto && classificationAuto.checked
           ? "Analyse et classement en cours…"
