@@ -155,6 +155,7 @@ def test_page_objectif_examen_presente_les_sources_externes_avec_liens_proteges(
     assert "Annales et ressources externes" in template
     assert "Annales et corrigés de ton niveau" in template
     assert "Publication et exactitude pédagogique sont deux contrôles différents" in template
+    assert "le catalogue ne distingue pas encore le Programme scolaire (PS)" in template
     assert 'href="/documents/{{ doc.id }}/telecharger"' in template
     assert 'target="_blank" rel="noopener noreferrer"' in template
     assert "ne validons pas individuellement chaque sujet ou corrigé" in template
