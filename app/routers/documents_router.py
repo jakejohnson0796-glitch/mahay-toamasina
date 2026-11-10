@@ -73,6 +73,48 @@ def _charger_fiche_pedagogique(document: Document) -> dict:
     return _charger_fiche_pedagogique_json(document.fiche_pedagogique_json)
 
 
+BEPC_SESSION_2027_PARCOURS = {
+    "pe": "Programme d'études (PE)",
+    "ps_a": "Programme scolaire (PS) · Option A",
+    "ps_b": "Programme scolaire (PS) · Option B",
+}
+
+
+def _normaliser_bepc_session_2027_parcours(
+    valeur: Optional[str],
+    *,
+    portee_academique: str,
+    niveau_scolaire: Optional[NiveauScolaire],
+    type_document: Optional[TypeDocument],
+    annee: Optional[int],
+) -> tuple[Optional[str], Optional[str]]:
+    """Valide la variante PE/PS-A/PS-B uniquement pour les annales BEPC 2027."""
+    normalisee = str(valeur or "").strip().casefold()
+    applicable = bool(
+        portee_academique == "scolaire"
+        and niveau_scolaire
+        and niveau_scolaire.cycle == "college"
+        and str(niveau_scolaire.libelle or "").strip().casefold() == "3e"
+        and type_document in {TypeDocument.ANNALE, TypeDocument.CORRIGE}
+        and annee == 2027
+    )
+
+    if not applicable:
+        if normalisee:
+            return None, (
+                "Le classement PE/PS du BEPC ne s'applique qu'aux annales et corrigés "
+                "scolaires de 3e pour la session 2027."
+            )
+        return None, None
+
+    if normalisee not in BEPC_SESSION_2027_PARCOURS:
+        return None, (
+            "Pour une annale ou un corrigé BEPC 2027 de 3e, sélectionnez le PE, "
+            "le PS option A ou le PS option B."
+        )
+    return normalisee, None
+
+
 def _fiche_pedagogique_peut_etre_validee(document: Document) -> bool:
     statut = str(getattr(document, "resume_statut_ia", "") or "")
     resume = str(getattr(document, "resume_ia", "") or "").strip()
@@ -498,6 +540,7 @@ def upload_document(
     matiere: Optional[str] = Form(default=""),
     type_document: Optional[TypeDocument] = Form(default=None),
     annee: Optional[int] = Form(default=None),
+    bepc_session_2027_parcours: Optional[str] = Form(default=None),
     filiere_id: Optional[int] = Form(default=None),
     portee_academique: str = Form(default="universitaire"),
     cycle_scolaire: Optional[str] = Form(default=None),
@@ -699,6 +742,19 @@ def upload_document(
         if annee < 2000 or annee > 2100:
             return RedirectResponse("/documents?erreur=annee_invalide", status_code=303)
 
+    bepc_parcours_valide, erreur_bepc_parcours = _normaliser_bepc_session_2027_parcours(
+        bepc_session_2027_parcours,
+        portee_academique=portee,
+        niveau_scolaire=niveau_scolaire,
+        type_document=type_document,
+        annee=annee,
+    )
+    if erreur_bepc_parcours:
+        return RedirectResponse(
+            "/documents?erreur=programme_bepc_invalide",
+            status_code=303,
+        )
+
     filieres_disponibles = session.exec(select(Filiere)).all()
     if portee == "universitaire" and not filieres_disponibles:
         return RedirectResponse("/documents?erreur=filiere_invalide", status_code=303)
@@ -780,6 +836,7 @@ def upload_document(
         option_scolaire_id=option_scolaire.id if option_scolaire else None,
         matiere_scolaire_id=matiere_scolaire.id if matiere_scolaire else None,
         etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+        bepc_session_2027_parcours=bepc_parcours_valide,
         cercle_id=cercle_id,
         uploader_id=utilisateur.id,
         chemin_fichier=chemin_stocke,
