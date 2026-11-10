@@ -35,7 +35,7 @@ for (const href of expectedHrefs) {
  // Les libellés dynamiques sont remplacés par leur libellé apprenant stable,
  // tandis que le HTML et les six emplacements communs restent ceux de base.html.
 const navHtml = navSource
-  .replace(/<a\b([^>]*)data-smoke-label="([^"]+)"([^>]*)>[\s\S]*?<\/a>/gi, (_match, before, label, after) => '<a' + before + after + '>' + label + '</a>')
+  .replace(/<a\b([^>]*)data-smoke-label="([^"]+)"([^>]*)>[\s\S]*?<\/a>/gi, (_match, before, label, after) => '<a' + before + after + '><span>' + label + '</span></a>')
   .replace(/\{\{\s*icone\([^}]*\)\s*\}\}/g, '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"></svg>')
   .replace(/\{\{[\s\S]*?\}\}/g, "")
   .replace(/\{%[\s\S]*?%\}/g, "");
