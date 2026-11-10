@@ -137,3 +137,25 @@ def test_language_smoke_exercises_settings_selection_and_translation_fallback():
     assert "fallbackEnglish.textContent !== 'Search for a document in approved documents'" in smoke
     assert "locales: ['fr', 'mg', 'en']" in smoke
     assert 'const CACHE_NOM = "mahay-static-v4";' in service_worker
+
+
+
+def test_sidebar_exposes_harmonisation_only_to_verified_teachers_and_admins():
+    base = BASE.read_text(encoding="utf-8")
+    assert 'utilisateur.role == "professeur"' in base
+    assert 'utilisateur.statut_verification_enseignant == "approuve"' in base
+    assert 'href="/enseignant/harmonisation"' in base
+    assert 'href="/admin/harmonisation-cours"' in base
+
+
+def test_sidebar_links_directly_to_language_settings():
+    base = BASE.read_text(encoding="utf-8")
+    settings = SECURITY.read_text(encoding="utf-8")
+    script = LANGUAGE_JS.read_text(encoding="utf-8")
+    assert 'href="/securite#language-settings"' in base
+    assert 'id="language-settings"' in settings
+    assert 'id="select-langue-parametres"' in settings
+    assert '"Changer de langue": "Change language"' in script
+    assert '"Changer de langue": "Hanova fiteny"' in script
+    assert '"Harmonisation des cours": "Course harmonization"' in script
+    assert '"Harmonisation des cours": "Fandrindrana ny lesona"' in script
