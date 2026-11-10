@@ -36,6 +36,9 @@
     <p>Les questions de cette première version sont générées pour t'entraîner. Une session courte comporte 10 questions et 15 minutes : elle ne reproduit pas la durée ni toutes les épreuves officielles. Elle ne remplace ni les sujets publiés par les autorités, ni les cours, ni les corrections validées par ton enseignant. Vérifie toujours le programme suivi dans ton établissement.</p>
   </aside>
 
+  {% if request.query_params.get("ok") == "programme_bepc_enregistre" %}
+  <div class="info" role="status">Ton choix de programme BEPC 2027 est enregistré dans ton profil. Tu peux le modifier à tout moment si ton établissement confirme un autre parcours.</div>
+  {% endif %}
   {% if request.query_params.get("erreur") %}
   <div class="erreur" role="alert">
     {% set erreur = request.query_params.get("erreur") %}
@@ -44,7 +47,13 @@
     {% elif erreur == "parcours_indisponible" %}
       Ce parcours ne correspond pas au niveau vérifié dans ton profil.
     {% elif erreur == "option_invalide" %}
-      Pour le BEPC ancien programme, sélectionne l'option A ou B.
+      Le choix de ton profil ne correspond pas à l'option de cet entraînement.
+    {% elif erreur == "programme_bepc_invalide" %}
+      Choisis le PE, le PS option A ou le PS option B. Cette sélection est réservée aux profils vérifiés de 3e.
+    {% elif erreur == "programme_bepc_requis" %}
+      Enregistre d'abord le programme BEPC suivi dans ton établissement avant de commencer un examen blanc.
+    {% elif erreur == "programme_bepc_incompatible" %}
+      Cet entraînement ne correspond pas au programme BEPC enregistré dans ton profil.
     {% elif erreur == "serie_manquante" %}
       La série du Baccalauréat doit être active et vérifiée dans ton profil.
     {% elif erreur == "matiere_indisponible" %}
@@ -57,6 +66,8 @@
   </div>
   {% endif %}
 
+  <section class="objectif-examen-section" id="choisir-examen"
+
   <section class="objectif-examen-section" id="choisir-examen" aria-labelledby="choisir-examen-title">
     <div class="objectif-examen-heading">
       <span class="ai-kicker">Choisir un parcours</span>
@@ -66,51 +77,63 @@
 
     <div class="objectif-examen-grid">
       {% if bepc_disponible %}
-      <article class="objectif-examen-card">
+      <article class="objectif-examen-card objectif-examen-card-bepc">
         <div class="objectif-examen-card-icon" aria-hidden="true">📘</div>
         <span class="objectif-examen-tag">BEPC · Session 2027</span>
-        <h3>Ancien programme scolaire (PS)</h3>
-        <p>Choisis l'option A ou B correspondant au programme réellement suivi dans ton établissement.</p>
-        {% if matieres %}
-        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
+        <h3>Programme suivi dans ton établissement</h3>
+        <p>Déclare le programme qui correspond à tes cours. Ce choix est enregistré dans ton profil et n'est pas présenté comme une vérification officielle de l'établissement.</p>
+        <form method="post" action="/objectif-examen/programme" class="objectif-examen-form">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <input type="hidden" name="objectif" value="bepc_ps">
-          <label for="bepc-ps-option">Option</label>
-          <select id="bepc-ps-option" name="option_ps" required>
-            <option value="">Choisir une option</option>
-            <option value="A">Option A</option>
-            <option value="B">Option B</option>
+          <label for="bepc-programme-profil">Mon programme BEPC</label>
+          <select id="bepc-programme-profil" name="parcours" required>
+            <option value="">Choisir le programme suivi</option>
+            <option value="pe" {% if bepc_programme_actuel == "pe" %}selected{% endif %}>Nouveau Programme d’études (PE)</option>
+            <option value="ps_a" {% if bepc_programme_actuel == "ps_a" %}selected{% endif %}>Programme scolaire (PS) · Option A</option>
+            <option value="ps_b" {% if bepc_programme_actuel == "ps_b" %}selected{% endif %}>Programme scolaire (PS) · Option B</option>
           </select>
-          <label for="bepc-ps-matiere">Matière</label>
-          <select id="bepc-ps-matiere" name="matiere" required>
-            <option value="">Choisir une matière</option>
-            {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
-          </select>
-          <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement</button>
+          <button class="bouton bouton-secondaire" type="submit">Enregistrer dans mon profil</button>
         </form>
+        {% if bepc_programme_actuel in ["ps_a", "ps_b"] %}
+          <div class="objectif-examen-notice objectif-examen-notice-compact">
+            <strong>Parcours enregistré : {{ bepc_programme_libelle }}</strong>
+            <p>Les annales BEPC 2027 et l'examen blanc sont limités à cette option.</p>
+          </div>
+          {% if matieres %}
+          <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="objectif" value="bepc_ps">
+            <input type="hidden" name="option_ps" value="{{ 'A' if bepc_programme_actuel == 'ps_a' else 'B' }}">
+            <label for="bepc-ps-matiere">Matière</label>
+            <select id="bepc-ps-matiere" name="matiere" required>
+              <option value="">Choisir une matière</option>
+              {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
+            </select>
+            <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement PS</button>
+          </form>
+          {% else %}
+          <p class="objectif-examen-empty">Aucune matière vérifiée n'est encore disponible pour cette classe.</p>
+          {% endif %}
+        {% elif bepc_programme_actuel == "pe" %}
+          <div class="objectif-examen-notice objectif-examen-notice-compact">
+            <strong>Parcours enregistré : {{ bepc_programme_libelle }}</strong>
+            <p>Les annales BEPC 2027 et l'examen blanc sont limités au Programme d’études.</p>
+          </div>
+          {% if matieres %}
+          <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <input type="hidden" name="objectif" value="bepc_pe">
+            <label for="bepc-pe-matiere">Matière</label>
+            <select id="bepc-pe-matiere" name="matiere" required>
+              <option value="">Choisir une matière</option>
+              {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
+            </select>
+            <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement PE</button>
+          </form>
+          {% else %}
+          <p class="objectif-examen-empty">Aucune matière vérifiée n'est encore disponible pour cette classe.</p>
+          {% endif %}
         {% else %}
-        <p class="objectif-examen-empty">Aucune matière vérifiée n'est encore disponible pour cette classe.</p>
-        {% endif %}
-      </article>
-
-      <article class="objectif-examen-card">
-        <div class="objectif-examen-card-icon" aria-hidden="true">📗</div>
-        <span class="objectif-examen-tag">BEPC · Session 2027</span>
-        <h3>Nouveau programme d'études (PE)</h3>
-        <p>Un entraînement distinct pour les élèves dont l'établissement applique le nouveau programme d'études.</p>
-        {% if matieres %}
-        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
-          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-          <input type="hidden" name="objectif" value="bepc_pe">
-          <label for="bepc-pe-matiere">Matière</label>
-          <select id="bepc-pe-matiere" name="matiere" required>
-            <option value="">Choisir une matière</option>
-            {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
-          </select>
-          <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement</button>
-        </form>
-        {% else %}
-        <p class="objectif-examen-empty">Aucune matière vérifiée n'est encore disponible pour cette classe.</p>
+          <p class="objectif-examen-empty">Enregistre ton programme pour activer les entraînements BEPC 2027 et afficher les annales correspondantes.</p>
         {% endif %}
       </article>
       {% elif cycle == "college" %}
@@ -193,7 +216,9 @@
     <aside class="objectif-examen-notice objectif-examen-notice-compact" role="note">
       <strong>Publication et exactitude pédagogique sont deux contrôles différents</strong>
       <p>La modération autorise la publication du document dans la bibliothèque. Elle ne certifie pas automatiquement que toutes les réponses d'un corrigé sont exactes. Vérifie la source et, en cas de doute, demande confirmation à ton enseignant.</p>
-      <p>Pour le BEPC, le catalogue ne distingue pas encore le Programme scolaire (PS) du Programme d’études (PE). Vérifie la version réellement suivie dans ton établissement et, lorsque c’est applicable, l’option A ou B.</p>
+      {% if bepc_disponible %}
+      <p>Les documents BEPC 2027 affichés respectent le programme déclaré dans ton profil. Vérifie que ce choix correspond bien aux cours suivis dans ton établissement.</p>
+      {% endif %}
     </aside>
     {% if annales_disponibles %}
     <div class="objectif-examen-grid">
@@ -209,7 +234,12 @@
     </div>
     {% else %}
     <div class="objectif-examen-empty-state">
+      {% if bepc_disponible and not bepc_programme_actuel %}
+      <strong>Enregistre ton programme BEPC pour afficher les annales 2027 correspondantes.</strong>
+      <p>Les sujets de 2027 non classés dans ton programme ne sont pas affichés pour éviter de mélanger PE, PS option A et PS option B.</p>
+      {% else %}
       <strong>Aucune annale ou aucun corrigé publié pour ton profil pour le moment.</strong>
+      {% endif %}
       <p>Tu peux consulter toute la bibliothèque scolaire ou déposer un document. Il sera visible dans cette liste après approbation.</p>
       <div class="ai-hero-actions">
         <a href="/documents?portee_academique=scolaire&niveau_scolaire_id={{ utilisateur.niveau_scolaire_id }}">Explorer la bibliothèque</a>
