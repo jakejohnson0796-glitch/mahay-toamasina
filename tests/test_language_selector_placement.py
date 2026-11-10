@@ -70,7 +70,7 @@ def test_english_dictionary_covers_core_ui_and_preserves_scientific_content():
         "Tuteur IA": "AI Tutor",
         "Lancer le quiz": "Start quiz",
         "Mes cercles": "My study circles",
-        "Sécurité du compte": "Account security",
+        "Paramètres du compte": "Account settings",
         "Salle de classe": "Classroom",
         "Vérification facultative du résumé IA": "Optional AI summary review",
         "Langue de l’interface": "Interface language",
@@ -148,14 +148,17 @@ def test_sidebar_exposes_harmonisation_only_to_verified_teachers_and_admins():
     assert 'href="/admin/harmonisation-cours"' in base
 
 
-def test_sidebar_links_directly_to_language_settings():
+def test_sidebar_uses_account_settings_label_without_language_shortcut():
     base = BASE.read_text(encoding="utf-8")
     settings = SECURITY.read_text(encoding="utf-8")
     script = LANGUAGE_JS.read_text(encoding="utf-8")
-    assert 'href="/securite#language-settings"' in base
+    assert "Changer de langue" not in base
+    assert base.count('href="/securite#language-settings"') == 1
+    assert base.count("Paramètres du compte</a>") == 2
+    assert "Sécurité du compte</a>" not in base
     assert 'id="language-settings"' in settings
     assert 'id="select-langue-parametres"' in settings
-    assert '"Changer de langue": "Change language"' in script
-    assert '"Changer de langue": "Hanova fiteny"' in script
+    assert '"Paramètres du compte": "Account settings"' in script
+    assert '"Paramètres du compte": "Fikirana momba ny kaonty"' in script
     assert '"Harmonisation des cours": "Course harmonization"' in script
     assert '"Harmonisation des cours": "Fandrindrana ny lesona"' in script
