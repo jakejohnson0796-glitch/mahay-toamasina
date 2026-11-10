@@ -486,16 +486,26 @@ def classifier_document(
     # Une confiance IA explicitement basse n'autorise pas une réécriture
     # agressive du choix utilisateur pour les champs ambigus.
     if resultat_ia and confiance_ia < 0.55:
-        titre = _nettoyer_titre(titre_fourni) or titre_local
+        titre = (
+            _nettoyer_titre(titre_fourni)
+            or titre_local
+            or _titre_depuis_texte(texte)
+        )
         matiere = (
             _nettoyer_titre(matiere_fourni)
             or matiere_local_nom
             or matiere_local
+            or _matiere_depuis_signaux(nom_fichier, texte)
             or _matiere_auto_valide(titre_local or "")
         )
         type_document = type_local_nom or type_local_texte or type_fourni
         annee = annee_local or annee_fournie
-        filiere_id = filiere_id_fournie
+        # Un score IA faible ne doit pas annuler un rapprochement local fort
+        # entre le contenu et un élément du référentiel (filière ou matière).
+        filiere_id = (
+            filiere_id_fournie
+            or (meilleur_filiere.id if meilleur_filiere is not None else None)
+        )
 
     return ClassificationDocument(
         titre=titre,
