@@ -28,12 +28,16 @@ def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> 
         .order_by(Cours.date_creation.desc())
         .limit(100)
     ).all()
-    cours_ids = [item.id for item in cours if item.id is not None]
+    nb_cours = int(
+        session.exec(
+            select(func.count(Cours.id)).where(Cours.professeur_id == utilisateur.id)
+        ).one() or 0
+    )
 
-    if not cours_ids:
+    if not cours:
         return {
             "statistiques_enseignant": {
-                "cours": 0,
+                "cours": nb_cours,
                 "inscriptions": 0,
                 "seances_planifiees": 0,
                 "copies_a_corriger": 0,
@@ -43,9 +47,9 @@ def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> 
 
     nb_inscriptions = int(
         session.exec(
-            select(func.count(InscriptionCours.id)).where(
-                InscriptionCours.cours_id.in_(cours_ids)
-            )
+            select(func.count(InscriptionCours.id))
+            .join(Cours, Cours.id == InscriptionCours.cours_id)
+            .where(Cours.professeur_id == utilisateur.id)
         ).one() or 0
     )
     nb_seances_planifiees = int(
@@ -83,7 +87,7 @@ def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> 
 
     return {
         "statistiques_enseignant": {
-            "cours": len(cours),
+            "cours": nb_cours,
             "inscriptions": nb_inscriptions,
             "seances_planifiees": nb_seances_planifiees,
             "copies_a_corriger": copies_a_corriger,
