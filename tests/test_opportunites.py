@@ -25,7 +25,7 @@ def test_source_refuse_les_schemas_non_web_et_les_urls_mal_formees():
 
 def test_migration_opportunites_est_reversible_et_suit_la_tete_actuelle():
     migration = (ROOT / "alembic/versions/b7e2c9a4d1f6_opportunites_academiques.py").read_text(encoding="utf-8")
-    assert 'down_revision: Union[str, Sequence[str], None] = "l6d8b2f1a4c9"' in migration
+    assert 'down_revision: Union[str, Sequence[str], None] = "m1e7b3c5d9a2"' in migration
     assert "op.create_table(" in migration
     assert '"opportuniteacademique"' in migration
     assert "def downgrade()" in migration

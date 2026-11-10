@@ -31,6 +31,27 @@ from ..rate_limit import limite_depassee
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+PARCOURS_BEPC_2027 = {
+    "pe": "Nouveau Programme d'études (PE)",
+    "ps_a": "Programme scolaire (PS) · Option A",
+    "ps_b": "Programme scolaire (PS) · Option B",
+}
+
+
+def _valider_parcours_bepc_2027(valeur: Optional[str], contexte: Optional[dict]) -> str:
+    """Valide un choix déclaré pour un profil vérifié en classe de 3e."""
+    if (
+        not contexte
+        or contexte.get("cycle_education") != "college"
+        or str(contexte.get("niveau") or "").strip().casefold() != "3e"
+    ):
+        raise ValueError("Le choix du programme BEPC est réservé aux profils vérifiés de 3e.")
+    code = str(valeur or "").strip().casefold()
+    if code not in PARCOURS_BEPC_2027:
+        raise ValueError("Choisissez le PE, le PS option A ou le PS option B.")
+    return code
+
+
 
 def _matieres_disponibles(session: Session) -> List[str]:
     valeurs = session.exec(
@@ -176,6 +197,7 @@ def _annales_scolaires_objectif_examen(
     session: Session,
     contexte: Optional[dict],
     *,
+    bepc_parcours: Optional[str] = None,
     limite: int = 8,
 ) -> List[Document]:
     """Liste les annales/corrigés scolaires publics compatibles avec le profil.
@@ -193,6 +215,22 @@ def _annales_scolaires_objectif_examen(
         Document.type_document.in_([TypeDocument.ANNALE, TypeDocument.CORRIGE]),
         Document.cercle_id.is_(None),
     )
+
+    # En 3e, les annales 2027 ne sont visibles que dans le programme
+    # déclaré par l'élève. Les sujets d'années précédentes restent accessibles.
+    if (
+        contexte.get("cycle_education") == "college"
+        and str(contexte.get("niveau") or "").strip().casefold() == "3e"
+    ):
+        if bepc_parcours in PARCOURS_BEPC_2027:
+            requete = requete.where(
+                or_(
+                    Document.annee != 2027,
+                    Document.bepc_session_2027_parcours == bepc_parcours,
+                )
+            )
+        else:
+            requete = requete.where(Document.annee != 2027)
 
     option_ids = set()
     option_id = contexte.get("option_scolaire_id")
@@ -373,6 +411,13 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
         and cycle == "college"
         and str(niveau or "").strip().casefold() == "3e"
     )
+    bepc_programme_actuel = (
+        getattr(utilisateur, "bepc_2027_parcours", None)
+        if bepc_disponible else None
+    )
+    if bepc_programme_actuel not in PARCOURS_BEPC_2027:
+        bepc_programme_actuel = None
+    bepc_programme_libelle = PARCOURS_BEPC_2027.get(bepc_programme_actuel)
     option_profil = (
         session.get(OptionScolaire, contexte["option_scolaire_id"])
         if contexte and contexte.get("option_scolaire_id") else None
@@ -385,7 +430,11 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
         and serie_label
     )
     annales_disponibles = (
-        _annales_scolaires_objectif_examen(session, contexte)
+        _annales_scolaires_objectif_examen(
+            session,
+            contexte,
+            bepc_parcours=bepc_programme_actuel,
+        )
         if bepc_disponible or bacc_disponible else []
     )
     priorites = quiz_module.plan_revision_du_jour(
@@ -400,6 +449,8 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "niveau": niveau,
             "matieres": matieres,
             "bepc_disponible": bepc_disponible,
+            "bepc_programme_actuel": bepc_programme_actuel,
+            "bepc_programme_libelle": bepc_programme_libelle,
             "bacc_disponible": bacc_disponible,
             "serie_label": serie_label,
             "priorites": priorites,
@@ -407,6 +458,34 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "annales_disponibles": annales_disponibles,
         },
     )
+
+
+@router.post("/objectif-examen/programme")
+def enregistrer_programme_bepc_2027(
+    request: Request,
+    parcours: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Enregistre le programme déclaré par l'élève de 3e pour ses annales 2027."""
+    utilisateur = utilisateur_courant(request, session)
+    redirection = acces_ia_ou_redirection(utilisateur, session)
+    if redirection:
+        return redirection
+
+    contexte = _contexte_scolaire_quiz(utilisateur, session)
+    try:
+        code = _valider_parcours_bepc_2027(parcours, contexte)
+    except ValueError:
+        return RedirectResponse(
+            "/objectif-examen?erreur=programme_bepc_invalide",
+            status_code=303,
+        )
+
+    utilisateur.bepc_2027_parcours = code
+    session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/objectif-examen?ok=programme_bepc_enregistre", status_code=303)
 
 
 @router.post("/objectif-examen/lancer")
@@ -455,9 +534,31 @@ def lancer_objectif_examen(
         niveau = contexte["niveau"]
         niveau_scolaire_id = contexte["niveau_scolaire_id"]
         option_scolaire_id = contexte.get("option_scolaire_id")
+        parcours_profil = getattr(utilisateur, "bepc_2027_parcours", None)
+        if parcours_profil not in PARCOURS_BEPC_2027:
+            return RedirectResponse(
+                "/objectif-examen?erreur=programme_bepc_requis",
+                status_code=303,
+            )
+        if objectif == "bepc_pe" and parcours_profil != "pe":
+            return RedirectResponse(
+                "/objectif-examen?erreur=programme_bepc_incompatible",
+                status_code=303,
+            )
+        if objectif == "bepc_ps" and parcours_profil not in {"ps_a", "ps_b"}:
+            return RedirectResponse(
+                "/objectif-examen?erreur=programme_bepc_incompatible",
+                status_code=303,
+            )
+        option_attendue = {"ps_a": "A", "ps_b": "B"}.get(parcours_profil)
+        if option_ps and option_ps.strip().upper() != (option_attendue or ""):
+            return RedirectResponse(
+                "/objectif-examen?erreur=programme_bepc_incompatible",
+                status_code=303,
+            )
         try:
             contexte_examen = objectif_examen.construire_contexte_examen(
-                objectif, option_ps=option_ps
+                objectif, option_ps=option_attendue
             )
         except ValueError:
             return RedirectResponse("/objectif-examen?erreur=option_invalide", status_code=303)
