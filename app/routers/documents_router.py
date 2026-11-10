@@ -519,6 +519,12 @@ async def detect_document_automatique(
                 "filiere_nom": filiere_nom,
                 "confiance": round(float(classification.confiance or 0.0), 3),
                 "source": classification.source,
+                "caracteres_extraits": len((texte or "").strip()),
+                "statut_analyse": "texte_extrait" if (texte or "").strip() else "nom_fichier_seulement",
+                "avertissement": (
+                    "" if (texte or "").strip()
+                    else "Aucun texte exploitable n'a été extrait. Vérifiez la netteté et l'orientation du scan."
+                ),
             },
         })
     except Exception:
