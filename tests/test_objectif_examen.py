@@ -152,10 +152,13 @@ def test_page_objectif_examen_presente_les_sources_externes_avec_liens_proteges(
     module = lire("app/ressources_examens.py")
 
     assert "ressources_examens.ressources_pour_cycle(cycle)" in route
+    assert '@router.post("/objectif-examen/programme")' in route
+    assert 'bepc_2027_parcours' in route
+    assert 'Document.bepc_session_2027_parcours == bepc_parcours' in route
     assert "Annales et ressources externes" in template
     assert "Annales et corrigés de ton niveau" in template
     assert "Publication et exactitude pédagogique sont deux contrôles différents" in template
-    assert "le catalogue ne distingue pas encore le Programme scolaire (PS)" in template
+    assert "Les documents BEPC 2027 affichés respectent le programme déclaré" in template
     assert 'href="/documents/{{ doc.id }}/telecharger"' in template
     assert 'target="_blank" rel="noopener noreferrer"' in template
     assert "ne validons pas individuellement chaque sujet ou corrigé" in template
@@ -246,3 +249,69 @@ def test_annales_objectif_examen_accepte_option_fille_et_filtre_etablissement():
     assert "document.etablissement_scolaire_id is null" in sql
     assert "document.etablissement_scolaire_id =" in sql
     assert "limit" in sql
+
+@pytest.mark.parametrize(
+    "code",
+    ["pe", "ps_a", "ps_b"],
+)
+def test_valide_les_choix_de_programme_be_pc_2027_pour_une_3e(code):
+    from app.routers.quiz_router import _valider_parcours_bepc_2027
+
+    contexte = {"cycle_education": "college", "niveau": "3e"}
+
+    assert _valider_parcours_bepc_2027(code.upper(), contexte) == code
+
+
+@pytest.mark.parametrize(
+    "code,contexte",
+    [
+        ("", {"cycle_education": "college", "niveau": "3e"}),
+        ("option_c", {"cycle_education": "college", "niveau": "3e"}),
+        ("pe", {"cycle_education": "college", "niveau": "4e"}),
+        ("ps_a", {"cycle_education": "lycee", "niveau": "Terminale"}),
+        ("ps_b", None),
+    ],
+)
+def test_refuse_les_choix_be_pc_2027_invalides_ou_hors_3e(code, contexte):
+    from app.routers.quiz_router import _valider_parcours_bepc_2027
+
+    with pytest.raises(ValueError):
+        _valider_parcours_bepc_2027(code, contexte)
+
+
+def test_annales_be_pc_2027_sont_filtrees_par_le_programme_du_profil():
+    from app.routers.quiz_router import _annales_scolaires_objectif_examen
+
+    session = _SessionDocuments([SimpleNamespace(id=33)])
+    contexte = {
+        "niveau_scolaire_id": 3,
+        "cycle_education": "college",
+        "niveau": "3e",
+        "option_scolaire_id": None,
+        "etablissement_scolaire_id": None,
+    }
+
+    _annales_scolaires_objectif_examen(session, contexte, bepc_parcours="ps_b")
+
+    sql = str(session.query).casefold()
+    assert "document.annee !=" in sql
+    assert "document.bepc_session_2027_parcours =" in sql
+
+
+def test_annales_be_pc_2027_sont_masquees_si_le_profil_n_a_pas_de_choix():
+    from app.routers.quiz_router import _annales_scolaires_objectif_examen
+
+    session = _SessionDocuments([SimpleNamespace(id=34)])
+    contexte = {
+        "niveau_scolaire_id": 3,
+        "cycle_education": "college",
+        "niveau": "3e",
+        "option_scolaire_id": None,
+        "etablissement_scolaire_id": None,
+    }
+
+    _annales_scolaires_objectif_examen(session, contexte)
+
+    sql = str(session.query).casefold()
+    assert "document.annee !=" in sql
+    assert "document.bepc_session_2027_parcours =" not in sql
