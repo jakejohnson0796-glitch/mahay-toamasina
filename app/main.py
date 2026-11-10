@@ -122,6 +122,7 @@ app.include_router(revisions_router.router)
 app.include_router(gamification_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(legal_router.router)
+app.include_router(opportunites_router.router)
 
 
 def _masquer_mot_de_passe(url: str) -> str:
@@ -552,6 +553,7 @@ def sitemap(request: Request) -> Response:
         "/mode-emploi",
         "/contact",
         "/cadre-legal",
+        "/opportunites",
     ]
     lignes = [
         '<?xml version="1.0" encoding="UTF-8"?>',
