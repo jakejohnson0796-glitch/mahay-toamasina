@@ -12,7 +12,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def utilisateur(nom, telephone, role):
-    return Utilisateur(nom=nom, telephone=telephone, mot_de_passe_hash="hash-test", role=role)
+    statut = "approuve" if role == RoleUtilisateur.PROFESSEUR else "non_concerne"
+    return Utilisateur(
+        nom=nom,
+        telephone=telephone,
+        mot_de_passe_hash="hash-test",
+        role=role,
+        statut_verification_enseignant=statut,
+    )
 
 
 def test_notes_personnelles_isolees_par_etudiant():
