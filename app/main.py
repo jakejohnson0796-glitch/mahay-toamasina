@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import JSONResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -508,6 +508,13 @@ def readiness() -> Response:
             "initialisation_etape": etape_initialisation,
         },
     )
+
+
+@app.get("/google8d625d7edf0d28f9.html", include_in_schema=False)
+def google_search_console_verification() -> FileResponse:
+    """Sert le fichier exact demandé par Google Search Console à la racine du site."""
+    fichier_verification = BASE_DIR.parent / "google8d625d7edf0d28f9.html"
+    return FileResponse(fichier_verification, media_type="text/html")
 
 
 @app.get("/robots.txt", include_in_schema=False)
