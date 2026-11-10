@@ -57,7 +57,7 @@
       <p>Aucune proposition récente. Tu peux ouvrir l'espace enseignant pour proposer une amélioration.</p>
       {% endfor %}
     </section>
-    <style>
+    <style nonce="{{ csp_nonce(request) }}">
       .tb-harmonisation{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:18px;background:var(--content-surface)}
       .tb-harmonisation-entete{display:flex;gap:1rem;justify-content:space-between;align-items:center;flex-wrap:wrap}
       .tb-harmonisation-entete h2{margin:.2rem 0;font-size:1.1rem}
