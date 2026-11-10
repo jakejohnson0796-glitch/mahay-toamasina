@@ -906,7 +906,7 @@ def upload_documents_multiples(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    """Dépose jusqu'à 15 documents universitaires et classe chaque fichier séparément."""
+    """Dépose jusqu'à 15 documents d'un même parcours et les classe individuellement."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -1132,21 +1132,28 @@ def upload_documents_multiples(
         if not filieres_disponibles:
             return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
 
-    if not filieres_disponibles:
-        return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
+    if portee == "universitaire":
+        if not filieres_disponibles:
+            return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
+        filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
+        if filiere_id is not None and filiere_depart is None:
+            return afficher_erreur("La filière choisie n'est plus disponible.")
+        filiere_reference = filiere_depart or filieres_disponibles[0]
+        filieres_classification = [
+            SimpleNamespace(id=filiere.id, nom=filiere.nom)
+            for filiere in filieres_disponibles
+        ]
+    else:
+        filiere_reference = None
+        filieres_classification = [
+            SimpleNamespace(id=matiere.id, nom=matiere.libelle)
+            for matiere in matieres_scolaires_candidates
+        ]
 
-    filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
-    if filiere_id is not None and filiere_depart is None:
-        return afficher_erreur("La filière choisie n'est plus disponible.")
-    filiere_reference = filiere_depart or filieres_disponibles[0]
     annee_reference = annee or datetime.utcnow().year
 
     # L'extraction lourde et l'appel IA sont exécutés dans un pool de deux
     # workers maximum ; les opérations DB et notifications restent séquentielles.
-    filieres_classification = [
-        SimpleNamespace(id=filiere.id, nom=filiere.nom)
-        for filiere in filieres_disponibles
-    ]
     fichiers_stockes = []
     erreurs_batch = []
     resultats_batch = []
@@ -1177,7 +1184,7 @@ def upload_documents_multiples(
         matiere_fourni=(matiere or "").strip(),
         type_fourni=type_document,
         annee_fournie=annee,
-        filiere_id_fournie=filiere_id,
+        filiere_id_fournie=filiere_id if portee == "universitaire" else None,
     )
 
     nombre_envoyes = 0
