@@ -203,10 +203,10 @@ async def au_demarrage() -> None:
 
     initialisation.add_done_callback(_notifier_fin_initialisation)
 
-    # Render Free ne fournit pas de Background Worker gratuit. Lorsque Redis
-    # est configure, la boucle IA tourne donc dans un thread interne au Web
-    # service. Les appels IA restent hors de la boucle asyncio HTTP, tandis
-    # que Redis absorbe les rafales et PostgreSQL reste le filet de securite.
+    # La boucle IA tourne dans un thread interne au Web service.
+    # Render injecte Redis; Cloud Run peut activer explicitement le fallback
+    # PostgreSQL avec AI_WORKER_INLINE_ENABLED pour ne pas dependre du Redis Render.
+    # Les appels IA restent hors de la boucle asyncio HTTP.
     if parametres.redis_url or parametres.ai_worker_inline_enabled:
         arret_worker = threading.Event()
         worker_ia = threading.Thread(
