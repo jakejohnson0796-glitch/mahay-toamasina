@@ -35,6 +35,7 @@ def test_seances_terminees_sans_fiche_sont_filtrees_en_une_requete_sql():
                 telephone="0341200001",
                 mot_de_passe_hash="hash-test",
                 role=RoleUtilisateur.PROFESSEUR,
+                statut_verification_enseignant="approuve",
             )
             etudiant = Utilisateur(
                 nom="Étudiant",
