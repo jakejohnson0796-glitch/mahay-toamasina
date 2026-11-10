@@ -2373,6 +2373,10 @@ class DemandeMiseAJourCours(SQLModel, table=True):
     motif_decision: str = Field(default="", max_length=5000)
 
     __table_args__ = (
+        CheckConstraint(
+            "statut IN ('en_attente', 'en_discussion', 'precisions_demandees', 'validee', 'refusee')",
+            name="ck_demandemiseajourcours_statut",
+        ),
         Index("ix_demande_mise_a_jour_document", "document_id"),
         Index("ix_demande_mise_a_jour_auteur", "auteur_id"),
         Index("ix_demande_mise_a_jour_statut_date", "statut", "date_creation"),
