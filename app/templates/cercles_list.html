@@ -275,7 +275,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
   <div class="cercles-hero-contenu">
     <span class="cercles-hero-kicker">À l’échelle de Madagascar · Cercles d’étude</span>
     <h1 id="titre-hero-cercles" class="cercles-hero-titre">Réviser ensemble.<br>Progresser plus vite.</h1>
-    <p class="cercles-hero-sous-titre">Que tu sois au collège, au lycée ou à l’université, choisis ton cycle puis filtre par classe, série, mention, parcours ou matière. Les cercles transversaux restent accessibles à tous les profils.</p>
+    <p class="cercles-hero-sous-titre">Que tu sois au primaire, au collège, au lycée ou à l’université, choisis ton cycle puis filtre par classe, série, mention, parcours ou matière. Les cercles transversaux restent accessibles à tous les profils.</p>
     <div class="cercles-hero-actions">
       <a class="bouton bouton-primaire" href="#formulaire-recherche-cercles">Explorer les cercles</a>
       <a class="bouton bouton-secondaire" href="#resultats-cercles">Voir les résultats</a>
@@ -345,7 +345,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
 </svg>
 <p class="eyebrow">Des espaces adaptés à chaque cycle</p>
 <h2>Des cercles bien séparés, un même espace d’entraide</h2>
-<p>Les cercles collège/lycée suivent les classes, séries et matières vérifiées. Les cercles universitaires suivent les mentions et parcours. Les groupes transversaux permettent de travailler entre cycles sans mélanger les référentiels.</p>
+<p>Les cercles primaire/collège/lycée suivent les classes, séries et matières vérifiées. Les cercles universitaires suivent les mentions et parcours. Les groupes transversaux permettent de travailler entre cycles sans mélanger les référentiels.</p>
 
 <div class="theme-jour">
   <p class="theme-jour-etiquette">Theme du jour · {{ theme_du_jour.date_affichee }}</p>
@@ -612,13 +612,13 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
       <label for="recherche_portee_academique">Parcours scolaire / universitaire</label>
       <select id="recherche_portee_academique" name="portee_academique">
         <option value="" {% if not recherche_portee_academique %}selected{% endif %}>Tous les cercles</option>
-        <option value="scolaire" {% if recherche_portee_academique == "scolaire" %}selected{% endif %}>Collège / lycée</option>
+        <option value="scolaire" {% if recherche_portee_academique == "scolaire" %}selected{% endif %}>Primaire / collège / lycée</option>
         <option value="universitaire" {% if recherche_portee_academique == "universitaire" %}selected{% endif %}>Université</option>
         <option value="transversal" {% if recherche_portee_academique == "transversal" %}selected{% endif %}>Transversal / libre</option>
       </select>
     </div>
     <fieldset id="filtres-scolaires" class="groupe-filtres-cercles"{% if recherche_portee_academique in ["universitaire", "transversal"] %} hidden{% endif %}>
-      <legend>Collège et lycée</legend>
+      <legend>Primaire, collège et lycée</legend>
     <div>
       <label for="recherche_niveau_scolaire_id">Classe scolaire</label>
       <select id="recherche_niveau_scolaire_id" name="niveau_scolaire_id">
@@ -716,7 +716,7 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
   <h3 class="titre-carte">Creer un cercle</h3>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
   {% if request.query_params.get("erreur") == "niveau_invalide" %}<div class="erreur">Choisis un niveau valide (Licence, Master ou Doctorat).</div>{% endif %}
-  {% if request.query_params.get("erreur") == "classe_scolaire_requise" %}<div class="erreur">Choisis le cycle collège/lycée et une classe.</div>{% endif %}
+  {% if request.query_params.get("erreur") == "classe_scolaire_requise" %}<div class="erreur">Choisis le cycle primaire, collège ou lycée et une classe.</div>{% endif %}
   {% if request.query_params.get("erreur") == "classe_scolaire_invalide" %}<div class="erreur">La classe sélectionnée n'est pas disponible dans le référentiel vérifié.</div>{% endif %}
   {% if request.query_params.get("erreur") == "option_scolaire_invalide" %}<div class="erreur">La série ou option ne correspond pas à la classe choisie.</div>{% endif %}
   {% if request.query_params.get("erreur") == "etablissement_scolaire_invalide" %}<div class="erreur">L'établissement choisi n'est pas dans le catalogue vérifié.</div>{% endif %}
@@ -742,8 +742,8 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
 
     <label for="creation_portee_academique">Type de cercle</label>
     <select id="creation_portee_academique" name="portee_academique">
-      <option value="universitaire" {% if utilisateur.cycle_education not in ["college", "lycee"] %}selected{% endif %}>Université / enseignement supérieur</option>
-      <option value="scolaire" {% if utilisateur.cycle_education in ["college", "lycee"] %}selected{% endif %}>Collège / lycée</option>
+      <option value="universitaire" {% if utilisateur.cycle_education not in ["primaire", "college", "lycee"] %}selected{% endif %}>Université / enseignement supérieur</option>
+      <option value="scolaire" {% if utilisateur.cycle_education in ["primaire", "college", "lycee"] %}selected{% endif %}>Primaire / collège / lycée</option>
     </select>
 
     <div id="creation-bloc-universitaire" data-university-scope>
@@ -775,7 +775,8 @@ html[data-theme="sombre"] .cercles-page-shell .carte-recherche-cercles form.filt
     <div id="creation-bloc-scolaire" data-school-scope hidden>
       <label for="creation_cycle_scolaire">Cycle scolaire</label>
       <select id="creation_cycle_scolaire" name="cycle_scolaire" disabled>
-        <option value="">Choisissez collège ou lycée</option>
+        <option value="">Choisissez un cycle scolaire</option>
+        <option value="primaire">Primaire · T1 à T5</option>
         <option value="college">Collège · 6e à 3e</option>
         <option value="lycee">Lycée · Seconde à Terminale</option>
       </select>

@@ -40,11 +40,11 @@ from .models import (
 )
 
 logger = logging.getLogger("mahay.cercles_scolaires")
-CYCLES_SCOLAIRES = {"college", "lycee"}
+CYCLES_SCOLAIRES = {"primaire", "college", "lycee"}
 
 
 def _libelle_cycle(cycle: str) -> str:
-    return "Collège" if cycle == "college" else "Lycée"
+    return {"primaire": "Primaire", "college": "Collège", "lycee": "Lycée"}.get(cycle, "Cycle scolaire")
 
 
 def _option_valide(

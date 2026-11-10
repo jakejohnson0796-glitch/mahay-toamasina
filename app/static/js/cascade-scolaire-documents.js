@@ -80,7 +80,7 @@
       reset(level, school && cycleValue ? "Chargement des classes…" : "Choisissez d’abord le cycle", true);
       reset(option, "Choisissez d’abord la classe", true);
       updateBepcProgrammeField();
-      if (!school || !["college", "lycee"].includes(cycleValue)) return;
+      if (!school || !["primaire", "college", "lycee"].includes(cycleValue)) return;
 
       const rows = await getJSON("/api/scolaire/niveaux?cycle=" + encodeURIComponent(cycleValue));
       if (id !== levelsRequest) return;
