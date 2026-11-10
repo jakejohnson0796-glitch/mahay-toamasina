@@ -1233,9 +1233,10 @@ def upload_documents_multiples(
                 session.get(MatiereScolaire, id_matiere_final)
                 if id_matiere_final else None
             )
+            # Une détection scolaire automatique doit pointer vers une matière
+            # vérifiée du programme. Un simple libellé OCR n'est pas une validation.
             matiere_finale = (
-                matiere_scolaire_finale.libelle
-                if matiere_scolaire_finale else (classification.matiere or matiere or "").strip()
+                matiere_scolaire_finale.libelle if matiere_scolaire_finale else ""
             )
 
         manquants = []
