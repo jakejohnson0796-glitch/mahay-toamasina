@@ -511,35 +511,54 @@ def classifier_document(
 
     type_document = type_local_texte or type_local_nom or type_auto or type_fourni
 
-    annee = None
+    annee_ia = None
     try:
         valeur_annee = int(resultat_ia.get("annee") or 0)
         if 2000 <= valeur_annee <= 2100:
-            annee = valeur_annee
+            annee_ia = valeur_annee
     except (ValueError, TypeError):
-        annee = None
-    annee = annee_local or annee or annee_fournie
+        annee_ia = None
+    annee = annee_local or annee_ia or annee_fournie
 
-    filiere_id = filiere_id_fournie
     nom_ia = _normaliser(str(resultat_ia.get("filiere_nom") or ""))
+    filiere_ia_id = None
     if nom_ia:
         for filiere in candidats:
             if _normaliser(filiere.nom) == nom_ia:
-                filiere_id = filiere.id
+                filiere_ia_id = filiere.id
                 break
-    if filiere_id is None and meilleur_filiere is not None:
-        filiere_id = meilleur_filiere.id
-
-    auto_utilisee = any(
-        valeur is not None
-        for valeur in (
-            resultat_ia.get("titre"),
-            resultat_ia.get("matiere"),
-            type_auto,
-            annee,
-            nom_ia,
-        )
+    filiere_id_auto = (
+        filiere_ia_id
+        or (meilleur_filiere.id if meilleur_filiere is not None else None)
     )
+    # Une valeur manuelle reste prioritaire sur une proposition automatique.
+    filiere_id = (
+        filiere_id_fournie
+        if filiere_id_fournie is not None else filiere_id_auto
+    )
+
+    # Le score représente les éléments trouvés dans le fichier, pas les
+    # champs manuels utilisés comme valeurs de secours.
+    titre_auto_detecte = bool(
+        resultat_ia.get("titre") or titre_local or _titre_depuis_texte(texte)
+    )
+    matiere_auto_detectee = bool(
+        matiere_local
+        or matiere_local_nom
+        or _matiere_depuis_signaux(nom_fichier, texte)
+        or matiere_ia
+        or _matiere_auto_valide(titre_local or "")
+    )
+    type_auto_detecte = bool(type_local_nom or type_local_texte or type_auto)
+    annee_auto_detectee = bool(annee_local or annee_ia)
+    filiere_auto_detectee = filiere_id_auto is not None
+    ia_a_fourni_un_indice = any((
+        resultat_ia.get("titre"),
+        resultat_ia.get("matiere"),
+        type_auto,
+        annee_ia,
+        filiere_ia_id,
+    ))
 
     # Une confiance IA explicitement basse n'autorise pas une réécriture
     # agressive du choix utilisateur pour les champs ambigus.
@@ -572,13 +591,13 @@ def classifier_document(
         annee=annee,
         filiere_id=filiere_id,
         confiance=round(max(
-            confiance_ia if auto_utilisee and resultat_ia else 0.0,
+            confiance_ia if ia_a_fourni_un_indice else 0.0,
             sum((
-                0.18 if titre else 0.0,
-                0.25 if matiere else 0.0,
-                0.18 if type_document else 0.0,
-                0.15 if annee else 0.0,
-                0.16 if filiere_id else 0.0,
+                0.18 if titre_auto_detecte else 0.0,
+                0.25 if matiere_auto_detectee else 0.0,
+                0.18 if type_auto_detecte else 0.0,
+                0.15 if annee_auto_detectee else 0.0,
+                0.16 if filiere_auto_detectee else 0.0,
                 0.08 if len((texte or "").strip()) >= 120 else 0.0,
             )),
         ), 3),
