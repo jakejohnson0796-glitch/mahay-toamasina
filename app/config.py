@@ -38,6 +38,13 @@ class Parametres:
     redis_url: str = field(default_factory=lambda: os.getenv("REDIS_URL", ""))
     ai_queue_redis_key: str = field(default_factory=lambda: os.getenv("AI_QUEUE_REDIS_KEY", "mahay:ai:queue"))
 
+    # Autorise un worker IA embarque sans Redis (file PostgreSQL), notamment sur Cloud Run.
+    # Desactive par defaut pour ne pas modifier les deployments existants.
+    ai_worker_inline_enabled: bool = field(
+        default_factory=lambda: os.getenv("AI_WORKER_INLINE_ENABLED", "false").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
+
     # --- Session (cookies de connexion) ---
     session_secret_key: str = field(default_factory=lambda: os.getenv("SESSION_SECRET_KEY", "a-changer-en-production"))
 
