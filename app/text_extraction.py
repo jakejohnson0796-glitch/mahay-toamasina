@@ -204,7 +204,7 @@ def _langue_tesseract(pytesseract) -> str:
 
 def _preparer_image_ocr(image):
     """Améliore le contraste et la lisibilité des scans avant l'OCR."""
-    from PIL import ImageFilter, ImageOps
+    from PIL import Image, ImageFilter, ImageOps
 
     image = image.convert("RGB") if image.mode not in {"RGB", "L"} else image.copy()
     image = ImageOps.grayscale(image)
