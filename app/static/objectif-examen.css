@@ -39,3 +39,6 @@
 .objectif-examen-source-note{font-size:.78rem!important}
 .objectif-examen-source-limit{padding:.7rem .8rem;border-left:3px solid var(--content-border);border-radius:8px;background:var(--content-bg);font-size:.8rem!important}
 .objectif-examen-source-card .bouton{align-self:flex-start;margin-top:auto}
+
+.objectif-examen-annale-card{height:100%}
+.objectif-examen-annale-card .bouton{align-self:flex-start;margin-top:auto}
