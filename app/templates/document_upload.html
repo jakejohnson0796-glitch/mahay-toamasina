@@ -1009,10 +1009,8 @@
     if (fichiers.length > MAX_FILES) erreurs.push("sélectionnez au maximum 15 fichiers par envoi");
     const tailleTotale = fichiers.reduce(function (total, fichier) { return total + fichier.size; }, 0);
     if (tailleTotale > MAX_BATCH_BYTES) erreurs.push("le lot dépasse 120 Mo au total");
-    if (fichiers.length > 1 && ((!auto && !scolaire) || (scolaire && (!valeur(fields.cycleScolaire) || !valeur(fields.niveauScolaire))))) {
-      erreurs.push(scolaire
-        ? "choisissez un cycle et une classe vérifiés pour le lot scolaire"
-        : "activez la détection automatique pour classer chaque fichier séparément");
+    if (fichiers.length > 1 && !auto && !scolaire) {
+      erreurs.push("activez la détection automatique pour classer chaque fichier séparément");
     }
     fichiers.forEach(function (fichier) {
       const ext = (fichier.name || "").split(".").pop().toLowerCase();
