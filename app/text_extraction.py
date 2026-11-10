@@ -99,7 +99,7 @@ def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
                     texte = getattr(forme, "text", "") or ""
                     if texte.strip():
                         morceaux.append(texte.strip())
-                texte_diapositive = "\\n".join(morceaux).strip()
+                texte_diapositive = "\n".join(morceaux).strip()
                 if texte_diapositive:
                     texte_diapositive = texte_diapositive[:MAX_TEXTE_EXTRAIT - total]
                     passages.append({
@@ -191,7 +191,7 @@ def _extraire_texte_pdf_par_ocr(chemin: Path) -> str:
                     total += len(morceau)
                 if total >= MAX_TEXTE_EXTRAIT:
                     break
-            return "\\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
+            return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""
 
@@ -267,7 +267,7 @@ def _extraire_texte_docx(chemin: Path) -> str:
                 for table in zone.tables:
                     for ligne in table.rows:
                         ajouter(" | ".join(cellule.text for cellule in ligne.cells))
-        return "\\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
+        return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""
 
@@ -294,12 +294,12 @@ def _extraire_texte_pptx(chemin: Path) -> str:
                         cellules = [cellule.text.strip() for cellule in ligne.cells]
                         if any(cellules):
                             morceaux_diapo.append(" | ".join(cellules))
-            contenu_diapo = "\\n".join(morceaux_diapo).strip()
+            contenu_diapo = "\n".join(morceaux_diapo).strip()
             if contenu_diapo:
                 contenu_diapo = contenu_diapo[:MAX_TEXTE_EXTRAIT - total]
-                morceaux.append(f"Diapositive {numero}\\n{contenu_diapo}")
+                morceaux.append(f"Diapositive {numero}\n{contenu_diapo}")
                 total += len(contenu_diapo)
-        return "\\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
+        return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""
 
