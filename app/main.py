@@ -512,8 +512,8 @@ def readiness() -> Response:
 
 @app.get("/robots.txt", include_in_schema=False)
 def robots(request: Request) -> Response:
-    """Expose une politique simple d'exploration : pages publiques indexables,
-    zones privees et actions internes exclues des moteurs."""
+    """Autorise l'exploration publique et référence le sitemap canonique."""
+    base_url = parametres.seo_canonical_base_url.rstrip("/")
     return PlainTextResponse(
         "\n".join([
             "User-agent: *",
@@ -524,19 +524,17 @@ def robots(request: Request) -> Response:
             "Disallow: /notifications",
             "Disallow: /mes-revisions",
             "Disallow: /abonnement",
-            "Disallow: /mot-de-passe-oublie",
-            "Disallow: /connexion/2fa",
             "Disallow: /cercles/*/membres",
             "Disallow: /cercles/*/demandes",
-            f"Sitemap: {request.base_url}sitemap.xml",
+            f"Sitemap: {base_url}/sitemap.xml",
         ]) + "\n"
     )
 
 
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request) -> Response:
-    """Sitemap minimal des pages publiques stables."""
-    base_url = str(request.base_url).rstrip("/")
+    """Sitemap des seules pages publiques stables de MITARIDALA."""
+    base_url = parametres.seo_canonical_base_url.rstrip("/")
     chemins = [
         "/",
         "/a-propos",
@@ -546,15 +544,14 @@ def sitemap(request: Request) -> Response:
         "/faq",
         "/mode-emploi",
         "/contact",
-        "/inscription",
-        "/connexion",
+        "/cadre-legal",
     ]
     lignes = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ]
     for chemin in chemins:
-        lignes.extend([f"  <url><loc>{base_url}{chemin}</loc></url>"])
+        lignes.append(f"  <url><loc>{base_url}{chemin}</loc></url>")
     lignes.append("</urlset>")
     return Response(
         content="\n".join(lignes),
