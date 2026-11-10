@@ -25,7 +25,7 @@ SEUIL_CARACTERES_PDF_TEXTE = 100  # en dessous de ca, on suppose que c'est un sc
 MAX_PAGES_PDF_TEXTE = 60
 MAX_PAGES_PDF_OCR = 20
 MAX_TEXTE_EXTRAIT = 300_000
-MAX_OCR_DPI = 120
+MAX_OCR_DPI = 150
 
 
 def extraire_texte(chemin_fichier: str) -> str:
@@ -175,7 +175,7 @@ def _extraire_texte_pdf_par_ocr(chemin: Path) -> str:
                 str(chemin),
                 first_page=1,
                 last_page=MAX_PAGES_PDF_OCR,
-                dpi=150,
+                dpi=MAX_OCR_DPI,
                 use_pdftocairo=True,
                 output_folder=dossier,
                 paths_only=True,
