@@ -2140,7 +2140,7 @@ class CycleEnseigne(SQLModel, table=True):
 
     __table_args__ = (
         CheckConstraint(
-            "cycle_education IN ('college', 'lycee', 'universite')",
+            "cycle_education IN ('primaire', 'college', 'lycee', 'universite')",
             name="ck_cycleenseigne_cycle",
         ),
         UniqueConstraint(

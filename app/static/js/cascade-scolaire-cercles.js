@@ -97,7 +97,7 @@
 
     async function loadLevels() {
       const ticket = ++levelRequest;
-      const active = isSchool() && ["college", "lycee"].includes(cycle.value);
+      const active = isSchool() && ["primaire", "college", "lycee"].includes(cycle.value);
       reset(level, active ? "Chargement des classes…" : "Choisissez d’abord le cycle", true);
       reset(option, "Choisissez d’abord la classe", true);
       if (!active) return;

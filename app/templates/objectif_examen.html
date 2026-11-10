@@ -140,7 +140,7 @@
         <span class="objectif-examen-tag">BEPC</span>
         <h3>Préparation disponible en classe de 3e</h3>
         <p>Ton profil indique actuellement {{ niveau or "une classe non renseignée" }}. Tu peux déjà poursuivre tes quiz et tes révisions, puis revenir à Objectif Examen lorsque ton profil sera à jour.</p>
-        <a class="bouton bouton-secondaire" href="/profil/academique">Vérifier mon profil scolaire</a>
+        <a class="bouton bouton-secondaire" href="/profil/scolaire">Vérifier mon profil scolaire</a>
       </article>
       {% endif %}
 
@@ -183,28 +183,51 @@
       </article>
       {% endif %}
 
-      {% if cycle not in ["college", "lycee"] %}
+      {% if cepe_disponible %}
+      <article class="objectif-examen-card objectif-examen-card-cepe">
+        <div class="objectif-examen-card-icon" aria-hidden="true">📖</div>
+        <span class="objectif-examen-tag">CEPE · Classe T5</span>
+        <h3>Prépare le CEPE par matière</h3>
+        <p>Ton profil indique la classe T5. Choisis une matière du référentiel primaire vérifié pour lancer un entraînement pédagogique non officiel.</p>
+        {% if matieres %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="cepe">
+          <label for="cepe-matiere">Matière</label>
+          <select id="cepe-matiere" name="matiere" required>
+            <option value="">Choisir une matière</option>
+            {% for matiere in matieres %}<option value="{{ matiere }}">{{ matiere }}</option>{% endfor %}
+          </select>
+          <button class="bouton bouton-primaire" type="submit">Lancer mon entraînement CEPE</button>
+        </form>
+        {% else %}
+        <p class="objectif-examen-empty">Les matières du programme T5 ne sont pas encore publiées dans le référentiel de ton établissement.</p>
+        {% endif %}
+      </article>
+      {% elif cycle == "primaire" %}
+      <article class="objectif-examen-card objectif-examen-card-muted objectif-examen-cepe">
+        <div class="objectif-examen-card-icon" aria-hidden="true">📖</div>
+        <span class="objectif-examen-tag">CEPE · Primaire</span>
+        <h3>Préparation au CEPE en classe T5</h3>
+        <p>Ton profil indique {{ niveau or "une classe primaire" }}. Le parcours CEPE et les annales d’examen sont accessibles à partir de la classe T5.</p>
+        <a class="bouton bouton-secondaire" href="/profil/scolaire">Actualiser mon profil scolaire</a>
+      </article>
+      {% endif %}
+
+      {% if cycle not in ["primaire", "college", "lycee"] %}
       <article class="objectif-examen-card objectif-examen-card-muted">
         <div class="objectif-examen-card-icon" aria-hidden="true">📚</div>
         <span class="objectif-examen-tag">Prochaine extension</span>
         <h3>Autres examens et concours</h3>
-        <p>La première version commence par le BEPC et le Baccalauréat. Les parcours CEPE et universitaires seront ajoutés avec leurs référentiels et leurs formats vérifiés.</p>
+        <p>Les autres examens et concours seront ajoutés progressivement, avec leurs référentiels et leurs formats vérifiés.</p>
         <a class="bouton bouton-secondaire" href="/quiz">Continuer avec les quiz</a>
       </article>
       {% endif %}
 
-      {% if cycle == "college" or cycle == "lycee" %}
-      <article class="objectif-examen-card objectif-examen-card-muted objectif-examen-cepe">
-        <div class="objectif-examen-card-icon" aria-hidden="true">📖</div>
-        <span class="objectif-examen-tag">Extension à venir</span>
-        <h3>CEPE et primaire</h3>
-        <p>Le parcours CEPE sera activé lorsque le référentiel primaire et ses matières seront intégrés et vérifiés.</p>
-      </article>
-      {% endif %}
     </div>
   </section>
 
-  {% if bepc_disponible or bacc_disponible %}
+  {% if bepc_disponible or bacc_disponible or cepe_disponible %}
   <section class="objectif-examen-section objectif-examen-annales" aria-labelledby="objectif-annales-title">
     <div class="objectif-examen-heading">
       <span class="ai-kicker">Bibliothèque MITARIDALA</span>
@@ -262,7 +285,9 @@
       {% for source in ressources_externes %}
       <article class="objectif-examen-card objectif-examen-source-card">
         <span class="objectif-examen-tag">
-          {% if "bepc" in source.examens_affiches and "baccalaureat" in source.examens_affiches %}
+          {% if "cepe" in source.examens_affiches %}
+            CEPE
+          {% elif "bepc" in source.examens_affiches and "baccalaureat" in source.examens_affiches %}
             BEPC · Baccalauréat
           {% elif "bepc" in source.examens_affiches %}
             BEPC

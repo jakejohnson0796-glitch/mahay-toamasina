@@ -435,6 +435,47 @@ def test_quiz_cible_reconnait_la_classe_scolaire_sans_basculer_en_l1():
     engine.dispose()
 
 
+def test_quiz_cible_reconnait_le_profil_primaire_t5_pour_cepe():
+    engine, session = _session()
+    referentiel, _, _ = _school_catalogue(session)
+    niveau = NiveauScolaire(
+        referentiel_id=referentiel.id,
+        code="T5",
+        libelle="T5",
+        cycle="primaire",
+        ordre=5,
+        est_active=True,
+        source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(niveau)
+    session.commit()
+    session.refresh(niveau)
+    user = _user(
+        session,
+        niveau_id=niveau.id,
+        option_id=None,
+        cycle="primaire",
+        telephone="0340000123",
+    )
+
+    contexte = quiz_router._contexte_scolaire_quiz(user, session)
+
+    assert contexte == {
+        "niveau": "T5",
+        "cycle_education": "primaire",
+        "referentiel_id": referentiel.id,
+        "niveau_scolaire_id": niveau.id,
+        "option_scolaire_id": None,
+        "etablissement_scolaire_id": None,
+    }
+    assert quiz_router._niveau_quiz_par_defaut(user, contexte, [], None) == "T5"
+    assert quiz_module.valider_parametres("Mathématiques", "T5", "Moyen", 5) == "Mathématiques"
+
+    session.close()
+    engine.dispose()
+
+
 def test_professeur_sans_classe_peut_garder_un_parcours_scolaire_general():
     engine, session = _session()
     teacher = Utilisateur(
@@ -479,6 +520,25 @@ def test_quiz_cible_refuse_un_profil_scolaire_sans_classe_validee():
     session.close()
     engine.dispose()
 
+
+def test_tuteur_ia_reconnait_le_profil_primaire_t5():
+    engine, session = _session()
+    referentiel, _, _ = _school_catalogue(session)
+    niveau = NiveauScolaire(
+        referentiel_id=referentiel.id, code="T5", libelle="T5", cycle="primaire",
+        ordre=5, est_actif=True, source_officielle=referentiel.source_officielle,
+        statut_validation="verifie",
+    )
+    session.add(niveau)
+    session.commit()
+    session.refresh(niveau)
+    user = _user(session, niveau_id=niveau.id, option_id=None, cycle="primaire", telephone="0340000124")
+    contexte = tuteur_router._contexte_scolaire_tuteur(user, session)
+    assert contexte["niveau"] == "T5"
+    assert contexte["cycle_education"] == "primaire"
+    assert contexte["niveau_scolaire_id"] == niveau.id
+    session.close()
+    engine.dispose()
 
 def test_tuteur_ia_utilise_la_classe_et_refuse_un_document_d_un_autre_niveau():
     engine, session = _session()
@@ -651,6 +711,7 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
     session.refresh(user)
 
     session.add_all([
+        CycleEnseigne(utilisateur_id=user.id, cycle_education="primaire"),
         CycleEnseigne(utilisateur_id=user.id, cycle_education="college"),
         CycleEnseigne(utilisateur_id=user.id, cycle_education="lycee"),
         CycleEnseigne(utilisateur_id=user.id, cycle_education="universite"),
@@ -661,7 +722,7 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
         select(CycleEnseigne).where(CycleEnseigne.utilisateur_id == user.id)
     ).all()
     assert {row.cycle_education for row in cycles} == {
-        "college", "lycee", "universite"
+        "primaire", "college", "lycee", "universite"
     }
     session.refresh(user)
     assert user.role == RoleUtilisateur.ETUDIANT
@@ -676,7 +737,7 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
 
     with pytest.raises(IntegrityError):
         session.add(
-            CycleEnseigne(utilisateur_id=user.id, cycle_education="primaire")
+            CycleEnseigne(utilisateur_id=user.id, cycle_education="maternelle")
         )
         session.commit()
     session.rollback()
@@ -686,15 +747,15 @@ def test_professeur_peut_declarer_plusieurs_cycles_sans_recevoir_de_role_automat
 def test_normaliser_cycles_enseignes_inclut_le_cycle_principal_et_dedoublonne():
     cycles = auth_router.normaliser_cycles_enseignes(
         " college ",
-        ["LYCEE", "lycee", " universite ", ""],
+        ["LYCEE", "lycee", " universite ", "primaire", ""],
     )
-    assert cycles == {"college", "lycee", "universite"}
+    assert cycles == {"college", "lycee", "universite", "primaire"}
 
 
 def test_normaliser_cycles_enseignes_refuse_une_valeur_inconnue():
     assert auth_router.normaliser_cycles_enseignes(
         "lycee",
-        ["college", "primaire"],
+        ["college", "maternelle"],
     ) is None
 
 

@@ -88,7 +88,7 @@ def _telephone_rate_key(telephone: str) -> str:
         return "invalide:" + hashlib.sha256(brute.encode("utf-8")).hexdigest()[:16]
 
 
-CYCLES_ENSEIGNEMENT_VALIDES = frozenset({"college", "lycee", "universite"})
+CYCLES_ENSEIGNEMENT_VALIDES = frozenset({"primaire", "college", "lycee", "universite"})
 
 
 def normaliser_cycles_enseignes(
@@ -266,7 +266,7 @@ def inscription(
         etablissement_scolaire_id_nettoye = None
         cycle = ""
     else:
-        if cycle not in {"college", "lycee", "universite"}:
+        if cycle not in {"primaire", "college", "lycee", "universite"}:
             # Anciennes intégrations et formulaires encore ouverts peuvent
             # poster sans le nouveau champ. On conserve une réponse formulaire
             # classique avec le message, tout en refusant toujours la création.
@@ -274,7 +274,7 @@ def inscription(
                 request, "register.html",
                 _contexte_formulaire_inscription(
                     session,
-                    "Choisissez votre cycle : collège, lycée ou université.",
+                    "Choisissez votre cycle : primaire, collège, lycée ou université.",
                 ),
             )
 
@@ -316,7 +316,7 @@ def inscription(
             option_scolaire_id_nettoye = None
             etablissement_scolaire_id_nettoye = None
         else:
-            # Un profil collège/lycée ne doit pas être détourné en filière
+            # Un profil primaire/collège/lycée ne doit pas être détourné en filière
             # universitaire : les deux référentiels sont disjoints et sont
             # validés côté serveur même si le navigateur est manipulé.
             universite_id_nettoye = None
@@ -948,6 +948,106 @@ def _rendu_formulaire_profil_academique(
             "composante_id_actuelle": profil["faculte"].id if profil["faculte"] else None,
         },
     )
+
+
+def _rendu_formulaire_profil_scolaire(request: Request, utilisateur: Utilisateur, session: Session, erreur: Optional[str] = None):
+    referentiels = session.exec(
+        select(ReferentielScolaire)
+        .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
+        .order_by(ReferentielScolaire.date_creation.desc(), ReferentielScolaire.id.desc())
+    ).all()
+    referentiel = referentiels[0] if referentiels else None
+    niveaux = []
+    options = []
+    if referentiel:
+        niveaux = session.exec(
+            select(NiveauScolaire)
+            .where(NiveauScolaire.referentiel_id == referentiel.id, NiveauScolaire.est_actif == True, NiveauScolaire.statut_validation == "verifie")  # noqa: E712
+            .order_by(NiveauScolaire.cycle, NiveauScolaire.ordre)
+        ).all()
+        options = session.exec(
+            select(OptionScolaire)
+            .where(OptionScolaire.referentiel_id == referentiel.id, OptionScolaire.est_active == True, OptionScolaire.statut_validation == "verifie")  # noqa: E712
+            .order_by(OptionScolaire.libelle)
+        ).all()
+    return templates.TemplateResponse(
+        request, "profil_scolaire.html",
+        {"utilisateur": utilisateur, "referentiel": referentiel, "niveaux": niveaux, "options": options, "erreur": erreur},
+    )
+
+
+@router.get("/profil/scolaire")
+def formulaire_profil_scolaire(request: Request, session: Session = Depends(get_session)):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
+        return RedirectResponse("/securite", status_code=303)
+    return _rendu_formulaire_profil_scolaire(request, utilisateur, session)
+
+
+@router.post("/profil/scolaire")
+def actualiser_profil_scolaire(
+    request: Request,
+    cycle_education: str = Form(...),
+    niveau_scolaire_id: str = Form(...),
+    option_scolaire_id: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR):
+        return RedirectResponse("/securite", status_code=303)
+
+    def _erreur(message: str):
+        return _rendu_formulaire_profil_scolaire(request, utilisateur, session, message)
+
+    cycle = (cycle_education or "").strip().lower()
+    if cycle not in {"primaire", "college", "lycee"}:
+        return _erreur("Choisis un cycle scolaire valide.")
+    niveau_id = entier_ou_none(niveau_scolaire_id)
+    option_id = entier_ou_none(option_scolaire_id)
+    referentiels = session.exec(
+        select(ReferentielScolaire)
+        .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
+        .order_by(ReferentielScolaire.date_creation.desc(), ReferentielScolaire.id.desc())
+    ).all()
+    referentiel = referentiels[0] if referentiels else None
+    niveau = session.get(NiveauScolaire, niveau_id) if niveau_id else None
+    if (
+        not referentiel or not niveau
+        or niveau.referentiel_id != referentiel.id
+        or not niveau.est_actif
+        or niveau.statut_validation != "verifie"
+        or niveau.cycle != cycle
+    ):
+        return _erreur("La classe choisie n’appartient pas au référentiel scolaire vérifié.")
+    option = session.get(OptionScolaire, option_id) if option_id else None
+    if option_id and (
+        not option or option.referentiel_id != referentiel.id
+        or option.niveau_id != niveau.id or not option.est_active
+        or option.statut_validation != "verifie"
+    ):
+        return _erreur("La série ou l’option choisie n’est pas valide pour cette classe.")
+    if option and option.parent_option_id:
+        parent = session.get(OptionScolaire, option.parent_option_id)
+        if (
+            not parent or parent.referentiel_id != referentiel.id
+            or parent.niveau_id != niveau.id or parent.parent_option_id is not None
+            or not parent.est_active or parent.statut_validation != "verifie"
+        ):
+            return _erreur("La série parente de cette option n’est pas vérifiée.")
+    if cycle == "lycee" and niveau.libelle.strip().casefold() == "terminale" and not option:
+        return _erreur("Pour préparer le Baccalauréat, sélectionne aussi ta série vérifiée.")
+
+    utilisateur.cycle_education = cycle
+    utilisateur.niveau_scolaire_id = niveau.id
+    utilisateur.option_scolaire_id = option.id if option else None
+    session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/objectif-examen?ok=profil_scolaire_actualise", status_code=303)
 
 
 @router.get("/profil/academique")

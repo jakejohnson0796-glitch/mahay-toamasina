@@ -114,6 +114,7 @@
     const cyclePrincipalHint = document.getElementById("cycle-principal-hint");
     let dernierCyclePrincipal = cycleSelect ? cycleSelect.value : "";
     const nomsCycles = {
+      primaire: "Primaire",
       college: "Collège",
       lycee: "Lycée",
       universite: "Université / enseignement supérieur"
@@ -164,7 +165,7 @@
     }
 
     function cycleValide() {
-      return Boolean(cycleSelect && ["college", "lycee", "universite"].includes(cycleSelect.value));
+      return Boolean(cycleSelect && ["primaire", "college", "lycee", "universite"].includes(cycleSelect.value));
     }
 
     function academiqueComplete() {
@@ -199,7 +200,7 @@
       if (roleField) roleField.hidden = estResponsable;
       if (roleSelect) roleSelect.disabled = estResponsable;
       const estUniversitaire = profilActif && cycleSelect && cycleSelect.value === "universite";
-      const estScolaire = profilActif && cycleSelect && ["college", "lycee"].includes(cycleSelect.value);
+      const estScolaire = profilActif && cycleSelect && ["primaire", "college", "lycee"].includes(cycleSelect.value);
       const estProfesseur = roleSelect.value === "professeur";
       const cyclePrincipalActuel = cycleSelect ? cycleSelect.value : "";
 

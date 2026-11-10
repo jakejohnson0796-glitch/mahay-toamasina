@@ -705,8 +705,8 @@
             <div class="document-upload-field full">
               <label for="portee_academique">Type de parcours <span>Obligatoire</span></label>
               <select id="portee_academique" name="portee_academique" required>
-                <option value="universitaire" {% if not (cercle and cercle.portee_academique == "scolaire") and utilisateur.cycle_education not in ["college", "lycee"] %}selected{% endif %}>Université / enseignement supérieur</option>
-                <option value="scolaire" {% if (cercle and cercle.portee_academique == "scolaire") or utilisateur.cycle_education in ["college", "lycee"] %}selected{% endif %}>Collège / lycée</option>
+                <option value="universitaire" {% if not (cercle and cercle.portee_academique == "scolaire") and utilisateur.cycle_education not in ["primaire", "college", "lycee"] %}selected{% endif %}>Université / enseignement supérieur</option>
+                <option value="scolaire" {% if (cercle and cercle.portee_academique == "scolaire") or utilisateur.cycle_education in ["primaire", "college", "lycee"] %}selected{% endif %}>Primaire / collège / lycée</option>
               </select>
               <small>Le document sera classé dans le bon référentiel : une classe scolaire n’est jamais enregistrée comme une filière universitaire.</small>
             </div>
@@ -729,7 +729,8 @@
                 <div class="document-upload-field">
                   <label for="cycle_scolaire">Cycle scolaire <span>Obligatoire</span></label>
                   <select id="cycle_scolaire" name="cycle_scolaire" disabled>
-                    <option value="">Choisissez collège ou lycée</option>
+                    <option value="">Choisissez un cycle scolaire</option>
+                    <option value="primaire" {% if (niveau_cercle_scolaire and niveau_cercle_scolaire.cycle == "primaire") or (not niveau_cercle_scolaire and utilisateur.cycle_education == "primaire") %}selected{% endif %}>Primaire</option>
                     <option value="college" {% if (niveau_cercle_scolaire and niveau_cercle_scolaire.cycle == "college") or (not niveau_cercle_scolaire and utilisateur.cycle_education == "college") %}selected{% endif %}>Collège</option>
                     <option value="lycee" {% if (niveau_cercle_scolaire and niveau_cercle_scolaire.cycle == "lycee") or (not niveau_cercle_scolaire and utilisateur.cycle_education == "lycee") %}selected{% endif %}>Lycée</option>
                   </select>

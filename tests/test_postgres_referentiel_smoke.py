@@ -375,6 +375,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             )
         ).all()
         assert {niveau.code for niveau in rape_courant_niveaux} == {
+            "T1", "T2", "T3", "T4", "T5",
             "6E", "5E", "4E", "3E", "2NDE", "1ERE", "TERM"
         }
         rape_courant_options = session.exec(
@@ -408,6 +409,25 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             for option in rape_courant_options
         }
         expected_rape_2026 = {
+            ("T1", None, "RAPE_T1.pdf"): {
+                "MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS",
+            },
+            ("T2", None, "RAPE_T2.pdf"): {
+                "MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS",
+            },
+            ("T3", None, "RAPE_T3.pdf"): {
+                "MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS",
+            },
+            ("T4", None, "RAPE_T4.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_TECHNOLOGIE", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "EPS", "ARTS",
+            },
+            ("T5", None, "RAPE_T5.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_TECHNOLOGIE", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "EPS", "ARTS",
+            },
             ("6E", None, "RAPE_T6.pdf"): {
                 "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
                 "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
@@ -490,14 +510,14 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
                 for row in imported_rows
             )
 
-        # Couverture exacte attendue : 4 × 11 au collège, 12 en seconde,
-        # 3 × 13 en première et 3 × 11 en terminale = 128 associations.
+        # Couverture exacte attendue : 38 associations pour T1-T5
+        # ajoutées aux 128 associations collège/lycée = 166 associations.
         nb_programmes_2026 = session.exec(
             select(ProgrammeMatiereScolaire.id).where(
                 ProgrammeMatiereScolaire.referentiel_id == rape_courant.id
             )
         ).all()
-        assert len(nb_programmes_2026) == 128
+        assert len(nb_programmes_2026) == 166
 
         # Le catalogue canonique des matières pointe vers l'index MEN ; les
         # sources précises par niveau/série restent sur chaque programme.
@@ -954,7 +974,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "b7e2c9a4d1f6", (
+    assert revision == "c3e8f1a6b9d2", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
@@ -1014,7 +1034,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "b7e2c9a4d1f6"
+    assert revision == "c3e8f1a6b9d2"
     assert index_count == 48
     assert institution_index_count == 1
 

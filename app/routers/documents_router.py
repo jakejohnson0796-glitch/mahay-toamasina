@@ -278,7 +278,7 @@ def liste_documents(
             niveau_profil
             and niveau_profil.est_actif
             and niveau_profil.statut_validation == "verifie"
-            and niveau_profil.cycle in {"college", "lycee"}
+            and niveau_profil.cycle in {"primaire", "college", "lycee"}
             and all(item.id != niveau_profil.id for item in niveaux_scolaires)
         ):
             niveaux_scolaires.append(niveau_profil)
@@ -592,7 +592,7 @@ def upload_document(
         if filiere_id is not None:
             return RedirectResponse("/documents?erreur=cible_scolaire_incoherente", status_code=303)
         cycle_scolaire = (cycle_scolaire or "").strip().lower()
-        if cycle_scolaire not in {"college", "lycee"} or niveau_scolaire_id is None:
+        if cycle_scolaire not in {"primaire", "college", "lycee"} or niveau_scolaire_id is None:
             return RedirectResponse("/documents?erreur=classe_scolaire_requise", status_code=303)
 
         niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)

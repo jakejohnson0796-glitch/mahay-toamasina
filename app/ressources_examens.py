@@ -10,6 +10,23 @@ from typing import Any
 
 _RESSOURCES: tuple[dict[str, Any], ...] = (
     {
+        "id": "men-rape-t5-cepe",
+        "nom": "Ministère de l’Éducation nationale — RAPE T5",
+        "examens": ("cepe",),
+        "type_contenu": "Référentiel officiel et répartition annuelle T5",
+        "description": (
+            "Document du MEN pour la dernière classe du primaire. Il sert de repère "
+            "pédagogique pour les entraînements CEPE ; il ne s’agit pas d’une banque d’annales."
+        ),
+        "url": "https://plateforme.education.mg/bibliotheque-numerique/theme/biblio/pix/pdf/RAPE_T5.pdf",
+        "url_label": "Consulter le RAPE T5",
+        "limites": (
+            "Le RAPE organise les apprentissages annuels et ne remplace pas le "
+            "Programme d’Études complet ni les consignes officielles de la session CEPE."
+        ),
+        "source_note": "Source : bibliothèque numérique du Ministère de l’Éducation nationale.",
+    },
+    {
         "id": "laza-adina",
         "nom": "Laza-Adina",
         "examens": ("bepc", "baccalaureat"),
@@ -53,7 +70,9 @@ _RESSOURCES: tuple[dict[str, Any], ...] = (
 def ressources_pour_cycle(cycle: str | None) -> list[dict[str, Any]]:
     """Retourne les ressources correspondant au cycle, sans les déclarer validées."""
     cycle_normalise = str(cycle or "").strip().casefold()
-    if cycle_normalise == "college":
+    if cycle_normalise == "primaire":
+        examens_cibles = {"cepe"}
+    elif cycle_normalise == "college":
         examens_cibles = {"bepc"}
     elif cycle_normalise == "lycee":
         examens_cibles = {"baccalaureat"}
