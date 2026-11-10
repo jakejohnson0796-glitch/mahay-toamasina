@@ -154,37 +154,22 @@ jobs:
             exit 1
           fi
           export SERVICE_URL
+          ready=false
           for attempt in $(seq 1 30); do
             if curl --fail --silent --show-error "${SERVICE_URL}/ready" -o /tmp/ready.json 2>/dev/null; then
-              if python - <<'PY'
-          import json
-          import os
-          import sys
-          with open("/tmp/ready.json", encoding="utf-8") as handle:
-              payload = json.load(handle)
-          ok = payload.get("status") == "ready" and payload.get("release") == os.environ["GITHUB_SHA"]
-          if not ok:
-              print("Readiness ou SHA inattendu:", payload)
-              sys.exit(1)
-          PY
-              then
+              if python -c 'import json,os,sys; p=json.load(open("/tmp/ready.json", encoding="utf-8")); sys.exit(0 if p.get("status") == "ready" and p.get("release") == os.environ["GITHUB_SHA"] else 1)'; then
+                ready=true
                 break
               fi
             fi
-            if [[ "${attempt}" == "30" ]]; then
-              echo "Cloud Run ne devient pas ready avec le commit attendu." >&2
-              exit 1
-            fi
             sleep 10
           done
+          if [[ "${ready}" != "true" ]]; then
+            echo "Cloud Run ne devient pas ready avec le commit attendu." >&2
+            if [[ -f /tmp/ready.json ]]; then cat /tmp/ready.json; fi
+            exit 1
+          fi
           curl --fail --silent --show-error "${SERVICE_URL}/health" -o /tmp/health.json
-          python - <<'PY'
-          import json
-          with open("/tmp/health.json", encoding="utf-8") as handle:
-              health = json.load(handle)
-          if health.get("ai_queue_backend") != "postgresql" or not health.get("ai_worker_alive"):
-              raise SystemExit(f"Worker IA PostgreSQL non opérationnel: {health}")
-          print("Cloud Run prêt:", health.get("release"), "| worker:", health.get("ai_queue_backend"))
-          PY
+          python -c 'import json,sys; h=json.load(open("/tmp/health.json", encoding="utf-8")); ok=h.get("ai_queue_backend") == "postgresql" and h.get("ai_worker_alive") is True; print("Cloud Run health:", h); sys.exit(0 if ok else 1)'
           echo "MITARIDALA Cloud Run: ${SERVICE_URL}" >> "${GITHUB_STEP_SUMMARY}"
           echo "Release vérifiée: ${GITHUB_SHA}" >> "${GITHUB_STEP_SUMMARY}"
