@@ -474,7 +474,12 @@ def traiter_demande_admin(
             f"/admin/harmonisation-cours/demandes/{demande_id}?erreur=motif_decision_invalide",
             status_code=303,
         )
-    document = session.get(Document, demande.document_id)
+    # Verrouiller la ligne du cours pendant le contrôle de version et la publication.
+    document = session.exec(
+        select(Document)
+        .where(Document.id == demande.document_id)
+        .with_for_update()
+    ).first()
     if not document:
         return RedirectResponse("/admin/harmonisation-cours?etat=document_introuvable", status_code=303)
 
