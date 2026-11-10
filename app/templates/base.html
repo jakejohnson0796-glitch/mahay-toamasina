@@ -130,6 +130,7 @@
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/mfa-setup.js?v={{ version_asset('js/mfa-setup.js') }}" defer></script>
 {% endif %}
 <link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
+<link rel="stylesheet" href="/static/interface-polish.css?v={{ version_asset('interface-polish.css') }}">
 <link rel="stylesheet" href="/static/opportunites.css?v={{ version_asset('opportunites.css') }}">
 <link rel="stylesheet" href="/static/back-navigation.css?v={{ version_asset('back-navigation.css') }}">
 {% if request.url.path.startswith("/cercles") or request.url.path in ["/admin/referentiel/scolaire", "/catalogue-scolaire"] %}
