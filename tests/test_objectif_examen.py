@@ -153,7 +153,96 @@ def test_page_objectif_examen_presente_les_sources_externes_avec_liens_proteges(
 
     assert "ressources_examens.ressources_pour_cycle(cycle)" in route
     assert "Annales et ressources externes" in template
+    assert "Annales et corrigés de ton niveau" in template
+    assert "Publication et exactitude pédagogique sont deux contrôles différents" in template
+    assert "le catalogue ne distingue pas encore le Programme scolaire (PS)" in template
+    assert 'href="/documents/{{ doc.id }}/telecharger"' in template
     assert 'target="_blank" rel="noopener noreferrer"' in template
     assert "ne validons pas individuellement chaque sujet ou corrigé" in template
     assert "Nous ne recopions pas leurs fichiers" in template
     assert "contenus de tiers comme vérifiés ou officiels" in module
+
+class _ExecDocuments:
+    def __init__(self, documents):
+        self.documents = documents
+
+    def all(self):
+        return self.documents
+
+
+class _SessionDocuments:
+    def __init__(self, documents=None, options=None):
+        self.documents = documents or []
+        self.options = options or {}
+        self.query = None
+
+    def get(self, model, option_id):
+        return self.options.get(option_id)
+
+    def exec(self, query):
+        self.query = query
+        return _ExecDocuments(self.documents)
+
+
+def test_annales_objectif_examen_ne_retourne_rien_sans_profil_scolaire():
+    from app.routers.quiz_router import _annales_scolaires_objectif_examen
+
+    session = _SessionDocuments([SimpleNamespace(id=1)])
+
+    assert _annales_scolaires_objectif_examen(session, None) == []
+    assert session.query is None
+
+
+def test_annales_objectif_examen_limite_aux_documents_scolaires_publics():
+    from app.routers.quiz_router import _annales_scolaires_objectif_examen
+
+    documents = [SimpleNamespace(id=12), SimpleNamespace(id=11)]
+    session = _SessionDocuments(documents)
+
+    resultat = _annales_scolaires_objectif_examen(
+        session,
+        {
+            "niveau_scolaire_id": 3,
+            "option_scolaire_id": None,
+            "etablissement_scolaire_id": None,
+        },
+    )
+
+    sql = str(session.query).casefold()
+    assert resultat == documents
+    assert "document.statut" in sql
+    assert "document.portee_academique" in sql
+    assert "document.niveau_scolaire_id" in sql
+    assert "document.type_document" in sql
+    assert "document.cercle_id is null" in sql
+    assert "document.option_scolaire_id is null" in sql
+    assert "document.etablissement_scolaire_id is null" in sql
+    assert "document.annee desc" in sql
+    assert "limit" in sql
+
+
+def test_annales_objectif_examen_accepte_option_fille_et_filtre_etablissement():
+    from app.routers.quiz_router import _annales_scolaires_objectif_examen
+
+    option_fille = SimpleNamespace(id=8, parent_option_id=7)
+    session = _SessionDocuments(
+        [SimpleNamespace(id=14)],
+        options={8: option_fille},
+    )
+
+    _annales_scolaires_objectif_examen(
+        session,
+        {
+            "niveau_scolaire_id": 4,
+            "option_scolaire_id": 8,
+            "etablissement_scolaire_id": 20,
+        },
+        limite=50,
+    )
+
+    sql = str(session.query).casefold()
+    assert "document.option_scolaire_id is null" in sql
+    assert "document.option_scolaire_id in" in sql
+    assert "document.etablissement_scolaire_id is null" in sql
+    assert "document.etablissement_scolaire_id =" in sql
+    assert "limit" in sql

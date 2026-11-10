@@ -183,6 +183,43 @@
     </div>
   </section>
 
+  {% if bepc_disponible or bacc_disponible %}
+  <section class="objectif-examen-section objectif-examen-annales" aria-labelledby="objectif-annales-title">
+    <div class="objectif-examen-heading">
+      <span class="ai-kicker">Bibliothèque MITARIDALA</span>
+      <h2 id="objectif-annales-title">Annales et corrigés de ton niveau</h2>
+      <p>Documents scolaires publiés après modération et correspondant à ta classe vérifiée{% if serie_label %} et à ta série{% endif %}.</p>
+    </div>
+    <aside class="objectif-examen-notice objectif-examen-notice-compact" role="note">
+      <strong>Publication et exactitude pédagogique sont deux contrôles différents</strong>
+      <p>La modération autorise la publication du document dans la bibliothèque. Elle ne certifie pas automatiquement que toutes les réponses d'un corrigé sont exactes. Vérifie la source et, en cas de doute, demande confirmation à ton enseignant.</p>
+      <p>Pour le BEPC, le catalogue ne distingue pas encore le Programme scolaire (PS) du Programme d’études (PE). Vérifie la version réellement suivie dans ton établissement et, lorsque c’est applicable, l’option A ou B.</p>
+    </aside>
+    {% if annales_disponibles %}
+    <div class="objectif-examen-grid">
+      {% for doc in annales_disponibles %}
+      <article class="objectif-examen-card objectif-examen-annale-card">
+        <span class="objectif-examen-tag">{{ "Annale" if doc.type_document.value == "annale" else "Corrigé" }} · {{ doc.annee }}</span>
+        <h3>{{ doc.titre }}</h3>
+        <p><strong>{{ doc.matiere }}</strong></p>
+        <p class="objectif-examen-source-note">Référence : {{ doc.reference }}</p>
+        <a class="bouton bouton-secondaire" href="/documents/{{ doc.id }}/telecharger">Télécharger le document</a>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="objectif-examen-empty-state">
+      <strong>Aucune annale ou aucun corrigé publié pour ton profil pour le moment.</strong>
+      <p>Tu peux consulter toute la bibliothèque scolaire ou déposer un document. Il sera visible dans cette liste après approbation.</p>
+      <div class="ai-hero-actions">
+        <a href="/documents?portee_academique=scolaire&niveau_scolaire_id={{ utilisateur.niveau_scolaire_id }}">Explorer la bibliothèque</a>
+        <a href="/documents/upload">Déposer une annale ou un corrigé</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="objectif-examen-section objectif-examen-ressources" aria-labelledby="objectif-ressources-title">
     <div class="objectif-examen-heading">
       <span class="ai-kicker">Pour aller plus loin</span>
