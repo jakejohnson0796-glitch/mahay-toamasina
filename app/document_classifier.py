@@ -94,8 +94,9 @@ def _titre_depuis_nom(nom_fichier: str) -> Optional[str]:
 def _titre_depuis_texte(texte: str) -> Optional[str]:
     """Retient un en-tête plausible quand le nom de fichier est générique."""
     exclusions = (
-        "universite de ", "republique de ", "ministere de ", "faculte de ",
+        "universite ", "republique ", "ministere ", "faculte ",
         "annee universitaire", "document de travail", "table des matieres",
+        "ufr ", "departement ", "etablissement ", "ecole ",
     )
     for ligne in (texte or "").splitlines()[:35]:
         valeur = _nettoyer_titre(ligne)
