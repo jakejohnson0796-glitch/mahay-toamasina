@@ -77,6 +77,7 @@ def test_detection_recupere_matiere_canonique_et_filiere_avec_une_legere_faute(m
     assert resultat.type_document == TypeDocument.ANNALE
     assert resultat.annee == 2026
     assert resultat.filiere_id == 12
+    assert resultat.titre is not None and "2026" not in resultat.titre
 
 
 def test_titre_est_retrouve_dans_le_contenu_quand_le_nom_est_generique(monkeypatch):
