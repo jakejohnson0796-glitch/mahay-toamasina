@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block titre %}Harmonisation des cours — Espace enseignant{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair espace-harmonisation">
+  <header class="tb-panneau-entete">
+    <div>
+      <p class="eyebrow">Espace réservé aux professeurs vérifiés</p>
+      <h1>Harmonisation collaborative des cours</h1>
+      <p class="stat-label">Propose une amélioration argumentée, échange avec les autres enseignants et suis chaque décision. Seul l'administrateur peut publier une nouvelle version.</p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/dashboard">Retour au tableau de bord</a>
+  </header>
+  {% set etat = request.query_params.get("etat") %}
+  {% if etat == "justification_incomplete" %}
+  <div class="erreur" role="alert">La proposition doit contenir un passage précis, un cours complet proposé, une justification détaillée, une source ou une explication de son absence et un impact pédagogique.</div>
+  {% elif etat == "document_indisponible" %}
+  <div class="erreur" role="alert">Ce cours n'est pas disponible pour une mise à jour collaborative.</div>
+  {% elif etat == "discussion_fermee" %}
+  <div class="info" role="status">Cette demande a été clôturée. La discussion est désormais en lecture seule.</div>
+  {% endif %}
+  <section class="harmonisation-intro">
+    <h2>Soumettre une mise à jour</h2>
+    <p>Choisis un cours déjà publié. Ta proposition doit contenir la version complète qui remplacera l'actuelle après validation, pas seulement une phrase isolée.</p>
+    {% if not documents %}<p>Aucun cours public n'est actuellement disponible pour une proposition.</p>{% endif %}
+    {% for doc in documents %}
+    <details class="harmonisation-document">
+      <summary>
+        <strong>{{ doc.titre }}</strong>
+        <span>{{ doc.matiere }} · {{ doc.annee }} · {{ "Version harmonisée " ~ doc.version_harmonisee if doc.contenu_harmonise else "Pas encore de version harmonisée" }}</span>
+      </summary>
+      <form method="post" action="/enseignant/harmonisation/documents/{{ doc.id }}/demande" class="harmonisation-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label>Partie précise à modifier
+          <input name="passage_concerne" minlength="8" maxlength="2000" required placeholder="Ex. Définition du magma, paragraphe 2">
+        </label>
+        <label>Nouvelle version complète du cours
+          <textarea name="contenu_propose" minlength="80" maxlength="100000" rows="8" required placeholder="Présente ici le cours complet proposé, avec les parties qui ne changent pas."></textarea>
+        </label>
+        <label>Justification détaillée (minimum 50 caractères)
+          <textarea name="justification" minlength="50" maxlength="10000" rows="4" required placeholder="Quel problème précis cette modification corrige-t-elle ? Pourquoi est-elle scientifiquement et pédagogiquement préférable ?"></textarea>
+        </label>
+        <label>Source, preuve ou justification de son absence
+          <textarea name="source_justificative" minlength="8" maxlength="5000" rows="3" required placeholder="Référence EP/FRP, document officiel, source scientifique ou explication si aucune source externe n'est disponible."></textarea>
+        </label>
+        <label>Impact pédagogique attendu
+          <textarea name="impact_pedagogique" minlength="20" maxlength="5000" rows="3" required placeholder="Précise l'effet sur les objectifs, les exemples, les exercices, les corrigés ou les évaluations."></textarea>
+        </label>
+        <p class="harmonisation-note">La version actuellement publiée sera automatiquement conservée comme référence. Toute modification acceptée sera publiée dans Documents avec sa date et son numéro de version.</p>
+        <button class="bouton bouton-primaire" type="submit">Soumettre la proposition</button>
+      </form>
+    </details>
+    {% endfor %}
+  </section>
+  <section class="harmonisation-list" aria-labelledby="harmonisation-demandes-title">
+    <div class="tb-panneau-entete">
+      <div>
+        <h2 id="harmonisation-demandes-title">Alertes et propositions récentes</h2>
+        <p class="stat-label">Toutes les propositions de mise à jour sont visibles aux professeurs vérifiés. Les élèves et étudiants n'ont pas accès à cet espace.</p>
+      </div>
+      <span class="doc-type-label">{{ demandes|length }}</span>
+    </div>
+    {% for item in demandes %}
+    <article class="harmonisation-demande">
+      <div class="harmonisation-demande-entete">
+        <strong>{{ item.document.titre if item.document else "Cours indisponible" }}</strong>
+        <span class="harmonisation-statut statut-{{ item.demande.statut }}">{{ item.demande.statut.replace("_", " ") }}</span>
+      </div>
+      <p class="stat-label">{{ item.document.matiere if item.document else "Matière inconnue" }} · Proposé par {{ item.auteur.nom if item.auteur else "Enseignant" }} · {{ item.demande.date_creation.strftime("%d/%m/%Y à %H:%M") }} · Version source {{ item.demande.version_source }}</p>
+      <p><strong>Partie concernée :</strong> {{ item.demande.passage_concerne }}</p>
+      <p><strong>Justification :</strong> {{ item.demande.justification[:420] }}{% if item.demande.justification|length > 420 %}…{% endif %}</p>
+      <p><strong>Source :</strong> {{ item.demande.source_justificative[:240] }}{% if item.demande.source_justificative|length > 240 %}…{% endif %}</p>
+      <p><strong>Impact pédagogique :</strong> {{ item.demande.impact_pedagogique[:240] }}{% if item.demande.impact_pedagogique|length > 240 %}…{% endif %}</p>
+      <a class="bouton bouton-secondaire" href="/enseignant/harmonisation/demandes/{{ item.demande.id }}">Lire la proposition et participer à la relecture</a>
+    </article>
+    {% else %}
+    <p>Aucune proposition de mise à jour n'a encore été soumise.</p>
+    {% endfor %}
+  </section>
+</div>
+<style>
+.espace-harmonisation{max-width:1120px;margin:0 auto}
+.harmonisation-intro,.harmonisation-list{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}
+.harmonisation-document,.harmonisation-demande{padding:.9rem 0;border-top:1px solid var(--content-border)}
+.harmonisation-document summary{display:grid;gap:.25rem;cursor:pointer}
+.harmonisation-document summary span,.harmonisation-note{color:var(--content-text-muted);font-size:.78rem}
+.harmonisation-form{display:grid;gap:.75rem;margin-top:1rem}
+.harmonisation-form label{display:grid;gap:.35rem;font-weight:650;font-size:.82rem}
+.harmonisation-form input,.harmonisation-form select,.harmonisation-form textarea{width:100%;box-sizing:border-box;padding:.7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}
+.harmonisation-form textarea{resize:vertical;line-height:1.55}
+.harmonisation-demande-entete{display:flex;justify-content:space-between;gap:.75rem;align-items:center;flex-wrap:wrap}
+.harmonisation-statut{padding:.2rem .55rem;border:1px solid var(--content-border);border-radius:999px;font-size:.68rem}
+.harmonisation-demande p{font-size:.83rem;line-height:1.55;overflow-wrap:anywhere}
+@media(max-width:600px){.harmonisation-intro,.harmonisation-list{padding:.75rem}.harmonisation-demande .bouton{width:100%;text-align:center;white-space:normal}}
+</style>
+{% endblock %}
