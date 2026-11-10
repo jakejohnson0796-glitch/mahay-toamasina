@@ -3,10 +3,6 @@
 {% block meta_description %}{% if request.url.path == "/faq" %}Consultez les réponses aux questions fréquentes sur MITARIDALA : inscription, documents, quiz, Tuteur IA, cercles d'étude, classes virtuelles et sécurité du compte.{% else %}Consultez les retours et informations utiles sur l'utilisation de MITARIDALA.{% endif %}{% endblock %}
 {% block og_title %}{% if request.url.path == "/faq" %}Questions fréquentes sur MITARIDALA{% else %}Avis sur MITARIDALA{% endif %}{% endblock %}
 {% block og_description %}{% if request.url.path == "/faq" %}Les réponses pratiques pour découvrir et utiliser la plateforme éducative MITARIDALA.{% else %}Avis et retours sur la plateforme MITARIDALA.{% endif %}{% endblock %}
-{% block titre %}{% if request.url.path == "/faq" %}FAQ MITARIDALA — questions fréquentes{% else %}Avis et retours — MITARIDALA{% endif %}{% endblock %}
-{% block meta_description %}{% if request.url.path == "/faq" %}Consultez les réponses aux questions fréquentes sur MITARIDALA : inscription, documents, quiz, Tuteur IA, cercles d'étude, classes virtuelles et sécurité du compte.{% else %}Consultez les retours et informations utiles sur l'utilisation de MITARIDALA.{% endif %}{% endblock %}
-{% block og_title %}{% if request.url.path == "/faq" %}Questions fréquentes sur MITARIDALA{% else %}Avis sur MITARIDALA{% endif %}{% endblock %}
-{% block og_description %}{% if request.url.path == "/faq" %}Les réponses pratiques pour découvrir et utiliser la plateforme éducative MITARIDALA.{% else %}Avis et retours sur la plateforme MITARIDALA.{% endif %}{% endblock %}
 {% from "components/etat_vide_constellation.html" import etat_vide_constellation %}
 {% from "components/etoiles.html" import etoiles_lecture, etoiles_saisie %}
 
