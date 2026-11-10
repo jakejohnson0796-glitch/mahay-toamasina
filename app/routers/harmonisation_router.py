@@ -549,6 +549,10 @@ def consulter_cours_harmonise_public(
     request: Request,
     session: Session = Depends(get_session),
 ):
+    utilisateur = utilisateur_courant(request, session)
+    if not (professeur_verifie(utilisateur) or administrateur_autorise(utilisateur)):
+        return RedirectResponse("/", status_code=303)
+
     document = session.get(Document, document_id)
     if (
         not document
@@ -561,5 +565,5 @@ def consulter_cours_harmonise_public(
     return templates.TemplateResponse(
         request,
         "cours_harmonise.html",
-        {"utilisateur": utilisateur_courant(request, session), "document": document},
+        {"utilisateur": utilisateur, "document": document},
     )
