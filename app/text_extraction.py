@@ -7,13 +7,10 @@ de quiz" — c'est fait ici.
 Deux strategies, appliquees dans l'ordre :
 1. PDF avec du texte selectionnable -> pdfplumber (rapide, 100% Python,
    pas de dependance systeme).
-2. Scan/image, ou PDF ou pdfplumber ne sort presque rien -> OCR via
-   pytesseract. Necessite le binaire Tesseract installe sur la machine
-   (`apt install tesseract-ocr tesseract-ocr-fra` sous Linux, installeur
-   officiel sous Windows) et, pour les PDF scannes, `poppler` pour
-   pdf2image (`apt install poppler-utils`). C'est optionnel : si ces
-   dependances manquent, l'extraction retombe simplement sur une chaine
-   vide plutot que de faire planter l'appli.
+2. Scan/image et PDF mêlant texte et images -> OCR via pytesseract.
+   En production Docker, Tesseract français et anglais ainsi que Poppler sont
+   installés. Si ces dépendances système manquent en développement local,
+   l'extraction retombe sur le texte disponible sans faire planter l'appli.
 """
 from pathlib import Path
 import shutil
@@ -35,10 +32,11 @@ def extraire_texte(chemin_fichier: str) -> str:
     suffixe = chemin.suffix.lower()
 
     if suffixe == ".pdf":
-        texte = _extraire_texte_pdf(chemin)
-        if len(texte.strip()) >= SEUIL_CARACTERES_PDF_TEXTE:
-            return texte
-        return _extraire_texte_pdf_par_ocr(chemin) or texte
+        # Extraction hybride page par page : un PDF peut mêler pages
+        # sélectionnables et pages scannées. On OCR uniquement les pages
+        # pauvres en texte au lieu de désactiver l'OCR dès qu'une couverture
+        # contient quelques lignes sélectionnables.
+        return _extraire_texte_pdf(chemin)
 
     if suffixe in (".docx",):
         return _extraire_texte_docx(chemin)
@@ -147,18 +145,51 @@ def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
 
 def _extraire_texte_pdf(chemin: Path) -> str:
     morceaux = []
+    nombre_pages_ocr = 0
+    try:
+        import pytesseract
+        from pdf2image import convert_from_path
+    except ImportError:
+        pytesseract = None
+        convert_from_path = None
+
     try:
         with pdfplumber.open(chemin) as pdf:
             total = 0
-            for page in pdf.pages[:MAX_PAGES_PDF_TEXTE]:
-                morceau = page.extract_text() or ""
-                morceaux.append(morceau)
-                total += len(morceau)
+            for numero, page in enumerate(pdf.pages[:MAX_PAGES_PDF_TEXTE], start=1):
+                morceau = (page.extract_text() or "").strip()
+                if (
+                    len(morceau) < SEUIL_CARACTERES_PDF_TEXTE
+                    and pytesseract is not None
+                    and convert_from_path is not None
+                    and nombre_pages_ocr < MAX_PAGES_PDF_OCR
+                ):
+                    try:
+                        images = convert_from_path(
+                            str(chemin),
+                            first_page=numero,
+                            last_page=numero,
+                            dpi=MAX_OCR_DPI,
+                            thread_count=1,
+                            use_pdftocairo=True,
+                        )
+                        if images:
+                            morceau_ocr = _ocr_image(images[0], pytesseract)
+                            if len(morceau_ocr) > len(morceau):
+                                morceau = morceau_ocr
+                        nombre_pages_ocr += 1
+                    except Exception:
+                        # Une page endommagée ne doit pas empêcher la lecture
+                        # des autres pages du même document.
+                        nombre_pages_ocr += 1
+                if morceau:
+                    morceaux.append(morceau)
+                    total += len(morceau)
                 if total >= MAX_TEXTE_EXTRAIT:
                     break
     except Exception:
         return ""
-    return "\n".join(morceaux)
+    return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
 
 
 def _langue_tesseract(pytesseract) -> str:
