@@ -689,6 +689,10 @@ class Document(SQLModel, table=True):
     fiche_validation_statut: str = Field(default="a_verifier", index=True)
     fiche_validee_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     fiche_validee_le: Optional[datetime] = None
+    # Version publique du cours harmonisé, publiée uniquement après validation admin.
+    contenu_harmonise: str = Field(default="", max_length=100000)
+    version_harmonisee: int = Field(default=0, index=True)
+    date_mise_a_jour_harmonisee: Optional[datetime] = None
 
     __table_args__ = (
         CheckConstraint(
@@ -1559,6 +1563,7 @@ class TypeNotification(str, Enum):
     NOTE_PUBLIEE = "note_publiee"
     STATUT_PRESENCE = "statut_presence"
     RAPPEL_ECHEANCE = "rappel_echeance"
+    HARMONISATION_COURS = "harmonisation_cours"
 
 
 class Notification(SQLModel, table=True):
@@ -2334,3 +2339,50 @@ class OpportuniteAcademique(SQLModel, table=True):
         CheckConstraint("statut IN ('brouillon', 'publiee', 'archivee')", name="ck_opportunite_academique_statut"),
         Index("ix_opportunite_statut_date_limite", "statut", "date_limite"),
     )
+
+
+class StatutDemandeMiseAJourCours(str, Enum):
+    EN_ATTENTE = "en_attente"
+    EN_DISCUSSION = "en_discussion"
+    PRECISIONS_DEMANDEES = "precisions_demandees"
+    VALIDEE = "validee"
+    REFUSEE = "refusee"
+
+
+class DemandeMiseAJourCours(SQLModel, table=True):
+    """Proposition motivée d'évolution d'un cours public."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    document_id: int = Field(foreign_key="document.id", index=True)
+    auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    version_source: int = Field(default=0)
+    passage_concerne: str = Field(max_length=2000)
+    contenu_actuel: str = Field(default="", max_length=100000)
+    contenu_propose: str = Field(max_length=100000)
+    justification: str = Field(max_length=10000)
+    source_justificative: str = Field(max_length=5000)
+    impact_pedagogique: str = Field(max_length=5000)
+    statut: str = Field(
+        default=StatutDemandeMiseAJourCours.EN_ATTENTE.value,
+        index=True,
+        max_length=32,
+    )
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_traitement: Optional[datetime] = None
+    motif_decision: str = Field(default="", max_length=5000)
+
+    __table_args__ = (
+        Index("ix_demande_mise_a_jour_statut_date", "statut", "date_creation"),
+    )
+
+
+class EchangeDemandeMiseAJourCours(SQLModel, table=True):
+    """Commentaire de relecture conservé dans le fil de la demande."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    demande_id: int = Field(foreign_key="demandemiseajourcours.id", index=True)
+    auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    message: str = Field(max_length=5000)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
