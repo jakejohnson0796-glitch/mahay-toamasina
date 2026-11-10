@@ -5,7 +5,7 @@ WORKDIR /app
 # OCR actif en production : les scans PDF/JPG/PNG doivent être réellement lus.
 # antiword/catdoc couvrent aussi les anciens formats Word .doc et PowerPoint .ppt.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    tesseract-ocr tesseract-ocr-fra poppler-utils antiword catdoc \
+    tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra poppler-utils antiword catdoc \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
