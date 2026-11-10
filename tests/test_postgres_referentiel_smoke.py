@@ -375,6 +375,7 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             )
         ).all()
         assert {niveau.code for niveau in rape_courant_niveaux} == {
+            "T1", "T2", "T3", "T4", "T5",
             "6E", "5E", "4E", "3E", "2NDE", "1ERE", "TERM"
         }
         rape_courant_options = session.exec(
@@ -408,6 +409,25 @@ def test_postgres_demarrage_import_referentiel_idempotence_et_recherche():
             for option in rape_courant_options
         }
         expected_rape_2026 = {
+            ("T1", None, "RAPE_T1.pdf"): {
+                "MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS",
+            },
+            ("T2", None, "RAPE_T2.pdf"): {
+                "MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS",
+            },
+            ("T3", None, "RAPE_T3.pdf"): {
+                "MALAGASY", "FRANCAIS", "FOV", "MATHEMATIQUES", "EPS", "ARTS",
+            },
+            ("T4", None, "RAPE_T4.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_TECHNOLOGIE", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "EPS", "ARTS",
+            },
+            ("T5", None, "RAPE_T5.pdf"): {
+                "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
+                "SCIENCES_TECHNOLOGIE", "HISTOIRE", "GEOGRAPHIE",
+                "FOV", "EPS", "ARTS",
+            },
             ("6E", None, "RAPE_T6.pdf"): {
                 "MALAGASY", "FRANCAIS", "ANGLAIS", "MATHEMATIQUES",
                 "SCIENCES_PHYSIQUES", "SVT", "HISTOIRE", "GEOGRAPHIE",
