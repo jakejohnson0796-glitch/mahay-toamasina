@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titre %}Gérer les opportunités — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-hero"><div><span class="ops-kicker">Administration</span><h1>Centre des opportunités</h1><p>Ajoute des annonces sourcées. Elles restent en brouillon jusqu'à vérification explicite de la source.</p><div class="ops-hero-actions"><a href="/admin">Administration</a><a href="/opportunites">Voir la page publique</a></div></div></section>
+  {% if erreur %}<p role="alert">Impossible d'enregistrer : vérifie les champs, la date et le lien de la source ({{ erreur }}).</p>{% endif %}
+  {% if ok %}<p role="status">Action enregistrée : {{ ok }}.</p>{% endif %}
+  <section class="opportunites-admin-form">
+    <h2>Ajouter une opportunité</h2>
+    <form method="post" action="/admin/opportunites/creer">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label>Titre <input name="titre" maxlength="180" required></label>
+      <label>Catégorie <select name="categorie" required>{% for categorie in categories %}<option value="{{ categorie }}">{{ categorie|capitalize }}</option>{% endfor %}</select></label>
+      <label>Description <textarea name="description" maxlength="5000" rows="4" required></textarea></label>
+      <label>Niveau concerné <input name="niveau_cible" maxlength="80" placeholder="Ex. Licence, Master, Lycée"></label>
+      <label>Région / pays <input name="region" maxlength="100"></label>
+      <label>Date limite <input type="date" name="date_limite"></label>
+      <label>Nom de la source <input name="source_nom" maxlength="180" required></label>
+      <label>Lien officiel (HTTPS recommandé) <input type="url" name="source_url" maxlength="1000" required></label>
+      <button class="bouton bouton-primaire" type="submit">Enregistrer en brouillon</button>
+    </form>
+  </section>
+  <section class="opportunites-admin-liste">
+    <h2>Annonces enregistrées</h2>
+    {% for offre in opportunites %}
+    <article class="opportunite-carte">
+      <div class="opportunite-meta"><span>{{ offre.statut|capitalize }}</span><span>{{ offre.categorie|capitalize }}</span></div>
+      <h3>{{ offre.titre }}</h3><p>{{ offre.source_nom }} · <a href="{{ offre.source_url }}" target="_blank" rel="noopener noreferrer">Ouvrir la source</a></p>
+      {% if offre.statut == "brouillon" %}
+      <form method="post" action="/admin/opportunites/{{ offre.id }}/publier">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label><input type="checkbox" name="source_verifiee" value="oui" required> J'ai consulté la source et vérifié les conditions, l'éligibilité et les dates.</label>
+        <button class="bouton bouton-primaire" type="submit">Publier</button>
+      </form>
+      {% elif offre.statut == "publiee" %}
+      <form method="post" action="/admin/opportunites/{{ offre.id }}/archiver"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Archiver</button></form>
+      {% endif %}
+    </article>
+    {% else %}<p>Aucune annonce pour le moment.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

@@ -21,7 +21,7 @@ from sqlmodel import Session, select, func
 from .config import parametres
 from .database import executer_migrations, engine, get_session
 from .models import Faculte, Universite, Mention, Filiere, CercleEtude, StatutCercle, Document, StatutDocument, TentativeQuiz
-from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, admin_scolaire_router, tuteur_router, classe_router, classe_interactions_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router, scolaire_router, catalogue_scolaire_router, institution_router, suivi_academique_router, famille_router
+from .routers import auth_router, documents_router, sponsoring_router, cercles_router, abonnement_router, dashboard_router, quiz_router, jeu_cerebral_router, admin_router, admin_referentiel_router, admin_scolaire_router, tuteur_router, classe_router, classe_interactions_router, faq_router, feedback_router, academique_router, mode_emploi_router, notifications_router, revisions_router, gamification_router, onboarding_router, legal_router, scolaire_router, catalogue_scolaire_router, institution_router, suivi_academique_router, famille_router, opportunites_router
 from .security_headers import EnTetesSecuriteMiddleware
 from .static_cache import VersionedStaticAssetCacheMiddleware
 from .request_limits import RequestSizeLimitMiddleware
@@ -122,6 +122,7 @@ app.include_router(revisions_router.router)
 app.include_router(gamification_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(legal_router.router)
+app.include_router(opportunites_router.router)
 
 
 def _masquer_mot_de_passe(url: str) -> str:
@@ -552,6 +553,7 @@ def sitemap(request: Request) -> Response:
         "/mode-emploi",
         "/contact",
         "/cadre-legal",
+        "/opportunites",
     ]
     lignes = [
         '<?xml version="1.0" encoding="UTF-8"?>',
