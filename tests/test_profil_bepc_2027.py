@@ -114,7 +114,7 @@ def test_mode_examen_utilise_le_programme_du_profil_et_non_un_post_libre():
     assert 'getattr(utilisateur, "bepc_2027_parcours", None)' in section
     assert 'option_attendue = {"ps_a": "A", "ps_b": "B"}.get(parcours_profil)' in section
     assert "objectif, option_ps=option_attendue" in section
-    assert "option_ps.strip().upper() != (option_attendue or '')" in section
+    assert 'option_ps.strip().upper() != (option_attendue or "")' in section
 
 
 def test_modele_et_migration_conservent_les_anciens_profils():
