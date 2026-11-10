@@ -17,7 +17,8 @@ def test_glisser_deposer_remplit_input_et_declenche_le_flux_normal():
         "input.files = transfert.files;",
         "input.files = fileList;",
         'input.dispatchEvent(new Event("change", { bubbles: true }));',
-        'input.addEventListener("change", function () { maj(); detecterFichier(); });',
+        'input.addEventListener("change", function () { appliquerModeDetectionAuto(); maj(); detecterFichier(); });',
+        "function appliquerModeDetectionAuto()",
         'zone.addEventListener("drop", function (event)',
         "event.stopPropagation();",
     ]

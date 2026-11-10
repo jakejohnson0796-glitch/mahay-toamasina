@@ -33,6 +33,7 @@ from .. import course_revision
 from .. import quiz as quiz_module
 from ..rate_limit import limite_depassee
 from ..document_classifier import classifier_document
+from ..document_batch import analyser_documents_stockes, MAX_DOCUMENTS_PAR_LOT, MAX_TAILLE_DOCUMENT_PAR_LOT
 from ..quiz_validation import QuizValidationError, valider_questions
 
 router = APIRouter()
@@ -311,7 +312,7 @@ def liste_documents(
         requete_depots = select(Document).where(
             Document.uploader_id == utilisateur.id,
             Document.statut.in_([StatutDocument.EN_ATTENTE, StatutDocument.REJETE]),
-        ).order_by(Document.date_upload.desc()).limit(10)
+        ).order_by(Document.date_upload.desc()).limit(30)
         if cercle_id is not None:
             requete_depots = requete_depots.where(Document.cercle_id == cercle_id)
         mes_depots = session.exec(requete_depots).all()
@@ -518,6 +519,12 @@ async def detect_document_automatique(
                 "filiere_nom": filiere_nom,
                 "confiance": round(float(classification.confiance or 0.0), 3),
                 "source": classification.source,
+                "caracteres_extraits": len((texte or "").strip()),
+                "statut_analyse": "texte_extrait" if (texte or "").strip() else "nom_fichier_seulement",
+                "avertissement": (
+                    "" if (texte or "").strip()
+                    else "Aucun texte exploitable n'a été extrait. Vérifiez la netteté et l'orientation du scan."
+                ),
             },
         })
     except Exception:
@@ -868,6 +875,22 @@ def upload_document(
     return RedirectResponse(f"/documents?envoye=1&portee_academique={portee}{suffixe}", status_code=303)
 
 
+def _taille_upload(fichier: UploadFile) -> Optional[int]:
+    """Lit la taille connue par Starlette sans consommer le flux du fichier."""
+    taille = getattr(fichier, "size", None)
+    if isinstance(taille, int) and taille >= 0:
+        return taille
+    try:
+        flux = fichier.file
+        position = flux.tell()
+        flux.seek(0, 2)
+        taille = flux.tell()
+        flux.seek(position)
+        return int(taille)
+    except Exception:
+        return None
+
+
 @router.post("/documents/upload-multiple")
 def upload_documents_multiples(
     request: Request,
@@ -876,14 +899,20 @@ def upload_documents_multiples(
     matiere: Optional[str] = Form(default=""),
     type_document: Optional[TypeDocument] = Form(default=None),
     annee: Optional[int] = Form(default=None),
+    bepc_session_2027_parcours: Optional[str] = Form(default=None),
     filiere_id: Optional[int] = Form(default=None),
     portee_academique: str = Form(default="universitaire"),
+    cycle_scolaire: Optional[str] = Form(default=None),
+    niveau_scolaire_id: Optional[int] = Form(default=None),
+    option_scolaire_id: Optional[int] = Form(default=None),
+    matiere_scolaire_id: Optional[int] = Form(default=None),
+    etablissement_scolaire_id: Optional[int] = Form(default=None),
     cercle_id: Optional[int] = Form(default=None),
     classification_auto: bool = Form(default=False),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    """Dépose un lot universitaire. Les cibles scolaires restent mono-fichier tant que le classifieur scolaire n'est pas disponible."""
+    """Dépose jusqu'à 15 documents d'un même parcours et les classe individuellement."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -891,11 +920,6 @@ def upload_documents_multiples(
     portee = (portee_academique or "universitaire").strip().lower()
     if portee not in {"universitaire", "scolaire"}:
         return RedirectResponse("/documents?erreur=portee_invalide", status_code=303)
-    if portee == "scolaire":
-        # Ne jamais laisser un envoi multiple scolaire tomber sur le moteur
-        # de classification universitaire par omission de métadonnées.
-        return RedirectResponse("/documents?erreur=depot_scolaire_mono_fichier", status_code=303)
-
     filieres_disponibles = session.exec(select(Filiere)).all()
     cercle = session.get(CercleEtude, cercle_id) if cercle_id is not None else None
 
@@ -909,6 +933,7 @@ def upload_documents_multiples(
                 "erreur": message,
                 "message": "",
                 "erreurs_batch": details or [],
+                "resultats_batch": [],
                 "utilisateur": utilisateur,
             },
             status_code=status_code,
@@ -916,10 +941,22 @@ def upload_documents_multiples(
 
     if not fichiers:
         return afficher_erreur("Sélectionnez au moins un fichier.")
-    if len(fichiers) > 5:
-        return afficher_erreur("Un envoi est limité à 5 fichiers. Sélectionnez un lot plus petit.")
-    if not classification_auto:
+    if len(fichiers) > MAX_DOCUMENTS_PAR_LOT:
+        return afficher_erreur(
+            f"Un envoi est limité à {MAX_DOCUMENTS_PAR_LOT} fichiers. Sélectionnez un lot plus petit."
+        )
+    if portee == "universitaire" and not classification_auto:
         return afficher_erreur("Activez la détection automatique pour classer chaque fichier séparément.")
+
+    tailles = [_taille_upload(fichier) for fichier in fichiers]
+    if any(taille is None for taille in tailles):
+        return afficher_erreur("La taille d'un fichier n'a pas pu être vérifiée. Re-sélectionnez les documents.")
+    tailles_connues = [taille for taille in tailles if taille is not None]
+    if sum(tailles_connues) > MAX_TAILLE_DOCUMENT_PAR_LOT:
+        return afficher_erreur("Le lot dépasse 120 Mo au total. Réduisez la taille des fichiers.")
+    if any(taille is not None and taille > 20 * 1024 * 1024 for taille in tailles):
+        return afficher_erreur("Chaque document doit faire 20 Mo maximum.")
+
     if limite_depassee(f"upload-document:user:{utilisateur.id}", 20, 3600) or limite_depassee(
         f"upload-document:ip:{adresse_ip_client(request)}", 40, 3600
     ):
@@ -928,126 +965,376 @@ def upload_documents_multiples(
     if cercle_id is not None:
         if not cercle or not _est_membre_cercle(session, cercle_id, utilisateur.id):
             return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
+        if cercle.portee_academique in {"universitaire", "scolaire"} and cercle.portee_academique != portee:
+            return afficher_erreur("La portée du cercle ne correspond pas au dépôt.")
 
-    if not filieres_disponibles:
-        return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
-    filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
-    filiere_reference = filiere_depart or filieres_disponibles[0]
+    niveau_scolaire = None
+    option_scolaire = None
+    matiere_scolaire = None
+    etablissement_scolaire = None
+    referentiel_courant = None
+    matieres_scolaires_candidates = []
+
+    if portee == "scolaire":
+        if filiere_id is not None:
+            return afficher_erreur("Un document scolaire ne peut pas être lié à une filière universitaire.")
+        cycle_scolaire = (cycle_scolaire or "").strip().lower()
+        if cycle_scolaire not in {"primaire", "college", "lycee"} or niveau_scolaire_id is None:
+            return afficher_erreur("Choisissez le cycle et la classe avant l'envoi du lot.")
+
+        niveau_scolaire = session.get(NiveauScolaire, niveau_scolaire_id)
+        referentiel_courant = (
+            session.get(ReferentielScolaire, niveau_scolaire.referentiel_id)
+            if niveau_scolaire is not None else None
+        )
+        if (
+            not referentiel_courant
+            or not niveau_scolaire
+            or niveau_scolaire.referentiel_id != referentiel_courant.id
+            or not niveau_scolaire.est_actif
+            or niveau_scolaire.statut_validation != "verifie"
+            or niveau_scolaire.cycle != cycle_scolaire
+        ):
+            return afficher_erreur("La classe choisie n'est pas valide dans le référentiel scolaire vérifié.")
+
+        options_compatibles = []
+        if option_scolaire_id is not None:
+            option_scolaire = session.get(OptionScolaire, option_scolaire_id)
+            parent_option = (
+                session.get(OptionScolaire, option_scolaire.parent_option_id)
+                if option_scolaire and option_scolaire.parent_option_id else None
+            )
+            if (
+                not option_scolaire
+                or option_scolaire.referentiel_id != referentiel_courant.id
+                or option_scolaire.niveau_id != niveau_scolaire.id
+                or not option_scolaire.est_active
+                or option_scolaire.statut_validation != "verifie"
+                or (
+                    option_scolaire.parent_option_id is not None
+                    and (
+                        not parent_option
+                        or parent_option.referentiel_id != referentiel_courant.id
+                        or parent_option.niveau_id != niveau_scolaire.id
+                        or parent_option.parent_option_id is not None
+                        or not parent_option.est_active
+                        or parent_option.statut_validation != "verifie"
+                    )
+                )
+            ):
+                return afficher_erreur("La série ou option choisie n'est pas valide pour cette classe.")
+            options_compatibles.append(option_scolaire.id)
+            if option_scolaire.parent_option_id:
+                options_compatibles.append(option_scolaire.parent_option_id)
+
+        if matiere_scolaire_id is not None:
+            matiere_scolaire = session.get(MatiereScolaire, matiere_scolaire_id)
+            association = session.exec(
+                select(ProgrammeMatiereScolaire).where(
+                    ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                    ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                    ProgrammeMatiereScolaire.matiere_id == matiere_scolaire_id,
+                    ProgrammeMatiereScolaire.statut_validation == "verifie",
+                    or_(
+                        ProgrammeMatiereScolaire.option_id.is_(None),
+                        ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                    ),
+                )
+            ).first()
+            if (
+                not matiere_scolaire
+                or not matiere_scolaire.est_active
+                or matiere_scolaire.statut_validation != "verifie"
+                or not association
+            ):
+                return afficher_erreur("La matière choisie n'est pas vérifiée pour cette classe/option.")
+            matiere = matiere_scolaire.libelle
+
+        if etablissement_scolaire_id is not None:
+            etablissement_scolaire = session.get(EtablissementScolaire, etablissement_scolaire_id)
+            if (
+                not etablissement_scolaire
+                or not etablissement_scolaire.est_actif
+                or not etablissement_scolaire.est_verifie
+            ):
+                return afficher_erreur("L'établissement choisi n'est pas vérifié.")
+
+        if cercle:
+            if cercle.niveau_scolaire_id and cercle.niveau_scolaire_id != niveau_scolaire.id:
+                return afficher_erreur("La classe choisie ne correspond pas au cercle.")
+            if cercle.option_scolaire_id:
+                options_compatibles_cercle = set(options_compatibles)
+                if cercle.option_scolaire_id not in options_compatibles_cercle:
+                    return afficher_erreur("La série ou option choisie ne correspond pas au cercle.")
+            if cercle.etablissement_scolaire_id:
+                if etablissement_scolaire and etablissement_scolaire.id != cercle.etablissement_scolaire_id:
+                    return afficher_erreur("L'établissement choisi ne correspond pas au cercle.")
+                etablissement_scolaire = session.get(EtablissementScolaire, cercle.etablissement_scolaire_id)
+                if (
+                    not etablissement_scolaire
+                    or not etablissement_scolaire.est_actif
+                    or not etablissement_scolaire.est_verifie
+                ):
+                    return afficher_erreur("L'établissement du cercle n'est plus vérifié.")
+                etablissement_scolaire_id = etablissement_scolaire.id
+            if cercle.matiere_scolaire_id:
+                if not _matiere_cercle_coherente(cercle, matiere_scolaire_id):
+                    return afficher_erreur("La matière choisie ne correspond pas au cercle.")
+                if matiere_scolaire_id is None:
+                    matiere_scolaire = session.get(MatiereScolaire, cercle.matiere_scolaire_id)
+                    association = session.exec(
+                        select(ProgrammeMatiereScolaire).where(
+                            ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                            ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                            ProgrammeMatiereScolaire.matiere_id == cercle.matiere_scolaire_id,
+                            ProgrammeMatiereScolaire.statut_validation == "verifie",
+                            or_(
+                                ProgrammeMatiereScolaire.option_id.is_(None),
+                                ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                            ),
+                        )
+                    ).first()
+                    if (
+                        not matiere_scolaire
+                        or not matiere_scolaire.est_active
+                        or matiere_scolaire.statut_validation != "verifie"
+                        or not association
+                    ):
+                        return afficher_erreur("La matière ciblée par le cercle n'est plus disponible.")
+                    matiere_scolaire_id = matiere_scolaire.id
+                    matiere = matiere_scolaire.libelle
+
+        # Le moteur compare les matières extraites avec le programme vérifié
+        # de cette classe et de cette option. Il ne peut proposer que des IDs
+        # issus des associations officielles/validées.
+        associations = session.exec(
+            select(ProgrammeMatiereScolaire).where(
+                ProgrammeMatiereScolaire.referentiel_id == referentiel_courant.id,
+                ProgrammeMatiereScolaire.niveau_id == niveau_scolaire.id,
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+                or_(
+                    ProgrammeMatiereScolaire.option_id.is_(None),
+                    ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+                ),
+            )
+        ).all()
+        ids_matieres = {association.matiere_id for association in associations}
+        if matiere_scolaire_id is not None:
+            ids_matieres.add(matiere_scolaire_id)
+        if ids_matieres:
+            matieres_scolaires_candidates = session.exec(
+                select(MatiereScolaire).where(
+                    MatiereScolaire.id.in_(sorted(ids_matieres)),
+                    MatiereScolaire.est_active == True,  # noqa: E712
+                    MatiereScolaire.statut_validation == "verifie",
+                )
+            ).all()
+
+    else:
+        if any(value is not None for value in (
+            niveau_scolaire_id, option_scolaire_id, matiere_scolaire_id, etablissement_scolaire_id
+        )):
+            return afficher_erreur("Retirez les filtres scolaires d'un dépôt universitaire.")
+        if not filieres_disponibles:
+            return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
+
+    if portee == "universitaire":
+        if not filieres_disponibles:
+            return afficher_erreur("Aucune filière n'est disponible pour classer les documents.", status_code=503)
+        filiere_depart = session.get(Filiere, filiere_id) if filiere_id is not None else None
+        if filiere_id is not None and filiere_depart is None:
+            return afficher_erreur("La filière choisie n'est plus disponible.")
+        filiere_reference = filiere_depart or filieres_disponibles[0]
+        filieres_classification = [
+            SimpleNamespace(id=filiere.id, nom=filiere.nom)
+            for filiere in filieres_disponibles
+        ]
+    else:
+        filiere_reference = None
+        filieres_classification = [
+            SimpleNamespace(id=matiere.id, nom=matiere.libelle)
+            for matiere in matieres_scolaires_candidates
+        ]
+
     annee_reference = annee or datetime.utcnow().year
 
-    nombre_envoyes = 0
+    # L'extraction lourde et l'appel IA sont exécutés dans un pool de deux
+    # workers maximum ; les opérations DB et notifications restent séquentielles.
+    fichiers_stockes = []
     erreurs_batch = []
+    resultats_batch = []
+
     for fichier in fichiers:
         nom_fichier = Path(fichier.filename or "document").name
         chemin_stocke = None
         try:
             reference_stockage = generer_reference(filiere_reference, annee_reference, session)
             chemin_stocke = sauvegarder_fichier(fichier, reference_stockage)
-
-            try:
-                with ouvrir_fichier_local(chemin_stocke) as chemin_local:
-                    texte_document = extraire_texte(str(chemin_local))
-            except Exception:
-                # Le nom de fichier et les métadonnées fournies peuvent encore
-                # suffire à classer le document si l'extraction est indisponible.
-                texte_document = ""
-
-            classification = classifier_document(
-                nom_fichier=nom_fichier,
-                texte=texte_document or "",
-                filieres=filieres_disponibles,
-                titre_fourni=(titre or "") if len(fichiers) == 1 else "",
-                matiere_fourni=matiere or "",
-                type_fourni=type_document,
-                annee_fournie=annee,
-                filiere_id_fournie=filiere_id,
-            )
-
-            titre_final = (classification.titre or ((titre or "") if len(fichiers) == 1 else "")).strip()
-            matiere_finale = (classification.matiere or matiere or "").strip()
-            type_final = classification.type_document or type_document
-            annee_finale = classification.annee or annee
-            filiere_finale = session.get(Filiere, classification.filiere_id or filiere_id) if (classification.filiere_id or filiere_id) else None
-
-            manquants = []
-            if not titre_final:
-                manquants.append("titre")
-            if not matiere_finale:
-                manquants.append("matière")
-            if type_final is None:
-                manquants.append("type")
-            if annee_finale is None or annee_finale < 2000 or annee_finale > 2100:
-                manquants.append("année")
-            if filiere_finale is None:
-                manquants.append("filière")
-            if manquants:
-                supprimer_fichier(chemin_stocke)
-                erreurs_batch.append(
-                    f"{nom_fichier} : informations insuffisantes ({', '.join(manquants)}). "
-                    "Renommez le fichier avec la matière ou renseignez des informations communes, puis réessayez."
-                )
-                continue
-
-            document = Document(
-                reference=generer_reference(filiere_finale, annee_finale, session),
-                titre=titre_final[:180],
-                matiere=matiere_finale[:120],
-                type_document=type_final,
-                annee=annee_finale,
-                filiere_id=filiere_finale.id,
-                cercle_id=cercle_id,
-                uploader_id=utilisateur.id,
-                chemin_fichier=chemin_stocke,
-                statut=StatutDocument.EN_ATTENTE,
-            )
-            try:
-                session.add(document)
-                session.commit()
-                session.refresh(document)
-                # Chaque fichier du lot possède sa propre fiche pédagogique.
-                try:
-                    ai_queue.planifier_resume_document(document.id)
-                except Exception:
-                    pass
-            except Exception:
-                session.rollback()
-                supprimer_fichier(chemin_stocke)
-                erreurs_batch.append(f"{nom_fichier} : impossible d'enregistrer le document. Réessayez.")
-                continue
-
-            nombre_envoyes += 1
-            try:
-                _notifier_admins_nouveau_document(session, document, utilisateur)
-                gamification.enregistrer_action(
-                    session,
-                    utilisateur.id,
-                    "document",
-                    source_type="document",
-                    source_key=str(document.id),
-                )
-                session.commit()
-            except Exception:
-                # Le document est déjà enregistré et reste en attente de modération.
-                session.rollback()
+            fichiers_stockes.append({
+                "nom_fichier": nom_fichier,
+                "chemin_stocke": chemin_stocke,
+            })
         except FichierInvalide as erreur:
             if chemin_stocke:
                 supprimer_fichier(chemin_stocke)
             erreurs_batch.append(f"{nom_fichier} : {erreur}")
         except Exception:
-            session.rollback()
             if chemin_stocke:
                 supprimer_fichier(chemin_stocke)
+            erreurs_batch.append(f"{nom_fichier} : impossible d'enregistrer le fichier.")
+
+    analyses = analyser_documents_stockes(
+        fichiers_stockes,
+        filieres_classification,
+        titre_fourni=(titre or "").strip() if len(fichiers) == 1 else "",
+        matiere_fourni=(matiere or "").strip(),
+        type_fourni=type_document,
+        annee_fournie=annee,
+        filiere_id_fournie=filiere_id if portee == "universitaire" else None,
+    )
+
+    nombre_envoyes = 0
+    for index, fichier_stocke in enumerate(fichiers_stockes):
+        nom_fichier = fichier_stocke["nom_fichier"]
+        chemin_stocke = fichier_stocke["chemin_stocke"]
+        analyse = analyses.get(index, {})
+        classification = analyse.get("classification")
+        if classification is None:
+            supprimer_fichier(chemin_stocke)
             erreurs_batch.append(
-                f"{nom_fichier} : traitement impossible. Vérifiez le fichier et ses métadonnées."
+                f"{nom_fichier} : {analyse.get('erreur') or 'la détection automatique a échoué.'}"
             )
+            continue
+
+        titre_final = (
+            classification.titre
+            or ((titre or "").strip() if len(fichiers) == 1 else "")
+        ).strip()
+        type_final = classification.type_document or type_document
+        annee_finale = classification.annee or annee
+        filiere_finale = None
+        matiere_scolaire_finale = None
+        bepc_parcours_valide, erreur_bepc_parcours = _normaliser_bepc_session_2027_parcours(
+            bepc_session_2027_parcours,
+            portee_academique=portee,
+            niveau_scolaire=niveau_scolaire,
+            type_document=type_final,
+            annee=annee_finale,
+        )
+
+        if portee == "universitaire":
+            filiere_id_finale = classification.filiere_id or filiere_id
+            filiere_finale = session.get(Filiere, filiere_id_finale) if filiere_id_finale else None
+            matiere_finale = (classification.matiere or matiere or "").strip()
+        else:
+            ids_matieres_candidates = {item.id for item in matieres_scolaires_candidates}
+            # Un choix manuel reste prioritaire ; sinon le classifieur ne peut
+            # proposer qu'une matière vérifiée de cette classe et cette option.
+            id_matiere_detectee = (
+                classification.filiere_id
+                if classification.filiere_id in ids_matieres_candidates else None
+            )
+            id_matiere_final = matiere_scolaire_id or id_matiere_detectee
+            matiere_scolaire_finale = (
+                session.get(MatiereScolaire, id_matiere_final)
+                if id_matiere_final else None
+            )
+            # Une détection scolaire automatique doit pointer vers une matière
+            # vérifiée du programme. Un simple libellé OCR n'est pas une validation.
+            matiere_finale = (
+                matiere_scolaire_finale.libelle if matiere_scolaire_finale else ""
+            )
+
+        manquants = []
+        if not titre_final:
+            manquants.append("titre")
+        if not matiere_finale:
+            manquants.append("matière")
+        if type_final is None:
+            manquants.append("type de document")
+        if annee_finale is None or annee_finale < 2000 or annee_finale > 2100:
+            manquants.append("année")
+        if portee == "universitaire" and filiere_finale is None:
+            manquants.append("filière")
+        if erreur_bepc_parcours:
+            manquants.append("programme BEPC 2027")
+
+        if manquants:
+            supprimer_fichier(chemin_stocke)
+            erreurs_batch.append(
+                f"{nom_fichier} : informations non détectées ou non vérifiées ({', '.join(manquants)}). "
+                "Vérifiez le contenu du fichier et les métadonnées communes."
+            )
+            continue
+
+        document = Document(
+            reference=generer_reference(filiere_finale, annee_finale, session),
+            titre=titre_final[:180],
+            matiere=matiere_finale[:120],
+            type_document=type_final,
+            annee=annee_finale,
+            filiere_id=filiere_finale.id if filiere_finale else None,
+            portee_academique=portee,
+            niveau_scolaire_id=niveau_scolaire.id if niveau_scolaire else None,
+            option_scolaire_id=option_scolaire.id if option_scolaire else None,
+            matiere_scolaire_id=matiere_scolaire_finale.id if matiere_scolaire_finale else None,
+            etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+            bepc_session_2027_parcours=bepc_parcours_valide,
+            cercle_id=cercle_id,
+            uploader_id=utilisateur.id,
+            chemin_fichier=chemin_stocke,
+            statut=StatutDocument.EN_ATTENTE,
+        )
+        try:
+            session.add(document)
+            session.commit()
+            session.refresh(document)
+        except Exception:
+            session.rollback()
+            supprimer_fichier(chemin_stocke)
+            erreurs_batch.append(f"{nom_fichier} : impossible d'enregistrer le document.")
+            continue
+
+        try:
+            ai_queue.planifier_resume_document(document.id)
+        except Exception:
+            pass
+        try:
+            _notifier_admins_nouveau_document(session, document, utilisateur)
+            gamification.enregistrer_action(
+                session,
+                utilisateur.id,
+                "document",
+                source_type="document",
+                source_key=str(document.id),
+            )
+            session.commit()
+        except Exception:
+            session.rollback()
+
+        nombre_envoyes += 1
+        resultats_batch.append({
+            "nom_fichier": nom_fichier,
+            "titre": document.titre,
+            "matiere": document.matiere,
+            "type_document": document.type_document.value,
+            "annee": document.annee,
+            "filiere": (
+                filiere_finale.nom if filiere_finale
+                else (niveau_scolaire.libelle if niveau_scolaire else "Scolaire")
+            ),
+            "confiance": round(float(classification.confiance or 0.0) * 100),
+            "source": classification.source,
+            "caracteres_extraits": int(analyse.get("caracteres_extraits") or 0),
+        })
 
     if nombre_envoyes:
         message = (
-            f"{nombre_envoyes} document(s) envoyé(s) pour validation. "
-            "Ils seront publiés uniquement après approbation par un modérateur."
+            f"{nombre_envoyes} document(s) sur {len(fichiers)} envoyé(s) pour validation. "
+            "Chaque fichier a été analysé séparément ; la publication reste soumise à la modération."
         )
     else:
-        message = "Aucun document n'a pu être envoyé. Consultez les détails ci-dessous."
+        message = "Aucun document n'a pu être envoyé. Consultez les détails et complétez les métadonnées."
 
     return templates.TemplateResponse(
         "document_upload.html",
@@ -1058,6 +1345,7 @@ def upload_documents_multiples(
             "erreur": "",
             "message": message,
             "erreurs_batch": erreurs_batch,
+            "resultats_batch": resultats_batch,
             "utilisateur": utilisateur,
         },
     )

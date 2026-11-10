@@ -7,23 +7,23 @@ de quiz" — c'est fait ici.
 Deux strategies, appliquees dans l'ordre :
 1. PDF avec du texte selectionnable -> pdfplumber (rapide, 100% Python,
    pas de dependance systeme).
-2. Scan/image, ou PDF ou pdfplumber ne sort presque rien -> OCR via
-   pytesseract. Necessite le binaire Tesseract installe sur la machine
-   (`apt install tesseract-ocr tesseract-ocr-fra` sous Linux, installeur
-   officiel sous Windows) et, pour les PDF scannes, `poppler` pour
-   pdf2image (`apt install poppler-utils`). C'est optionnel : si ces
-   dependances manquent, l'extraction retombe simplement sur une chaine
-   vide plutot que de faire planter l'appli.
+2. Scan/image et PDF mêlant texte et images -> OCR via pytesseract.
+   En production Docker, Tesseract français et anglais ainsi que Poppler sont
+   installés. Si ces dépendances système manquent en développement local,
+   l'extraction retombe sur le texte disponible sans faire planter l'appli.
 """
 from pathlib import Path
+import shutil
+import subprocess
 
 import pdfplumber
 
 SEUIL_CARACTERES_PDF_TEXTE = 100  # en dessous de ca, on suppose que c'est un scan
 MAX_PAGES_PDF_TEXTE = 60
-MAX_PAGES_PDF_OCR = 20
+MAX_PAGES_PDF_OCR = 15
 MAX_TEXTE_EXTRAIT = 300_000
-MAX_OCR_DPI = 120
+MAX_OCR_DPI = 160
+MAX_PIXELS_IMAGE_OCR = 40_000_000
 
 
 def extraire_texte(chemin_fichier: str) -> str:
@@ -33,16 +33,23 @@ def extraire_texte(chemin_fichier: str) -> str:
     suffixe = chemin.suffix.lower()
 
     if suffixe == ".pdf":
-        texte = _extraire_texte_pdf(chemin)
-        if len(texte.strip()) >= SEUIL_CARACTERES_PDF_TEXTE:
-            return texte
-        return _extraire_texte_pdf_par_ocr(chemin) or texte
+        # Extraction hybride page par page : un PDF peut mêler pages
+        # sélectionnables et pages scannées. On OCR uniquement les pages
+        # pauvres en texte au lieu de désactiver l'OCR dès qu'une couverture
+        # contient quelques lignes sélectionnables.
+        return _extraire_texte_pdf(chemin)
 
     if suffixe in (".docx",):
         return _extraire_texte_docx(chemin)
 
     if suffixe in (".pptx",):
         return _extraire_texte_pptx(chemin)
+
+    if suffixe == ".doc":
+        return _extraire_texte_bureautique_ancien(chemin, "antiword")
+
+    if suffixe == ".ppt":
+        return _extraire_texte_bureautique_ancien(chemin, "catppt")
 
     if suffixe in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"):
         return _extraire_texte_image(chemin)
@@ -139,34 +146,123 @@ def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
 
 def _extraire_texte_pdf(chemin: Path) -> str:
     morceaux = []
+    nombre_pages_ocr = 0
+    try:
+        import pytesseract
+        from pdf2image import convert_from_path
+    except ImportError:
+        pytesseract = None
+        convert_from_path = None
+
     try:
         with pdfplumber.open(chemin) as pdf:
             total = 0
-            for page in pdf.pages[:MAX_PAGES_PDF_TEXTE]:
-                morceau = page.extract_text() or ""
-                morceaux.append(morceau)
-                total += len(morceau)
+            for numero, page in enumerate(pdf.pages[:MAX_PAGES_PDF_TEXTE], start=1):
+                morceau = (page.extract_text() or "").strip()
+                if (
+                    len(morceau) < SEUIL_CARACTERES_PDF_TEXTE
+                    and pytesseract is not None
+                    and convert_from_path is not None
+                    and nombre_pages_ocr < MAX_PAGES_PDF_OCR
+                ):
+                    try:
+                        images = convert_from_path(
+                            str(chemin),
+                            first_page=numero,
+                            last_page=numero,
+                            dpi=MAX_OCR_DPI,
+                            thread_count=1,
+                            use_pdftocairo=True,
+                        )
+                        if images:
+                            try:
+                                morceau_ocr = _ocr_image(images[0], pytesseract)
+                                if len(morceau_ocr) > len(morceau):
+                                    morceau = morceau_ocr
+                            finally:
+                                # Une seule page est rendue par itération :
+                                # libère immédiatement ses pixels après l'OCR.
+                                for image_rendue in images:
+                                    try:
+                                        image_rendue.close()
+                                    except Exception:
+                                        pass
+                        nombre_pages_ocr += 1
+                    except Exception:
+                        # Une page endommagée ne doit pas empêcher la lecture
+                        # des autres pages du même document.
+                        nombre_pages_ocr += 1
+                if morceau:
+                    morceaux.append(morceau)
+                    total += len(morceau)
                 if total >= MAX_TEXTE_EXTRAIT:
                     break
     except Exception:
         return ""
-    return "\n".join(morceaux)
+    return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
+
+
+def _langue_tesseract(pytesseract) -> str:
+    """Choisit les modèles installés sans échouer si un modèle facultatif manque."""
+    try:
+        disponibles = set(pytesseract.get_languages(config=""))
+    except Exception:
+        disponibles = {"fra"}
+    langues = [langue for langue in ("fra", "eng") if langue in disponibles]
+    return "+".join(langues) or "eng"
+
+
+def _preparer_image_ocr(image):
+    """Améliore le contraste et la lisibilité des scans avant l'OCR."""
+    from PIL import Image, ImageFilter, ImageOps
+
+    largeur, hauteur = image.size
+    if largeur <= 0 or hauteur <= 0 or largeur * hauteur > MAX_PIXELS_IMAGE_OCR:
+        raise ValueError("Image trop grande pour l'OCR")
+    image = ImageOps.exif_transpose(image)
+    image = image.convert("RGB") if image.mode not in {"RGB", "L"} else image.copy()
+    image = ImageOps.grayscale(image)
+    image = ImageOps.autocontrast(image, cutoff=1)
+    plus_grand_cote = max(image.size)
+    if 0 < plus_grand_cote < 1800:
+        facteur = min(1.8, 1800 / plus_grand_cote)
+        image = image.resize(
+            (max(1, int(image.width * facteur)), max(1, int(image.height * facteur))),
+            Image.Resampling.LANCZOS,
+        )
+    return image.filter(ImageFilter.SHARPEN)
+
+
+def _ocr_image(image, pytesseract) -> str:
+    image_preparee = _preparer_image_ocr(image)
+    return (pytesseract.image_to_string(
+        image_preparee,
+        lang=_langue_tesseract(pytesseract),
+        config="--oem 1 --psm 3 -c preserve_interword_spaces=1",
+        timeout=25,
+    ) or "").strip()
 
 
 def _extraire_texte_pdf_par_ocr(chemin: Path) -> str:
-    """OCR page par page pour un PDF scanne (import local expres : voir
-    le commentaire en tete de fichier sur les dependances optionnelles)."""
+    """OCR borné des PDF scannés, avec prétraitement et modèles FR/EN."""
     try:
         import pytesseract
         from pdf2image import convert_from_path
     except ImportError:
         return ""
     try:
-        pages = convert_from_path(str(chemin), first_page=1, last_page=MAX_PAGES_PDF_OCR, dpi=MAX_OCR_DPI, use_pdftocairo=True)
+        pages = convert_from_path(
+            str(chemin),
+            first_page=1,
+            last_page=MAX_PAGES_PDF_OCR,
+            dpi=MAX_OCR_DPI,
+            thread_count=1,
+            use_pdftocairo=True,
+        )
         morceaux = []
         total = 0
         for page in pages:
-            morceau = pytesseract.image_to_string(page, lang="fra")
+            morceau = _ocr_image(page, pytesseract)
             morceaux.append(morceau)
             total += len(morceau)
             if total >= MAX_TEXTE_EXTRAIT:
@@ -183,8 +279,31 @@ def _extraire_texte_image(chemin: Path) -> str:
     except ImportError:
         return ""
     try:
-        return pytesseract.image_to_string(Image.open(chemin), lang="fra")[:MAX_TEXTE_EXTRAIT]
+        with Image.open(chemin) as image:
+            return _ocr_image(image, pytesseract)[:MAX_TEXTE_EXTRAIT]
     except Exception:
+        return ""
+
+
+def _extraire_texte_bureautique_ancien(chemin: Path, executable: str) -> str:
+    """Lit les anciens formats .doc/.ppt avec antiword/catppt si présents."""
+    commande = shutil.which(executable)
+    if not commande:
+        return ""
+    try:
+        resultat = subprocess.run(
+            [commande, str(chemin)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=25,
+            check=False,
+        )
+        if resultat.returncode != 0:
+            return ""
+        return (resultat.stdout or "")[:MAX_TEXTE_EXTRAIT]
+    except (OSError, subprocess.SubprocessError):
         return ""
 
 
@@ -195,8 +314,20 @@ def _extraire_texte_docx(chemin: Path) -> str:
         return ""
     try:
         document = DocxDocument(str(chemin))
-        paragraphes = [p.text for p in document.paragraphs if p.text.strip()]
-        return "\n".join(paragraphes)[:MAX_TEXTE_EXTRAIT]
+        morceaux = [p.text.strip() for p in document.paragraphs if p.text.strip()]
+        # Les supports de cours et tableaux de résultats contiennent souvent
+        # la matière et les dates uniquement dans les cellules des tableaux.
+        for tableau in document.tables:
+            for ligne in tableau.rows:
+                cellules = [cellule.text.strip() for cellule in ligne.cells if cellule.text.strip()]
+                if cellules:
+                    morceaux.append(" | ".join(cellules))
+        for section in document.sections:
+            for zone in (section.header, section.footer):
+                morceaux.extend(
+                    p.text.strip() for p in zone.paragraphs if p.text.strip()
+                )
+        return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""
 
