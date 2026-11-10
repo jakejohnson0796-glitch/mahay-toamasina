@@ -61,7 +61,7 @@
   </section>
   {% endif %}
 </div>
-<style>
+<style nonce="{{ csp_nonce(request) }}">
 .harmonisation-detail{max-width:1160px;margin:0 auto}
 .harmonisation-detail-section{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}
 .harmonisation-texte{white-space:pre-wrap;overflow-wrap:anywhere;padding:.85rem;border-radius:10px;background:var(--content-bg);border:1px solid var(--content-border);font-size:.83rem;line-height:1.65}
