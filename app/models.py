@@ -2307,3 +2307,27 @@ class MembreEtablissement(SQLModel, table=True):
         Index("ix_fk_membre_etablissement_cree_par_id", "cree_par_id"),
         Index("ix_fk_membre_etablissement_modifie_par_id", "modifie_par_id"),
     )
+
+ 
+class OpportuniteAcademique(SQLModel, table=True):
+    """Annonce académique publiée uniquement après vérification explicite de sa source."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    titre: str = Field(max_length=180, index=True)
+    categorie: str = Field(max_length=30, index=True)
+    description: str
+    niveau_cible: Optional[str] = Field(default=None, max_length=80, index=True)
+    region: Optional[str] = Field(default=None, max_length=100, index=True)
+    date_limite: Optional[date] = Field(default=None, index=True)
+    source_nom: str = Field(max_length=180)
+    source_url: str = Field(max_length=1000)
+    statut: str = Field(default="brouillon", max_length=16, index=True)
+    cree_par_id: int = Field(foreign_key="utilisateur.id", index=True)
+    verifie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
+    verifiee_le: Optional[datetime] = None
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+    __table_args__ = (
+        CheckConstraint("categorie IN ('bourse', 'concours', 'admission', 'stage', 'formation', 'evenement')", name="ck_opportunite_academique_categorie"),
+        CheckConstraint("statut IN ('brouillon', 'publiee', 'archivee')", name="ck_opportunite_academique_statut"),
+        Index("ix_opportunite_statut_date_limite", "statut", "date_limite"),
+    )
