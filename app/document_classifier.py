@@ -100,7 +100,10 @@ def _titre_depuis_texte(texte: str) -> Optional[str]:
     """Retient un en-tête plausible quand le nom de fichier est générique."""
     exclusions = (
         "universite ", "republique ", "ministere ", "faculte ",
-        "annee universitaire", "document de travail", "table des matieres",
+        "annee ", "session ", "matiere ", "discipline ", "module ",
+        "document de travail", "table des matieres", "type de document",
+        "epreuve ", "examen ", "annale ", "annales ", "corrige ", "corriges ",
+        "sujet ", "nom et prenom", "nom :", "prenom :", "duree ", "coefficient ",
         "ufr ", "departement ", "etablissement ", "ecole ",
     )
     for ligne in (texte or "").splitlines()[:35]:
@@ -204,22 +207,29 @@ def _type_local(texte: str) -> Optional[TypeDocument]:
     def contient(*expressions: str) -> bool:
         return any(f" {expression} " in normalise for expression in expressions)
 
-    if contient("corrige", "correction", "solution", "solutions", "corrige type", "reponse type"):
+    if contient(
+        "corrige", "corriges", "correction", "corrections", "solution", "solutions",
+        "corrige type", "reponse type", "reponses types",
+    ):
         return TypeDocument.CORRIGE
     if contient(
-        "annale", "examen", "ancien examen", "sujet examen", "epreuve",
-        "epreuve finale", "partiel", "examen session", "session normale",
-        "session rattrapage", "devoir surveille", "composition", "controle continu",
+        "annale", "annales", "examen", "examens", "ancien examen", "sujet examen",
+        "epreuve", "epreuves", "epreuve finale", "partiel", "partiels",
+        "examen session", "session normale", "session rattrapage",
+        "devoir surveille", "devoirs surveilles", "composition", "compositions",
+        "controle continu",
     ):
         return TypeDocument.ANNALE
     if contient(
-        "fiche de revision", "fiche revision", "resume", "synthese",
-        "memo revision", "cheat sheet",
+        "fiche de revision", "fiches de revision", "fiche revision",
+        "resume", "resumes", "synthese", "syntheses", "memo revision",
+        "cheat sheet",
     ):
         return TypeDocument.FICHE
     if contient(
-        "cours", "chapitre", "support de cours", "polycopie", "notes de cours",
-        "travaux diriges", "travaux pratiques",
+        "cours", "chapitre", "chapitres", "support de cours", "supports de cours",
+        "polycopie", "polycopies", "notes de cours", "travaux diriges",
+        "travaux pratiques",
     ):
         return TypeDocument.COURS
     return None
