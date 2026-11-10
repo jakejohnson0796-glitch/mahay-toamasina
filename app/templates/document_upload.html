@@ -695,7 +695,11 @@
               <strong>{{ resultat.nom_fichier }}</strong> — {{ resultat.titre }} · {{ resultat.matiere }} ·
               {{ resultat.type_document }} · {{ resultat.annee }} · {{ resultat.filiere }}.
               <span>{{ resultat.confiance }} % de confiance · {{ resultat.caracteres_extraits }} caractères lus · {{ resultat.source }}.</span>
-              {% if resultat.confiance < 55 %}<strong>Vérification manuelle recommandée.</strong>{% endif %}
+              {% if resultat.caracteres_extraits == 0 %}
+              <strong>Aucun texte n'a été extrait. La détection repose surtout sur le nom du fichier ; vérification manuelle nécessaire.</strong>
+              {% elif resultat.confiance < 55 %}
+              <strong>Vérification manuelle recommandée.</strong>
+              {% endif %}
             </li>
             {% endfor %}
           </ul>
@@ -1185,7 +1189,13 @@
       let message = "Métadonnées détectées depuis le fichier.";
       if (d.filiere_nom) message += " Filière : " + d.filiere_nom + ".";
       if (confiance > 0) message += " Confiance : " + Math.round(confiance * 100) + "%.";
-      setDetection(message, "success");
+      if (Number(d.caracteres_extraits || 0) > 0) {
+        message += " " + Number(d.caracteres_extraits).toLocaleString("fr-FR") + " caractères lus.";
+        setDetection(message, "success");
+      } else {
+        message += " Aucun texte exploitable n’a été extrait : vérifiez la qualité du scan avant l’envoi.";
+        setDetection(message, "warning");
+      }
     } catch (error) {
       if (version !== detectionVersion) return;
       setDetection((error && error.message ? error.message : "Détection indisponible.") + " Vous pouvez compléter les champs manuellement.", "warning");
