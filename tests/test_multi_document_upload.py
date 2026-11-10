@@ -15,6 +15,8 @@ def test_upload_form_allows_multiple_selection_but_keeps_single_upload_contract(
     assert 'input.name = "fichiers"' in template
     assert "fichiers.length > MAX_FILES" in template
     assert "Jusqu’à 15 fichiers par envoi" in template
+    assert "Les lots scolaires sont autorisés aussi" in template
+    assert "const lotScolaire = scolaire && fichiers.length > 1" in template
     assert "120 Mo maximum par lot" in template
 
 
@@ -28,7 +30,10 @@ def test_batch_upload_requires_automatic_classification_and_csrf():
     assert "_csrf: None = Depends(verifier_csrf)" in batch
     assert "if len(fichiers) > MAX_DOCUMENTS_PAR_LOT:" in batch
     assert "MAX_TAILLE_DOCUMENT_PAR_LOT" in batch
-    assert "if not classification_auto:" in batch
+    assert 'portee == "scolaire" and not' not in batch
+    assert "ProgrammeMatiereScolaire" in batch
+    assert "matiere_scolaire_id" in batch
+    assert "if portee == \"universitaire\" and not classification_auto:" in batch
 
 
 def test_batch_upload_classifies_each_file_and_preserves_moderation():
@@ -39,6 +44,9 @@ def test_batch_upload_classifies_each_file_and_preserves_moderation():
     assert "for fichier in fichiers:" in batch
     assert "analyser_documents_stockes(" in batch
     assert "MAX_DOCUMENTS_PAR_LOT" in batch
+    assert "matieres_scolaires_candidates" in batch
+    assert "ids_matieres_candidates" in batch
+    assert "portee_academique=portee" in batch
     assert "supprimer_fichier(chemin_stocke)" in batch
     assert "statut=StatutDocument.EN_ATTENTE" in batch
     assert "_notifier_admins_nouveau_document" in batch
