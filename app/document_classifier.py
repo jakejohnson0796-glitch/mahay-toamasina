@@ -78,16 +78,16 @@ def _titre_depuis_texte(texte: str) -> Optional[str]:
         "nom et prenom", "enseignant", "professeur", "departement", "adresse",
     )
     for ligne in (texte or "")[:MAX_TEXTE_IA].splitlines()[:35]:
-        valeur = " ".join(str(ligne or "").split()).strip(" •-*\\t")
+        valeur = " ".join(str(ligne or "").split()).strip(" •-*\t")
         normalisee = _normaliser(valeur)
         mots = normalisee.split()
         if len(normalisee) < 4 or len(valeur) > MAX_TITRE or len(mots) > 16:
             continue
         if any(normalisee.startswith(prefixe) for prefixe in prefixes):
             continue
-        if re.fullmatch(r"(?:page\\s*)?\\d+(?:\\s*/\\s*\\d+)?", normalisee):
+        if re.fullmatch(r"(?:page\s*)?\d+(?:\s*/\s*\d+)?", normalisee):
             continue
-        if re.fullmatch(r"[\\W\\d_]+", valeur):
+        if re.fullmatch(r"[\W\d_]+", valeur):
             continue
         return _nettoyer_titre(valeur)
     return None
@@ -121,7 +121,7 @@ def _annee_depuis_texte(*sources: str) -> Optional[int]:
     textes = [_normaliser(source or "") for source in sources]
     for texte in textes:
         match = re.search(
-            r"\\bsession\\s*(?:normale|rattrapage|extraordinaire)?\\s*[:=-]?\\s*((?:19|20)\\d{2})\\b",
+            r"\bsession\s*(?:normale|rattrapage|extraordinaire)?\s*[:=-]?\s*((?:19|20)\d{2})\b",
             texte,
         )
         if match:
@@ -130,7 +130,7 @@ def _annee_depuis_texte(*sources: str) -> Optional[int]:
                 return annee
     for texte in textes:
         match = re.search(
-            r"\\bannee(?: scolaire| academique| universitaire)?\\s*[:=-]?\\s*((?:19|20)\\d{2})(?:\\s*[-/]\\s*((?:19|20)\\d{2}))?\\b",
+            r"\bannee(?: scolaire| academique| universitaire)?\s*[:=-]?\s*((?:19|20)\d{2})(?:\s*[-/]\s*((?:19|20)\d{2}))?\b",
             texte,
         )
         if match:
@@ -138,7 +138,7 @@ def _annee_depuis_texte(*sources: str) -> Optional[int]:
             if 2000 <= annee <= 2100:
                 return annee
     for source in sources:
-        for valeur in re.findall(r"\\b(?:19|20)\\d{2}\\b", source or ""):
+        for valeur in re.findall(r"\b(?:19|20)\d{2}\b", source or ""):
             annee = int(valeur)
             if 2000 <= annee <= 2100:
                 return annee
@@ -323,7 +323,7 @@ def classifier_document(
     La valeur fournie par l'utilisateur reste le fallback. Les déductions
     automatiques ne remplacent une valeur que lorsqu'elles sont exploitables.
     """
-    texte_reference = f"{nom_fichier}\\n{texte or ''}"
+    texte_reference = f"{nom_fichier}\n{texte or ''}"
     titre_local = _titre_depuis_nom(nom_fichier)
     titre_texte = _titre_depuis_texte(texte)
     matiere_local = _matiere_locale(texte)
