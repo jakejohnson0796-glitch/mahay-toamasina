@@ -118,3 +118,25 @@ def test_annee_academique_retient_la_fin_de_la_periode():
     from app.document_classifier import _annee_depuis_texte
 
     assert _annee_depuis_texte("Année académique 2025-2026", "cours_2024.pdf") == 2026
+
+
+def test_classifieur_reconnait_les_pluriels_des_types_documentaires():
+    from app.document_classifier import _type_local
+
+    assert _type_local("ANNALES DE MATHÉMATIQUES") == TypeDocument.ANNALE
+    assert _type_local("EXAMENS ET ÉPREUVES") == TypeDocument.ANNALE
+    assert _type_local("CORRIGÉS OFFICIELS") == TypeDocument.CORRIGE
+    assert _type_local("FICHES DE RÉVISION") == TypeDocument.FICHE
+
+
+def test_titre_ocr_ignore_les_entetes_administratifs():
+    from app.document_classifier import _titre_depuis_texte
+
+    texte = (
+        "UNIVERSITÉ DE TOAMASINA\\n"
+        "ANNÉE UNIVERSITAIRE 2025-2026\\n"
+        "SESSION NORMALE 2026\\n"
+        "ÉPREUVE FINALE\\n"
+        "Analyse des fonctions et applications"
+    )
+    assert _titre_depuis_texte(texte) == "Analyse des fonctions et applications"
