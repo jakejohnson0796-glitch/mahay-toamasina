@@ -821,8 +821,8 @@
               <div class="document-upload-auto-box">
                 <input type="checkbox" id="classification_auto" name="classification_auto" value="true">
                 <label class="document-upload-auto-copy" for="classification_auto">
-                  <strong>Détection automatique (université)</strong>
-                  <span>Détecte le titre, la matière, le type, l’année et la filière universitaire. Le dépôt scolaire est classé manuellement pour éviter toute confusion entre classes et filières.</span>
+                  <strong>Détection intelligente par document</strong>
+                  <span>Université : le moteur détecte le titre, la matière, le type, l’année et la filière. Scolaire : chaque fichier est comparé aux matières validées de la classe et de l’option choisies. Les informations incertaines restent à vérifier.</span>
                 </label>
               </div>
             </div>
@@ -833,7 +833,7 @@
                 <span class="document-upload-file-icon" aria-hidden="true">📎</span>
                 <span class="document-upload-file-copy">
                   <strong>Choisir plusieurs fichiers ou les déposer ici</strong>
-                  <span>Jusqu’à 15 fichiers par envoi · 120 Mo maximum par lot · 20 Mo maximum par fichier.</span>
+                  <span>Jusqu’à 15 fichiers par envoi · 120 Mo maximum par lot · 20 Mo maximum par fichier. Pour un lot scolaire, choisissez une même classe et une même option.</span>
                   <span class="document-upload-file-name" id="nom-fichier">Aucun fichier sélectionné</span>
                 </span>
                 <input type="file" id="fichier" name="fichier" required multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
@@ -981,9 +981,10 @@
     const auto = Boolean(classificationAuto && classificationAuto.checked);
     const fichiers = fichiersSelectionnes();
 
+    const lotScolaire = scolaire && fichiers.length > 1;
     if (scolaire && auto) {
-      erreurs.push("la détection automatique n'est disponible que pour les documents universitaires");
-    } else if (!auto) {
+      erreurs.push("le parcours scolaire utilise les matières du référentiel vérifié");
+    } else if (!auto && !lotScolaire) {
       if (!valeur(fields.titre)) erreurs.push("ajoutez un titre");
       if (!valeur(fields.matiere)) erreurs.push("indiquez la matière");
       if (!valeur(fields.annee)) erreurs.push("indiquez l'année");
@@ -994,6 +995,9 @@
       } else if (!valeur(fields.filiere)) {
         erreurs.push("choisissez une filière universitaire");
       }
+    } else if (lotScolaire) {
+      if (!valeur(fields.cycleScolaire)) erreurs.push("choisissez le cycle scolaire");
+      if (!valeur(fields.niveauScolaire)) erreurs.push("choisissez la classe");
     } else if (detectionEnCours && fichiers.length <= 1) {
       erreurs.push("attendez la fin de la détection automatique");
     }
@@ -1005,9 +1009,9 @@
     if (fichiers.length > MAX_FILES) erreurs.push("sélectionnez au maximum 15 fichiers par envoi");
     const tailleTotale = fichiers.reduce(function (total, fichier) { return total + fichier.size; }, 0);
     if (tailleTotale > MAX_BATCH_BYTES) erreurs.push("le lot dépasse 120 Mo au total");
-    if (fichiers.length > 1 && (!auto || scolaire)) {
+    if (fichiers.length > 1 && ((!auto && !scolaire) || (scolaire && (!valeur(fields.cycleScolaire) || !valeur(fields.niveauScolaire))))) {
       erreurs.push(scolaire
-        ? "envoyez un document scolaire à la fois"
+        ? "choisissez un cycle et une classe vérifiés pour le lot scolaire"
         : "activez la détection automatique pour classer chaque fichier séparément");
     }
     fichiers.forEach(function (fichier) {
@@ -1082,10 +1086,12 @@
       if (scolaire) classificationAuto.checked = false;
     }
     const auto = Boolean(classificationAuto && classificationAuto.checked && !scolaire);
+    const lotScolaire = scolaire && fichiersSelectionnes().length > 1;
+    const detectionParFichier = auto || lotScolaire;
 
     [fields.titre, fields.matiere, fields.annee, fields.type].forEach(function (field) {
       if (!field) return;
-      field.required = !auto;
+      field.required = !detectionParFichier;
     });
     if (fields.filiere) fields.filiere.required = !auto && !scolaire;
     if (fields.cycleScolaire) {
@@ -1102,11 +1108,9 @@
     // Les métadonnées scolaires sont validées à la main pour éviter qu'un
     // classifieur universitaire ne produise une fausse filière scolaire.
     if (input) {
-      input.multiple = !scolaire;
-      if (scolaire && input.files && input.files.length > 1) {
-        input.value = "";
-        setDetection("Le dépôt scolaire se fait un document à la fois pour garantir son bon classement.", "warning");
-      }
+      // Les lots scolaires sont autorisés aussi : leur cible commune est
+      // validée côté serveur et chaque matière est rapprochée du programme.
+      input.multiple = true;
     }
     if (classificationAuto) classificationAuto.setAttribute("aria-checked", String(auto));
   }
@@ -1120,13 +1124,17 @@
   }
   async function detecterFichier() {
     const version = ++detectionVersion;
+    const fichiers = fichiersSelectionnes();
     if (valeur(fields.portee) === "scolaire") {
       detectionEnCours = false;
-      setDetection("Complétez manuellement la classe et, si disponible, la série ou l’option scolaire.", "warning");
+      if (fichiers.length > 1) {
+        setDetection("Les " + fichiers.length + " fichiers seront lus individuellement et rapprochés des matières vérifiées de la classe et de l’option sélectionnées.", "success");
+      } else {
+        setDetection("Choisissez la classe et, si disponible, la série ou l’option scolaire. Les métadonnées du document seront vérifiées à l’envoi.", "warning");
+      }
       maj();
       return;
     }
-    const fichiers = fichiersSelectionnes();
     if (fichiers.length > 1) {
       detectionEnCours = false;
       if (classificationAuto && classificationAuto.checked) {
@@ -1241,7 +1249,7 @@
   });
 
   if (input && nom && zone) {
-    input.addEventListener("change", function () { maj(); detecterFichier(); });
+    input.addEventListener("change", function () { appliquerModeDetectionAuto(); maj(); detecterFichier(); });
     ["dragenter", "dragover"].forEach(function (name) {
       zone.addEventListener(name, function (event) { event.preventDefault(); zone.classList.add("dragover"); });
     });
@@ -1294,9 +1302,15 @@
       }
       const fichiers = fichiersSelectionnes();
       if (fichiers.length > 1) {
-        if (!classificationAuto || !classificationAuto.checked) {
+        const scolaire = valeur(fields.portee) === "scolaire";
+        if (!scolaire && (!classificationAuto || !classificationAuto.checked)) {
           event.preventDefault();
           setDetection("Activez la détection automatique pour envoyer jusqu’à 15 documents dans un même lot.", "warning");
+          return;
+        }
+        if (scolaire && (!valeur(fields.cycleScolaire) || !valeur(fields.niveauScolaire))) {
+          event.preventDefault();
+          setDetection("Choisissez une classe vérifiée avant d’envoyer le lot scolaire.", "warning");
           return;
         }
         form.action = "/documents/upload-multiple";
