@@ -1204,11 +1204,39 @@ def upload_documents_multiples(
             classification.titre
             or ((titre or "").strip() if len(fichiers) == 1 else "")
         ).strip()
-        matiere_finale = (classification.matiere or matiere or "").strip()
         type_final = classification.type_document or type_document
         annee_finale = classification.annee or annee
-        filiere_id_finale = classification.filiere_id or filiere_id
-        filiere_finale = session.get(Filiere, filiere_id_finale) if filiere_id_finale else None
+        filiere_finale = None
+        matiere_scolaire_finale = None
+        bepc_parcours_valide, erreur_bepc_parcours = _normaliser_bepc_session_2027_parcours(
+            bepc_session_2027_parcours,
+            portee_academique=portee,
+            niveau_scolaire=niveau_scolaire,
+            type_document=type_final,
+            annee=annee_finale,
+        )
+
+        if portee == "universitaire":
+            filiere_id_finale = classification.filiere_id or filiere_id
+            filiere_finale = session.get(Filiere, filiere_id_finale) if filiere_id_finale else None
+            matiere_finale = (classification.matiere or matiere or "").strip()
+        else:
+            ids_matieres_candidates = {item.id for item in matieres_scolaires_candidates}
+            # Un choix manuel reste prioritaire ; sinon le classifieur ne peut
+            # proposer qu'une matière vérifiée de cette classe et cette option.
+            id_matiere_detectee = (
+                classification.filiere_id
+                if classification.filiere_id in ids_matieres_candidates else None
+            )
+            id_matiere_final = matiere_scolaire_id or id_matiere_detectee
+            matiere_scolaire_finale = (
+                session.get(MatiereScolaire, id_matiere_final)
+                if id_matiere_final else None
+            )
+            matiere_finale = (
+                matiere_scolaire_finale.libelle
+                if matiere_scolaire_finale else (classification.matiere or matiere or "").strip()
+            )
 
         manquants = []
         if not titre_final:
@@ -1219,14 +1247,16 @@ def upload_documents_multiples(
             manquants.append("type de document")
         if annee_finale is None or annee_finale < 2000 or annee_finale > 2100:
             manquants.append("année")
-        if filiere_finale is None:
+        if portee == "universitaire" and filiere_finale is None:
             manquants.append("filière")
+        if erreur_bepc_parcours:
+            manquants.append("programme BEPC 2027")
 
         if manquants:
             supprimer_fichier(chemin_stocke)
             erreurs_batch.append(
-                f"{nom_fichier} : informations non détectées ({', '.join(manquants)}). "
-                "Ajoutez ces éléments au nom du fichier ou renseignez les métadonnées communes."
+                f"{nom_fichier} : informations non détectées ou non vérifiées ({', '.join(manquants)}). "
+                "Vérifiez le contenu du fichier et les métadonnées communes."
             )
             continue
 
@@ -1236,7 +1266,13 @@ def upload_documents_multiples(
             matiere=matiere_finale[:120],
             type_document=type_final,
             annee=annee_finale,
-            filiere_id=filiere_finale.id,
+            filiere_id=filiere_finale.id if filiere_finale else None,
+            portee_academique=portee,
+            niveau_scolaire_id=niveau_scolaire.id if niveau_scolaire else None,
+            option_scolaire_id=option_scolaire.id if option_scolaire else None,
+            matiere_scolaire_id=matiere_scolaire_finale.id if matiere_scolaire_finale else None,
+            etablissement_scolaire_id=etablissement_scolaire.id if etablissement_scolaire else None,
+            bepc_session_2027_parcours=bepc_parcours_valide,
             cercle_id=cercle_id,
             uploader_id=utilisateur.id,
             chemin_fichier=chemin_stocke,
@@ -1276,7 +1312,10 @@ def upload_documents_multiples(
             "matiere": document.matiere,
             "type_document": document.type_document.value,
             "annee": document.annee,
-            "filiere": filiere_finale.nom,
+            "filiere": (
+                filiere_finale.nom if filiere_finale
+                else (niveau_scolaire.libelle if niveau_scolaire else "Scolaire")
+            ),
             "confiance": round(float(classification.confiance or 0.0) * 100),
             "source": classification.source,
             "caracteres_extraits": int(analyse.get("caracteres_extraits") or 0),
