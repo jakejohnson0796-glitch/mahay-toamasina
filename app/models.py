@@ -691,7 +691,7 @@ class Document(SQLModel, table=True):
     fiche_validee_le: Optional[datetime] = None
     # Version publique du cours harmonisé, publiée uniquement après validation admin.
     contenu_harmonise: str = Field(default="", max_length=100000)
-    version_harmonisee: int = Field(default=0, index=True)
+    version_harmonisee: int = Field(default=0)
     date_mise_a_jour_harmonisee: Optional[datetime] = None
 
     __table_args__ = (
@@ -1435,7 +1435,7 @@ class MessageCercle(SQLModel, table=True):
     relu a chaque ouverture du salon en plus du flux temps reel)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     cercle_id: int = Field(foreign_key="cercleetude.id")
-    auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    auteur_id: int = Field(foreign_key="utilisateur.id")
     contenu: str
     date_envoi: datetime = Field(default_factory=datetime.utcnow)
     # Partage de fichier (PDF) : optionnel, un message peut etre texte
@@ -1586,7 +1586,7 @@ class Notification(SQLModel, table=True):
     message_id: Optional[int] = Field(default=None, foreign_key="messagecercle.id")
     url_destination: Optional[str] = Field(default=None, max_length=300)
     lu: bool = Field(default=False)
-    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
 class AbonnementEtudiant(SQLModel, table=True):
@@ -1986,7 +1986,7 @@ class Feedback(SQLModel, table=True):
     categorie: CategorieFeedback = Field(default=CategorieFeedback.GENERAL)
     statut: StatutFeedback = Field(default=StatutFeedback.NOUVEAU, index=True)
     est_public: bool = Field(default=False)
-    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
     date_modification: datetime = Field(default_factory=datetime.utcnow)
 
     __table_args__ = (
@@ -2223,7 +2223,7 @@ class DocumentPartageSeance(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     seance_id: int = Field(foreign_key="seance.id", index=True)
     cours_id: int = Field(foreign_key="cours.id", index=True)
-    document_id: int = Field(foreign_key="document.id", index=True)
+    document_id: int = Field(foreign_key="document.id")
     partage_par_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
@@ -2364,7 +2364,6 @@ class DemandeMiseAJourCours(SQLModel, table=True):
     impact_pedagogique: str = Field(max_length=5000)
     statut: str = Field(
         default=StatutDemandeMiseAJourCours.EN_ATTENTE.value,
-        index=True,
         max_length=32,
     )
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
@@ -2374,6 +2373,8 @@ class DemandeMiseAJourCours(SQLModel, table=True):
     motif_decision: str = Field(default="", max_length=5000)
 
     __table_args__ = (
+        Index("ix_demande_mise_a_jour_document", "document_id"),
+        Index("ix_demande_mise_a_jour_auteur", "auteur_id"),
         Index("ix_demande_mise_a_jour_statut_date", "statut", "date_creation"),
     )
 
