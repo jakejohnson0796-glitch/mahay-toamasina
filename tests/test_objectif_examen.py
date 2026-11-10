@@ -153,6 +153,9 @@ def test_page_objectif_examen_presente_les_sources_externes_avec_liens_proteges(
 
     assert "ressources_examens.ressources_pour_cycle(cycle)" in route
     assert "Annales et ressources externes" in template
+    assert "Annales et corrigés de ton niveau" in template
+    assert "Publication et exactitude pédagogique sont deux contrôles différents" in template
+    assert 'href="/documents/{{ doc.id }}/telecharger"' in template
     assert 'target="_blank" rel="noopener noreferrer"' in template
     assert "ne validons pas individuellement chaque sujet ou corrigé" in template
     assert "Nous ne recopions pas leurs fichiers" in template
