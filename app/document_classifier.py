@@ -16,6 +16,7 @@ import json
 import logging
 import re
 import unicodedata
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Optional, Sequence
 
@@ -26,8 +27,29 @@ from .models import Filiere, TypeDocument
 
 logger = logging.getLogger(__name__)
 
-MAX_TEXTE_IA = 12_000
+MAX_TEXTE_IA = 16_000
 MAX_TITRE = 180
+
+ALIASES_MATIERES = {
+    "Mathématiques": ("mathematiques", "mathematique", "maths", "algebre", "geometrie", "equations differentielles", "calcul integral"),
+    "Physique": ("physique", "mecanique", "electricite", "optique", "thermodynamique"),
+    "Chimie": ("chimie", "chimique", "chimie organique", "chimie minerale"),
+    "Biologie": ("biologie", "svt", "anatomie", "physiologie", "botanique", "zoologie"),
+    "Français": ("francais", "grammaire", "conjugaison", "litterature francaise", "redaction"),
+    "Malagasy": ("malagasy", "malgache", "teny malagasy"),
+    "Anglais": ("anglais", "english"),
+    "Histoire": ("histoire", "histoire contemporaine", "histoire ancienne"),
+    "Géographie": ("geographie", "cartographie", "geographie humaine"),
+    "Philosophie": ("philosophie", "philosophique"),
+    "Droit": ("droit civil", "droit penal", "droit public", "droit prive", "juridique", "jurisprudence"),
+    "Économie": ("economie", "economique", "microeconomie", "macroeconomie"),
+    "Comptabilité": ("comptabilite", "comptable", "comptes annuels"),
+    "Informatique": ("informatique", "programmation", "algorithmique", "developpement logiciel", "bases de donnees"),
+    "Gestion": ("gestion", "management", "administration des entreprises"),
+    "Marketing": ("marketing", "communication commerciale"),
+    "Psychologie": ("psychologie", "psychologique"),
+    "Éducation civique": ("education civique", "instruction civique", "education a la citoyennete"),
+}
 
 
 @dataclass(frozen=True)
@@ -67,6 +89,27 @@ def _titre_depuis_nom(nom_fichier: str) -> Optional[str]:
     stem = Path(nom_fichier or "").stem
     stem = re.sub(r"\b(20\d{2}|19\d{2})\b", " ", stem)
     return _nettoyer_titre(stem)
+
+
+def _titre_depuis_texte(texte: str) -> Optional[str]:
+    """Retient un en-tête plausible quand le nom de fichier est générique."""
+    exclusions = (
+        "universite de ", "republique de ", "ministere de ", "faculte de ",
+        "annee universitaire", "document de travail", "table des matieres",
+    )
+    for ligne in (texte or "").splitlines()[:35]:
+        valeur = _nettoyer_titre(ligne)
+        if not valeur or len(valeur) < 8 or len(valeur) > 120:
+            continue
+        normalise = _normaliser(valeur)
+        if any(normalise.startswith(item) for item in exclusions):
+            continue
+        if len(normalise.split()) > 14 or re.fullmatch(r"[\d\s./-]+", valeur):
+            continue
+        if sum(char.isalpha() for char in valeur) < 6:
+            continue
+        return valeur
+    return None
 
 
 def _matiere_depuis_nom_fichier(nom_fichier: str) -> Optional[str]:
@@ -159,26 +202,84 @@ def _matiere_locale(texte: str) -> Optional[str]:
     return None
 
 
+def _score_filiere(nom_filiere: str, texte_normalise: str) -> int:
+    nom = _normaliser(nom_filiere)
+    if not nom or not texte_normalise:
+        return 0
+    contenu = f" {texte_normalise} "
+    if len(nom) >= 5 and f" {nom} " in contenu:
+        return 120 + len(nom)
+
+    stopwords = {
+        "de", "du", "des", "et", "la", "le", "les", "en", "a", "au", "aux",
+        "faculte", "universite", "universitaire", "departement", "formation",
+        "sciences", "etudes", "licence", "master",
+    }
+    tokens = {mot for mot in nom.split() if len(mot) >= 3 and mot not in stopwords}
+    if not tokens:
+        tokens = {mot for mot in nom.split() if len(mot) >= 5}
+    if not tokens:
+        return 0
+
+    mots_contenu = set(texte_normalise.split())
+    correspondants = set()
+    for token in tokens:
+        if token in mots_contenu:
+            correspondants.add(token)
+            continue
+        if len(token) >= 6 and any(
+            len(mot) >= 6 and SequenceMatcher(None, token, mot).ratio() >= 0.90
+            for mot in mots_contenu
+        ):
+            correspondants.add(token)
+
+    ratio = len(correspondants) / len(tokens)
+    if ratio == 1:
+        return 88 + 3 * len(tokens)
+    if ratio >= 0.67 and len(tokens) >= 2:
+        return 45 + int(20 * ratio) + len(correspondants)
+    return 0
+
+
 def _candidats_filieres(texte: str, filieres: Sequence[Filiere], limite: int = 12) -> list[Filiere]:
     contenu = _normaliser(texte)
     if not contenu:
         return []
-
-    mots = set(contenu.split())
-    scores: list[tuple[int, int, Filiere]] = []
-    for filiere in filieres:
-        nom = _normaliser(filiere.nom)
-        if not nom:
-            continue
-        nom_mots = set(nom.split())
-        score = 0
-        if len(nom) >= 5 and nom in contenu:
-            score += 100 + len(nom)
-        score += sum(2 for mot in nom_mots if len(mot) >= 4 and mot in mots)
-        if score > 0:
-            scores.append((score, len(nom), filiere))
+    scores = [
+        (_score_filiere(filiere.nom, contenu), len(_normaliser(filiere.nom)), filiere)
+        for filiere in filieres
+    ]
+    scores = [item for item in scores if item[0] > 0]
     scores.sort(key=lambda item: (item[0], item[1]), reverse=True)
     return [item[2] for item in scores[:limite]]
+
+
+def _matiere_depuis_signaux(nom_fichier: str, texte: str) -> Optional[str]:
+    """Repère les matières connues sans transformer une phrase en matière."""
+    nom = _normaliser(Path(nom_fichier or "").stem)
+    lignes_hautes = _normaliser("\n".join((texte or "").splitlines()[:35]))
+    contenu = _normaliser(texte or "")
+    scores: list[tuple[int, str]] = []
+    for matiere, alias in ALIASES_MATIERES.items():
+        score = 0
+        for valeur in alias:
+            cle = _normaliser(valeur)
+            if not cle:
+                continue
+            if f" {cle} " in f" {nom} ":
+                score += 10
+            if f" {cle} " in f" {lignes_hautes} ":
+                score += 6
+            elif f" {cle} " in f" {contenu} ":
+                score += 2
+        if score:
+            scores.append((score, matiere))
+    scores.sort(reverse=True)
+    if not scores or scores[0][0] < 5:
+        return None
+    if len(scores) > 1 and scores[0][0] - scores[1][0] < 3:
+        return None
+    return scores[0][1]
 
 
 def _client_ia() -> Optional[Groq]:
@@ -288,14 +389,25 @@ def classifier_document(
 
     candidats = _candidats_filieres(texte_reference, filieres)
     meilleur_filiere = candidats[0] if candidats else None
-    if meilleur_filiere and _normaliser(meilleur_filiere.nom) not in _normaliser(texte_reference):
+    texte_normalise = _normaliser(texte_reference)
+    if meilleur_filiere and _score_filiere(meilleur_filiere.nom, texte_normalise) < 80:
         meilleur_filiere = None
+    if len(candidats) > 1 and meilleur_filiere:
+        score_1 = _score_filiere(candidats[0].nom, texte_normalise)
+        score_2 = _score_filiere(candidats[1].nom, texte_normalise)
+        if score_1 - score_2 < 12:
+            meilleur_filiere = None
 
     resultat_ia = _classification_ia(nom_fichier, texte, candidats)
     confiance_ia = float(resultat_ia.get("confiance") or 0.0)
     confiance_ia = max(0.0, min(1.0, confiance_ia))
 
-    titre = _nettoyer_titre(resultat_ia.get("titre") or "") or titre_local or _nettoyer_titre(titre_fourni)
+    titre = (
+        _nettoyer_titre(resultat_ia.get("titre") or "")
+        or titre_local
+        or _titre_depuis_texte(texte)
+        or _nettoyer_titre(titre_fourni)
+    )
 
     # L'IA peut parfois recopier une phrase du cours comme "matière".
     # On refuse ces sorties trop longues/phrastiques et on utilise le nom
@@ -303,8 +415,9 @@ def classifier_document(
     matiere_ia = _matiere_auto_valide(resultat_ia.get("matiere") or "")
     matiere = (
         matiere_local_nom
-        or matiere_ia
         or matiere_local
+        or _matiere_depuis_signaux(nom_fichier, texte)
+        or matiere_ia
         or _matiere_auto_valide(titre_local or "")
         or _nettoyer_titre(matiere_fourni)
     )
