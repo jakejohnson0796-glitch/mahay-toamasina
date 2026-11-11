@@ -207,15 +207,23 @@ def inscription(
     # administrative le fera après vérification.
     profil_demande = (
         "professeur" if role == RoleUtilisateur.PROFESSEUR
+        else "repetiteur" if role == RoleUtilisateur.REPETITEUR
         else "sponsor" if role == RoleUtilisateur.SPONSOR
         else "eleve"
     )
     est_demande_enseignant = profil_demande == "professeur"
-    if role not in (RoleUtilisateur.ETUDIANT, RoleUtilisateur.PROFESSEUR, RoleUtilisateur.SPONSOR):
+    est_demande_repetiteur = profil_demande == "repetiteur"
+    if role not in (
+        RoleUtilisateur.ETUDIANT,
+        RoleUtilisateur.PROFESSEUR,
+        RoleUtilisateur.SPONSOR,
+        RoleUtilisateur.REPETITEUR,
+    ):
         role = RoleUtilisateur.ETUDIANT
         profil_demande = "eleve"
         est_demande_enseignant = False
-    if est_demande_enseignant:
+    if est_demande_enseignant or est_demande_repetiteur:
+        # L'inscription ne confère aucun rôle professionnel avant validation.
         role = RoleUtilisateur.ETUDIANT
 
     # Le compte responsable reste un compte sans privilège spécial.
@@ -225,6 +233,7 @@ def inscription(
         role = RoleUtilisateur.RESPONSABLE
         profil_demande = "responsable"
         est_demande_enseignant = False
+        est_demande_repetiteur = False
 
     # Compatibilité avec les anciens formulaires/tests et liens : un choix
     # universitaire historique est interprété comme le cycle université si
@@ -254,8 +263,8 @@ def inscription(
     option_scolaire_obj = None
     etablissement_scolaire_obj = None
 
-    if role in (RoleUtilisateur.SPONSOR, RoleUtilisateur.RESPONSABLE):
-        # Les comptes sponsor et responsable n'ont pas de rattachement pédagogique.
+    if role in (RoleUtilisateur.SPONSOR, RoleUtilisateur.RESPONSABLE) or est_demande_repetiteur:
+        # Les comptes sponsor, répétiteur et responsable n'ont pas de rattachement pédagogique.
         universite_id_nettoye = None
         composante_id_nettoye = None
         mention_id_nettoye = None
@@ -460,6 +469,8 @@ def inscription(
         etablissement_scolaire_id=(etablissement_scolaire_obj.id if etablissement_scolaire_obj else None),
         statut_verification_enseignant=("en_attente" if est_demande_enseignant else "non_concerne"),
         demande_enseignant_le=(datetime.utcnow() if est_demande_enseignant else None),
+        statut_verification_repetiteur=("en_attente" if est_demande_repetiteur else "non_concerne"),
+        demande_repetiteur_le=(datetime.utcnow() if est_demande_repetiteur else None),
         mention_id=mention_id_nettoye,
         filiere_id=filiere_id_nettoye,
         faculte_id=composante_id_nettoye,
@@ -485,7 +496,7 @@ def inscription(
     session.commit()
     session.refresh(utilisateur)
 
-    if utilisateur.role == RoleUtilisateur.ETUDIANT:
+    if utilisateur.role == RoleUtilisateur.ETUDIANT and utilisateur.profil_souhaite != "repetiteur":
         subscription.creer_essai_gratuit(session, utilisateur)
 
     # Notification interne : chaque administrateur recoit une alerte.
@@ -495,6 +506,8 @@ def inscription(
     _ouvrir_session_authentifiee(request, utilisateur)
     if utilisateur.profil_souhaite == "responsable":
         return RedirectResponse("/famille", status_code=303)
+    if utilisateur.profil_souhaite == "repetiteur":
+        return RedirectResponse("/dashboard", status_code=303)
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         return RedirectResponse("/bienvenue", status_code=303)
     return RedirectResponse("/", status_code=303)
