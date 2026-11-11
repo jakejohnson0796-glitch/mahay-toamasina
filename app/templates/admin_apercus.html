@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block titre %}Aperçu des espaces utilisateurs — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page admin-apercus-page">
+  <section class="ops-hero admin-apercus-hero">
+    <div>
+      <span class="ops-kicker">Contrôle des interfaces · Administration</span>
+      <h1>Voir MITARIDALA du côté des utilisateurs.</h1>
+      <p>
+        Prévisualise les espaces tels qu'ils sont présentés aux différents profils.
+        L'aperçu utilise des données fictives et ne modifie aucun compte.
+      </p>
+    </div>
+    <div class="admin-apercus-hero-etat">
+      <span class="admin-apercus-hero-icone" aria-hidden="true">◉</span>
+      <strong>Mode lecture seule</strong>
+      <span>Ton compte administrateur reste inchangé.</span>
+    </div>
+  </section>
+
+  {% if request.query_params.get("erreur") == "espace_invalide" %}
+  <div class="ops-alert ops-alert-warn">Cet espace d'aperçu n'existe pas. Choisis l'une des vues proposées ci-dessous.</div>
+  {% endif %}
+
+  <section class="admin-apercus-intro">
+    <div>
+      <span class="ops-kicker">Trois expériences à contrôler</span>
+      <h2>Quel espace veux-tu examiner ?</h2>
+    </div>
+    <p>Chaque aperçu reprend le tableau de bord et la navigation du profil sélectionné. Les liens et formulaires sont volontairement désactivés.</p>
+  </section>
+
+  <div class="admin-apercus-grille">
+    <article class="admin-apercus-carte admin-apercus-etudiant">
+      <div class="admin-apercus-carte-top">
+        <span class="admin-apercus-icone" aria-hidden="true">🎓</span>
+        <span class="ops-badge">Apprenant</span>
+      </div>
+      <h3>Élève / Étudiant</h3>
+      <p>Accueil, routine quotidienne, documents, quiz, révisions, parcours, cercles et objectifs d'examen.</p>
+      <ul>
+        <li>Tableau de bord apprenant</li>
+        <li>Navigation et compte côté étudiant</li>
+        <li>États vides de démonstration</li>
+      </ul>
+      <a class="bouton bouton-primaire" href="/admin/apercus/etudiant">Voir l'espace étudiant <span aria-hidden="true">→</span></a>
+    </article>
+
+    <article class="admin-apercus-carte admin-apercus-enseignant">
+      <div class="admin-apercus-carte-top">
+        <span class="admin-apercus-icone" aria-hidden="true">📚</span>
+        <span class="ops-badge">Compte vérifié</span>
+      </div>
+      <h3>Enseignant</h3>
+      <p>Accueil professionnel, statistiques, création de cours, gestion des classes et harmonisation.</p>
+      <ul>
+        <li>Tableau de bord enseignant approuvé</li>
+        <li>Navigation spécifique à l'enseignement</li>
+        <li>État sans cours de démonstration</li>
+      </ul>
+      <a class="bouton bouton-primaire" href="/admin/apercus/enseignant">Voir l'espace enseignant <span aria-hidden="true">→</span></a>
+    </article>
+
+    <article class="admin-apercus-carte admin-apercus-repetiteur">
+      <div class="admin-apercus-carte-top">
+        <span class="admin-apercus-icone" aria-hidden="true">🧑‍🏫</span>
+        <span class="ops-badge">Rôle Sponsor</span>
+      </div>
+      <h3>Répétiteur / Partenaire</h3>
+      <p>Contrôle l'affichage actuel d'un compte répétiteur, rattaché au rôle technique Sponsor.</p>
+      <ul>
+        <li>Navigation réellement utilisée aujourd'hui</li>
+        <li>Profil de démonstration sans données réelles</li>
+        <li>Signalement de la limite actuelle du rôle</li>
+      </ul>
+      <a class="bouton bouton-primaire" href="/admin/apercus/repetiteur">Voir l'espace répétiteur <span aria-hidden="true">→</span></a>
+    </article>
+  </div>
+
+  <aside class="admin-apercus-note">
+    <strong>À savoir pour les répétiteurs</strong>
+    <p>
+      Le code actuel regroupe les répétiteurs, commerces et services dans le rôle
+      <code>sponsor</code>. Leur tableau de bord n'est pas encore distinct de celui
+      des apprenants. L'aperçu le montre volontairement tel qu'il fonctionne aujourd'hui ;
+      il ne présente pas une interface future comme si elle était déjà disponible.
+    </p>
+  </aside>
+</div>
+{% endblock %}
