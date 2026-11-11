@@ -66,7 +66,7 @@
 <link rel="stylesheet" href="/static/responsive.css?v={{ version_asset('responsive.css') }}">
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation.js?v={{ version_asset('js/admin-confirmation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/pwa.js?v={{ version_asset('js/pwa.js') }}" defer></script>
-{% if request.url.path in ["/notifications", "/mes-revisions", "/mon-parcours"] or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or utilisateur.profil_souhaite == "repetiteur"))) or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
+{% if request.url.path in ["/notifications", "/mes-revisions", "/mon-parcours"] or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or (utilisateur.profil_souhaite == "repetiteur" and utilisateur.statut_verification_repetiteur != "retire")))) or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
 {% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences"] or request.url.path in ["/famille", "/admin/responsables-eleves"] %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
 {% endif %}
@@ -76,7 +76,7 @@
 {% if request.url.path == "/mode-emploi" %}
 <link rel="stylesheet" href="/static/mode-emploi.css?v={{ version_asset('mode-emploi.css') }}">
 {% endif %}
-{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path.startswith("/documents") or request.url.path.startswith("/document") or request.url.path.startswith("/classe") or request.url.path.startswith("/cercle") or request.url.path.startswith("/cercles") or request.url.path.startswith("/moderation") or request.url.path.startswith("/admin/moderation-") or request.url.path == "/admin/ia" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or utilisateur.profil_souhaite == "repetiteur"))) or request.url.path == "/mes-revisions" or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}
+{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path.startswith("/documents") or request.url.path.startswith("/document") or request.url.path.startswith("/classe") or request.url.path.startswith("/cercle") or request.url.path.startswith("/cercles") or request.url.path.startswith("/moderation") or request.url.path.startswith("/admin/moderation-") or request.url.path == "/admin/ia" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or (utilisateur.profil_souhaite == "repetiteur" and utilisateur.statut_verification_repetiteur != "retire")))) or request.url.path == "/mes-revisions" or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}
 <link rel="stylesheet" href="/static/ai-learning.css?v={{ version_asset('ai-learning.css') }}">
 {% endif %}
 {# Un seul moteur de rendu pour toutes les surfaces qui peuvent afficher du texte scientifique IA. #}
@@ -91,7 +91,7 @@
    or request.url.path.startswith("/moderation")
    or request.url.path.startswith("/admin/moderation-")
    or request.url.path == "/admin/ia"
-   or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or utilisateur.profil_souhaite == "repetiteur")))
+   or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or (utilisateur.profil_souhaite == "repetiteur" and utilisateur.statut_verification_repetiteur != "retire"))))
    or request.url.path == "/mes-revisions"
    or (mode_apercu_admin and mode_apercu_espace == "etudiant")
    or request.url.path == "/session-apprentissage"
@@ -100,10 +100,10 @@
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/charger-dependances-ia.js?v={{ version_asset('js/charger-dependances-ia.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
 {% endif %}
-{% if request.url.path.startswith("/defis") or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or utilisateur.profil_souhaite == "repetiteur"))) or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}
+{% if request.url.path.startswith("/defis") or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or (utilisateur.profil_souhaite == "repetiteur" and utilisateur.statut_verification_repetiteur != "retire")))) or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}
 <link rel="stylesheet" href="/static/gamification.css?v={{ version_asset('gamification.css') }}">
 {% endif %}
-{% if request.url.path == "/bienvenue" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or utilisateur.profil_souhaite == "repetiteur"))) or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}
+{% if request.url.path == "/bienvenue" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or (utilisateur.profil_souhaite == "repetiteur" and utilisateur.statut_verification_repetiteur != "retire")))) or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}
 <link rel="stylesheet" href="/static/onboarding.css?v={{ version_asset('onboarding.css') }}">
 {% endif %}
 {% if request.url.path.startswith("/documents") or request.url.path.startswith("/cercles") %}
@@ -262,7 +262,7 @@
         <p class="tb-sidebar-groupe">Compte enseignant</p>
         <a href="/dashboard#verification" class="tb-sidebar-lien"><span class="tb-icone">🎓</span> Suivi de vérification</a>
         {% endif %}
-      {% elif utilisateur is defined and utilisateur and (utilisateur.role == "repetiteur" or utilisateur.profil_souhaite == "repetiteur") %}
+      {% elif utilisateur is defined and utilisateur and (utilisateur.role == "repetiteur" or (utilisateur.profil_souhaite == "repetiteur" and utilisateur.statut_verification_repetiteur != "retire")) %}
         <p class="tb-sidebar-groupe">Accompagner</p>
         <a href="/dashboard" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}><span class="tb-icone">🧑‍🏫</span> Mon espace répétiteur</a>
         <a href="/dashboard#rep-profil-form" class="tb-sidebar-lien"><span class="tb-icone">📝</span> Ma fiche professionnelle</a>
