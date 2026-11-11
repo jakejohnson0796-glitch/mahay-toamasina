@@ -63,7 +63,7 @@ def construire_plan_hebdomadaire(
         taches = candidates[index * 2:(index + 1) * 2]
         jours.append({
             "index": index + 1,
-            "nom": nom,
+            "nom": _JOURS[date_jour.weekday()],
             "date": date_jour.strftime("%d/%m"),
             "date_iso": date_jour.isoformat(),
             "taches": taches,
