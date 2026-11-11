@@ -105,7 +105,8 @@
           <td>
             {% if u.id != utilisateur.id %}
             <div class="ops-actions">
-              {% if u.role.value == "etudiant" and u.profil_souhaite == "repetiteur" and u.statut_verification_repetiteur == "en_attente" %}
+              {% if u.role.value == "etudiant" and u.profil_souhaite == "repetiteur" %}
+              {% if u.statut_verification_repetiteur == "en_attente" %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-repetiteur">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
                 <button class="bouton bouton-secondaire" type="submit">Valider répétiteur</button>
@@ -114,6 +115,9 @@
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
                 <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
               </form>
+              {% else %}
+              <small class="ops-table-date">Demande répétiteur déjà traitée</small>
+              {% endif %}
               {% elif u.role.value == "etudiant" %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
