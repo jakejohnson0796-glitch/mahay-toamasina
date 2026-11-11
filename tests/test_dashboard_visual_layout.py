@@ -12,7 +12,7 @@ def test_dashboard_layout_stylesheet_is_loaded_only_on_dashboard_after_global_ov
     base = BASE.read_text(encoding="utf-8")
     link = '/static/dashboard-polish.css?v={{ version_asset(\'dashboard-polish.css\') }}'
     assert base.count(link) == 1
-    assert '{% if request.url.path == "/dashboard" %}' in base
+    assert '{% if request.url.path == "/dashboard" or mode_apercu_admin %}' in base
     assert base.index("/static/responsive-overrides.css") < base.index(link) < base.index("</head>")
     assert base.index("/static/student-hub.css") < base.index(link)
 
