@@ -57,14 +57,14 @@
 <link rel="stylesheet" href="/static/public-pages.css?v={{ version_asset('public-pages.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/activite.css?v={{ version_asset('activite.css') }}">
-{% if request.url.path.startswith("/admin") or request.url.path.startswith("/securite/") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
+{% if (request.url.path.startswith("/admin") and not mode_apercu_admin) or request.url.path.startswith("/securite/") or request.url.path in ["/abonnement", "/sponsoring", "/securite"] %}
 <link rel="stylesheet" href="/static/ops.css?v={{ version_asset('ops.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/sidebar.css?v={{ version_asset('sidebar.css') }}">
 <link rel="stylesheet" href="/static/responsive.css?v={{ version_asset('responsive.css') }}">
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation.js?v={{ version_asset('js/admin-confirmation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/pwa.js?v={{ version_asset('js/pwa.js') }}" defer></script>
-{% if request.url.path in ["/notifications", "/mes-revisions", "/mon-parcours"] or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
+{% if request.url.path in ["/notifications", "/mes-revisions", "/mon-parcours"] or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) or (mode_apercu_admin and mode_apercu_espace in ["etudiant", "repetiteur"]) %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
 {% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences"] or request.url.path in ["/famille", "/admin/responsables-eleves"] %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
 {% endif %}
@@ -74,7 +74,7 @@
 {% if request.url.path == "/mode-emploi" %}
 <link rel="stylesheet" href="/static/mode-emploi.css?v={{ version_asset('mode-emploi.css') }}">
 {% endif %}
-{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path.startswith("/documents") or request.url.path.startswith("/document") or request.url.path.startswith("/classe") or request.url.path.startswith("/cercle") or request.url.path.startswith("/cercles") or request.url.path.startswith("/moderation") or request.url.path.startswith("/admin/moderation-") or request.url.path == "/admin/ia" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) or request.url.path == "/mes-revisions" %}
+{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path.startswith("/documents") or request.url.path.startswith("/document") or request.url.path.startswith("/classe") or request.url.path.startswith("/cercle") or request.url.path.startswith("/cercles") or request.url.path.startswith("/moderation") or request.url.path.startswith("/admin/moderation-") or request.url.path == "/admin/ia" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) or request.url.path == "/mes-revisions" or (mode_apercu_admin and mode_apercu_espace in ["etudiant", "repetiteur"]) %}
 <link rel="stylesheet" href="/static/ai-learning.css?v={{ version_asset('ai-learning.css') }}">
 {% endif %}
 {# Un seul moteur de rendu pour toutes les surfaces qui peuvent afficher du texte scientifique IA. #}
@@ -91,16 +91,17 @@
    or request.url.path == "/admin/ia"
    or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur"))
    or request.url.path == "/mes-revisions"
+   or (mode_apercu_admin and mode_apercu_espace in ["etudiant", "repetiteur"])
    or request.url.path == "/session-apprentissage"
    or request.url.path == "/carte-connaissances" %}
 <!-- Chargeur borné avec CDN de secours ; le contenu utilisateur reste sur la page. -->
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/charger-dependances-ia.js?v={{ version_asset('js/charger-dependances-ia.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
 {% endif %}
-{% if request.url.path.startswith("/defis") or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) %}
+{% if request.url.path.startswith("/defis") or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) or (mode_apercu_admin and mode_apercu_espace in ["etudiant", "repetiteur"]) %}
 <link rel="stylesheet" href="/static/gamification.css?v={{ version_asset('gamification.css') }}">
 {% endif %}
-{% if request.url.path == "/bienvenue" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) %}
+{% if request.url.path == "/bienvenue" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) or (mode_apercu_admin and mode_apercu_espace in ["etudiant", "repetiteur"]) %}
 <link rel="stylesheet" href="/static/onboarding.css?v={{ version_asset('onboarding.css') }}">
 {% endif %}
 {% if request.url.path.startswith("/documents") or request.url.path.startswith("/cercles") %}
@@ -110,19 +111,22 @@
 
 
 
+{% if request.url.path.startswith("/admin/apercus") or mode_apercu_admin %}
+<link rel="stylesheet" href="/static/admin-apercu.css?v={{ version_asset('admin-apercu.css') }}">
+{% endif %}
 <link rel="stylesheet" href="/static/responsive-overrides.css?v={{ version_asset('responsive-overrides.css') }}">
 <link rel="stylesheet" href="/static/experience-refresh.css?v={{ version_asset('experience-refresh.css') }}">
 {% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/cercles") %}
 <link rel="stylesheet" href="/static/learning-polish.css?v={{ version_asset('learning-polish.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/motion-polish.css?v={{ version_asset('motion-polish.css') }}">
-{% if request.url.path == "/dashboard" %}
+{% if request.url.path == "/dashboard" or mode_apercu_admin %}
 <link rel="stylesheet" href="/static/dashboard-polish.css?v={{ version_asset('dashboard-polish.css') }}">
 {% endif %}
 {% if request.url.path == "/mon-parcours" %}
 <link rel="stylesheet" href="/static/mon-parcours.css?v={{ version_asset('mon-parcours.css') }}">
 {% endif %}
-{% if request.url.path == "/dashboard" and utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}
+{% if (request.url.path == "/dashboard" and utilisateur is defined and utilisateur and utilisateur.role == "professeur") or (mode_apercu_admin and mode_apercu_espace == "enseignant") %}
 <link rel="stylesheet" href="/static/dashboard-enseignant.css?v={{ version_asset('dashboard-enseignant.css') }}">
 {% endif %}
 <link rel="stylesheet" href="/static/global-design-system.css?v={{ version_asset('global-design-system.css') }}">
@@ -153,7 +157,7 @@
 {% endif %}
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
-  class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') or request.url.path in ['/famille', '/admin/responsables-eleves'] %} page-classe{% endif %}{% if request.url.path.startswith('/admin') or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
+  class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') or request.url.path in ['/famille', '/admin/responsables-eleves'] %} page-classe{% endif %}{% if (request.url.path.startswith('/admin') and not mode_apercu_admin) or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
   {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}data-admin-session="1"{% endif %}
 >
 {% from "components/icone.html" import icone %}
@@ -203,7 +207,16 @@
   de config StrictUndefined dans templating.py), donc le badge ne
   s'affiche que la ou la donnee existe reellement. Rien d'invente.
 #}
-<div class="app-mise-en-page">
+{% if mode_apercu_admin %}
+<aside class="admin-apercu-bandeau" role="status" aria-live="polite">
+  <div class="admin-apercu-bandeau-texte">
+    <strong>APERÇU EN LECTURE SEULE · {{ mode_apercu_titre }}</strong>
+    <span>{{ mode_apercu_note }}</span>
+  </div>
+  <a href="/admin/apercus" class="admin-apercu-quitter">Quitter l’aperçu <span aria-hidden="true">×</span></a>
+</aside>
+{% endif %}
+<div class="app-mise-en-page"{% if mode_apercu_admin %} inert data-admin-apercu-contenu{% endif %}>
 
   <button type="button" class="sidebar-bouton-mobile" id="bouton-menu-mobile" aria-expanded="false" aria-controls="nav-principale" aria-label="Ouvrir le menu">
     <span></span><span></span><span></span>
@@ -267,7 +280,7 @@
       {% endif %}
 
       <p class="tb-sidebar-groupe">Compte</p>
-      <a href="/notifications" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/notifications') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/notifications') else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Notifications{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %}<span class="tb-sidebar-badge">{{ nb_notifs if nb_notifs < 100 else "99+" }}</span>{% endif %}</a>
+      <a href="/notifications" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/notifications') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/notifications') else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Notifications{% set nb_notifs = 0 if mode_apercu_admin else compter_notifications_non_lues(request) %}{% if nb_notifs %}<span class="tb-sidebar-badge">{{ nb_notifs if nb_notifs < 100 else "99+" }}</span>{% endif %}</a>
       {% if not (utilisateur is defined and utilisateur and utilisateur.role == "professeur") %}
       <a href="/mes-revisions" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/mes-revisions') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/mes-revisions') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Mes révisions</a>
       <a href="/defis" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/defis') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/defis') else '' }}><span class="tb-icone">🏆</span> Défis &amp; récompenses</a>
@@ -457,7 +470,7 @@
       </a>
       {% endif %}
     </header>
-    {% if profil_academique_a_actualiser(request) %}
+    {% if not mode_apercu_admin and profil_academique_a_actualiser(request) %}
     <div class="info info-profil-academique">
       Votre profil academique doit etre actualise pour utiliser correctement les cercles d'etudes.
       <a href="/profil/academique">Actualiser maintenant</a>
