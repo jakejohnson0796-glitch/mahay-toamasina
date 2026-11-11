@@ -56,3 +56,30 @@ def test_plan_est_borne_a_quatorze_notions_et_deux_par_jour():
     assert all(len(jour["taches"]) <= 2 for jour in plan)
     assert plan[0]["date_iso"] == "2026-11-11"
     assert plan[-1]["date_iso"] == "2026-11-17"
+
+
+def test_planning_lance_un_quiz_cible_sur_la_notion_selectionnee():
+    from app.templating import templates
+
+    template = templates.env.get_template("objectif_examen.html")
+    source, _, _ = templates.env.loader.get_source(templates.env, "objectif_examen.html")
+
+    assert template is not None
+    assert '<form method="post" action="/quiz/generer"' in source
+    assert 'name="_csrf" value="{{ jeton_csrf(request) }}"' in source
+    assert 'name="mode_quiz" value="matiere"' in source
+    assert 'name="matiere" value="{{ tache.matiere }}"' in source
+    assert 'name="matiere_libre" value="{{ tache.notion }}"' in source
+    assert "M'entraîner sur cette notion" in source
+
+
+def test_quiz_cible_la_progression_exacte_pour_adapter_la_difficulte():
+    import inspect
+    from app.routers.quiz_router import generer_quiz
+
+    source = inspect.getsource(generer_quiz)
+
+    assert "ProgressionNotion.utilisateur_id == utilisateur.id" in source
+    assert "ProgressionNotion.matiere == matiere_selectionnee" in source
+    assert "ProgressionNotion.notion == sujet_libre" in source
+    assert "ProgressionNotion.niveau == niveau" in source
