@@ -43,12 +43,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    bind = op.get_bind()
-    if bind.dialect.name == "postgresql":
-        raise NotImplementedError(
-            "PostgreSQL ne permet pas de retirer une valeur d'un enum natif. "
-            "La suppression du rôle REPETITEUR nécessite une migration manuelle."
-        )
+    # PostgreSQL ne sait pas supprimer une valeur d'un enum natif. On conserve
+    # donc l'étiquette REPETITEUR, qui reste inutilisée par l'ancienne version,
+    # tout en annulant proprement les colonnes et l'index de cette migration.
     op.drop_index("ix_utilisateur_statut_verification_repetiteur", table_name="utilisateur")
     with op.batch_alter_table("utilisateur") as batch:
         for nom in (
