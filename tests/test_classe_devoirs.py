@@ -65,12 +65,14 @@ class TestClasseDevoirs(unittest.TestCase):
                 telephone="0341101001",
                 mot_de_passe_hash=hacher_mot_de_passe(MOT_DE_PASSE),
                 role=RoleUtilisateur.PROFESSEUR,
+                statut_verification_enseignant="approuve",
             )
             autre_prof = Utilisateur(
                 nom="Autre professeur",
                 telephone="0341101002",
                 mot_de_passe_hash=hacher_mot_de_passe(MOT_DE_PASSE),
                 role=RoleUtilisateur.PROFESSEUR,
+                statut_verification_enseignant="approuve",
             )
             etudiant = Utilisateur(
                 nom="Etudiant inscrit",

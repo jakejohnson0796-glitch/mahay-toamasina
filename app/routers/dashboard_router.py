@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Request, Depends
+from sqlalchemy import func
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlmodel import Session, select
 
@@ -10,12 +11,89 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Cours, DemandeMiseAJourCours, Document, InscriptionCours, ProgressionNotion, RoleUtilisateur, Utilisateur
+from ..models import Cours, Devoir, DemandeMiseAJourCours, Document, InscriptionCours, ProgressionNotion, RenduDevoir, RoleUtilisateur, Seance, StatutSeance, Utilisateur
 from .. import dashboard as dashboard_module
 from .. import learning_recap
 
 router = APIRouter()
+
 logger = logging.getLogger(__name__)
+
+
+def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> dict:
+    """Construit l'espace professionnel uniquement depuis les cours du professeur connecté."""
+    cours = session.exec(
+        select(Cours)
+        .where(Cours.professeur_id == utilisateur.id)
+        .order_by(Cours.date_creation.desc())
+        .limit(100)
+    ).all()
+    nb_cours = int(
+        session.exec(
+            select(func.count(Cours.id)).where(Cours.professeur_id == utilisateur.id)
+        ).one() or 0
+    )
+
+    if not cours:
+        return {
+            "statistiques_enseignant": {
+                "cours": nb_cours,
+                "inscriptions": 0,
+                "seances_planifiees": 0,
+                "copies_a_corriger": 0,
+            },
+            "cours_enseignes": [],
+        }
+
+    nb_inscriptions = int(
+        session.exec(
+            select(func.count(InscriptionCours.id))
+            .join(Cours, Cours.id == InscriptionCours.cours_id)
+            .where(Cours.professeur_id == utilisateur.id)
+        ).one() or 0
+    )
+    nb_seances_planifiees = int(
+        session.exec(
+            select(func.count(Seance.id))
+            .join(Cours, Cours.id == Seance.cours_id)
+            .where(
+                Cours.professeur_id == utilisateur.id,
+                Seance.statut == StatutSeance.PLANIFIEE,
+            )
+        ).one() or 0
+    )
+    copies_a_corriger = int(
+        session.exec(
+            select(func.count(RenduDevoir.id))
+            .join(Devoir, Devoir.id == RenduDevoir.devoir_id)
+            .join(Cours, Cours.id == Devoir.cours_id)
+            .where(
+                Cours.professeur_id == utilisateur.id,
+                RenduDevoir.note == None,  # noqa: E711
+            )
+        ).one() or 0
+    )
+
+    cours_enseignes = []
+    for item in cours:
+        inscrits = int(
+            session.exec(
+                select(func.count(InscriptionCours.id)).where(
+                    InscriptionCours.cours_id == item.id
+                )
+            ).one() or 0
+        )
+        cours_enseignes.append({"cours": item, "inscrits": inscrits})
+
+    return {
+        "statistiques_enseignant": {
+            "cours": nb_cours,
+            "inscriptions": nb_inscriptions,
+            "seances_planifiees": nb_seances_planifiees,
+            "copies_a_corriger": copies_a_corriger,
+        },
+        "cours_enseignes": cours_enseignes,
+    }
 
 
 @router.get("/dashboard")
@@ -23,6 +101,32 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+
+    if utilisateur.role == RoleUtilisateur.PROFESSEUR:
+        if utilisateur.statut_verification_enseignant == "approuve":
+            donnees_enseignant = donnees_dashboard_enseignant(session, utilisateur)
+            return templates.TemplateResponse(
+                request,
+                "dashboard_enseignant.html",
+                {
+                    "utilisateur": utilisateur,
+                    "statut_enseignant": utilisateur.statut_verification_enseignant,
+                    **donnees_enseignant,
+                },
+            )
+        return templates.TemplateResponse(
+            request,
+            "dashboard_enseignant.html",
+            {
+                "utilisateur": utilisateur,
+                "statut_enseignant": utilisateur.statut_verification_enseignant,
+                "statistiques_enseignant": {
+                    "cours": 0, "inscriptions": 0,
+                    "seances_planifiees": 0, "copies_a_corriger": 0,
+                },
+                "cours_enseignes": [],
+            },
+        )
 
     dashboard_module.notifier_echeances_proches(session, utilisateur.id)
     donnees = dashboard_module.donnees_dashboard(session, utilisateur)
@@ -68,6 +172,12 @@ def api_bilan_reprise(
             status_code=401,
             headers={"Cache-Control": "no-store"},
         )
+    if utilisateur.role != RoleUtilisateur.ETUDIANT:
+        return JSONResponse(
+            {"erreur": "espace_reserve_aux_apprenants"},
+            status_code=403,
+            headers={"Cache-Control": "no-store"},
+        )
 
     try:
         bilan = learning_recap.construire_bilan(session, utilisateur, depuis=depuis)
@@ -89,6 +199,8 @@ def page_mon_parcours(request: Request, session: Session = Depends(get_session))
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role != RoleUtilisateur.ETUDIANT:
+        return RedirectResponse("/dashboard", status_code=303)
 
     maintenant = datetime.utcnow()
     bilan = learning_recap.construire_bilan(

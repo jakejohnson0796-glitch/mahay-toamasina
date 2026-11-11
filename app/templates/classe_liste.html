@@ -7,17 +7,25 @@
 <div class="classe-page">
   <section class="classe-hero" aria-labelledby="classe-title">
     <div>
-      <span class="classe-kicker">Apprentissage en direct · Classe virtuelle</span>
-      <h1 id="classe-title">Cours, séances et devoirs au même endroit.</h1>
+      <span class="classe-kicker">{% if est_professeur %}Espace enseignant · Gestion pédagogique{% else %}Apprentissage en direct · Classe virtuelle{% endif %}</span>
+      <h1 id="classe-title">{% if est_professeur %}Organise tes cours et accompagne tes classes.{% else %}Cours, séances et devoirs au même endroit.{% endif %}</h1>
       <p>
+        {% if est_professeur %}
+        Gère tes classes, ajoute tes apprenants, planifie les séances et suis les devoirs depuis ton espace d’enseignement.
+        {% else %}
         Retrouve tes cours en ligne, rejoins les séances en direct et suis les devoirs
         sans multiplier les pages. Les outils collaboratifs restent disponibles pendant la séance.
+        {% endif %}
       </p>
       <div class="classe-hero-actions">
         {% if est_professeur %}
         <a class="bouton bouton-primaire" href="#nouveau-cours">Créer un cours</a>
         {% endif %}
+        {% if est_professeur %}
+        <a class="bouton bouton-secondaire" href="/enseignant/harmonisation">Harmonisation des cours</a>
+        {% else %}
         <a class="bouton bouton-secondaire" href="/mode-emploi#classe">Comment ça marche ?</a>
+        {% endif %}
       </div>
     </div>
     <div class="classe-hero-side">
@@ -27,8 +35,22 @@
       <div class="classe-stats">
         <div class="classe-stat">
           <strong>{{ cours_visibles|length }}</strong>
-          <span>cours visibles dans ton espace</span>
+          <span>{% if est_professeur %}cours sous ta responsabilité{% else %}cours visibles dans ton espace{% endif %}</span>
         </div>
+        {% if est_professeur %}
+        <div class="classe-stat">
+          <strong>LIVE</strong>
+          <span>Préparation et animation des séances</span>
+        </div>
+        <div class="classe-stat">
+          <strong>DEVOIRS</strong>
+          <span>Publication et suivi des corrections</span>
+        </div>
+        <div class="classe-stat">
+          <strong>ÉQUIPE</strong>
+          <span>Accompagnement de tes apprenants</span>
+        </div>
+        {% else %}
         <div class="classe-stat">
           <strong>LIVE</strong>
           <span>séances vidéo quand un professeur démarre le cours</span>
@@ -41,19 +63,25 @@
           <strong>24/7</strong>
           <span>accès aux ressources et devoirs hors séance</span>
         </div>
+        {% endif %}
       </div>
     </div>
   </section>
 
   <div class="classe-toolbar">
     <div class="classe-toolbar-left">
-      <span class="classe-toolbar-label">Mon espace</span>
+      <span class="classe-toolbar-label">{% if est_professeur %}Espace enseignant{% else %}Mon espace{% endif %}</span>
       <span class="classe-course-badge">{{ cours_visibles|length }} cours</span>
     </div>
     <div class="classe-toolbar-right">
+      {% if est_professeur %}
+      <a class="bouton bouton-secondaire" href="/enseignant/harmonisation">Harmonisation</a>
+      <a class="bouton bouton-secondaire" href="/mode-emploi#classe">Guide enseignant</a>
+      {% else %}
       <a class="bouton bouton-secondaire" href="/documents">Documents</a>
       <a class="bouton bouton-secondaire" href="/quiz">Quiz IA</a>
       <a class="bouton bouton-secondaire" href="/tuteur">Tuteur IA</a>
+      {% endif %}
     </div>
   </div>
 

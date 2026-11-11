@@ -43,17 +43,30 @@ router = APIRouter()
 
 
 def _est_professeur(utilisateur: Optional[Utilisateur]) -> bool:
-    return bool(utilisateur and utilisateur.role in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN))
+    """Un enseignant n'accède aux outils professionnels qu'après validation."""
+    return bool(
+        utilisateur
+        and (
+            utilisateur.role == RoleUtilisateur.ADMIN
+            or (
+                utilisateur.role == RoleUtilisateur.PROFESSEUR
+                and utilisateur.statut_verification_enseignant == "approuve"
+            )
+        )
+    )
 
 
 def _peut_gerer_cours(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    """Professeur proprietaire de CE cours (uniquement le sien) ou admin.
-    Reverifie a chaque appel de route, jamais fait confiance a
-    l'interface — meme principe que _peut_gerer_cercle dans
-    cercles_router.py."""
+    """Professeur vérifié propriétaire de CE cours, ou administrateur."""
     if not utilisateur:
         return False
-    return utilisateur.id == cours.professeur_id or utilisateur.role == RoleUtilisateur.ADMIN
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        return True
+    return bool(
+        utilisateur.role == RoleUtilisateur.PROFESSEUR
+        and utilisateur.statut_verification_enseignant == "approuve"
+        and utilisateur.id == cours.professeur_id
+    )
 
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
@@ -230,6 +243,11 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    if (
+        utilisateur.role == RoleUtilisateur.PROFESSEUR
+        and utilisateur.statut_verification_enseignant != "approuve"
+    ):
+        return RedirectResponse("/dashboard#verification", status_code=303)
 
     if utilisateur.role in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN):
         if utilisateur.role == RoleUtilisateur.ADMIN:

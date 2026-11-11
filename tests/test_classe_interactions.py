@@ -28,6 +28,9 @@ def creer_utilisateur(nom, telephone, role):
         telephone=telephone,
         mot_de_passe_hash="hash-test",
         role=role,
+        statut_verification_enseignant=(
+            "approuve" if role == RoleUtilisateur.PROFESSEUR else "non_concerne"
+        ),
     )
 
 

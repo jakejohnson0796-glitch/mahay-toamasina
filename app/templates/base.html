@@ -64,7 +64,7 @@
 <link rel="stylesheet" href="/static/responsive.css?v={{ version_asset('responsive.css') }}">
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation.js?v={{ version_asset('js/admin-confirmation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/pwa.js?v={{ version_asset('js/pwa.js') }}" defer></script>
-{% if request.url.path in ["/notifications", "/mes-revisions", "/dashboard", "/mon-parcours"] %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
+{% if request.url.path in ["/notifications", "/mes-revisions", "/mon-parcours"] or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
 {% if request.url.path.startswith("/classe") or request.url.path in ["/mes-notes", "/mes-presences"] or request.url.path in ["/famille", "/admin/responsables-eleves"] %}
 <link rel="stylesheet" href="/static/classe.css?v={{ version_asset('classe.css') }}">
 {% endif %}
@@ -74,7 +74,7 @@
 {% if request.url.path == "/mode-emploi" %}
 <link rel="stylesheet" href="/static/mode-emploi.css?v={{ version_asset('mode-emploi.css') }}">
 {% endif %}
-{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path.startswith("/documents") or request.url.path.startswith("/document") or request.url.path.startswith("/classe") or request.url.path.startswith("/cercle") or request.url.path.startswith("/cercles") or request.url.path.startswith("/moderation") or request.url.path.startswith("/admin/moderation-") or request.url.path == "/admin/ia" or request.url.path == "/dashboard" or request.url.path == "/mes-revisions" %}
+{% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/jeu-cerebral") or request.url.path.startswith("/documents") or request.url.path.startswith("/document") or request.url.path.startswith("/classe") or request.url.path.startswith("/cercle") or request.url.path.startswith("/cercles") or request.url.path.startswith("/moderation") or request.url.path.startswith("/admin/moderation-") or request.url.path == "/admin/ia" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) or request.url.path == "/mes-revisions" %}
 <link rel="stylesheet" href="/static/ai-learning.css?v={{ version_asset('ai-learning.css') }}">
 {% endif %}
 {# Un seul moteur de rendu pour toutes les surfaces qui peuvent afficher du texte scientifique IA. #}
@@ -89,7 +89,7 @@
    or request.url.path.startswith("/moderation")
    or request.url.path.startswith("/admin/moderation-")
    or request.url.path == "/admin/ia"
-   or request.url.path == "/dashboard"
+   or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur"))
    or request.url.path == "/mes-revisions"
    or request.url.path == "/session-apprentissage"
    or request.url.path == "/carte-connaissances" %}
@@ -97,10 +97,10 @@
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/charger-dependances-ia.js?v={{ version_asset('js/charger-dependances-ia.js') }}"></script>
 <script nonce="{{ csp_nonce(request) }}" defer src="/static/js/rendu_ia.js?v={{ version_asset('js/rendu_ia.js') }}"></script>
 {% endif %}
-{% if request.url.path.startswith("/defis") or request.url.path == "/dashboard" %}
+{% if request.url.path.startswith("/defis") or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) %}
 <link rel="stylesheet" href="/static/gamification.css?v={{ version_asset('gamification.css') }}">
 {% endif %}
-{% if request.url.path == "/bienvenue" or request.url.path == "/dashboard" %}
+{% if request.url.path == "/bienvenue" or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and utilisateur.role == "professeur")) %}
 <link rel="stylesheet" href="/static/onboarding.css?v={{ version_asset('onboarding.css') }}">
 {% endif %}
 {% if request.url.path.startswith("/documents") or request.url.path.startswith("/cercles") %}
@@ -122,8 +122,11 @@
 {% if request.url.path == "/mon-parcours" %}
 <link rel="stylesheet" href="/static/mon-parcours.css?v={{ version_asset('mon-parcours.css') }}">
 {% endif %}
+{% if request.url.path == "/dashboard" and utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}
+<link rel="stylesheet" href="/static/dashboard-enseignant.css?v={{ version_asset('dashboard-enseignant.css') }}">
+{% endif %}
 <link rel="stylesheet" href="/static/global-design-system.css?v={{ version_asset('global-design-system.css') }}">
-{% if request.session.get("user_id") %}
+{% if request.session.get("user_id") and utilisateur is defined and utilisateur and utilisateur.role == "etudiant" %}
 <link rel="stylesheet" href="/static/bilan-reprise.css?v={{ version_asset('bilan-reprise.css') }}">
 {% endif %}
 {% if request.url.path.startswith("/securite") %}
@@ -235,32 +238,40 @@
         <span class="tb-icone">{{ icone("dashboard", 17) }}</span> Tableau de bord
       </a>
 
-      <p class="tb-sidebar-groupe">Apprendre</p>
-      <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
-      <a href="/quiz" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Quiz IA</a>
-      <a href="/mon-parcours" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mon-parcours' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mon-parcours' else '' }}><span class="tb-icone">📈</span> Mon parcours</a>
-      <a href="/objectif-examen" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/objectif-examen') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/objectif-examen') else '' }}><span class="tb-icone">🎯</span> Objectif Examen</a>
-      <a href="/jeu-cerebral" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}><span class="tb-icone">🧠</span> Jeu cérébral</a>
-      <a href="/jeux-classiques" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/jeux-classiques') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeux-classiques') else '' }}><span class="tb-icone">🏆</span> Jeux classiques</a>
-      <a href="/tuteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/tuteur') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/tuteur') else '' }}><span class="tb-icone">{{ icone("tuteur", 17) }}</span> Tuteur IA</a>
+      {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}
+        {% if utilisateur.statut_verification_enseignant == "approuve" %}
+        <p class="tb-sidebar-groupe">Enseigner</p>
+        <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> Mes cours et classes</a>
+        <a href="/enseignant/harmonisation" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/enseignant/harmonisation') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/enseignant/harmonisation') else '' }}><span class="tb-icone">📚</span> Harmonisation des cours</a>
+        {% else %}
+        <p class="tb-sidebar-groupe">Compte enseignant</p>
+        <a href="/dashboard#verification" class="tb-sidebar-lien"><span class="tb-icone">🎓</span> Suivi de vérification</a>
+        {% endif %}
+      {% else %}
+        <p class="tb-sidebar-groupe">Apprendre</p>
+        <a href="/documents" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}><span class="tb-icone">{{ icone("documents", 17) }}</span> Documents</a>
+        <a href="/quiz" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Quiz IA</a>
+        <a href="/mon-parcours" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mon-parcours' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mon-parcours' else '' }}><span class="tb-icone">📈</span> Mon parcours</a>
+        <a href="/objectif-examen" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/objectif-examen') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/objectif-examen') else '' }}><span class="tb-icone">🎯</span> Objectif Examen</a>
+        <a href="/jeu-cerebral" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}><span class="tb-icone">🧠</span> Jeu cérébral</a>
+        <a href="/jeux-classiques" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/jeux-classiques') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeux-classiques') else '' }}><span class="tb-icone">🏆</span> Jeux classiques</a>
+        <a href="/tuteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/tuteur') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/tuteur') else '' }}><span class="tb-icone">{{ icone("tuteur", 17) }}</span> Tuteur IA</a>
 
-      <p class="tb-sidebar-groupe">Collaborer</p>
-      <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
-        <span class="tb-icone">{{ icone("cercles", 17) }}</span> Mes cercles
-        {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
-      </a>
-      <a href="/catalogue-scolaire" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/catalogue-scolaire' else '' }}" {{ 'aria-current="page"' if request.url.path == '/catalogue-scolaire' else '' }}><span class="tb-icone">🎓</span> Catalogue scolaire</a>
-      <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> Classe virtuelle</a>
-
-      {% if utilisateur is defined and utilisateur and utilisateur.role == "professeur" and utilisateur.statut_verification_enseignant == "approuve" %}
-      <p class="tb-sidebar-groupe">Enseignement</p>
-      <a href="/enseignant/harmonisation" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/enseignant/harmonisation') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/enseignant/harmonisation') else '' }}><span class="tb-icone">📚</span> Harmonisation des cours</a>
+        <p class="tb-sidebar-groupe">Collaborer</p>
+        <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
+          <span class="tb-icone">{{ icone("cercles", 17) }}</span> Mes cercles
+          {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
+        </a>
+        <a href="/catalogue-scolaire" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/catalogue-scolaire' else '' }}" {{ 'aria-current="page"' if request.url.path == '/catalogue-scolaire' else '' }}><span class="tb-icone">🎓</span> Catalogue scolaire</a>
+        <a href="/classe" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/classe') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/classe') else '' }}><span class="tb-icone">{{ icone("classe", 17) }}</span> Classe virtuelle</a>
       {% endif %}
 
       <p class="tb-sidebar-groupe">Compte</p>
       <a href="/notifications" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/notifications') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/notifications') else '' }}><span class="tb-icone">{{ icone("aide", 17) }}</span> Notifications{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %}<span class="tb-sidebar-badge">{{ nb_notifs if nb_notifs < 100 else "99+" }}</span>{% endif %}</a>
+      {% if not (utilisateur is defined and utilisateur and utilisateur.role == "professeur") %}
       <a href="/mes-revisions" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/mes-revisions') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/mes-revisions') else '' }}><span class="tb-icone">{{ icone("quiz", 17) }}</span> Mes révisions</a>
       <a href="/defis" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/defis') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/defis') else '' }}><span class="tb-icone">🏆</span> Défis &amp; récompenses</a>
+      {% endif %}
       <a href="/securite" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}><span class="tb-icone">{{ icone("securite", 17) }}</span> Paramètres du compte</a>
       {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
       <a href="/admin" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/admin') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/admin') else '' }}><span class="tb-icone">{{ icone("admin", 17) }}</span> Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %}<span class="tb-sidebar-badge">{{ nb_admin_notifs }}</span>{% endif %}</a>
@@ -298,7 +309,7 @@
         {{ avatar_utilisateur(utilisateur, taille=30) }}
         <span class="tb-sidebar-compte-identite">
           <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
-          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% elif utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable" %}Responsable légal{% else %}Mon compte{% endif %}</span>
+          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% elif utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable" %}Responsable légal{% elif utilisateur.role == "professeur" %}Enseignant{% elif utilisateur.role == "etudiant" %}Élève / étudiant{% else %}Mon compte{% endif %}</span>
           {% set jours_compte = calculer_jours_inactivite(utilisateur) %}
           <span class="tb-sidebar-compte-activite">{{ jours_compte }} j. inactif</span>
         </span>
@@ -325,6 +336,20 @@
         <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
         <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
+        {% elif utilisateur is defined and utilisateur and utilisateur.role == "professeur" %}
+        <p class="tb-menu-compte-groupe">Espace enseignant</p>
+        <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord enseignant</span></a>
+        {% if utilisateur.statut_verification_enseignant == "approuve" %}
+        <a class="tb-menu-compte-item" href="/classe"><span class="tb-menu-compte-icone">{{ icone("classe", 16) }}</span><span>Mes cours et classes</span></a>
+        <a class="tb-menu-compte-item" href="/enseignant/harmonisation"><span class="tb-menu-compte-icone">📚</span><span>Harmonisation des cours</span></a>
+        {% else %}
+        <a class="tb-menu-compte-item" href="/dashboard#verification"><span class="tb-menu-compte-icone">🎓</span><span>Suivi de vérification</span></a>
+        {% endif %}
+        <p class="tb-menu-compte-groupe">Compte &amp; aide</p>
+        <a class="tb-menu-compte-item" href="/notifications"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Notifications{% set nb_notifs = compter_notifications_non_lues(request) %}{% if nb_notifs %} · {{ nb_notifs }} non lues{% endif %}</span></a>
+        <a class="tb-menu-compte-item" href="/securite"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Paramètres du compte</span></a>
+        <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
+        <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
         {% else %}
         <p class="tb-menu-compte-groupe">Mon espace</p>
         <a class="tb-menu-compte-item" href="/dashboard"><span class="tb-menu-compte-icone">{{ icone("dashboard", 16) }}</span><span>Tableau de bord</span></a>
@@ -349,7 +374,6 @@
         <a class="tb-menu-compte-item" href="/faq"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Aide &amp; Avis</span></a>
         <a class="tb-menu-compte-item" href="/cadre-legal"><span class="tb-menu-compte-icone">{{ icone("securite", 16) }}</span><span>Éthique et confidentialité</span></a>
         <a class="tb-menu-compte-item" href="/mode-emploi"><span class="tb-menu-compte-icone">{{ icone("aide", 16) }}</span><span>Mode d'emploi</span></a>
-
         <a class="tb-menu-compte-item" href="/contact"><span class="tb-menu-compte-icone">{{ icone("contact", 16) }}</span><span>Contacter MITARIDALA</span></a>
         {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}
         <a class="tb-menu-compte-item" href="/admin"><span class="tb-menu-compte-icone">{{ icone("admin", 16) }}</span><span>Administration{% set nb_admin_notifs = nb_notifications_admin_nouvelles(request) %}{% if nb_admin_notifs %} · {{ nb_admin_notifs }} nouvelles{% endif %}</span></a>
@@ -396,22 +420,22 @@
 
   {% if request.session.get("user_id") %}
   <nav class="navigation-mobile-fixe" aria-label="Navigation rapide mobile">
-    <a href="/dashboard" class="navigation-mobile-lien{{ ' actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
+    <a href="/dashboard" data-smoke-label="Accueil" class="navigation-mobile-lien{{ ' actif' if request.url.path == '/dashboard' else '' }}" {{ 'aria-current="page"' if request.url.path == '/dashboard' else '' }}>
       {{ icone("dashboard", 20) }}<span>Accueil</span>
     </a>
-    <a href="/documents" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/documents') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/documents') else '' }}>
-      {{ icone("documents", 20) }}<span>Docs</span>
+    <a href="{{ '/classe' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else '/dashboard#verification' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else '/documents' }}" data-eleve-href="/documents" data-professeur-href="/classe" data-smoke-label="Docs" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/classe') or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/documents')) else '' }}">
+      {{ icone("classe", 20) if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else icone("documents", 20) }}<span>{{ 'Mes classes' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else 'Vérification' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else 'Docs' }}</span>
     </a>
-    <a href="/quiz" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/quiz') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/quiz') else '' }}>
-      {{ icone("quiz", 20) }}<span>Quiz</span>
+    <a href="{{ '/enseignant/harmonisation' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else '/notifications' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else '/quiz' }}" data-eleve-href="/quiz" data-professeur-href="/enseignant/harmonisation" data-smoke-label="Quiz" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/enseignant/harmonisation') or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/quiz')) else '' }}">
+      <span aria-hidden="true">{{ '📚' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else '🔔' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else '' }}</span>{{ icone("quiz", 20) if not (utilisateur is defined and utilisateur and utilisateur.role == 'professeur') else '' }}<span>{{ 'Harmonisation' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else 'Notifications' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else 'Quiz' }}</span>
     </a>
-    <a href="/jeu-cerebral" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/jeu-cerebral') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/jeu-cerebral') else '' }}>
-      <span class="navigation-mobile-icone" aria-hidden="true">🧠</span><span>Jeu</span>
+    <a href="{{ '/notifications' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else '/faq' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else '/jeu-cerebral' }}" data-eleve-href="/jeu-cerebral" data-professeur-href="/notifications" data-smoke-label="Jeu" class="navigation-mobile-lien{{ ' actif' if (utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and request.url.path.startswith('/notifications')) or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/jeu-cerebral')) else '' }}">
+      <span class="navigation-mobile-icone" aria-hidden="true">{{ '🔔' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else '❔' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else '🧠' }}</span><span>{{ 'Alertes' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else 'Aide' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else 'Jeu' }}</span>
     </a>
-    <a href="/cercles" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
-      {{ icone("cercles", 20) }}<span>Cercles</span>
+    <a href="{{ '/faq' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else '/contact' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else '/cercles' }}" data-eleve-href="/cercles" data-professeur-href="/faq" data-smoke-label="Cercles" class="navigation-mobile-lien{{ ' actif' if (utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and (request.url.path.startswith('/faq') or request.url.path == '/contact')) or (utilisateur is defined and utilisateur and utilisateur.role != 'professeur' and request.url.path.startswith('/cercles')) else '' }}">
+      <span class="navigation-mobile-icone" aria-hidden="true">{{ '❔' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else '✉️' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else '' }}</span>{{ icone("cercles", 20) if not (utilisateur is defined and utilisateur and utilisateur.role == 'professeur') else '' }}<span>{{ 'Aide' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' and utilisateur.statut_verification_enseignant == 'approuve' else 'Contact' if utilisateur is defined and utilisateur and utilisateur.role == 'professeur' else 'Cercles' }}</span>
     </a>
-    <a href="/securite" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}>
+    <a href="/securite" data-smoke-label="Profil" class="navigation-mobile-lien{{ ' actif' if request.url.path.startswith('/securite') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/securite') else '' }}>
       {{ icone("securite", 20) }}<span>Profil</span>
     </a>
   </nav>
@@ -525,7 +549,7 @@
   </div>
 </div>
 
-{% if request.session.get("user_id") %}
+{% if request.session.get("user_id") and utilisateur is defined and utilisateur and utilisateur.role == "etudiant" %}
 <div
   class="bilan-reprise-fond"
   id="bilan-reprise-fond"
@@ -639,7 +663,7 @@
 {% endif %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/ux.js?v={{ version_asset('ux.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/langue.js?v={{ version_asset('js/langue.js') }}" defer></script>
-{% if request.session.get("user_id") %}
+{% if request.session.get("user_id") and utilisateur is defined and utilisateur and utilisateur.role == "etudiant" %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/bilan-reprise.js?v={{ version_asset('js/bilan-reprise.js') }}" defer></script>
 {% endif %}
 {% if request.url.path == "/notifications" %}
