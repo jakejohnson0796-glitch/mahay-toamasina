@@ -128,6 +128,8 @@ def test_l_interface_apercu_est_marquee_lecture_seule_et_accessible_depuis_admin
 
     assert 'inert data-admin-apercu-contenu' in base
     assert "APERÇU EN LECTURE SEULE" in base
+    assert '{% set mode_apercu_admin = mode_apercu_admin|default(false) %}' in base
+    assert '{% set mode_apercu_espace = mode_apercu_espace|default("") %}' in base
     assert base.count("0 if mode_apercu_admin else compter_notifications_non_lues(request)") == 4
     assert "none if mode_apercu_admin else request.session.get(\"notification_inactivite\")" in base
     assert 'href="/admin/apercus"' in admin
