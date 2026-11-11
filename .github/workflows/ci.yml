@@ -62,7 +62,7 @@ jobs:
       - name: Smoke navigateur responsive des cercles
         run: |
           npm install --no-save playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
           node scripts/smoke_circle_layout.mjs
           node scripts/smoke_global_responsive.mjs
           node scripts/smoke_back_navigation.mjs
