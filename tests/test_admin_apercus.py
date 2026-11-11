@@ -125,6 +125,33 @@ def _capture_template_dashboard(monkeypatch):
     return appels
 
 
+
+def test_dashboard_revient_a_l_espace_etudiant_apres_retrait_du_role_repetiteur(monkeypatch):
+    utilisateur = SimpleNamespace(
+        id=42,
+        nom="Ancien répétiteur",
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="repetiteur",
+        statut_verification_repetiteur="retire",
+    )
+    monkeypatch.setattr(dashboard_router, "utilisateur_courant", lambda *_args: utilisateur)
+    appels = _capture_template_dashboard(monkeypatch)
+    monkeypatch.setattr(
+        dashboard_router.dashboard_module,
+        "notifier_echeances_proches",
+        lambda *_args: None,
+    )
+    monkeypatch.setattr(
+        dashboard_router.dashboard_module,
+        "donnees_dashboard",
+        lambda *_args: {},
+    )
+
+    dashboard_router.page_dashboard(SimpleNamespace(), SimpleNamespace())
+
+    assert appels["template"] == "dashboard_etudiant.html"
+
+
 def test_role_repetiteur_est_different_du_role_sponsor():
     assert RoleUtilisateur.REPETITEUR.value == "repetiteur"
     assert RoleUtilisateur.REPETITEUR != RoleUtilisateur.SPONSOR
