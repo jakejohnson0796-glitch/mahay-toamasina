@@ -352,6 +352,167 @@ def page_accueil_admin(request: Request, session: Session = Depends(get_session)
     )
 
 
+# ---------------------------------------------------------------------
+# Aperçu des espaces utilisateurs (lecture seule, sans usurpation)
+# ---------------------------------------------------------------------
+def _utilisateur_demo_espace(espace: str) -> Utilisateur:
+    """Construit un profil non persistant destiné uniquement au rendu Jinja."""
+    profils = {
+        "etudiant": {
+            "nom": "Profil de démonstration",
+            "role": RoleUtilisateur.ETUDIANT,
+            "profil_souhaite": "eleve",
+            "statut_verification_enseignant": "non_concerne",
+        },
+        "enseignant": {
+            "nom": "Profil enseignant de démonstration",
+            "role": RoleUtilisateur.PROFESSEUR,
+            "profil_souhaite": "professeur",
+            "statut_verification_enseignant": "approuve",
+        },
+        "repetiteur": {
+            "nom": "Profil répétiteur de démonstration",
+            "role": RoleUtilisateur.SPONSOR,
+            "profil_souhaite": "sponsor",
+            "statut_verification_enseignant": "non_concerne",
+        },
+    }
+    profil = profils[espace]
+    # ID négatif réservé au rendu : l'objet n'est jamais ajouté à la session.
+    return Utilisateur(
+        id=-1,
+        nom=profil["nom"],
+        mot_de_passe_hash="profil-apercu-non-authentifiable",
+        role=profil["role"],
+        profil_souhaite=profil["profil_souhaite"],
+        statut_verification_enseignant=profil["statut_verification_enseignant"],
+    )
+
+
+def _donnees_apercu_etudiant() -> dict:
+    """Données de démonstration vides : aucune progression réelle n'est lue/modifiée."""
+    return {
+        "parcours_demarrage": {
+            "onboarding_termine": False,
+            "etapes_terminees": 0,
+            "etapes": [],
+            "jour": 1,
+            "plan_7_jours": [],
+        },
+        "routine_du_jour": {
+            "complete": False,
+            "terminees": 0,
+            "total": 3,
+            "pourcentage": 0,
+            "etapes": [],
+        },
+        "gamification": {
+            "niveau": 1,
+            "total_xp": 0,
+            "streak": 0,
+            "missions": [],
+            "xp_dans_niveau": 0,
+            "xp_prochain": 250,
+        },
+        "abonnement": None,
+        "acces_premium": False,
+        "jours_restants": 0,
+        "cercles": [],
+        "documents_recents": [],
+        "dernier_document": None,
+        "dernier_document_delai": None,
+        "nb_cercles_rejoints": 0,
+        "nb_documents_consultes": 0,
+        "nb_quiz_completes": 0,
+        "dernier_quiz": None,
+        "tentative_quiz_en_cours": None,
+        "score_moyen_quiz": 0,
+        "jours_actifs_consecutifs": 0,
+        "activite_recente": [],
+        "ressources_populaires": [],
+        "recommandations": [],
+        "echeances_a_venir": [],
+        "progression_matieres": [],
+        "notions_a_revoir": [],
+        "prochaine_revision": [],
+        "alertes_harmonisation": None,
+    }
+
+
+@router.get("/admin/apercus")
+def page_admin_apercus(request: Request, session: Session = Depends(get_session)):
+    """Sélecteur des interfaces visibles par les différents profils."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "admin_apercus.html",
+        {"utilisateur": admin},
+    )
+
+
+@router.get("/admin/apercus/{espace}")
+def page_admin_apercu_espace(
+    espace: str,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Affiche le vrai template du rôle avec un profil fictif et une page inert."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    espaces = {
+        "etudiant": {
+            "titre": "Espace Élève / Étudiant",
+            "note": "Profil fictif · données personnelles et progression non chargées.",
+            "template": "dashboard_etudiant.html",
+        },
+        "enseignant": {
+            "titre": "Espace Enseignant",
+            "note": "Compte fictif vérifié · aucun cours ni élève réel n'est affiché.",
+            "template": "dashboard_enseignant.html",
+        },
+        "repetiteur": {
+            "titre": "Espace Répétiteur / Sponsor",
+            "note": (
+                "Aperçu du rôle Sponsor actuel : les répétiteurs, commerces et services "
+                "partagent encore le même rôle et le tableau de bord générique des apprenants."
+            ),
+            "template": "dashboard_etudiant.html",
+        },
+    }
+    configuration = espaces.get(espace)
+    if not configuration:
+        return RedirectResponse("/admin/apercus?erreur=espace_invalide", status_code=303)
+
+    profil_demo = _utilisateur_demo_espace(espace)
+    contexte = {
+        "utilisateur": profil_demo,
+        "mode_apercu_admin": True,
+        "mode_apercu_espace": espace,
+        "mode_apercu_titre": configuration["titre"],
+        "mode_apercu_note": configuration["note"],
+    }
+
+    if espace == "enseignant":
+        contexte.update({
+            "statut_enseignant": "approuve",
+            "statistiques_enseignant": {
+                "cours": 0,
+                "inscriptions": 0,
+                "seances_planifiees": 0,
+                "copies_a_corriger": 0,
+            },
+            "cours_enseignes": [],
+        })
+    else:
+        contexte.update(_donnees_apercu_etudiant())
+
+    return templates.TemplateResponse(request, configuration["template"], contexte)
+
+
 @router.get("/admin/ia")
 def page_admin_ia(request: Request, session: Session = Depends(get_session)):
     """Supervision du worker IA, des strategies de risque et des modeles."""
