@@ -28,7 +28,11 @@ def upgrade() -> None:
         batch.add_column(sa.Column("verification_repetiteur_le", sa.DateTime(), nullable=True))
         batch.add_column(sa.Column(
             "verification_repetiteur_par_id", sa.Integer(),
-            sa.ForeignKey("utilisateur.id"), nullable=True,
+            sa.ForeignKey(
+                "utilisateur.id",
+                name="fk_utilisateur_verification_repetiteur_par",
+            ),
+            nullable=True,
         ))
         batch.add_column(sa.Column("motif_refus_repetiteur", sa.String(), nullable=True))
         batch.add_column(sa.Column("matieres_repetiteur", sa.String(length=500), nullable=True))
