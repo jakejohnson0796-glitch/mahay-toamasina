@@ -83,3 +83,7 @@
 .objectif-examen-semaine-empty{margin:0;line-height:1.5}
 @media(max-width:980px){.objectif-examen-semaine-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.objectif-examen-semaine-grid{grid-template-columns:1fr}.objectif-examen-semaine-card{padding:1rem}}
+
+.objectif-examen-semaine-action{margin-top:.35rem}
+.objectif-examen-semaine-action .bouton{width:100%;min-height:2.45rem;justify-content:center;white-space:normal;text-align:center;line-height:1.25;font-size:.76rem;padding:.55rem .65rem}
+.objectif-examen-semaine-card li{align-content:start}

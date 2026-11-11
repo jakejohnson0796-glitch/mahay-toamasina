@@ -441,12 +441,20 @@
                 Maîtrise {{ tache.score }}%
                 {% if tache.revision_due %} · Révision à échéance{% endif %}
               </small>
+              <form method="post" action="/quiz/generer" class="objectif-examen-semaine-action">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <input type="hidden" name="mode_quiz" value="matiere">
+                <input type="hidden" name="matiere" value="{{ tache.matiere }}">
+                <input type="hidden" name="matiere_libre" value="{{ tache.notion }}">
+                <input type="hidden" name="nb_questions" value="10">
+                <button class="bouton bouton-secondaire" type="submit">M'entraîner sur cette notion</button>
+              </form>
             </li>
           {% endfor %}
           </ul>
           <div class="objectif-examen-semaine-footer">
             <span>Environ {{ jour.duree_minutes }} min</span>
-            <a href="/mes-revisions">Réviser</a>
+            <a href="/mes-revisions">Voir mes révisions</a>
           </div>
         {% else %}
           <p class="objectif-examen-semaine-empty">Aucune notion évaluée prévue ce jour.</p>
