@@ -49,7 +49,7 @@ def test_plan_alterne_entrainement_et_correction_active():
     plan = construire_plan_hebdomadaire(
         [
             _bilan("Mathématiques", "a_renforcer", 38, 4),
-            _bilan("Français", "a_evaluer"),
+            _bilan("Français", "en_consolidation", 72, 1),
         ],
         maintenant=datetime(2026, 11, 11),
         objectif="cepe",
