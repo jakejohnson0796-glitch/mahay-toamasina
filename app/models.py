@@ -15,7 +15,8 @@ from sqlalchemy import CheckConstraint, Index, text, UniqueConstraint, Column, F
 
 class RoleUtilisateur(str, Enum):
     ETUDIANT = "etudiant"
-    SPONSOR = "sponsor"      # repetiteur, petit commerce, service pour etudiants
+    SPONSOR = "sponsor"      # petit commerce, service et partenaire étudiant
+    REPETITEUR = "repetiteur"  # professionnel du soutien scolaire, distinct du sponsor
     PROFESSEUR = "professeur"  # anime des cours dans le module Classe virtuelle
     RESPONSABLE = "responsable"  # consulte uniquement le portail famille vérifié
     ADMIN = "admin"
@@ -457,6 +458,16 @@ class Utilisateur(SQLModel, table=True):
     verification_enseignant_le: Optional[datetime] = None
     verification_enseignant_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     motif_refus_enseignant: Optional[str] = None
+    # Vérification indépendante des répétiteurs : une demande n'accorde jamais
+    # le rôle professionnel tant qu'un administrateur ne l'a pas approuvée.
+    statut_verification_repetiteur: str = Field(default="non_concerne", index=True, max_length=20)
+    demande_repetiteur_le: Optional[datetime] = None
+    verification_repetiteur_le: Optional[datetime] = None
+    verification_repetiteur_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    motif_refus_repetiteur: Optional[str] = None
+    matieres_repetiteur: Optional[str] = Field(default=None, max_length=500)
+    niveaux_repetiteur: Optional[str] = Field(default=None, max_length=500)
+    tarif_horaire_repetiteur_ariary: Optional[int] = None
     filiere_id: Optional[int] = Field(default=None, foreign_key="filiere.id")
     # Composante choisie explicitement dans le profil. Indispensable pour
     # les etudiants en tronc commun, car aucune Filiere ne permet sinon de
