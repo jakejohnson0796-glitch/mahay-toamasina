@@ -111,9 +111,6 @@
 
 
 
-{% if request.url.path.startswith("/admin/apercus") or mode_apercu_admin %}
-<link rel="stylesheet" href="/static/admin-apercu.css?v={{ version_asset('admin-apercu.css') }}">
-{% endif %}
 <link rel="stylesheet" href="/static/responsive-overrides.css?v={{ version_asset('responsive-overrides.css') }}">
 <link rel="stylesheet" href="/static/experience-refresh.css?v={{ version_asset('experience-refresh.css') }}">
 {% if request.url.path.startswith("/quiz") or request.url.path.startswith("/tuteur") or request.url.path.startswith("/cercles") %}
@@ -154,6 +151,9 @@
 {% endif %}
 {% if request.url.path in ["/notifications", "/mes-revisions", "/defis", "/a-propos"] %}
 <link rel="stylesheet" href="/static/feature-pages-refresh.css?v={{ version_asset('feature-pages-refresh.css') }}">
+{% endif %}
+{% if request.url.path.startswith("/admin/apercus") or mode_apercu_admin %}
+<link rel="stylesheet" href="/static/admin-apercu.css?v={{ version_asset('admin-apercu.css') }}">
 {% endif %}
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
@@ -477,7 +477,7 @@
     </div>
     {% endif %}
 
-    {% set rappel_inactivite = request.session.get("notification_inactivite") %}
+    {% set rappel_inactivite = none if mode_apercu_admin else request.session.get("notification_inactivite") %}
     {% if rappel_inactivite %}
     <aside class="notification-inactivite" aria-live="polite">
       <span class="notification-inactivite-icone" aria-hidden="true">!</span>
