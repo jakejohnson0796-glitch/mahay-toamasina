@@ -859,13 +859,24 @@ def generer_quiz(
             matiere_choisie = sujet_libre or matiere_selectionnee
         if not matiere_choisie:
             return RedirectResponse("/quiz?erreur=matiere_requise", status_code=303)
-        progression_cible = next(
-            (
-                progression for progression in progressions
-                if (getattr(progression, "matiere", None) or "").casefold() == matiere_choisie.casefold()
-            ),
-            None,
-        )
+        if matiere_selectionnee and sujet_libre:
+            # Depuis le planning hebdomadaire, retrouver la progression exacte
+            # de cette notion pour adapter aussi la difficulté à cette notion.
+            progression_cible = session.exec(
+                select(ProgressionNotion)
+                .where(ProgressionNotion.utilisateur_id == utilisateur.id)
+                .where(ProgressionNotion.matiere == matiere_selectionnee)
+                .where(ProgressionNotion.notion == sujet_libre)
+                .where(ProgressionNotion.niveau == niveau)
+            ).first()
+        else:
+            progression_cible = next(
+                (
+                    progression for progression in progressions
+                    if (getattr(progression, "matiere", None) or "").casefold() == matiere_choisie.casefold()
+                ),
+                None,
+            )
         if (difficulte or "auto").strip() == "auto":
             difficulte_choisie = quiz_module.difficulte_revision_adaptative(progression_cible)
         else:
