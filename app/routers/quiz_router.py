@@ -474,6 +474,27 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             or str(progression.niveau or "").strip().casefold() == niveau_cible
         )
     ][:5]
+    objectif_plan = None
+    option_ps_plan = None
+    lien_quiz_plan = "/quiz"
+    if cepe_disponible:
+        objectif_plan = "cepe"
+    elif bepc_disponible and bepc_programme_actuel == "pe":
+        objectif_plan = "bepc_pe"
+    elif bepc_disponible and bepc_programme_actuel in {"ps_a", "ps_b"}:
+        objectif_plan = "bepc_ps"
+        option_ps_plan = "A" if bepc_programme_actuel == "ps_a" else "B"
+    elif bepc_disponible:
+        lien_quiz_plan = "/objectif-examen#choisir-examen"
+    elif bacc_disponible:
+        objectif_plan = "baccalaureat"
+
+    plan_hebdomadaire = preparation_intelligente.construire_plan_hebdomadaire(
+        bilans_matieres,
+        objectif=objectif_plan,
+        option_ps=option_ps_plan,
+        lien_quiz=lien_quiz_plan,
+    )
     return templates.TemplateResponse(
         request,
         "objectif_examen.html",
@@ -490,6 +511,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "serie_label": serie_label,
             "priorites": priorites,
             "bilans_matieres": bilans_matieres,
+            "plan_hebdomadaire": plan_hebdomadaire,
             "ressources_externes": ressources_examens.ressources_pour_cycle(cycle),
             "annales_disponibles": annales_disponibles,
         },

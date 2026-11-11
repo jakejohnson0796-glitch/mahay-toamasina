@@ -386,6 +386,46 @@
   </section>
   {% endif %}
 
+  {% if plan_hebdomadaire and plan_hebdomadaire.seances %}
+  <section class="objectif-examen-section objectif-examen-plan-semaine" id="plan-7-jours" aria-labelledby="plan-semaine-title">
+    <div class="objectif-examen-heading">
+      <span class="ai-kicker">Programme adaptatif · 7 jours</span>
+      <h2 id="plan-semaine-title">Ton programme de préparation sur une semaine</h2>
+      <p>Les séances sont ordonnées selon tes matières à évaluer, tes difficultés et tes acquis. Après chaque quiz, le programme se recalcule à partir de tes réponses.</p>
+      <p class="objectif-examen-plan-total"><strong>{{ plan_hebdomadaire.duree_totale_minutes }} minutes indicatives</strong> · {{ plan_hebdomadaire.nb_matieres }} matière{{ "s" if plan_hebdomadaire.nb_matieres != 1 else "" }} prise{{ "s" if plan_hebdomadaire.nb_matieres != 1 else "" }} en compte</p>
+    </div>
+    <div class="objectif-examen-semaine-grid">
+      {% for seance in plan_hebdomadaire.seances %}
+      <article class="objectif-examen-semaine-card">
+        <div class="objectif-examen-semaine-date">
+          <strong>{{ seance.jour }}</strong>
+          <time>{{ seance.date_label }}</time>
+        </div>
+        <span class="objectif-examen-tag">{{ seance.type_label }}</span>
+        <h3>{{ seance.titre }}</h3>
+        {% if seance.matiere %}<p class="objectif-examen-semaine-matiere">{{ seance.matiere }}</p>{% endif %}
+        <p>{{ seance.description }}</p>
+        <small class="objectif-examen-semaine-duree">{{ seance.duree_minutes }} min · durée indicative</small>
+        {% if seance.objectif %}
+        <form method="post" action="/objectif-examen/lancer" class="objectif-examen-semaine-action">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="objectif" value="{{ seance.objectif }}">
+          <input type="hidden" name="matiere" value="{{ seance.matiere }}">
+          {% if seance.option_ps %}<input type="hidden" name="option_ps" value="{{ seance.option_ps }}">{% endif %}
+          <button class="bouton bouton-secondaire" type="submit">{{ seance.action_label }}</button>
+        </form>
+        {% else %}
+        <a class="bouton bouton-secondaire objectif-examen-semaine-link" href="{{ seance.href }}">{{ seance.action_label }}</a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    <aside class="objectif-examen-diagnostic-note" role="note">
+      Ce programme est un guide flexible, pas une promesse de réussite ni un calendrier officiel. Les durées sont indicatives ; privilégie la compréhension des corrections et demande l'aide de ton enseignant lorsque nécessaire.
+    </aside>
+  </section>
+  {% endif %}
+
   <section class="objectif-examen-section objectif-examen-priorites" aria-labelledby="objectif-priorites-title">
     <div class="objectif-examen-heading">
       <span class="ai-kicker">Travail personnalisé</span>

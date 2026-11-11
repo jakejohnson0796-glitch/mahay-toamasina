@@ -64,3 +64,20 @@
 .objectif-examen-plan-actions .bouton{align-self:flex-start}
 @media(max-width:980px){.objectif-examen-diagnostic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.objectif-examen-diagnostic-grid{grid-template-columns:1fr}.objectif-examen-plan-actions{flex-direction:column}.objectif-examen-plan-actions .bouton{width:100%;justify-content:center}}
+
+
+/* Programme hebdomadaire de préparation, construit depuis les diagnostics du profil. */
+.objectif-examen-plan-total{margin-top:.55rem;color:var(--content-muted);font-size:.82rem}
+.objectif-examen-semaine-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.85rem}
+.objectif-examen-semaine-card{display:flex;flex-direction:column;gap:.6rem;min-width:0;padding:1rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface)}
+.objectif-examen-semaine-date{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-bottom:.45rem;border-bottom:1px solid var(--content-border);color:var(--content-text)}
+.objectif-examen-semaine-date time{color:var(--content-muted);font-size:.76rem;font-variant-numeric:tabular-nums}
+.objectif-examen-semaine-card h3{margin:0;color:var(--content-text);font-size:1rem;line-height:1.35;overflow-wrap:anywhere}
+.objectif-examen-semaine-card>p{margin:0;color:var(--content-muted);font-size:.82rem;line-height:1.55}
+.objectif-examen-semaine-card .objectif-examen-semaine-matiere{color:var(--content-text);font-weight:750}
+.objectif-examen-semaine-duree{color:var(--content-muted);font-size:.74rem}
+.objectif-examen-semaine-action{margin-top:auto}
+.objectif-examen-semaine-action button,.objectif-examen-semaine-link{width:100%;justify-content:center;margin-top:auto}
+.objectif-examen-semaine-card .objectif-examen-tag{align-self:flex-start}
+@media(max-width:980px){.objectif-examen-semaine-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.objectif-examen-semaine-grid{grid-template-columns:1fr}.objectif-examen-semaine-card{padding:.9rem}}
