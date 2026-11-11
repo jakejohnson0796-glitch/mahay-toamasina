@@ -4,9 +4,8 @@ Les résultats proviennent exclusivement des ProgressionNotion de l'utilisateur
 et du niveau actuellement déclaré. Une matière sans historique reste « à évaluer ».
 """
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable, Optional
-from zoneinfo import ZoneInfo
 
 
 def _cle(texte: Any) -> str:
@@ -27,7 +26,7 @@ def construire_bilans_matieres(
     """
     from . import quiz as quiz_module
 
-    instant = maintenant or datetime.now(ZoneInfo("Indian/Antananarivo"))
+    instant = maintenant or datetime.now(timezone(timedelta(hours=3)))
     niveau_cible = _cle(niveau)
     par_matiere = defaultdict(list)
 
