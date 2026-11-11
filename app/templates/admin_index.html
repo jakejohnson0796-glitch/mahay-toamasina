@@ -12,19 +12,7 @@
         Un espace unique pour surveiller les demandes, modérer les contenus,
         gérer les utilisateurs, les abonnements, les sponsors et le référentiel académique.
       </p>
-      <div class="ops-hero-actions">
-        <a href="/admin/abonnements">Abonnements</a>
-        <a href="/admin/sponsors">Sponsors</a>
-        <a href="/admin/utilisateurs">Utilisateurs</a>
-    <a href="/admin/inscriptions-institutionnelles">Inscriptions institutionnelles</a>
-        <a href="/admin/stats">Statistiques</a>
-        <a href="/admin/statistiques-academiques">Suivi pédagogique</a>
-    <a href="/admin/harmonisation-cours">Harmonisation des cours</a>
-        <a href="/admin/harmonisation-cours">Harmonisation des cours</a>
-    <a href="/admin/ia">IA</a>
-        <a href="/admin/securite">Sécurité admin</a>
-        <a href="/admin/diagnostics">Diagnostics système</a>
-      </div>
+
     </div>
     <div class="ops-stat-grid">
       <div class="ops-stat"><strong>{{ nb_abonnements_en_attente }}</strong><span>abonnements à vérifier</span></div>
@@ -43,17 +31,9 @@
   </div>
   {% endif %}
 
-  <nav class="ops-nav" aria-label="Navigation administration">
-    <a class="is-active" href="/admin">Vue d'ensemble</a>
-    <a href="/admin/abonnements">Abonnements</a>
-    <a href="/admin/sponsors">Sponsors</a>
-    <a href="/admin/utilisateurs">Utilisateurs</a>
-    <a href="/admin/stats">Statistiques</a>
-    <a href="/admin/statistiques-academiques">Suivi pédagogique</a>
+  <nav class="ops-nav" aria-label="Accès rapides aux fonctions complémentaires">
     <a href="#nouveaux-arrivants" class="ops-nav-alert{% if nb_nouveaux_arrivants %} is-alert{% endif %}">Nouveaux arrivants{% if nb_nouveaux_arrivants %} · {{ nb_nouveaux_arrivants }}{% endif %}</a>
-    <a href="/moderation">Documents</a>
-    <a href="/admin/referentiel">Référentiel</a>
-        <a href="/admin/opportunites">Opportunités académiques</a>
+    <a href="/admin/opportunites">Opportunités académiques</a>
     <a href="/admin/diagnostics">Diagnostics système</a>
     <a href="/admin/securite">Sécurité admin</a>
   </nav>
