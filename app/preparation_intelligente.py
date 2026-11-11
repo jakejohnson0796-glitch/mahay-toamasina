@@ -6,6 +6,7 @@ et du niveau actuellement déclaré. Une matière sans historique reste « à é
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Iterable, Optional
+from zoneinfo import ZoneInfo
 
 
 def _cle(texte: Any) -> str:
@@ -26,7 +27,7 @@ def construire_bilans_matieres(
     """
     from . import quiz as quiz_module
 
-    instant = maintenant or datetime.utcnow()
+    instant = maintenant or datetime.now(ZoneInfo("Indian/Antananarivo"))
     niveau_cible = _cle(niveau)
     par_matiere = defaultdict(list)
 
