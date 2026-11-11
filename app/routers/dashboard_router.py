@@ -102,7 +102,13 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
-    if utilisateur.profil_souhaite == "repetiteur" or utilisateur.role == RoleUtilisateur.REPETITEUR:
+    if (
+        utilisateur.role == RoleUtilisateur.REPETITEUR
+        or (
+            utilisateur.profil_souhaite == "repetiteur"
+            and utilisateur.statut_verification_repetiteur in {"en_attente", "refuse"}
+        )
+    ):
         return templates.TemplateResponse(
             request,
             "dashboard_repetiteur.html",
