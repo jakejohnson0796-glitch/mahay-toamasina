@@ -44,9 +44,19 @@
           <td>
             <strong>
               {% if u.profil_souhaite == "professeur" %}Professeur demandé
-              {% elif u.profil_souhaite == "sponsor" %}Répétiteur / sponsor
+              {% elif u.profil_souhaite == "repetiteur" %}Répétiteur
+              {% elif u.profil_souhaite == "sponsor" %}Sponsor / commerce / service
               {% else %}Élève / étudiant{% endif %}
             </strong>
+            {% if u.profil_souhaite == "repetiteur" %}
+              <small class="ops-table-date">
+                {% if u.statut_verification_repetiteur == "en_attente" %}Validation répétiteur en attente
+                {% elif u.statut_verification_repetiteur == "approuve" %}Profil répétiteur validé
+                {% elif u.statut_verification_repetiteur == "refuse" %}Demande répétiteur refusée
+                {% elif u.statut_verification_repetiteur == "retire" %}Rôle répétiteur retiré
+                {% else %}Statut répétiteur non renseigné{% endif %}
+              </small>
+            {% endif %}
             {% if u.profil_souhaite == "professeur" %}
               <small class="ops-table-date">
                 {% if u.statut_verification_enseignant == "en_attente" %}Validation en attente
@@ -95,7 +105,16 @@
           <td>
             {% if u.id != utilisateur.id %}
             <div class="ops-actions">
-              {% if u.role.value == "etudiant" %}
+              {% if u.role.value == "etudiant" and u.profil_souhaite == "repetiteur" and u.statut_verification_repetiteur == "en_attente" %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-repetiteur">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Valider répétiteur</button>
+              </form>
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-repetiteur" data-confirm-message="Refuser la demande répétiteur de {{ u.nom }} ?">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+              </form>
+              {% elif u.role.value == "etudiant" %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
                 <button class="bouton bouton-secondaire" type="submit">
@@ -108,7 +127,7 @@
                 <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
               </form>
               {% endif %}
-              {% elif u.role.value in ["professeur","admin"] %}
+              {% elif u.role.value in ["professeur","repetiteur","admin"] %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" {% if u.role.value == "admin" %}data-confirm-message="Retirer le statut admin de {{ u.nom }} ?"{% endif %}><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Rétrograder</button></form>
               {% endif %}
               {% if u.banni %}
