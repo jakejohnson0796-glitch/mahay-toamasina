@@ -372,9 +372,14 @@ def _utilisateur_demo_espace(espace: str) -> Utilisateur:
         },
         "repetiteur": {
             "nom": "Profil répétiteur de démonstration",
-            "role": RoleUtilisateur.SPONSOR,
-            "profil_souhaite": "sponsor",
+            "role": RoleUtilisateur.REPETITEUR,
+            "profil_souhaite": "repetiteur",
             "statut_verification_enseignant": "non_concerne",
+            "statut_verification_repetiteur": "approuve",
+            "matieres_repetiteur": "Mathématiques · Physique · Français",
+            "niveaux_repetiteur": "Collège · Lycée · L1",
+            "tarif_horaire_repetiteur_ariary": 10000,
+            "bio": "Profil de démonstration : présentation et informations fictives.",
         },
     }
     profil = profils[espace]
@@ -386,6 +391,11 @@ def _utilisateur_demo_espace(espace: str) -> Utilisateur:
         role=profil["role"],
         profil_souhaite=profil["profil_souhaite"],
         statut_verification_enseignant=profil["statut_verification_enseignant"],
+        statut_verification_repetiteur=profil.get("statut_verification_repetiteur", "non_concerne"),
+        matieres_repetiteur=profil.get("matieres_repetiteur"),
+        niveaux_repetiteur=profil.get("niveaux_repetiteur"),
+        tarif_horaire_repetiteur_ariary=profil.get("tarif_horaire_repetiteur_ariary"),
+        bio=profil.get("bio"),
     )
 
 
@@ -475,12 +485,9 @@ def page_admin_apercu_espace(
             "template": "dashboard_enseignant.html",
         },
         "repetiteur": {
-            "titre": "Espace Répétiteur / Sponsor",
-            "note": (
-                "Aperçu du rôle Sponsor actuel : les répétiteurs, commerces et services "
-                "partagent encore le même rôle et le tableau de bord générique des apprenants."
-            ),
-            "template": "dashboard_etudiant.html",
+            "titre": "Espace Répétiteur",
+            "note": "Profil fictif validé · données personnelles, offres et demandes réelles non chargées.",
+            "template": "dashboard_repetiteur.html",
         },
     }
     configuration = espaces.get(espace)
@@ -507,6 +514,8 @@ def page_admin_apercu_espace(
             },
             "cours_enseignes": [],
         })
+    elif espace == "repetiteur":
+        contexte.update({"statut_repetiteur": "approuve"})
     else:
         contexte.update(_donnees_apercu_etudiant())
 
@@ -1043,6 +1052,66 @@ def refuser_demande_professeur(
     return RedirectResponse("/admin/utilisateurs", status_code=303)
 
 
+@router.post("/admin/utilisateurs/{utilisateur_id}/promouvoir-repetiteur")
+def approuver_demande_repetiteur(
+    request: Request,
+    utilisateur_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Accorde le rôle répétiteur uniquement à la suite d'une demande en attente."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if (
+        cible
+        and cible.role == RoleUtilisateur.ETUDIANT
+        and cible.profil_souhaite == "repetiteur"
+        and cible.statut_verification_repetiteur == "en_attente"
+    ):
+        cible.role = RoleUtilisateur.REPETITEUR
+        cible.statut_verification_repetiteur = "approuve"
+        cible.verification_repetiteur_le = datetime.utcnow()
+        cible.verification_repetiteur_par_id = admin.id
+        cible.motif_refus_repetiteur = None
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/refuser-repetiteur")
+def refuser_demande_repetiteur(
+    request: Request,
+    utilisateur_id: int,
+    motif: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Refuse une demande répétiteur sans accorder de rôle professionnel."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if (
+        cible
+        and cible.role == RoleUtilisateur.ETUDIANT
+        and cible.profil_souhaite == "repetiteur"
+        and cible.statut_verification_repetiteur == "en_attente"
+    ):
+        cible.statut_verification_repetiteur = "refuse"
+        cible.verification_repetiteur_le = datetime.utcnow()
+        cible.verification_repetiteur_par_id = admin.id
+        cible.motif_refus_repetiteur = (motif.strip()[:500] or None)
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
 @router.post("/admin/utilisateurs/{utilisateur_id}/retrograder-etudiant")
 def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     """Retire le statut PROFESSEUR ou ADMIN d'un utilisateur (retour a
@@ -1065,6 +1134,13 @@ def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session
         cible.statut_verification_enseignant = "retire"
         cible.verification_enseignant_le = datetime.utcnow()
         cible.verification_enseignant_par_id = admin.id
+        session.add(cible)
+        session.commit()
+    elif cible.role == RoleUtilisateur.REPETITEUR:
+        cible.role = RoleUtilisateur.ETUDIANT
+        cible.statut_verification_repetiteur = "retire"
+        cible.verification_repetiteur_le = datetime.utcnow()
+        cible.verification_repetiteur_par_id = admin.id
         session.add(cible)
         session.commit()
     elif cible.role == RoleUtilisateur.ADMIN:

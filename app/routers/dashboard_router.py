@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Form
 from sqlalchemy import func
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlmodel import Session, select
@@ -102,6 +102,22 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    if (
+        utilisateur.role == RoleUtilisateur.REPETITEUR
+        or (
+            utilisateur.profil_souhaite == "repetiteur"
+            and utilisateur.statut_verification_repetiteur in {"en_attente", "refuse"}
+        )
+    ):
+        return templates.TemplateResponse(
+            request,
+            "dashboard_repetiteur.html",
+            {
+                "utilisateur": utilisateur,
+                "statut_repetiteur": getattr(utilisateur, "statut_verification_repetiteur", "non_concerne"),
+            },
+        )
+
     if utilisateur.role == RoleUtilisateur.PROFESSEUR:
         if utilisateur.statut_verification_enseignant == "approuve":
             donnees_enseignant = donnees_dashboard_enseignant(session, utilisateur)
@@ -155,6 +171,48 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
         "dashboard_etudiant.html",
         {"utilisateur": utilisateur, **donnees, "alertes_harmonisation": alertes_harmonisation},
     )
+
+
+
+@router.post("/repetiteur/profil")
+def enregistrer_profil_repetiteur(
+    request: Request,
+    matieres: str = Form(""),
+    niveaux: str = Form(""),
+    tarif_horaire: str = Form(""),
+    presentation: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Met à jour la fiche professionnelle uniquement après validation admin."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur or utilisateur.role != RoleUtilisateur.REPETITEUR:
+        return RedirectResponse("/dashboard", status_code=303)
+    if utilisateur.statut_verification_repetiteur != "approuve":
+        return RedirectResponse("/dashboard?erreur=profil_non_valide", status_code=303)
+
+    matieres = (matieres or "").strip()
+    niveaux = (niveaux or "").strip()
+    presentation = (presentation or "").strip()
+    tarif_nettoye = (tarif_horaire or "").strip()
+    tarif = None
+    if tarif_nettoye:
+        try:
+            tarif = int(tarif_nettoye)
+        except (TypeError, ValueError):
+            return RedirectResponse("/dashboard?erreur=tarif_invalide", status_code=303)
+        if tarif < 1 or tarif > 10000000:
+            return RedirectResponse("/dashboard?erreur=tarif_invalide", status_code=303)
+    if len(matieres) > 500 or len(niveaux) > 500 or len(presentation) > 1000:
+        return RedirectResponse("/dashboard?erreur=profil_trop_long", status_code=303)
+
+    utilisateur.matieres_repetiteur = matieres or None
+    utilisateur.niveaux_repetiteur = niveaux or None
+    utilisateur.tarif_horaire_repetiteur_ariary = tarif
+    utilisateur.bio = presentation or None
+    session.add(utilisateur)
+    session.commit()
+    return RedirectResponse("/dashboard?ok=profil_enregistre", status_code=303)
 
 
 

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block titre %}Espace répétiteur — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<main class="rep-page" data-role-workspace="repetiteur">
+  <header class="rep-hero">
+    <div>
+      <p class="rep-kicker">MITARIDALA · Espace professionnel</p>
+      <h1>Bonjour {{ utilisateur.nom.split(" ")[0] }}.</h1>
+      <p>Un espace indépendant pour présenter ton accompagnement scolaire et organiser ton activité de répétiteur.</p>
+    </div>
+    {% if statut_repetiteur == "approuve" %}
+    <span class="rep-status rep-status-ok">Profil vérifié</span>
+    {% else %}
+    <span class="rep-status">Vérification en cours</span>
+    {% endif %}
+  </header>
+
+  {% if request.query_params.get("ok") == "profil_enregistre" %}
+  <div class="rep-alert rep-alert-ok" role="status">Ta fiche professionnelle a été enregistrée.</div>
+  {% elif request.query_params.get("erreur") == "tarif_invalide" %}
+  <div class="rep-alert" role="alert">Indique un tarif horaire valide en ariary, ou laisse le champ vide.</div>
+  {% elif request.query_params.get("erreur") == "profil_trop_long" %}
+  <div class="rep-alert" role="alert">Certains champs dépassent la longueur autorisée. Raccourcis-les puis réessaie.</div>
+  {% endif %}
+
+  {% if statut_repetiteur == "en_attente" %}
+  <section class="rep-panel rep-verification">
+    <span class="rep-illustration" aria-hidden="true">⏳</span>
+    <div>
+      <p class="rep-kicker">Demande reçue</p>
+      <h2>Ton profil répétiteur est en cours de vérification.</h2>
+      <p>Tu peux consulter les autres ressources de MITARIDALA, mais les fonctions professionnelles resteront désactivées jusqu'à la validation de l'administration.</p>
+    </div>
+  </section>
+  {% elif statut_repetiteur == "refuse" %}
+  <section class="rep-panel rep-verification">
+    <span class="rep-illustration" aria-hidden="true">ℹ️</span>
+    <div>
+      <p class="rep-kicker">Demande non approuvée</p>
+      <h2>Ton profil n'a pas encore été validé.</h2>
+      {% if utilisateur.motif_refus_repetiteur %}<p>Motif communiqué : {{ utilisateur.motif_refus_repetiteur }}</p>{% endif %}
+      <p>Contacte l'équipe MITARIDALA pour connaître les éléments à compléter avant une nouvelle demande.</p>
+    </div>
+  </section>
+  {% elif statut_repetiteur == "approuve" and utilisateur.role.value == "repetiteur" %}
+  <section class="rep-grid">
+    <article class="rep-panel" id="rep-profil-form">
+      <p class="rep-kicker">Ma fiche professionnelle</p>
+      <h2>Présente tes cours particuliers</h2>
+      <p>Renseigne les matières, les classes accompagnées et ton tarif indicatif. Ces informations sont modifiables depuis ton espace.</p>
+      <form method="post" action="/repetiteur/profil" class="rep-form">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="rep-matieres">Matières proposées</label>
+        <input id="rep-matieres" name="matieres" maxlength="500" value="{{ utilisateur.matieres_repetiteur or '' }}" placeholder="Ex. Mathématiques, Physique, Français">
+        <label for="rep-niveaux">Classes ou niveaux accompagnés</label>
+        <input id="rep-niveaux" name="niveaux" maxlength="500" value="{{ utilisateur.niveaux_repetiteur or '' }}" placeholder="Ex. 6e à Terminale, L1">
+        <label for="rep-tarif">Tarif horaire indicatif (Ar)</label>
+        <input id="rep-tarif" name="tarif_horaire" type="number" min="1" max="10000000" step="1" value="{{ utilisateur.tarif_horaire_repetiteur_ariary or '' }}" placeholder="Ex. 10 000">
+        <label for="rep-presentation">Présentation</label>
+        <textarea id="rep-presentation" name="presentation" maxlength="1000" rows="5" placeholder="Présente ton expérience, ta méthode et les modalités de tes cours.">{{ utilisateur.bio or '' }}</textarea>
+        <button class="bouton bouton-primaire" type="submit">Enregistrer ma fiche</button>
+      </form>
+    </article>
+    <aside class="rep-panel rep-aside">
+      <p class="rep-kicker">Statut du compte</p>
+      <h2>Compte vérifié</h2>
+      <p>Ton rôle répétiteur est distinct des comptes sponsor, commerce et service. La validation administrative est enregistrée sur ton compte.</p>
+      <div class="rep-aside-detail"><strong>{{ utilisateur.matieres_repetiteur or "À compléter" }}</strong><span>Matières</span></div>
+      <div class="rep-aside-detail"><strong>{{ utilisateur.niveaux_repetiteur or "À compléter" }}</strong><span>Niveaux</span></div>
+      <div class="rep-aside-detail"><strong>{% if utilisateur.tarif_horaire_repetiteur_ariary %}{{ "{:,.0f}".format(utilisateur.tarif_horaire_repetiteur_ariary).replace(",", " ") }} Ar{% else %}À définir{% endif %}</strong><span>Tarif horaire indicatif</span></div>
+    </aside>
+  </section>
+  {% else %}
+  <section class="rep-panel rep-verification">
+    <span class="rep-illustration" aria-hidden="true">🔒</span>
+    <div>
+      <p class="rep-kicker">Accès professionnel</p>
+      <h2>Ton espace répétiteur n'est pas activé.</h2>
+      <p>Seule une demande validée par l'administration permet d'accéder à la gestion de la fiche professionnelle.</p>
+    </div>
+  </section>
+  {% endif %}
+</main>
+<style nonce="{{ csp_nonce(request) }}">
+.rep-page{max-width:1120px;margin:0 auto;padding:1.2rem clamp(.8rem,3vw,2rem) 3rem;color:var(--content-text)}
+.rep-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.4rem 0 1.8rem}
+.rep-hero h1{font-size:clamp(1.7rem,4vw,2.5rem);margin:.25rem 0}.rep-hero p:not(.rep-kicker){max-width:690px;color:var(--content-text-muted);line-height:1.6}
+.rep-kicker{font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--content-text-muted);margin:0 0 .45rem}
+.rep-status{border:1px solid var(--content-border);border-radius:999px;padding:.5rem .85rem;font-size:.78rem;font-weight:800}
+.rep-status-ok{border-color:var(--content-link);color:var(--content-link)}
+.rep-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(240px,.8fr);gap:1rem}
+.rep-panel{background:var(--content-surface);border:1px solid var(--content-border);border-radius:18px;padding:clamp(1rem,2.5vw,1.5rem)}
+.rep-panel h2{font-size:1.15rem;margin:.25rem 0 .55rem}.rep-panel p{color:var(--content-text-muted);line-height:1.6;font-size:.9rem}
+.rep-verification{display:flex;gap:1rem;align-items:flex-start;max-width:850px}.rep-illustration{font-size:1.7rem}
+.rep-form{display:grid;gap:.55rem;margin-top:1.1rem}.rep-form label{font-size:.82rem;font-weight:750;margin-top:.45rem}.rep-form input,.rep-form textarea{width:100%;padding:.75rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}
+.rep-form textarea{resize:vertical}.rep-form button{justify-self:start;margin-top:.7rem}
+.rep-aside-detail{padding:.85rem 0;border-top:1px solid var(--content-border);display:grid;gap:.2rem;overflow-wrap:anywhere}.rep-aside-detail strong{font-size:.94rem}.rep-aside-detail span{font-size:.75rem;color:var(--content-text-muted)}
+.rep-alert{padding:.8rem 1rem;border:1px solid var(--content-border);border-radius:12px;margin-bottom:1rem;font-size:.9rem}.rep-alert-ok{color:var(--content-link)}
+@media(max-width:720px){.rep-grid{grid-template-columns:1fr}.rep-verification{display:block}.rep-hero{padding-top:.8rem}}
+</style>
+{% endblock %}
