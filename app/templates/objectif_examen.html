@@ -417,5 +417,48 @@
     </div>
     {% endif %}
   </section>
+
+  <section class="objectif-examen-section objectif-examen-semaine" aria-labelledby="objectif-semaine-title">
+    <div class="objectif-examen-heading">
+      <span class="ai-kicker">Coach de préparation · 7 jours</span>
+      <h2 id="objectif-semaine-title">Ton programme de révision de la semaine</h2>
+      <p>Les notions sont réparties selon tes résultats du niveau actuel. Les révisions échues passent en premier ; chaque séance proposée dure environ 20 minutes.</p>
+    </div>
+    <div class="objectif-examen-semaine-grid">
+      {% for jour in plan_hebdomadaire %}
+      <article class="objectif-examen-semaine-card{% if jour.taches %} objectif-examen-semaine-card--active{% endif %}">
+        <div class="objectif-examen-semaine-date">
+          <strong>{{ jour.nom }}</strong>
+          <span>{{ jour.date }}</span>
+        </div>
+        {% if jour.taches %}
+          <ul>
+          {% for tache in jour.taches %}
+            <li>
+              <span class="objectif-examen-semaine-matiere">{{ tache.matiere }}</span>
+              <strong>{{ tache.notion }}</strong>
+              <small>
+                Maîtrise {{ tache.score }}%
+                {% if tache.revision_due %} · Révision à échéance{% endif %}
+              </small>
+            </li>
+          {% endfor %}
+          </ul>
+          <div class="objectif-examen-semaine-footer">
+            <span>Environ {{ jour.duree_minutes }} min</span>
+            <a href="/mes-revisions">Réviser</a>
+          </div>
+        {% else %}
+          <p class="objectif-examen-semaine-empty">Aucune notion évaluée prévue ce jour.</p>
+          <a class="objectif-examen-semaine-diagnostic" href="/quiz">Faire un quiz diagnostic</a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    <aside class="objectif-examen-diagnostic-note" role="note">
+      <strong>Un planning honnête et évolutif</strong>
+      <p>Ce programme de sept jours est recalculé à chaque visite à partir de tes réponses enregistrées. Il ne remplace pas le calendrier officiel de l'examen ni les consignes de ton enseignant.</p>
+    </aside>
+  </section>
 </div>
 {% endblock %}
