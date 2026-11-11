@@ -27,6 +27,7 @@ from .. import objectif_examen
 from .. import ressources_examens
 from .. import quiz_calibration
 from .. import preparation_intelligente
+from .. import plan_examen_hebdomadaire
 from ..rate_limit import limite_depassee
 
 router = APIRouter()
@@ -466,14 +467,19 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
     priorites_candidates = quiz_module.plan_revision_du_jour(
         session, utilisateur.id, limit=100
     )
-    priorites = [
+    progressions_cibles = [
         progression for progression in priorites_candidates
         if str(progression.matiere or "").strip().casefold() in matieres_cibles
         and (
             not niveau_cible
             or str(progression.niveau or "").strip().casefold() == niveau_cible
         )
-    ][:5]
+    ]
+    priorites = progressions_cibles[:5]
+    plan_hebdomadaire = plan_examen_hebdomadaire.construire_plan_hebdomadaire(
+        progressions_cibles,
+        limite_notions=14,
+    )
     return templates.TemplateResponse(
         request,
         "objectif_examen.html",
@@ -489,6 +495,7 @@ def page_objectif_examen(request: Request, session: Session = Depends(get_sessio
             "cepe_disponible": cepe_disponible,
             "serie_label": serie_label,
             "priorites": priorites,
+            "plan_hebdomadaire": plan_hebdomadaire,
             "bilans_matieres": bilans_matieres,
             "ressources_externes": ressources_examens.ressources_pour_cycle(cycle),
             "annales_disponibles": annales_disponibles,
