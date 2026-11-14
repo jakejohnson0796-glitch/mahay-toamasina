@@ -144,10 +144,10 @@
     </div>
     {% if historique_actions %}
     <div class="admin-apercus-comptes-liste">
-      {% for evenement, compte_cible in historique_actions %}
+      {% for evenement in historique_actions %}
       <article class="admin-apercus-compte">
         <div>
-          <strong>{{ compte_cible.nom }} · compte #{{ compte_cible.id }}</strong>
+          <strong>{{ evenement.utilisateur_cible_nom }} · compte #{{ evenement.utilisateur_cible_id }}</strong>
           <span>Admin #{{ evenement.admin_id }} · {{ evenement.methode }} {{ evenement.chemin }}</span>
           <small>{{ evenement.date_creation.strftime("%d/%m/%Y à %H:%M:%S") if evenement.date_creation else "Date inconnue" }}</small>
         </div>
