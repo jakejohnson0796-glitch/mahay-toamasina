@@ -147,11 +147,10 @@ app.include_router(legal_router.router)
 app.include_router(opportunites_router.router)
 
 # FastAPI copie les routes d'un APIRouter au moment de include_router().
-# Si un module d'authentification a enregistré tardivement certaines routes
-# pendant l'initialisation des imports, on complète uniquement les couples
-# (chemin, méthodes) manquants. Les objets APIRoute d'origine sont réutilisés,
-# ce qui préserve leurs dépendances, notamment verifier_csrf.
-def _synchroniser_routes_authentification() -> None:
+# Certains imports croisés enregistrent tardivement des routes après cette copie.
+# On synchronise les routeurs concernés en réutilisant les APIRoute déjà construites :
+# leurs dépendances (dont verifier_csrf), validations et paramètres restent intacts.
+def _synchroniser_routes_tardives(*routeurs) -> None:
     routes_montees = {
         (
             getattr(_route, "path", None),
@@ -160,21 +159,21 @@ def _synchroniser_routes_authentification() -> None:
         for _route in app.router.routes
         if getattr(_route, "methods", None)
     }
-    for _route in auth_router.router.routes:
-        _methodes = frozenset(getattr(_route, "methods", None) or ())
-        _chemin = getattr(_route, "path", None)
-        if not _chemin or not _methodes:
-            continue
-        _cle = (_chemin, _methodes)
-        if _cle not in routes_montees:
-            # Les APIRoute ont déjà construit leur dépendance FastAPI.
-            # Les rattacher telles quelles évite de les recompiler/perdre
-            # leur CSRF ou leurs validations de paramètres.
-            app.router.routes.append(_route)
-            routes_montees.add(_cle)
+    for _routeur in routeurs:
+        for _route in _routeur.routes:
+            _methodes = frozenset(getattr(_route, "methods", None) or ())
+            _chemin = getattr(_route, "path", None)
+            if not _chemin or not _methodes:
+                continue
+            _cle = (_chemin, _methodes)
+            if _cle not in routes_montees:
+                app.router.routes.append(_route)
+                routes_montees.add(_cle)
 
 
-_synchroniser_routes_authentification()
+# Les routes d'authentification et de dépôt de documents sont contrôlées ici :
+# la CI vérifie que les mutations sensibles sont réellement exposées avec CSRF.
+_synchroniser_routes_tardives(auth_router.router, documents_router.router)
 
 
 def _masquer_mot_de_passe(url: str) -> str:
