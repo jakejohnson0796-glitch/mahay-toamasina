@@ -21,6 +21,8 @@
 
   {% if request.query_params.get("demande_envoyee") %}
   <div class="ops-alert ops-alert-info">Demande envoyée. Nous te recontacterons pour discuter du partenariat.</div>
+  {% elif request.query_params.get("profil_sponsor_requis") %}
+  <div class="ops-alert ops-alert-warn">Tu dois d’abord demander et obtenir l’approbation du profil sponsor.</div>
   {% endif %}
 
   <div class="ops-grid ops-grid-2 ops-section">
@@ -36,14 +38,17 @@
     <article class="ops-offer">
       <span class="ops-kicker">Premier contact</span>
       <h2>Parler de ton activité</h2>
-      {% if utilisateur %}
+      {% if utilisateur and utilisateur.role.value == "sponsor" and utilisateur.profil_souhaite == "sponsor" and utilisateur.statut_verification_sponsor == "approuve" %}
       <form method="post" action="/sponsoring/contact" class="ops-form">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <div><label for="message">Présente ton activité et ton besoin</label><textarea id="message" name="message" rows="6" maxlength="2000" placeholder="Ex. Je suis répétiteur en mathématiques et je souhaite proposer des séances aux étudiants…"></textarea><span class="stat-label">2 000 caractères maximum.</span></div>
         <div class="ops-form-actions"><button class="bouton bouton-primaire" type="submit">Envoyer ma demande</button></div>
       </form>
+      {% elif utilisateur %}
+      <p>La demande de partenariat est réservée aux comptes sponsor approuvés. Crée un compte avec le profil sponsor ; l’administration doit valider ce profil avant l’accès à cette demande commerciale.</p>
+      <div class="ops-form-actions"><a class="bouton bouton-primaire" href="/inscription">Demander le profil sponsor</a></div>
       {% else %}
-      <p>Connecte-toi pour enregistrer une demande de contact sponsor.</p>
+      <p>Connecte-toi avec un compte sponsor approuvé ou crée une demande de profil.</p>
       <div class="ops-form-actions"><a class="bouton bouton-primaire" href="/connexion">Se connecter</a><a class="bouton bouton-secondaire" href="/inscription">Créer un compte</a></div>
       {% endif %}
     </article>
