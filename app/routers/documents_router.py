@@ -1435,6 +1435,7 @@ def upload_documents_multiples(
             "confiance": round(float(classification.confiance or 0.0) * 100),
             "source": classification.source,
             "caracteres_extraits": int(analyse.get("caracteres_extraits") or 0),
+            "moteur_extraction": analyse.get("moteur_extraction") or "inconnu",
         })
 
     if nombre_envoyes:
