@@ -111,6 +111,6 @@ def test_docling_timeout_declenche_le_repli(monkeypatch):
                 has_timeout_errors=lambda: True,
             )
 
-    monkeypatch.setattr(docling_extraction.parametres, "docling_enabled", True)
+    monkeypatch.setattr(docling_extraction, "docling_actif", lambda: True)
     monkeypatch.setattr(docling_extraction, "_convertisseur_docling", lambda: FauxConvertisseur())
     assert docling_extraction.extraire_pdf_docling("scan.pdf", 1000) == ""
