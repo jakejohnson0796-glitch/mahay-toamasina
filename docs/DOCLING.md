@@ -19,7 +19,10 @@ Sur un worker séparé qui dispose d'une mémoire suffisante et d'un espace disq
 
 ```bash
 pip install -r requirements-docling.txt
+docling-tools models download --output-dir /models
 ```
+
+Le cache de modèles doit être préparé pendant le build ou fourni comme artefact persistant. Définir ensuite `DOCLING_ARTIFACTS_PATH=/models`. L'adaptateur refuse d'activer Docling si le dossier est absent ou vide et passe à l'extracteur historique : cela évite un téléchargement de modèles imprévisible pendant un dépôt utilisateur.
 
 Vérifier également que Tesseract et les modèles français/anglais sont installés dans l'image système.
 
@@ -27,7 +30,8 @@ Vérifier également que Tesseract et les modèles français/anglais sont instal
 
 Configurer uniquement sur le worker Docling :
 
-- `DOCLING_ENABLED=true` : active l'essai Docling pour les PDF.
+- `DOCLING_ARTIFACTS_PATH=/models` : dossier contenant les modèles pré-téléchargés.
+- `DOCLING_ENABLED=true` : active l'essai Docling pour les PDF uniquement lorsque le cache existe.
 - `DOCLING_TABLE_STRUCTURE=true` : active le modèle de reconstruction des tableaux ; le laisser désactivé tant que la mémoire n'a pas été mesurée.
 
 Par défaut, les deux options sont désactivées. Le service actuel n'est donc pas alourdi et garde son comportement OCR éprouvé.
