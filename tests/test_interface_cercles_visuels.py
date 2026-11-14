@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from app.security_headers import _CSP
+from app import security_headers
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,8 +10,31 @@ TEMPLATE = ROOT / "app/templates/cercles_list.html"
 IMAGE_DIR = ROOT / "app/static/images/cercles"
 
 
-def test_csp_autorise_les_images_locales():
-    assert "img-src 'self' data: https://*.supabase.co;" in _CSP
+def test_csp_autorise_les_images_locales(monkeypatch):
+    monkeypatch.setattr(security_headers.parametres, "supabase_url", "")
+    csp = security_headers._construire_csp("test-nonce")
+    directive_images = next(
+        directive.strip()
+        for directive in csp.split(";")
+        if directive.strip().startswith("img-src ")
+    )
+    assert directive_images == "img-src 'self' data:"
+
+
+def test_csp_autorise_uniquement_l_origine_supabase_configuree(monkeypatch):
+    monkeypatch.setattr(
+        security_headers.parametres,
+        "supabase_url",
+        "https://projet-demo.supabase.co/storage/v1",
+    )
+    csp = security_headers._construire_csp("test-nonce")
+    directive_images = next(
+        directive.strip()
+        for directive in csp.split(";")
+        if directive.strip().startswith("img-src ")
+    )
+    assert directive_images == "img-src 'self' data: https://projet-demo.supabase.co"
+    assert "*.supabase.co" not in directive_images
 
 
 def test_grille_cercles_reste_lisible_sur_desktops():
