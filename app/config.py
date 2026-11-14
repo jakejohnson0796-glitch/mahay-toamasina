@@ -134,6 +134,10 @@ class Parametres:
         default_factory=lambda: os.getenv("DOCLING_TABLE_STRUCTURE", "false").strip().lower()
         in {"1", "true", "yes", "on"}
     )
+    # Répertoire de modèles Docling pré-téléchargés ; aucun téléchargement à l'exécution.
+    docling_artifacts_path: str = field(
+        default_factory=lambda: os.getenv("DOCLING_ARTIFACTS_PATH", "").strip()
+    )
 
     # --- Emails de récupération et MFA (app/email_utils.py) ---
     # Sur Render Free, EMAIL_TRANSPORT=brevo_api force l'API HTTPS/443 car
