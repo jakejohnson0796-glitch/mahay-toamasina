@@ -17,6 +17,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .auth import empreinte_session_utilisateur, session_utilisateur_valide, verifier_mot_de_passe
 from .database import engine
 from .models import JournalActionAdmin, RoleUtilisateur, Utilisateur
+from .profile_approval import acces_interactif_admin_autorise
+from .client_ip import adresse_ip_client
+from .rate_limit import limite_depassee
 from .request_limits import limite_corps_requete
 
 
@@ -107,6 +110,26 @@ def reinitialiser_echecs_confirmation_admin(request: Request) -> None:
     request.session.pop("admin_confirmation_dernier_echec", None)
 
 
+def limite_confirmation_admin_depassee(request: Request, admin_id: int) -> bool:
+    """Applique un blocage partagé par compte et par IP après des échecs.
+
+    Les deux compteurs sont toujours incrémentés : le contrôle par compte
+    empêche la rotation d'IP, celui par IP ralentit les rafales multi-comptes.
+    Redis rend ces limites communes aux sessions et aux redémarrages.
+    """
+    compte_bloque = limite_depassee(
+        f"admin-confirmation:compte:{admin_id}",
+        MAX_ECHECS_CONFIRMATION_ADMIN,
+        int(FENETRE_ECHECS_CONFIRMATION_ADMIN.total_seconds()),
+    )
+    ip_bloquee = limite_depassee(
+        f"admin-confirmation:ip:{adresse_ip_client(request)}",
+        MAX_ECHECS_CONFIRMATION_ADMIN * 4,
+        int(FENETRE_ECHECS_CONFIRMATION_ADMIN.total_seconds()),
+    )
+    return bool(compte_bloque or ip_bloquee)
+
+
 def verifier_confirmation_admin(
     request: Request,
     utilisateur: Utilisateur,
@@ -181,6 +204,8 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                     RoleUtilisateur.ETUDIANT,
                     RoleUtilisateur.PROFESSEUR,
                     RoleUtilisateur.REPETITEUR,
+                    RoleUtilisateur.SPONSOR,
+                    RoleUtilisateur.RESPONSABLE,
                 }
                 if (
                     cible_id != user_id
@@ -188,6 +213,7 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                     or cible.banni
                     or cible.role not in roles_autorises
                     or cible.id == utilisateur.id
+                    or not acces_interactif_admin_autorise(cible)
                     or not session_utilisateur_valide(request.session, cible)
                 ):
                     request.session.clear()
@@ -248,6 +274,11 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
 
             valide, detail = verifier_confirmation_admin(request, utilisateur, mot_de_passe)
             if not valide:
+                if limite_confirmation_admin_depassee(request, utilisateur.id):
+                    return JSONResponse(
+                        {"detail": "Trop de tentatives de confirmation administrateur. Réessayez plus tard."},
+                        status_code=429,
+                    )
                 return JSONResponse({"detail": detail}, status_code=403)
 
         identifiant_audit = None
