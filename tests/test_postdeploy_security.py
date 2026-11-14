@@ -25,7 +25,10 @@ def test_csp_reelle_sur_reponse_http():
     assert "script-src-attr 'none'" in csp
     assert "style-src-attr 'unsafe-inline' 'unsafe-hashes'" in csp
     assert "strict-dynamic" in csp
-    assert "https://cdn.jsdelivr.net" in csp
+    assert "https://cdn.jsdelivr.net" not in csp
+    assert "https://unpkg.com" not in csp
+    assert "https://*.supabase.co" not in csp
+    assert "connect-src 'self' ws: wss:" not in csp
     assert "strict-dynamic" in csp
 
     match = re.search(r"script-src[^;]*'nonce-([^']+)'", csp)
