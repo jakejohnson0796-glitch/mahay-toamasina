@@ -37,7 +37,7 @@ for (const required of [
   '/marked/marked.min.js',
   '/dompurify/purify.min.js',
   '/highlightjs/highlight.min.js',
-  '/livekit/livekit-client.umd.min.js',
+  '/livekit/livekit-client.umd.js',
   '/THIRD_PARTY_NOTICES.md'
 ]) {
   if (!fs.existsSync(vendorRoot + required)) throw new Error('Missing local browser dependency: ' + required);
