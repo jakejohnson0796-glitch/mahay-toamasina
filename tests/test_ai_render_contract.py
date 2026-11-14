@@ -44,7 +44,7 @@ def test_security_csp_garde_les_scripts_locaux_et_les_styles_necessaires():
     }
     connect_sources = directives["connect-src"].split()[1:]
 
-    assert "script-src-attr 'none'" in directives["script-src-attr 'none'"]
+    assert directives["script-src-attr"] == "script-src-attr 'none'"
     assert directives["style-src-attr"].startswith("style-src-attr 'unsafe-inline'")
     assert "'unsafe-inline'" not in directives["script-src"].split()
     assert "wss://mitaridala.onrender.com" in connect_sources
