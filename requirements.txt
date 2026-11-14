@@ -13,7 +13,7 @@ python-dotenv==1.2.4
 psycopg2-binary==2.9.9      # driver Postgres, necessaire si DATABASE_URL pointe vers Supabase
 redis==8.1.0                 # file rapide partagee entre web et workers via Render Key Value
 supabase==2.31.0             # client Supabase (DB alternative + Storage)
-groq==1.6.0                  # generation de quiz par IA (API gratuite, console.groq.com)
+groq==1.7.0                  # generation de quiz par IA (API gratuite, console.groq.com)
 pdfplumber==0.11.10           # extraction PDF, pdfminer.six corrige et Pillow >= 12.2
 pytesseract==0.3.13          # OCR optionnel (scans/images) - necessite le binaire Tesseract
 pdf2image==1.17.0            # OCR optionnel sur PDF scannes - necessite poppler-utils
