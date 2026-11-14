@@ -310,4 +310,14 @@ def test_csp_autorise_uniquement_les_origines_supabase_et_livekit_configurees(mo
     assert "https://projet-test.supabase.co" in csp
     assert "wss://rtc.exemple.net" in csp
     assert "https://autre-projet.supabase.co" not in csp
-    assert "wss:" not in csp.replace("wss://mitaridala.onrender.com", "")
+    assert " ws: " not in csp
+    assert " wss: " not in csp
+
+
+
+def test_docker_runtime_uses_unprivileged_user_and_restricted_upload_directory():
+    from pathlib import Path
+
+    dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
+    assert "USER mahay:mahay" in dockerfile
+    assert "chown -R mahay:mahay /app/uploads" in dockerfile
