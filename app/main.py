@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Res
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlmodel import Session, select, func
 
 from .config import parametres
@@ -90,6 +91,25 @@ app.add_middleware(
 app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(EnTetesSecuriteMiddleware, https_actif=parametres.environnement == "production")
 app.add_middleware(VersionedStaticAssetCacheMiddleware)
+
+# Rejeter les en-têtes Host arbitraires avant qu'ils puissent influencer
+# les URLs, cookies, redirections ou contrôles d'origine.
+_hotes_autorises = {
+    "mitaridala.onrender.com",
+    "mahay-toamasina.onrender.com",
+    "localhost",
+    "127.0.0.1",
+    "testserver",
+}
+_hote_canonique = urlsplit(parametres.seo_canonical_base_url).hostname
+if _hote_canonique:
+    _hotes_autorises.add(_hote_canonique.casefold())
+_hotes_autorises.update(
+    hote.strip().casefold()
+    for hote in os.getenv("TRUSTED_HOSTS", "").split(",")
+    if hote.strip()
+)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=sorted(_hotes_autorises))
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
