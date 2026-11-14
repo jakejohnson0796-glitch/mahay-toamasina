@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, APIRouter, Request, Depends
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
@@ -144,22 +144,35 @@ app.include_router(revisions_router.router)
 app.include_router(gamification_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(legal_router.router)
-app.include_router(opportunites_router.router)
-
-# Garantit le montage des anciens formulaires de complétion du profil.
-# Le routeur d'authentification expose ces deux handlers avec leur dépendance
-# CSRF ; ce garde-fou évite qu'un import circulaire ou un enregistrement
-# tardif laisse un formulaire visible sans endpoint POST correspondant.
-for _chemin, _endpoint, _nom in (
-    ("/securite/universite", auth_router.modifier_universite, "modifier_universite"),
-    ("/securite/niveau", auth_router.modifier_niveau, "modifier_niveau"),
-):
-    if not any(
-        getattr(_route, "path", None) == _chemin
-        and "POST" in (getattr(_route, "methods", None) or set())
+app.include_router(opportunites_route# FastAPI copie les routes d'un APIRouter au moment de include_router().
+# Si un module d'authentification a enregistré tardivement certaines routes
+# pendant l'initialisation des imports, on complète uniquement les couples
+# (chemin, méthodes) manquants. Les objets APIRoute d'origine sont réutilisés,
+# ce qui préserve leurs dépendances, notamment verifier_csrf.
+def _synchroniser_routes_authentification() -> None:
+    routes_montees = {
+        (
+            getattr(_route, "path", None),
+            frozenset(getattr(_route, "methods", None) or ()),
+        )
         for _route in app.routes
-    ):
-        app.add_api_route(_chemin, _endpoint, methods=["POST"], name=f"{_nom}_securite_profil")
+        if getattr(_route, "methods", None)
+    }
+    routeur_complementaire = APIRouter()
+    for _route in auth_router.router.routes:
+        _methodes = frozenset(getattr(_route, "methods", None) or ())
+        _chemin = getattr(_route, "path", None)
+        if not _chemin or not _methodes:
+            continue
+        _cle = (_chemin, _methodes)
+        if _cle not in routes_montees:
+            routeur_complementaire.routes.append(_route)
+            routes_montees.add(_cle)
+    if routeur_complementaire.routes:
+        app.include_router(routeur_complementaire)
+
+
+_synchroniser_routes_authentification()
 
 
 def _masquer_mot_de_passe(url: str) -> str:
