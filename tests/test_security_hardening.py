@@ -321,3 +321,11 @@ def test_docker_runtime_uses_unprivileged_user_and_restricted_upload_directory()
     dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
     assert "USER mahay:mahay" in dockerfile
     assert "chown -R mahay:mahay /app/uploads" in dockerfile
+
+
+def test_docker_runtime_limits_websocket_frame_size_and_queue():
+    from pathlib import Path
+
+    dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
+    assert "--ws-max-size 65536" in dockerfile
+    assert "--ws-max-queue 32" in dockerfile
