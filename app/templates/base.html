@@ -265,7 +265,7 @@
       <p class="tb-sidebar-groupe">Validation du profil</p>
       <a href="/demande-validation" class="tb-sidebar-lien tb-sidebar-lien-actif" aria-current="page"><span class="tb-icone">⏳</span> Suivi de ma demande</a>
       <p class="tb-sidebar-groupe">Compte</p>
-      <a href="/securite" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("securite", 17) }}</span> Paramètres du compte</a>
+      <a href="/securite" class="tb-sidebar-lien"><span class="tb-icone">{{ icone("securite", 17) }}</span> Paramètres de sécurité</a>
       {% elif utilisateur is defined and utilisateur and (utilisateur.role == "responsable" or (utilisateur.profil_souhaite == "responsable" and utilisateur.role != "admin")) %}
       <p class="tb-sidebar-groupe">Compte</p>
       <a href="/famille" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/famille' else '' }}" {{ 'aria-current="page"' if request.url.path == '/famille' else '' }}><span class="tb-icone">👨‍👩‍👧</span> Espace famille</a>
