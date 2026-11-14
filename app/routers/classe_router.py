@@ -27,6 +27,7 @@ from ..csrf import verifier_csrf
 from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..profile_approval import profil_validation_requise
+from ..websocket_security import origine_websocket_autorisee
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
 from ..ws_manager import gestionnaire
@@ -1672,6 +1673,10 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
     cours de route) : un client qui bidouillerait son JS ne peut pas
     dessiner sans autorisation reelle, seulement casser sa propre
     experience locale."""
+    if not origine_websocket_autorisee(websocket):
+        await websocket.close(code=4403)
+        return
+
     with Session(engine) as session:
         user_id = websocket.session.get("user_id")
         if not user_id:
