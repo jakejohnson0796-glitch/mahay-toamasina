@@ -18,9 +18,25 @@ logger = logging.getLogger(__name__)
 _CONVERSION_LOCK = RLock()
 
 
+def _repertoire_modeles_docling() -> Path | None:
+    valeur = str(getattr(parametres, "docling_artifacts_path", "") or "").strip()
+    if not valeur:
+        return None
+    repertoire = Path(valeur).expanduser()
+    if not repertoire.is_dir():
+        return None
+    try:
+        return repertoire if any(repertoire.iterdir()) else None
+    except OSError:
+        return None
+
+
 def docling_actif() -> bool:
-    """Retourne l'état du commutateur sans importer de modèle lourd."""
-    return bool(getattr(parametres, "docling_enabled", False))
+    """Docling requiert un cache de modèles préparé hors du service web."""
+    return bool(
+        getattr(parametres, "docling_enabled", False)
+        and _repertoire_modeles_docling() is not None
+    )
 
 
 @lru_cache(maxsize=1)
@@ -33,7 +49,12 @@ def _convertisseur_docling():
     )
     from docling.document_converter import DocumentConverter, PdfFormatOption
 
+    repertoire_modeles = _repertoire_modeles_docling()
+    if repertoire_modeles is None:
+        raise RuntimeError("Cache des modèles Docling absent ou vide.")
+
     options = PdfPipelineOptions(
+        artifacts_path=str(repertoire_modeles),
         do_ocr=True,
         do_table_structure=bool(
             getattr(parametres, "docling_table_structure", False)
