@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block titre %}Mes demandes de répétiteurs — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<main class="rep-my-requests">
+  <header class="rep-my-hero">
+    <p class="rep-kicker">MITARIDALA · Suivi personnel</p>
+    <h1>Mes demandes d'accompagnement</h1>
+    <p>Retrouve ici les demandes envoyées aux répétiteurs vérifiés et consulte leur statut.</p>
+    <a href="/repetiteurs" class="bouton bouton-primaire">Trouver un répétiteur</a>
+  </header>
+  {% if request.query_params.get("ok") == "demande_envoyee" %}
+  <div class="rep-notice rep-notice-ok" role="status">Ta demande a été envoyée avec succès.</div>
+  {% endif %}
+  {% if demandes %}
+  <section class="rep-request-list">
+    {% for item in demandes %}
+    <article class="rep-request-item">
+      <div class="rep-request-head">
+        <div>
+          <p class="rep-kicker">Répétiteur</p>
+          <h2>{{ item.repetiteur_nom }}</h2>
+        </div>
+        {% if item.statut == "en_attente" %}
+        <span class="rep-state">En attente</span>
+        {% elif item.statut == "acceptee" %}
+        <span class="rep-state rep-state-ok">Acceptée</span>
+        {% else %}
+        <span class="rep-state">Refusée</span>
+        {% endif %}
+      </div>
+      <div class="rep-request-info">
+        <div><strong>Matière</strong><span>{{ item.matiere }}</span></div>
+        <div><strong>Niveau</strong><span>{{ item.niveau }}</span></div>
+        <div><strong>Envoyée le</strong><span>{{ item.date_creation.strftime("%d/%m/%Y à %H:%M") if item.date_creation else "—" }}</span></div>
+      </div>
+      <p class="rep-request-message">{{ item.message }}</p>
+      {% if item.statut == "acceptee" %}
+      <p class="rep-status-note">Le répétiteur a accepté d'étudier ta demande. Cette réponse ne fixe pas de rendez-vous. Pour organiser des cours hors ligne, implique un parent, un responsable légal ou ton établissement.</p>
+      {% elif item.statut == "refusee" %}
+      <p class="rep-status-note">Le répétiteur n'est pas disponible pour cette demande. Tu peux rechercher un autre profil.</p>
+      {% elif not item.profil_disponible %}
+      <p class="rep-status-note">Ce profil n'est plus actif. Ta demande reste dans ton historique.</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="rep-request-empty">
+    <span aria-hidden="true">✉️</span>
+    <h2>Tu n'as pas encore envoyé de demande</h2>
+    <p>Parcours l'annuaire pour trouver un répétiteur selon la matière et le niveau qui t'intéressent.</p>
+    <a href="/repetiteurs" class="bouton bouton-primaire">Consulter l'annuaire</a>
+  </section>
+  {% endif %}
+  <p class="rep-private-note">Tes coordonnées privées ne sont pas transmises aux répétiteurs. N'ajoute jamais de numéro, d'adresse ou d'email dans un message de demande.</p>
+</main>
+<style nonce="{{ csp_nonce(request) }}">
+.rep-my-requests{max-width:1000px;margin:0 auto;padding:1.2rem clamp(.8rem,3vw,2rem) 3rem;color:var(--content-text)}
+.rep-my-hero{padding:1.3rem 0 1.1rem}.rep-kicker{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--content-text-muted);margin:0 0 .45rem}
+.rep-my-hero h1{font-size:clamp(1.7rem,4vw,2.5rem);margin:.2rem 0 .5rem}.rep-my-hero p:not(.rep-kicker){color:var(--content-text-muted);line-height:1.6;margin-bottom:1rem}
+.rep-request-list{display:grid;gap:.9rem;margin-top:1rem}.rep-request-item,.rep-request-empty{background:var(--content-surface);border:1px solid var(--content-border);border-radius:18px;padding:1.1rem;min-width:0}
+.rep-request-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}.rep-request-head h2{margin:.15rem 0;font-size:1.1rem}
+.rep-state{font-size:.75rem;font-weight:800;border:1px solid var(--content-border);border-radius:999px;padding:.4rem .65rem}.rep-state-ok{color:var(--content-link);border-color:var(--content-link)}
+.rep-request-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:1rem 0}.rep-request-info div{display:grid;gap:.2rem}.rep-request-info strong{font-size:.74rem}.rep-request-info span{font-size:.85rem;color:var(--content-text-muted);overflow-wrap:anywhere}
+.rep-request-message{font-size:.9rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:.7rem 0}
+.rep-status-note,.rep-private-note,.rep-notice{padding:.8rem 1rem;border:1px solid var(--content-border);border-radius:12px;font-size:.82rem;line-height:1.5;color:var(--content-text-muted)}
+.rep-notice{margin:.8rem 0}.rep-notice-ok{color:var(--content-link)}
+.rep-request-empty{text-align:center;padding:2.2rem 1rem}.rep-request-empty>span{font-size:2rem}.rep-request-empty h2{font-size:1.2rem}.rep-request-empty p{color:var(--content-text-muted);margin-bottom:1rem}
+.rep-private-note{margin-top:1rem}
+@media(max-width:620px){.rep-request-info{grid-template-columns:1fr 1fr}.rep-request-info div:last-child{grid-column:1/-1}}
+</style>
+{% endblock %}
