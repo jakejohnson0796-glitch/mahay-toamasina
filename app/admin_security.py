@@ -17,6 +17,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .auth import empreinte_session_utilisateur, session_utilisateur_valide, verifier_mot_de_passe
 from .database import engine
 from .models import JournalActionAdmin, RoleUtilisateur, Utilisateur
+from .request_limits import limite_corps_requete
 
 
 LONGUEUR_MIN_CONFIRMATION_ADMIN = 12
@@ -201,7 +202,13 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                 longueur_annoncee = int(longueur_annoncee) if longueur_annoncee is not None else None
             except ValueError:
                 longueur_annoncee = None
-            limite_formulaire = limite_formulaire_admin(request.url.path)
+            # En mode supervise, conserver les plafonds par route de l'application
+            # (notamment les dépôts de documents), plutôt que la limite admin 512 Kio.
+            limite_formulaire = (
+                limite_corps_requete(request.method, request.url.path)
+                if mode_supervise
+                else limite_formulaire_admin(request.url.path)
+            )
             if longueur_annoncee is not None and longueur_annoncee > limite_formulaire:
                 return JSONResponse(
                     {"detail": "Formulaire administrateur trop volumineux."},
