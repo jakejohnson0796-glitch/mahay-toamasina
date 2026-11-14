@@ -67,7 +67,7 @@ def _contenu_public_sans_contact(valeur: Optional[str]) -> str:
 
 
 def _profil_public(utilisateur: Utilisateur) -> dict:
-    """Projection en liste blanche : pas de téléphone, email, identifiant ni ID public."""
+    """Projection en liste blanche : aucune coordonnée ni identifiant de connexion."""
     return {
         "id": utilisateur.id,
         "nom": nom_public_repetiteur(utilisateur.nom),
