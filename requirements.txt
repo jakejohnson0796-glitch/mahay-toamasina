@@ -25,7 +25,7 @@ alembic==1.13.2
 openpyxl==3.1.5                 # lecture du fichier Excel par scripts/import_academic_data.py
 livekit-api==1.2.0           # generation des jetons audio/video/partage d'ecran (classe virtuelle)
 pyotp==2.9.0                  # double authentification TOTP (gratuite, calculee localement)
-qrcode==7.4.2                 # QR code d'activation 2FA (aucun service externe)
+qrcode==8.2                 # QR code d'activation 2FA (aucun service externe)
 
 pytest==9.0.3
 httpx==0.28.1
