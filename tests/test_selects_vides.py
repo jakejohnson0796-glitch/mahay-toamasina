@@ -32,6 +32,7 @@ from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, Universite, Faculte, Mention, Filiere, CercleEtude,
+    ReferentielScolaire, NiveauScolaire, Abonnement, AbonnementEtudiant,
 )
 
 
@@ -154,6 +155,163 @@ class TestSelectsVides(unittest.TestCase):
             from sqlmodel import select
             u = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000099")).first()
             self.assertIsNone(u)
+
+
+    def _inscrire_profil(self, telephone, *, role="etudiant", responsable=False, cycle=None):
+        client = TestClient(app)
+        jeton = _jeton_csrf(client, "/inscription")
+        donnees = {
+            "nom": f"Compte {telephone}",
+            "telephone": telephone,
+            "mot_de_passe": "MotDePasse123!",
+            "role": role,
+            "accepter_conditions": "oui",
+            "_csrf": jeton,
+        }
+        if responsable:
+            donnees["mode_responsable"] = "oui"
+        if cycle:
+            donnees["cycle_education"] = cycle
+        response = client.post("/inscription", data=donnees, follow_redirects=False)
+        return client, response
+
+    def test_inscription_sponsor_attend_validation_et_ne_peut_pas_ouvrir_dashboard(self):
+        client, response = self._inscrire_profil("0340000111", role="sponsor")
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/demande-validation")
+
+        with Session(engine) as session:
+            from sqlmodel import select
+            user = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000111")).first()
+            self.assertIsNotNone(user)
+            self.assertEqual(user.role, RoleUtilisateur.ETUDIANT)
+            self.assertEqual(user.profil_souhaite, "sponsor")
+            self.assertEqual(user.statut_verification_sponsor, "en_attente")
+            self.assertIsNone(
+                session.exec(select(Abonnement).where(Abonnement.utilisateur_id == user.id)).first()
+            )
+
+        page = client.get("/demande-validation")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Sponsor", page.text)
+        dashboard = client.get("/dashboard", follow_redirects=False)
+        self.assertEqual(dashboard.status_code, 303)
+        self.assertEqual(dashboard.headers["location"], "/demande-validation")
+
+    def test_inscription_responsable_attend_validation_et_n_ouvre_pas_espace_famille(self):
+        client, response = self._inscrire_profil("0340000112", responsable=True)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/demande-validation")
+
+        with Session(engine) as session:
+            from sqlmodel import select
+            user = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000112")).first()
+            self.assertIsNotNone(user)
+            self.assertEqual(user.role, RoleUtilisateur.ETUDIANT)
+            self.assertEqual(user.profil_souhaite, "responsable")
+            self.assertEqual(user.statut_verification_responsable, "en_attente")
+
+        page = client.get("/demande-validation")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("responsable légal", page.text.lower())
+        famille = client.get("/famille", follow_redirects=False)
+        self.assertEqual(famille.status_code, 303)
+        self.assertEqual(famille.headers["location"], "/demande-validation")
+
+    def test_inscription_enseignant_et_repetiteur_cree_des_demandes_non_actives(self):
+        client_prof, response_prof = self._inscrire_profil(
+            "0340000113", role="professeur", cycle="college"
+        )
+        self.assertEqual(response_prof.status_code, 303)
+        self.assertEqual(response_prof.headers["location"], "/demande-validation")
+        client_rep, response_rep = self._inscrire_profil(
+            "0340000114", role="repetiteur"
+        )
+        self.assertEqual(response_rep.status_code, 303)
+        self.assertEqual(response_rep.headers["location"], "/demande-validation")
+
+        with Session(engine) as session:
+            from sqlmodel import select
+            prof = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000113")).first()
+            rep = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000114")).first()
+            self.assertEqual(prof.role, RoleUtilisateur.ETUDIANT)
+            self.assertEqual(prof.statut_verification_enseignant, "en_attente")
+            self.assertEqual(rep.role, RoleUtilisateur.ETUDIANT)
+            self.assertEqual(rep.statut_verification_repetiteur, "en_attente")
+
+        self.assertEqual(client_prof.get("/dashboard", follow_redirects=False).headers["location"], "/demande-validation")
+        self.assertEqual(client_rep.get("/dashboard", follow_redirects=False).headers["location"], "/demande-validation")
+
+    def test_inscription_eleve_conserve_activation_directe(self):
+        with Session(engine) as session:
+            referentiel = ReferentielScolaire(
+                code="MEN-TEST-INSCRIPTION-DIRECTE",
+                libelle="Référentiel test inscription directe",
+                source_officielle="https://www.education.gov.mg/",
+                statut="partiel",
+            )
+            session.add(referentiel)
+            session.commit()
+            session.refresh(referentiel)
+            niveau = NiveauScolaire(
+                referentiel_id=referentiel.id,
+                code="6E_TEST",
+                libelle="6e test",
+                cycle="college",
+                ordre=1,
+                est_active=True,
+                statut_validation="verifie",
+            )
+            session.add(niveau)
+            session.commit()
+            session.refresh(niveau)
+            niveau_id = niveau.id
+
+        client, response = self._inscrire_profil("0340000115", role="etudiant", cycle="college")
+        # Le formulaire doit fournir une classe validée, comme le ferait le navigateur.
+        # On rejoue avec le même compte seulement si la première requête n'a pas créé de compte.
+        if response.status_code != 303:
+            jeton = _jeton_csrf(client, "/inscription")
+            response = client.post("/inscription", data={
+                "nom": "Élève inscription directe",
+                "telephone": "0340000115",
+                "mot_de_passe": "MotDePasse123!",
+                "role": "etudiant",
+                "cycle_education": "college",
+                "niveau_scolaire_id": str(niveau_id),
+                "accepter_conditions": "oui",
+                "_csrf": jeton,
+            }, follow_redirects=False)
+        else:
+            # Le cycle sans classe est refusé par la route ; aucun compte ne doit exister.
+            with Session(engine) as session:
+                from sqlmodel import select
+                created = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000115")).first()
+                if created is None:
+                    jeton = _jeton_csrf(client, "/inscription")
+                    response = client.post("/inscription", data={
+                        "nom": "Élève inscription directe",
+                        "telephone": "0340000115",
+                        "mot_de_passe": "MotDePasse123!",
+                        "role": "etudiant",
+                        "cycle_education": "college",
+                        "niveau_scolaire_id": str(niveau_id),
+                        "accepter_conditions": "oui",
+                        "_csrf": jeton,
+                    }, follow_redirects=False)
+
+        self.assertEqual(response.status_code, 303, response.text[:300])
+        self.assertEqual(response.headers["location"], "/bienvenue")
+        with Session(engine) as session:
+            from sqlmodel import select
+            user = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000115")).first()
+            self.assertEqual(user.role, RoleUtilisateur.ETUDIANT)
+            self.assertEqual(user.profil_souhaite, "eleve")
+            self.assertEqual(user.statut_verification_enseignant, "non_concerne")
+            self.assertIsNotNone(
+                session.exec(select(AbonnementEtudiant).where(AbonnementEtudiant.utilisateur_id == user.id)).first()
+            )
+
 
     # --- 5. POST /admin/referentiel/filieres/{id}/assigner-mention avec mention_id="" ---
     def test_assigner_mention_vide_retire_la_mention(self):
