@@ -45,6 +45,7 @@ def _preparer_redis(monkeypatch, redis_client):
     monkeypatch.setattr(rate_limit, "_client_redis", redis_client)
     monkeypatch.setattr(rate_limit, "_url_client_redis", "redis://redis-test")
     rate_limit._tentatives.clear()
+    rate_limit._fenetres_max.clear()
 
 
 def test_rate_limit_store_is_bounded():
@@ -86,3 +87,21 @@ def test_redis_failure_uses_bounded_memory_fallback(monkeypatch):
     assert rate_limit.limite_depassee("fallback:test", 1, 60) is False
     assert rate_limit.limite_depassee("fallback:test", 1, 60) is True
     assert len(rate_limit._tentatives) == 1
+
+
+def test_memory_fallback_keeps_keys_until_their_longest_window_expires(monkeypatch):
+    now = [100.0]
+    monkeypatch.setattr(rate_limit.time, "monotonic", lambda: now[0])
+    rate_limit._tentatives.clear()
+    rate_limit._fenetres_max.clear()
+    rate_limit._dernier_nettoyage = now[0]
+
+    rate_limit._limite_depassee_memoire("long-window", 2, 7200)
+    now[0] += 3601
+    rate_limit._purger_expirees(now[0])
+    assert "long-window" in rate_limit._tentatives
+
+    now[0] += 3600
+    rate_limit._purger_expirees(now[0])
+    assert "long-window" not in rate_limit._tentatives
+    assert "long-window" not in rate_limit._fenetres_max
