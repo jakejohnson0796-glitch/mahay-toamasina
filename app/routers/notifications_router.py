@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
-from ..models import Notification
+from ..models import Notification, TypeNotification
 from ..templating import templates
 
 router = APIRouter()
@@ -167,3 +167,25 @@ def marquer_toutes_notifications_lues(
     request.session.pop("notification_inactivite", None)
 
     return RedirectResponse("/notifications", status_code=303)
+
+
+@router.post("/notifications/inactivite/lue")
+def marquer_notification_inactivite_lue(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Marque comme lue la notification de rappel d'inactivité de la session."""
+    notification_data = request.session.pop("notification_inactivite", None)
+    if notification_data:
+        notification_id = notification_data.get("notification_id")
+        notification = session.get(Notification, notification_id) if notification_id else None
+        if (
+            notification
+            and notification.destinataire_id == request.session.get("user_id")
+            and notification.type_notification == TypeNotification.INACTIVITE_3_JOURS
+        ):
+            notification.lu = True
+            session.add(notification)
+            session.commit()
+    return RedirectResponse("/", status_code=303)
