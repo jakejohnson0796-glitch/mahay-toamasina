@@ -155,3 +155,28 @@ def test_supabase_storage_documentation_requires_a_private_bucket():
     assert "bucket PRIVE" in exemple
     assert "URL signees temporaires" in exemple
     assert "public, si vous voulez" not in exemple
+
+def test_trusted_hosts_exclut_loopback_et_jokers_en_production():
+    import pytest
+    from app.main import _construire_hotes_autorises
+
+    hotes = _construire_hotes_autorises(
+        "production",
+        "https://mitaridala.onrender.com",
+    )
+    assert "mitaridala.onrender.com" in hotes
+    assert "localhost" not in hotes
+    assert "127.0.0.1" not in hotes
+    assert "testserver" not in hotes
+
+    with pytest.raises(RuntimeError):
+        _construire_hotes_autorises(
+            "production",
+            "https://mitaridala.onrender.com",
+            "*.exemple.com",
+        )
+    with pytest.raises(RuntimeError):
+        _construire_hotes_autorises(
+            "production",
+            "https://localhost",
+        )
