@@ -118,7 +118,25 @@
           </td>
           <td><span class="ops-table-date">{{ u.date_creation.strftime("%d/%m/%Y") }}</span></td>
           <td><span class="ops-badge ops-age-badge">{{ jours_depuis_creation(u) }} j</span></td>
-          <td>{% if u.banni %}<span class="ops-badge is-alert">Banni</span>{% else %}<span class="ops-badge is-success">Actif</span>{% endif %}</td>
+          <td>
+            {% if u.banni %}
+            <span class="ops-badge is-alert">Banni</span>
+            {% elif
+              (u.profil_souhaite == "professeur" and u.statut_verification_enseignant in ["en_attente", "refuse"])
+              or (u.profil_souhaite == "repetiteur" and u.statut_verification_repetiteur in ["en_attente", "refuse"])
+              or (u.profil_souhaite == "sponsor" and u.statut_verification_sponsor in ["en_attente", "refuse"])
+              or (u.profil_souhaite == "responsable" and u.statut_verification_responsable in ["en_attente", "refuse"])
+            %}
+            <span class="ops-badge is-alert">{% if
+              (u.profil_souhaite == "professeur" and u.statut_verification_enseignant == "en_attente")
+              or (u.profil_souhaite == "repetiteur" and u.statut_verification_repetiteur == "en_attente")
+              or (u.profil_souhaite == "sponsor" and u.statut_verification_sponsor == "en_attente")
+              or (u.profil_souhaite == "responsable" and u.statut_verification_responsable == "en_attente")
+            %}Validation en attente{% else %}Demande refusée{% endif %}</span>
+            {% else %}
+            <span class="ops-badge is-success">Actif</span>
+            {% endif %}
+          </td>
           <td>
             {% if u.id != utilisateur.id %}
             <div class="ops-actions">
@@ -130,7 +148,7 @@
               </form>
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-repetiteur" data-confirm-message="Refuser la demande répétiteur de {{ u.nom }} ?">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+                <input type="text" name="motif" maxlength="500" placeholder="Motif du refus (facultatif)" aria-label="Motif du refus repetiteur"><button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
               </form>
               {% else %}
               <small class="ops-table-date">Demande répétiteur déjà traitée</small>
@@ -143,7 +161,7 @@
               </form>
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-sponsor" data-confirm-message="Refuser la demande sponsor de {{ u.nom }} ?">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+                <input type="text" name="motif" maxlength="500" placeholder="Motif du refus (facultatif)" aria-label="Motif du refus sponsor"><button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
               </form>
               {% else %}
               <small class="ops-table-date">Demande sponsor déjà traitée</small>
@@ -156,7 +174,7 @@
               </form>
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-responsable" data-confirm-message="Refuser la demande responsable de {{ u.nom }} ?">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+                <input type="text" name="motif" maxlength="500" placeholder="Motif du refus (facultatif)" aria-label="Motif du refus responsable"><button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
               </form>
               {% else %}
               <small class="ops-table-date">Demande responsable déjà traitée</small>
@@ -171,7 +189,7 @@
               {% if u.profil_souhaite == "professeur" and u.statut_verification_enseignant == "en_attente" %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-professeur" data-confirm-message="Refuser la demande de profil enseignant de {{ u.nom }} ?">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+                <input type="text" name="motif" maxlength="500" placeholder="Motif du refus (facultatif)" aria-label="Motif du refus enseignant"><button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
               </form>
               {% endif %}
               {% elif u.role.value in ["professeur","repetiteur","admin"] %}
