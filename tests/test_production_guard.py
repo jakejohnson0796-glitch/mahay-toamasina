@@ -58,6 +58,7 @@ def test_csp_production_n_utilise_pas_unsafe_inline_hors_style_attr() -> None:
     assert "'unsafe-inline'" not in style_src
     assert "'unsafe-inline'" in style_attr
     assert "'self'" in style_src
+    assert "https://fonts.googleapis.com" in style_src
     assert "https://cdn.jsdelivr.net" not in style_src
     assert "script-src-attr 'none'" in csp
     assert "frame-ancestors 'none'" in csp
