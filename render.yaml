@@ -84,6 +84,12 @@ services:
     autoDeployTrigger: checksPass
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mahay-toamasina-ai-queue
+          property: connectionString
     # Les aperçus de PR sont volontairement désactivés pour ce service :
     # l'application démarre un worker IA et réconcilie des données au démarrage.
 
