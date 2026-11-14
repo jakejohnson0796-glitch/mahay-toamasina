@@ -326,5 +326,8 @@ def test_mode_admin_reel_affiche_un_bandeau_et_ne_bloque_pas_l_interface():
     assert 'data-admin-mode-actif="1"' in base
     assert 'action="/admin/apercus/quitter"' in base
     assert 'dataset.adminModeActif === "1"' in script
+    assert "window.fetch = async function" in script
+    assert "X-Admin-Confirmation-Password" in script
+    assert "x-admin-confirmation-password" in (ROOT / "app" / "admin_security.py").read_text(encoding="utf-8")
     assert 'action="/admin/apercus/acceder"' in selecteur
     assert "mes actions seront réelles" in selecteur
