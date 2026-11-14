@@ -861,6 +861,16 @@ def demander_reinitialisation(
 
         if utilisateur and utilisateur.email and email_configure():
             code = f"{secrets.randbelow(1_000_000):06d}"
+            # Un seul code de récupération actif par compte : une nouvelle
+            # demande invalide immédiatement les anciens codes encore valides.
+            session.execute(
+                sql_update(CodeReinitialisationMotDePasse)
+                .where(
+                    CodeReinitialisationMotDePasse.utilisateur_id == utilisateur.id,
+                    CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+                )
+                .values(utilise=True)
+            )
             session.add(CodeReinitialisationMotDePasse(
                 utilisateur_id=utilisateur.id,
                 code_hash=hacher_mot_de_passe(code),
@@ -938,11 +948,32 @@ def verifier_code_reinitialisation(
     if not entree_correspondante:
         return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
 
+    # Consommation atomique : deux requêtes simultanées ne peuvent pas
+    # utiliser le même code valide pour modifier le mot de passe.
+    resultat_consommation = session.execute(
+        sql_update(CodeReinitialisationMotDePasse)
+        .where(
+            CodeReinitialisationMotDePasse.id == entree_correspondante.id,
+            CodeReinitialisationMotDePasse.utilisateur_id == user_id,
+            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+            CodeReinitialisationMotDePasse.expire_le > datetime.utcnow(),
+        )
+        .values(utilise=True)
+    )
+    if resultat_consommation.rowcount != 1:
+        session.rollback()
+        return templates.TemplateResponse(
+            request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique}
+        )
+
     utilisateur = session.get(Utilisateur, user_id)
-    entree_correspondante.utilise = True
+    if not utilisateur:
+        session.rollback()
+        return templates.TemplateResponse(
+            request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique}
+        )
     utilisateur.mot_de_passe_hash = hacher_mot_de_passe(nouveau_mot_de_passe)
     utilisateur.doit_changer_mot_de_passe = False
-    session.add(entree_correspondante)
     session.add(utilisateur)
     session.commit()
     request.session.pop("en_attente_reinit_user_id", None)
