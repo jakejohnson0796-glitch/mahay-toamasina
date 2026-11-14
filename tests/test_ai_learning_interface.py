@@ -32,7 +32,7 @@ def test_base_charge_les_assets_quiz_tuteur_et_renderer_ia():
     assert positions_locales == sorted(positions_locales)
     assert "cdn.jsdelivr.net" not in loader
     assert "unpkg.com" not in loader
-    assert "DELAI_MAX_MS = 2500" not in loader
+    assert "var DELAI_MAX_MS = 2500;" in loader
     assert "window.rendreTous(document)" in loader
 
 
