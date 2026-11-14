@@ -179,18 +179,18 @@
               {% else %}
               <small class="ops-table-date">Demande responsable déjà traitée</small>
               {% endif %}
-              {% elif u.role.value == "etudiant" %}
+              {% elif u.role.value == "etudiant" and u.profil_souhaite == "professeur" %}
+              {% if u.statut_verification_enseignant == "en_attente" %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
-                <button class="bouton bouton-secondaire" type="submit">
-                  {% if u.profil_souhaite == "professeur" and u.statut_verification_enseignant == "en_attente" %}Valider enseignant{% else %}Attribuer rôle professeur{% endif %}
-                </button>
+                <button class="bouton bouton-secondaire" type="submit">Valider enseignant</button>
               </form>
-              {% if u.profil_souhaite == "professeur" and u.statut_verification_enseignant == "en_attente" %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-professeur" data-confirm-message="Refuser la demande de profil enseignant de {{ u.nom }} ?">
                 <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
                 <input type="text" name="motif" maxlength="500" placeholder="Motif du refus (facultatif)" aria-label="Motif du refus enseignant"><button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
               </form>
+              {% else %}
+              <small class="ops-table-date">Demande enseignant déjà traitée</small>
               {% endif %}
               {% elif u.role.value in ["professeur","repetiteur","admin"] %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/retrograder-etudiant" {% if u.role.value == "admin" %}data-confirm-message="Retirer le statut admin de {{ u.nom }} ?"{% endif %}><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><button class="bouton bouton-secondaire" type="submit">Rétrograder</button></form>
