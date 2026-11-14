@@ -4,7 +4,11 @@ from types import SimpleNamespace
 from fastapi.responses import RedirectResponse
 
 from app.models import RoleUtilisateur, Utilisateur
-from app.profile_approval import details_validation_profil, profil_validation_requise
+from app.profile_approval import (
+    acces_interactif_admin_autorise,
+    details_validation_profil,
+    profil_validation_requise,
+)
 from app.routers import admin_router
 from app.force_password_change import chemin_autorise_pendant_validation
 
@@ -208,3 +212,60 @@ def test_websockets_chat_et_tableau_bloquent_les_profils_non_valides():
     assert "from ..profile_approval import profil_validation_requise" in classe
     assert "if utilisateur.banni or profil_validation_requise(utilisateur):" in classe
     assert "if profil_validation_requise(utilisateur_frais):" in classe
+
+
+def test_supervision_admin_exige_un_role_effectif_et_un_profil_approuve():
+    profils_valides = [
+        ("professeur", "professeur", "statut_verification_enseignant"),
+        ("repetiteur", "repetiteur", "statut_verification_repetiteur"),
+        ("sponsor", "sponsor", "statut_verification_sponsor"),
+        ("responsable", "responsable", "statut_verification_responsable"),
+    ]
+    for profil, role, champ_statut in profils_valides:
+        valide = SimpleNamespace(
+            banni=False,
+            profil_souhaite=profil,
+            role=SimpleNamespace(value=role),
+            **{champ_statut: "approuve"},
+        )
+        assert acces_interactif_admin_autorise(valide)
+
+        en_attente = SimpleNamespace(
+            banni=False,
+            profil_souhaite=profil,
+            role=SimpleNamespace(value="etudiant"),
+            **{champ_statut: "en_attente"},
+        )
+        assert not acces_interactif_admin_autorise(en_attente)
+
+        refuse = SimpleNamespace(
+            banni=False,
+            profil_souhaite=profil,
+            role=SimpleNamespace(value="etudiant"),
+            **{champ_statut: "refuse"},
+        )
+        assert not acces_interactif_admin_autorise(refuse)
+
+    eleve = SimpleNamespace(
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
+    )
+    assert acces_interactif_admin_autorise(eleve)
+
+    ancien_repetiteur = SimpleNamespace(
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="repetiteur",
+        statut_verification_repetiteur="retire",
+    )
+    assert acces_interactif_admin_autorise(ancien_repetiteur)
+
+
+def test_compte_banni_ne_peut_jamais_etre_supervise():
+    eleve_banni = SimpleNamespace(
+        banni=True,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
+    )
+    assert not acces_interactif_admin_autorise(eleve_banni)
