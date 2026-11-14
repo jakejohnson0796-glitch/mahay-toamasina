@@ -224,8 +224,36 @@ class TestSelectsVides(unittest.TestCase):
         self.assertEqual(famille.headers["location"], "/demande-validation")
 
     def test_inscription_enseignant_et_repetiteur_cree_des_demandes_non_actives(self):
+        with Session(engine) as session:
+            referentiel = ReferentielScolaire(
+                code="MEN-TEST-INSCRIPTION-ENSEIGNANT",
+                libelle="Référentiel test inscription enseignant",
+                source_officielle="https://www.education.gov.mg/",
+                statut="partiel",
+            )
+            session.add(referentiel)
+            session.commit()
+            session.refresh(referentiel)
+            niveau = NiveauScolaire(
+                referentiel_id=referentiel.id,
+                code="5E_TEST",
+                libelle="5e test",
+                cycle="college",
+                ordre=2,
+                est_active=True,
+                source_officielle=referentiel.source_officielle,
+                statut_validation="verifie",
+            )
+            session.add(niveau)
+            session.commit()
+            session.refresh(niveau)
+            niveau_id = niveau.id
+
         client_prof, response_prof = self._inscrire_profil(
-            "0340000113", role="professeur", cycle="college"
+            "0340000113",
+            role="professeur",
+            cycle="college",
+            niveau_scolaire_id=niveau_id,
         )
         self.assertEqual(response_prof.status_code, 303)
         self.assertEqual(response_prof.headers["location"], "/demande-validation")
