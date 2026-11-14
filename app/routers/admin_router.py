@@ -27,7 +27,7 @@ from ..models import (
     Feedback, ReponseFeedback, StatutFeedback, Notification, TypeNotification,
     TacheIA, StatutTacheIA, PerformanceModeleIA, ProgressionNotion,
     CodeReinitialisationMotDePasse, DemandeCreationCercle, DemandeChangementFiliere,
-    LienResponsableEleve, EvenementLienResponsableEleve,
+    LienResponsableEleve, EvenementLienResponsableEleve, DemandeAccompagnement,
     MessageReaction, MessageMention, FAQ, ActionGamification,
 )
 from ..storage import supprimer_fichier
@@ -1679,6 +1679,16 @@ async def supprimer_utilisateur(
     ).all():
         evenement_famille.acteur_id = None
         session.add(evenement_famille)
+
+    # Les demandes privées de soutien appartiennent aux deux comptes :
+    # elles sont supprimées si l'élève ou le répétiteur est supprimé.
+    for demande_accompagnement in session.exec(
+        select(DemandeAccompagnement).where(
+            (DemandeAccompagnement.etudiant_id == utilisateur_id)
+            | (DemandeAccompagnement.repetiteur_id == utilisateur_id)
+        )
+    ).all():
+        session.delete(demande_accompagnement)
 
     # Verifie explicitement qu'aucune FK directe vers le compte ne reste
     # avant de supprimer la ligne Utilisateur.
