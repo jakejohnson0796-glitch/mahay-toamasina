@@ -146,3 +146,12 @@ def test_supabase_realtime_origin_is_allowlisted_as_websocket_only_when_configur
     assert "wss://projet-test.supabase.co" in csp
     assert "wss://rtc.exemple.net" in csp
     assert "wss://autre-projet.supabase.co" not in csp
+
+
+def test_supabase_storage_documentation_requires_a_private_bucket():
+    from pathlib import Path
+
+    exemple = Path(".env.example").read_text(encoding="utf-8")
+    assert "bucket PRIVE" in exemple
+    assert "URL signees temporaires" in exemple
+    assert "public, si vous voulez" not in exemple
