@@ -303,6 +303,11 @@ def _extraire_texte_pdf_legacy(chemin: Path) -> str:
     return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
 
 
+def _extraire_texte_pdf(chemin: Path) -> str:
+    """Alias de compatibilité pour les tests et anciens appelants internes."""
+    return _extraire_texte_pdf_legacy(chemin)
+
+
 def _langue_tesseract(pytesseract) -> str:
     """Choisit les modèles installés sans échouer si un modèle facultatif manque."""
     try:
