@@ -26,6 +26,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance)
 from ..auth import utilisateur_courant, session_utilisateur_valide
+from ..profile_approval import profil_validation_requise
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
 from ..ws_manager import gestionnaire
@@ -1681,6 +1682,9 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
         if not utilisateur or not session_utilisateur_valide(websocket.session, utilisateur):
             await websocket.close(code=4401)
             return
+        if utilisateur.banni or profil_validation_requise(utilisateur):
+            await websocket.close(code=4403)
+            return
 
         seance = session.get(Seance, seance_id)
         if not seance:
@@ -1729,6 +1733,9 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
                         or not cours_frais
                     ):
                         await websocket.close(code=4401)
+                        break
+                    if profil_validation_requise(utilisateur_frais):
+                        await websocket.close(code=4403)
                         break
 
                     # L'inscription et le role sont relus a chaque evenement :
