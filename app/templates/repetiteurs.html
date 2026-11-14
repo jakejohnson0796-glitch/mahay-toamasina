@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block titre %}Trouver un répétiteur — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<main class="rep-directory" data-page="annuaire-repetiteurs">
+  <header class="rep-directory-hero">
+    <p class="rep-directory-kicker">MITARIDALA · Accompagnement scolaire</p>
+    <h1>Trouver un répétiteur vérifié</h1>
+    <p>Découvre les profils approuvés par l'administration et envoie une demande liée à une matière et à un niveau précis.</p>
+    <form method="get" action="/repetiteurs" class="rep-search">
+      <label for="rep-q">Rechercher une matière ou un niveau</label>
+      <div class="rep-search-row">
+        <input id="rep-q" name="q" value="{{ recherche }}" maxlength="100" placeholder="Ex. Mathématiques, Physique, Terminale…">
+        <button class="bouton bouton-primaire" type="submit">Rechercher</button>
+        {% if recherche %}<a class="rep-reset" href="/repetiteurs">Effacer</a>{% endif %}
+      </div>
+    </form>
+  </header>
+
+  {% set erreur = request.query_params.get("erreur") %}
+  {% if request.query_params.get("ok") == "demande_envoyee" %}
+  <div class="rep-alert rep-alert-ok" role="status">Ta demande a été envoyée. Tu peux suivre son statut dans « Mes demandes ».</div>
+  {% elif erreur == "coordonnees_interdites" %}
+  <div class="rep-alert" role="alert">Pour protéger ta vie privée, n'ajoute pas de numéro, email, adresse ou lien dans une demande.</div>
+  {% elif erreur == "limite_demandes" %}
+  <div class="rep-alert" role="alert">Tu as déjà cinq demandes en attente. Attends qu'une réponse arrive avant d'en envoyer une autre.</div>
+  {% elif erreur == "demande_existante" %}
+  <div class="rep-alert" role="alert">Tu as déjà une demande en attente auprès de ce répétiteur.</div>
+  {% elif erreur == "champs_invalides" %}
+  <div class="rep-alert" role="alert">Vérifie la matière, le niveau et ton message avant de réessayer.</div>
+  {% elif erreur == "profil_indisponible" %}
+  <div class="rep-alert" role="alert">Ce profil n'est plus disponible. Actualise l'annuaire.</div>
+  {% endif %}
+
+  <div class="rep-directory-meta">
+    <span>{{ repetiteurs|length }} profil{{ "" if repetiteurs|length == 1 else "s" }} trouvé{{ "" if repetiteurs|length == 1 else "s" }}</span>
+    <a href="/mes-demandes-repetiteur">Voir mes demandes</a>
+  </div>
+
+  {% if repetiteurs %}
+  <section class="rep-directory-grid">
+    {% for repetiteur in repetiteurs %}
+    <article class="rep-directory-card">
+      <div class="rep-card-top">
+        <span class="rep-verified">✓ Profil vérifié</span>
+        {% if repetiteur.tarif %}
+        <span class="rep-price">{{ "{:,.0f}".format(repetiteur.tarif).replace(",", " ") }} Ar / h</span>
+        {% else %}
+        <span class="rep-price">Tarif à discuter</span>
+        {% endif %}
+      </div>
+      <h2>{{ repetiteur.nom }}</h2>
+      <div class="rep-detail">
+        <strong>Matières</strong>
+        <p>{{ repetiteur.matieres or "À préciser" }}</p>
+      </div>
+      <div class="rep-detail">
+        <strong>Niveaux accompagnés</strong>
+        <p>{{ repetiteur.niveaux or "À préciser" }}</p>
+      </div>
+      {% if repetiteur.presentation %}
+      <p class="rep-presentation">{{ repetiteur.presentation }}</p>
+      {% endif %}
+
+      {% if repetiteur.demande_en_attente %}
+      <div class="rep-pending" role="status">Demande déjà envoyée · en attente</div>
+      {% else %}
+      <details class="rep-request">
+        <summary>Demander un accompagnement</summary>
+        <form method="post" action="/repetiteurs/{{ repetiteur.id }}/demande" class="rep-request-form">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label for="rep-matiere-{{ repetiteur.id }}">Matière souhaitée</label>
+          <input id="rep-matiere-{{ repetiteur.id }}" name="matiere" required maxlength="120" placeholder="Ex. Mathématiques">
+          <label for="rep-niveau-{{ repetiteur.id }}">Classe ou niveau</label>
+          <input id="rep-niveau-{{ repetiteur.id }}" name="niveau" required maxlength="120" placeholder="Ex. Terminale">
+          <label for="rep-message-{{ repetiteur.id }}">Ce dont tu as besoin</label>
+          <textarea id="rep-message-{{ repetiteur.id }}" name="message" required minlength="10" maxlength="800" rows="4" placeholder="Décris la notion ou la difficulté scolaire à travailler."></textarea>
+          <p class="rep-privacy">N'écris pas de numéro, email, adresse ou lien. Tes coordonnées de compte ne sont jamais partagées avec le répétiteur.</p>
+          <button class="bouton bouton-primaire" type="submit">Envoyer la demande</button>
+        </form>
+      </details>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="rep-empty">
+    <span aria-hidden="true">📚</span>
+    <h2>Aucun profil ne correspond encore à cette recherche</h2>
+    <p>Essaie un autre mot-clé ou reviens un peu plus tard. Seuls les profils validés et complétés sont affichés.</p>
+    {% if recherche %}<a href="/repetiteurs" class="bouton bouton-secondaire">Afficher tous les profils</a>{% endif %}
+  </section>
+  {% endif %}
+
+  <p class="rep-safety-note">Une acceptation confirme que le répétiteur est disponible pour étudier ta demande ; elle ne fixe pas de rendez-vous. Pour organiser des cours hors ligne, implique un parent, un responsable légal ou ton établissement.</p>
+</main>
+<style nonce="{{ csp_nonce(request) }}">
+.rep-directory{max-width:1160px;margin:0 auto;padding:1.25rem clamp(.8rem,3vw,2rem) 3rem;color:var(--content-text)}
+.rep-directory-hero{padding:1.3rem 0 1.1rem}.rep-directory-kicker{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--content-text-muted);margin:0 0 .5rem}
+.rep-directory h1{font-size:clamp(1.7rem,4vw,2.55rem);margin:.2rem 0 .45rem}.rep-directory-hero>p:not(.rep-directory-kicker){max-width:750px;color:var(--content-text-muted);line-height:1.6}
+.rep-search{margin-top:1.35rem;max-width:760px}.rep-search label,.rep-request-form label{display:block;font-size:.82rem;font-weight:750;margin:.55rem 0}
+.rep-search-row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}.rep-search input,.rep-request-form input,.rep-request-form textarea{width:100%;min-width:0;padding:.75rem .85rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}
+.rep-search-row input{flex:1 1 280px}.rep-reset{font-size:.85rem;color:var(--content-link)}
+.rep-directory-meta{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin:1rem 0;color:var(--content-text-muted);font-size:.83rem}.rep-directory-meta a{color:var(--content-link);font-weight:700}
+.rep-directory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:1rem}
+.rep-directory-card,.rep-empty{background:var(--content-surface);border:1px solid var(--content-border);border-radius:18px;padding:1.1rem;min-width:0}
+.rep-card-top{display:flex;justify-content:space-between;gap:.65rem;align-items:center;flex-wrap:wrap}.rep-verified{font-size:.7rem;color:var(--content-link);font-weight:800}.rep-price{font-size:.78rem;font-weight:800}
+.rep-directory-card h2{font-size:1.2rem;margin:.75rem 0}
+.rep-detail{margin:.75rem 0}.rep-detail strong{font-size:.76rem}.rep-detail p,.rep-presentation{font-size:.88rem;line-height:1.55;color:var(--content-text-muted);overflow-wrap:anywhere;margin:.25rem 0}
+.rep-presentation{border-top:1px solid var(--content-border);padding-top:.8rem}
+.rep-request{border-top:1px solid var(--content-border);margin-top:1rem;padding-top:.9rem}.rep-request summary{cursor:pointer;font-weight:800;color:var(--content-link)}
+.rep-request-form{display:grid;gap:.35rem;margin-top:.8rem}.rep-request-form textarea{resize:vertical}
+.rep-privacy{font-size:.76rem;line-height:1.45;color:var(--content-text-muted);margin:.25rem 0}
+.rep-pending{margin-top:1rem;padding:.75rem;border:1px solid var(--content-border);border-radius:10px;font-size:.82rem}
+.rep-alert{padding:.8rem 1rem;border:1px solid var(--content-border);border-radius:12px;margin:.8rem 0;font-size:.9rem}.rep-alert-ok{color:var(--content-link)}
+.rep-empty{text-align:center;padding:2.2rem 1rem}.rep-empty>span{font-size:2rem}.rep-empty h2{font-size:1.2rem}.rep-empty p{color:var(--content-text-muted)}
+.rep-safety-note{margin:1.25rem 0 0;padding:.9rem 1rem;border-left:3px solid var(--content-border);color:var(--content-text-muted);font-size:.8rem;line-height:1.5}
+@media(max-width:560px){.rep-search-row{align-items:stretch}.rep-search-row button{width:100%}.rep-directory-meta{align-items:flex-start}}
+</style>
+{% endblock %}
