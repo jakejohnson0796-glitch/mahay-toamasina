@@ -21,8 +21,9 @@
   }
 
   function actionProtegee(form) {
-    if (document.body.dataset.adminSession !== "1") return false;
     if (!form || (form.method || "get").toLowerCase() !== "post") return false;
+    if (document.body.dataset.adminModeActif === "1") return true;
+    if (document.body.dataset.adminSession !== "1") return false;
 
     var url;
     try {
