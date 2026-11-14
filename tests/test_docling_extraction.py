@@ -9,6 +9,20 @@ def test_docling_reste_desactive_par_defaut(monkeypatch):
     assert docling_extraction.extraire_pdf_docling("document.pdf", 1000) == ""
 
 
+def test_docling_exige_un_cache_de_modeles_non_vide(monkeypatch, tmp_path):
+    monkeypatch.setattr(docling_extraction.parametres, "docling_enabled", True)
+    monkeypatch.setattr(
+        docling_extraction.parametres, "docling_artifacts_path", str(tmp_path / "absent")
+    )
+    assert docling_extraction.docling_actif() is False
+
+    cache = tmp_path / "models"
+    cache.mkdir()
+    (cache / "model.bin").write_bytes(b"weights")
+    monkeypatch.setattr(docling_extraction.parametres, "docling_artifacts_path", str(cache))
+    assert docling_extraction.docling_actif() is True
+
+
 def test_adaptateur_docling_exporte_du_markdown(monkeypatch):
     texte_attendu = ("Titre du document\n\n" + "Contenu pédagogique structuré. " * 20).strip()
 
@@ -22,7 +36,7 @@ def test_adaptateur_docling_exporte_du_markdown(monkeypatch):
                 has_timeout_errors=lambda: False,
             )
 
-    monkeypatch.setattr(docling_extraction.parametres, "docling_enabled", True)
+    monkeypatch.setattr(docling_extraction, "docling_actif", lambda: True)
     monkeypatch.setattr(docling_extraction, "_convertisseur_docling", lambda: FauxConvertisseur())
 
     assert docling_extraction.extraire_pdf_docling("annale.pdf", 10000) == texte_attendu
@@ -35,15 +49,16 @@ def test_pdf_utilise_docling_quand_le_texte_est_exploitable(monkeypatch, tmp_pat
 
     monkeypatch.setattr("app.docling_extraction.docling_actif", lambda: True)
     monkeypatch.setattr("app.docling_extraction.extraire_pdf_docling", lambda *_a, **_k: texte)
-    monkeypatch.setattr(
-        text_extraction.pdfplumber,
-        "open",
-        lambda _path: SimpleNamespace(
-            __enter__=lambda self: self,
-            __exit__=lambda self, *_args: False,
-            pages=[object()],
-        ),
-    )
+    class FauxPDF:
+        pages = [object()]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(text_extraction.pdfplumber, "open", lambda _path: FauxPDF())
     monkeypatch.setattr(
         text_extraction,
         "_extraire_texte_pdf_legacy",
@@ -52,7 +67,7 @@ def test_pdf_utilise_docling_quand_le_texte_est_exploitable(monkeypatch, tmp_pat
 
     resultat = text_extraction._extraire_texte_detaille_sans_limite(str(chemin))
 
-    assert resultat.moteur == "Docling + Tesseract"
+    assert resultat.moteur == "Docling (OCR intégré si nécessaire)"
     assert "mathématiques" in resultat.texte
 
 
