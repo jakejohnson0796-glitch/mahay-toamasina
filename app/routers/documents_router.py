@@ -25,7 +25,7 @@ from ..csrf import verifier_csrf
 from ..models import (Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
-from ..text_extraction import extraire_texte
+from ..text_extraction import extraire_texte, ExtractionSaturee
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from ..dependencies import acces_ia_ou_redirection, acces_premium_ou_redirection
 from ..web_utils import entier_ou_none
@@ -626,6 +626,12 @@ async def detect_document_automatique(
         return JSONResponse({"ok": True, "detection": detection})
     except CatalogueDetectionIndisponible as erreur:
         return JSONResponse({"ok": False, "erreur": str(erreur)}, status_code=503)
+    except ExtractionSaturee as erreur:
+        return JSONResponse(
+            {"ok": False, "erreur": str(erreur)},
+            status_code=429,
+            headers={"Retry-After": "15"},
+        )
     except Exception:
         return JSONResponse(
             {"ok": False, "erreur": "La détection automatique n'a pas pu analyser ce fichier."},
@@ -907,6 +913,9 @@ def upload_document(
             type_document = classification.type_document or type_document
             annee = classification.annee or annee
             filiere_id = classification.filiere_id or filiere_id
+        except ExtractionSaturee:
+            supprimer_fichier(chemin_stocke)
+            return RedirectResponse("/documents?erreur=analyse_occupee", status_code=303)
         except Exception:
             # Le dépôt peut continuer avec les métadonnées manuelles, sans exposer
             # le contenu du fichier dans les logs.
