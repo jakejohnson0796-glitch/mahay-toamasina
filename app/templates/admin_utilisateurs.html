@@ -46,6 +46,7 @@
               {% if u.profil_souhaite == "professeur" %}Professeur demandé
               {% elif u.profil_souhaite == "repetiteur" %}Répétiteur
               {% elif u.profil_souhaite == "sponsor" %}Sponsor / commerce / service
+              {% elif u.profil_souhaite == "responsable" %}Parent / responsable légal
               {% else %}Élève / étudiant{% endif %}
             </strong>
             {% if u.profil_souhaite == "repetiteur" %}
