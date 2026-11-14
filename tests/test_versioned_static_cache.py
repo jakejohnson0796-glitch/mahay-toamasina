@@ -1,23 +1,31 @@
 from starlette.applications import Starlette
+from starlette.requests import Request
 from starlette.responses import PlainTextResponse
+from starlette.routing import Route
 from starlette.testclient import TestClient
 
 from app.static_cache import VersionedStaticAssetCacheMiddleware
 
 
 def _client() -> TestClient:
-    app = Starlette()
-
-    @app.route("/static/{asset_path:path}", methods=["GET", "HEAD"])
-    def servir_asset(request):
+    def servir_asset(request: Request):
         if request.path_params["asset_path"] == "absent.css":
             return PlainTextResponse("not found", status_code=404)
         return PlainTextResponse("body {}", media_type="text/css")
 
-    @app.route("/page", methods=["GET", "HEAD"])
-    def page(request):
+    def page(_request: Request):
         return PlainTextResponse("page")
 
+    app = Starlette(
+        routes=[
+            Route(
+                "/static/{asset_path:path}",
+                servir_asset,
+                methods=["GET", "HEAD"],
+            ),
+            Route("/page", page, methods=["GET", "HEAD"]),
+        ]
+    )
     app.add_middleware(VersionedStaticAssetCacheMiddleware)
     return TestClient(app)
 
