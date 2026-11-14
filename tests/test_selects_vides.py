@@ -240,7 +240,7 @@ class TestSelectsVides(unittest.TestCase):
                 libelle="5e test",
                 cycle="college",
                 ordre=2,
-                est_active=True,
+                est_actif=True,
                 source_officielle=referentiel.source_officielle,
                 statut_validation="verifie",
             )
@@ -292,7 +292,7 @@ class TestSelectsVides(unittest.TestCase):
                 libelle="6e test",
                 cycle="college",
                 ordre=1,
-                est_active=True,
+                est_actif=True,
                 source_officielle=referentiel.source_officielle,
                 statut_validation="verifie",
             )
