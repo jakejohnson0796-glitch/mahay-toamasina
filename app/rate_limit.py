@@ -160,7 +160,11 @@ def _limite_depassee_memoire(cle: str, max_tentatives: int, fenetre_secondes: in
             historique.popleft()
 
         deja_trop = len(historique) >= max_tentatives
-        historique.append(maintenant)
+        # Ne stocker que les tentatives admises dans la fenêtre. Ajouter aussi
+        # chaque requête déjà bloquée permettrait à un déluge sur une seule clé
+        # de faire croître la deque sans limite malgré MAX_CLES.
+        if not deja_trop:
+            historique.append(maintenant)
 
         while len(_tentatives) > MAX_CLES:
             ancienne_cle, _ = _tentatives.popitem(last=False)
