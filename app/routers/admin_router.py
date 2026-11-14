@@ -7,6 +7,7 @@ cette partie, juste on y renvoie depuis la page d'accueil admin.
 """
 import json
 import re
+from sqlalchemy import and_, or_
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -43,6 +44,7 @@ from .cercles_router import (
     _supprimer_cercle_et_contenu,
 )
 from ..auth import hacher_mot_de_passe
+from ..profile_approval import acces_interactif_admin_autorise
 import secrets
 
 router = APIRouter()
@@ -53,6 +55,56 @@ def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
         return None
     return utilisateur
+
+
+def _condition_comptes_reels_supervisables():
+    """Filtre SQL des comptes dont le profil effectif est approuvé."""
+    return or_(
+        and_(
+            Utilisateur.role == RoleUtilisateur.ETUDIANT,
+            Utilisateur.profil_souhaite == "eleve",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.ETUDIANT,
+            Utilisateur.profil_souhaite == "professeur",
+            Utilisateur.statut_verification_enseignant == "retire",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.ETUDIANT,
+            Utilisateur.profil_souhaite == "repetiteur",
+            Utilisateur.statut_verification_repetiteur == "retire",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.ETUDIANT,
+            Utilisateur.profil_souhaite == "sponsor",
+            Utilisateur.statut_verification_sponsor == "retire",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.ETUDIANT,
+            Utilisateur.profil_souhaite == "responsable",
+            Utilisateur.statut_verification_responsable == "retire",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.PROFESSEUR,
+            Utilisateur.profil_souhaite == "professeur",
+            Utilisateur.statut_verification_enseignant == "approuve",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.REPETITEUR,
+            Utilisateur.profil_souhaite == "repetiteur",
+            Utilisateur.statut_verification_repetiteur == "approuve",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.SPONSOR,
+            Utilisateur.profil_souhaite == "sponsor",
+            Utilisateur.statut_verification_sponsor == "approuve",
+        ),
+        and_(
+            Utilisateur.role == RoleUtilisateur.RESPONSABLE,
+            Utilisateur.profil_souhaite == "responsable",
+            Utilisateur.statut_verification_responsable == "approuve",
+        ),
+    )
 
 
 _TACHE_IA_LIBELLES = {
@@ -457,14 +509,9 @@ def page_admin_apercus(request: Request, session: Session = Depends(get_session)
         return RedirectResponse("/", status_code=303)
 
     recherche = (request.query_params.get("q") or "").strip()[:80]
-    roles_autorises = (
-        RoleUtilisateur.ETUDIANT,
-        RoleUtilisateur.PROFESSEUR,
-        RoleUtilisateur.REPETITEUR,
-    )
     requete = (
         select(Utilisateur)
-        .where(Utilisateur.role.in_(roles_autorises))
+        .where(_condition_comptes_reels_supervisables())
         .where(Utilisateur.banni == False)  # noqa: E712
     )
     if recherche:
@@ -506,16 +553,10 @@ def ouvrir_espace_reel_utilisateur(
         return RedirectResponse("/admin/securite?configurer=1", status_code=303)
 
     cible = session.get(Utilisateur, utilisateur_id)
-    roles_autorises = {
-        RoleUtilisateur.ETUDIANT,
-        RoleUtilisateur.PROFESSEUR,
-        RoleUtilisateur.REPETITEUR,
-    }
     if (
         not cible
-        or cible.banni
-        or cible.role not in roles_autorises
         or cible.id == admin.id
+        or not acces_interactif_admin_autorise(cible)
     ):
         return RedirectResponse("/admin/apercus?erreur=compte_indisponible", status_code=303)
 
@@ -539,7 +580,11 @@ def ouvrir_espace_reel_utilisateur(
     request.session["auth_fingerprint"] = empreinte_session_utilisateur(cible)
     request.session["_csrf_token"] = secrets.token_hex(32)
     request.session.pop("notification_inactivite", None)
-    return RedirectResponse("/dashboard", status_code=303)
+    destination = {
+        RoleUtilisateur.SPONSOR: "/sponsoring",
+        RoleUtilisateur.RESPONSABLE: "/famille",
+    }.get(cible.role, "/dashboard")
+    return RedirectResponse(destination, status_code=303)
 
 
 @router.post("/admin/apercus/quitter")
