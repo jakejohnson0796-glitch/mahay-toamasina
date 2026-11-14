@@ -29,7 +29,7 @@
         <span class="ops-kicker">Accès interactif · Comptes réels</span>
         <h2 id="admin-apercus-comptes-titre">Ouvrir l’espace d’un utilisateur</h2>
       </div>
-      <p>Choisis un compte Élève / Étudiant, Enseignant ou Répétiteur. Tu retrouveras son véritable tableau de bord et ses données, avec ses autorisations normales.</p>
+      <p>Choisis un compte Élève / Étudiant, Enseignant, Répétiteur, Sponsor ou Responsable légal dont le profil a été approuvé. Tu retrouveras son véritable espace et ses données, avec ses autorisations normales. Les demandes en attente ou refusées ne sont pas accessibles.</p>
     </div>
 
     {% if request.query_params.get("erreur") == "compte_indisponible" %}
@@ -52,9 +52,12 @@
           <span>Compte #{{ compte.id }} ·
             {% if compte.role.value == "etudiant" %}Élève / Étudiant
             {% elif compte.role.value == "professeur" %}Enseignant
-            {% else %}Répétiteur{% endif %}
+            {% elif compte.role.value == "repetiteur" %}Répétiteur
+            {% elif compte.role.value == "sponsor" %}Sponsor / Partenaire
+            {% elif compte.role.value == "responsable" %}Parent / Responsable légal
+            {% else %}Profil non reconnu{% endif %}
           </span>
-          {% if compte.role.value == "professeur" %}<small>Vérification : {{ compte.statut_verification_enseignant or "non renseignée" }}</small>{% elif compte.role.value == "repetiteur" %}<small>Vérification : {{ compte.statut_verification_repetiteur or "non renseignée" }}</small>{% endif %}
+          {% if compte.role.value == "professeur" %}<small>Vérification : {{ compte.statut_verification_enseignant or "non renseignée" }}</small>{% elif compte.role.value == "repetiteur" %}<small>Vérification : {{ compte.statut_verification_repetiteur or "non renseignée" }}</small>{% elif compte.role.value == "sponsor" %}<small>Vérification : {{ compte.statut_verification_sponsor or "non renseignée" }}</small>{% elif compte.role.value == "responsable" %}<small>Vérification : {{ compte.statut_verification_responsable or "non renseignée" }}</small>{% endif %}
         </div>
         <form method="post" action="/admin/apercus/acceder">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -140,7 +143,7 @@
         <span class="ops-kicker">Traçabilité</span>
         <h2 id="admin-apercus-historique-titre">Dernières actions en accès administrateur</h2>
       </div>
-      <p>Les 50 dernières opérations tentées dans les comptes réels sont conservées avec l’administrateur, le compte cible, la route et le résultat HTTP.</p>
+      <p>Les 50 dernières opérations tentées dans les espaces réels sont conservées avec l’administrateur, le compte cible, la route et le résultat HTTP.</p>
     </div>
     {% if historique_actions %}
     <div class="admin-apercus-comptes-liste">
