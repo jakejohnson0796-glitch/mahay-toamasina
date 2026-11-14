@@ -171,6 +171,15 @@ def test_admin_ne_peut_pas_approuver_un_profil_qui_n_est_pas_son_type(monkeypatc
     assert session.commits == 0
 
 
+def test_admin_voit_distinctement_les_demandes_et_peut_justifier_un_refus():
+    racine = Path(__file__).resolve().parents[1]
+    template = (racine / "app" / "templates" / "admin_utilisateurs.html").read_text(encoding="utf-8")
+    assert "Validation en attente" in template
+    assert "Demande refusée" in template
+    assert 'name="motif"' in template
+    assert "Motif du refus (facultatif)" in template
+
+
 def test_migration_et_modele_exposent_des_statuts_distincts_pour_sponsor_et_responsable():
     colonnes = set(Utilisateur.__table__.columns.keys())
     attendues = {
