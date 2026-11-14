@@ -13,12 +13,15 @@ Deux strategies, appliquees dans l'ordre :
    l'extraction retombe sur le texte disponible sans faire planter l'appli.
 """
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 import shutil
 import subprocess
 from threading import BoundedSemaphore
 
 import pdfplumber
+
+logger = logging.getLogger(__name__)
 
 SEUIL_CARACTERES_PDF_TEXTE = 100  # en dessous de ca, on suppose que c'est un scan
 MAX_PAGES_PDF_TEXTE = 60
@@ -91,7 +94,7 @@ def _texte_docling_utilisable(texte: str) -> bool:
         return False
     alphanumeriques = sum(caractere.isalnum() for caractere in visibles)
     taux_alphanumerique = alphanumeriques / len(visibles)
-    taux_remplacement = texte.count("\\ufffd") / max(1, len(texte))
+    taux_remplacement = texte.count("\ufffd") / max(1, len(texte))
     return alphanumeriques >= 50 and taux_alphanumerique >= 0.18 and taux_remplacement <= 0.01
 
 
@@ -121,7 +124,7 @@ def _extraire_texte_detaille_sans_limite(chemin_fichier: str) -> ResultatExtract
                     if _texte_docling_utilisable(texte_docling):
                         return ResultatExtraction(
                             texte=texte_docling[:MAX_TEXTE_EXTRAIT],
-                            moteur="Docling + Tesseract",
+                            moteur="Docling (OCR intégré si nécessaire)",
                         )
             except Exception as erreur:
                 # Une dépendance facultative ne doit jamais casser le dépôt.
