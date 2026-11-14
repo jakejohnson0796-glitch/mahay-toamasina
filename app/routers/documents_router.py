@@ -5,7 +5,9 @@ et les valider (moderation) avant qu'ils soient publics.
 from pathlib import Path
 from types import SimpleNamespace
 from datetime import datetime
+import asyncio
 import json
+import threading
 from typing import Optional
 from urllib.parse import urlencode
 import mimetypes
@@ -16,7 +18,7 @@ from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Response
 from sqlmodel import Session, or_, select
 
-from ..database import get_session
+from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
@@ -33,10 +35,91 @@ from .. import course_revision
 from .. import quiz as quiz_module
 from ..rate_limit import limite_depassee
 from ..document_classifier import classifier_document
+from ..upload_validation import valider_upload
 from ..document_batch import analyser_documents_stockes, MAX_DOCUMENTS_PAR_LOT, MAX_TAILLE_DOCUMENT_PAR_LOT
 from ..quiz_validation import QuizValidationError, valider_questions
 
 router = APIRouter()
+
+
+TAILLE_MAX_DETECTION_DOCUMENT = 20 * 1024 * 1024
+DELAI_MAX_DETECTION_DOCUMENT_SECONDES = 90
+# OCR/PDF parsing consumes CPU and memory. A single heavy detector per
+# process preserves capacity for login, lessons, chat and other HTTP routes.
+_DETECTION_DOCUMENT_SEMAPHORE = threading.BoundedSemaphore(1)
+
+
+class CatalogueDetectionIndisponible(RuntimeError):
+    """Aucune filière n'est disponible pour classifier le document."""
+
+
+def _consommer_exception_tache(tache: asyncio.Task) -> None:
+    """Évite les exceptions non récupérées après le délai HTTP maximal."""
+    try:
+        tache.exception()
+    except asyncio.CancelledError:
+        pass
+
+
+def _analyser_document_detection(contenu: bytes, nom_fichier: str) -> dict:
+    """Exécute l'extraction OCR/classification hors de la boucle HTTP."""
+    chemin_temp = None
+    try:
+        suffixe = Path(nom_fichier).suffix.lower()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffixe) as tmp:
+            tmp.write(contenu)
+            chemin_temp = Path(tmp.name)
+
+        texte = extraire_texte(str(chemin_temp))
+        with Session(engine) as session_detection:
+            filieres = session_detection.exec(select(Filiere)).all()
+            if not filieres:
+                raise CatalogueDetectionIndisponible(
+                    "Aucune filière disponible pour la détection."
+                )
+
+            classification = classifier_document(
+                nom_fichier=nom_fichier,
+                texte=texte,
+                filieres=filieres,
+            )
+            filiere_nom = ""
+            if classification.filiere_id is not None:
+                filiere = session_detection.get(Filiere, classification.filiere_id)
+                filiere_nom = filiere.nom if filiere else ""
+
+        return {
+            "titre": classification.titre or "",
+            "matiere": classification.matiere or "",
+            "type_document": (
+                classification.type_document.value
+                if classification.type_document else ""
+            ),
+            "annee": classification.annee or "",
+            "filiere_id": classification.filiere_id or "",
+            "filiere_nom": filiere_nom,
+            "confiance": round(float(classification.confiance or 0.0), 3),
+            "source": classification.source,
+            "caracteres_extraits": len((texte or "").strip()),
+            "statut_analyse": (
+                "texte_extrait" if (texte or "").strip()
+                else "nom_fichier_seulement"
+            ),
+            "avertissement": (
+                "" if (texte or "").strip()
+                else "Aucun texte exploitable n'a été extrait. Vérifiez la netteté et l'orientation du scan."
+            ),
+        }
+    finally:
+        if chemin_temp is not None:
+            try:
+                chemin_temp.unlink(missing_ok=True)
+            except Exception:
+                pass
+        # The slot is released by the worker itself, not by the HTTP
+        # request. A timeout therefore cannot start another OCR job while
+        # the previous thread is still consuming resources.
+        _DETECTION_DOCUMENT_SEMAPHORE.release()
 
 
 def _est_membre_cercle(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
@@ -461,7 +544,7 @@ async def detect_document_automatique(
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
-    """Analyse le fichier sans le publier ni le conserver."""
+    """Analyse un document sans le publier, avec parsing isolé et borné."""
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return JSONResponse({"ok": False, "erreur": "Connexion requise."}, status_code=401)
@@ -470,74 +553,87 @@ async def detect_document_automatique(
     if limite_depassee(f"detect-document:user:{utilisateur.id}", 30, 3600) or limite_depassee(
         f"detect-document:ip:{host}", 60, 3600
     ):
-        return JSONResponse({"ok": False, "erreur": "Trop de détections. Réessayez plus tard."}, status_code=429)
-
-    nom_fichier = fichier.filename or "document"
-    suffixe = Path(nom_fichier).suffix.lower()
-    extensions = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"}
-    if suffixe not in extensions:
-        return JSONResponse({"ok": False, "erreur": "Format de fichier non pris en charge."}, status_code=400)
-
-    # Ne conserve jamais plus que la limite + 1 octet en mémoire, même si
-    # la requête contourne la limite HTTP côté proxy.
-    contenu = await fichier.read(20 * 1024 * 1024 + 1)
-    if not contenu:
-        return JSONResponse({"ok": False, "erreur": "Le fichier est vide."}, status_code=400)
-    if len(contenu) > 20 * 1024 * 1024:
-        return JSONResponse({"ok": False, "erreur": "Le fichier dépasse 20 Mo."}, status_code=413)
-
-    filieres = session.exec(select(Filiere)).all()
-    if not filieres:
-        return JSONResponse({"ok": False, "erreur": "Aucune filière disponible pour la détection."}, status_code=503)
-
-    chemin_temp = None
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffixe) as tmp:
-            tmp.write(contenu)
-            chemin_temp = Path(tmp.name)
-
-        texte = extraire_texte(str(chemin_temp))
-        classification = classifier_document(
-            nom_fichier=nom_fichier,
-            texte=texte,
-            filieres=filieres,
+        return JSONResponse(
+            {"ok": False, "erreur": "Trop de détections. Réessayez plus tard."},
+            status_code=429,
         )
 
-        filiere_nom = ""
-        if classification.filiere_id is not None:
-            filiere = session.get(Filiere, classification.filiere_id)
-            filiere_nom = filiere.nom if filiere else ""
+    nom_fichier = Path(fichier.filename or "document").name
+    extensions = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png"}
+    if Path(nom_fichier).suffix.lower() not in extensions:
+        return JSONResponse(
+            {"ok": False, "erreur": "Format de fichier non pris en charge."},
+            status_code=400,
+        )
 
-        return JSONResponse({
-            "ok": True,
-            "detection": {
-                "titre": classification.titre or "",
-                "matiere": classification.matiere or "",
-                "type_document": classification.type_document.value if classification.type_document else "",
-                "annee": classification.annee or "",
-                "filiere_id": classification.filiere_id or "",
-                "filiere_nom": filiere_nom,
-                "confiance": round(float(classification.confiance or 0.0), 3),
-                "source": classification.source,
-                "caracteres_extraits": len((texte or "").strip()),
-                "statut_analyse": "texte_extrait" if (texte or "").strip() else "nom_fichier_seulement",
-                "avertissement": (
-                    "" if (texte or "").strip()
-                    else "Aucun texte exploitable n'a été extrait. Vérifiez la netteté et l'orientation du scan."
-                ),
-            },
-        })
+    # Ne lance pas une seconde tâche OCR lourde tant que la précédente
+    # n'a pas libéré ses ressources, même si son client HTTP a expiré.
+    if not _DETECTION_DOCUMENT_SEMAPHORE.acquire(blocking=False):
+        return JSONResponse(
+            {"ok": False, "erreur": "Une analyse est déjà en cours. Réessayez dans quelques instants."},
+            status_code=429,
+            headers={"Retry-After": "15"},
+        )
+
+    transfert_semaphore_au_worker = False
+    try:
+        contenu = await fichier.read(TAILLE_MAX_DETECTION_DOCUMENT + 1)
+        if not contenu:
+            return JSONResponse(
+                {"ok": False, "erreur": "Le fichier est vide."},
+                status_code=400,
+            )
+        if len(contenu) > TAILLE_MAX_DETECTION_DOCUMENT:
+            return JSONResponse(
+                {"ok": False, "erreur": "Le fichier dépasse 20 Mo."},
+                status_code=413,
+            )
+
+        # La détection et le dépôt définitif appliquent la même validation
+        # de signature réelle, d'OOXML et de dimensions d'image.
+        try:
+            valider_upload(
+                contenu,
+                nom_fichier,
+                TAILLE_MAX_DETECTION_DOCUMENT,
+                extensions,
+            )
+        except ValueError as erreur:
+            return JSONResponse(
+                {"ok": False, "erreur": str(erreur)},
+                status_code=400,
+            )
+
+        tache = asyncio.create_task(
+            asyncio.to_thread(_analyser_document_detection, contenu, nom_fichier)
+        )
+        transfert_semaphore_au_worker = True
+        try:
+            detection = await asyncio.wait_for(
+                asyncio.shield(tache),
+                timeout=DELAI_MAX_DETECTION_DOCUMENT_SECONDES,
+            )
+        except asyncio.TimeoutError:
+            tache.add_done_callback(_consommer_exception_tache)
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "erreur": "L'analyse prend trop de temps. Le document n'a pas été publié ; réessayez avec un fichier plus léger.",
+                },
+                status_code=504,
+            )
+
+        return JSONResponse({"ok": True, "detection": detection})
+    except CatalogueDetectionIndisponible as erreur:
+        return JSONResponse({"ok": False, "erreur": str(erreur)}, status_code=503)
     except Exception:
         return JSONResponse(
             {"ok": False, "erreur": "La détection automatique n'a pas pu analyser ce fichier."},
             status_code=422,
         )
     finally:
-        if chemin_temp is not None:
-            try:
-                chemin_temp.unlink(missing_ok=True)
-            except Exception:
-                pass
+        if not transfert_semaphore_au_worker:
+            _DETECTION_DOCUMENT_SEMAPHORE.release()
 
 
 @router.post("/documents/upload")
