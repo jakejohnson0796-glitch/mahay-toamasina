@@ -2429,3 +2429,18 @@ class EchangeDemandeMiseAJourCours(SQLModel, table=True):
     auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
     message: str = Field(max_length=5000)
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+class JournalActionAdmin(SQLModel, table=True):
+    """Trace les actions exécutées par un admin dans l'espace réel d'un compte."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    admin_id: int = Field(foreign_key="utilisateur.id", index=True)
+    utilisateur_cible_id: int = Field(foreign_key="utilisateur.id", index=True)
+    methode: str = Field(max_length=10)
+    chemin: str = Field(max_length=240)
+    statut_http: int
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        Index("ix_journalactionadmin_admin_date", "admin_id", "date_creation"),
+        Index("ix_journalactionadmin_cible_date", "utilisateur_cible_id", "date_creation"),
+    )
