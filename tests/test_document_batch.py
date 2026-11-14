@@ -95,3 +95,31 @@ def test_batch_signale_proprement_un_moteur_extraction_sature(monkeypatch, tmp_p
     )
     assert "erreur" in resultats[0]
     assert "occupé" in resultats[0]["erreur"]
+
+
+
+def test_analyse_document_conserve_le_moteur_utilise(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    chemin = tmp_path / "annale.pdf"
+    chemin.write_bytes(b"%PDF-test")
+    extraction = SimpleNamespace(
+        texte="Contenu pédagogique suffisant pour être classé.",
+        moteur="Docling (OCR intégré si nécessaire)",
+    )
+    classification = SimpleNamespace(titre="Annale", confiance=0.9, source="locale")
+
+    monkeypatch.setattr(
+        document_batch, "extraire_texte_detaille", lambda _chemin: extraction
+    )
+    monkeypatch.setattr(
+        document_batch, "classifier_document", lambda **_kwargs: classification
+    )
+
+    resultat = document_batch._analyser_document_local(
+        str(chemin), "annale.pdf", []
+    )
+
+    assert resultat["caracteres_extraits"] == len(extraction.texte)
+    assert resultat["moteur_extraction"] == "Docling (OCR intégré si nécessaire)"
+    assert resultat["classification"] is classification
