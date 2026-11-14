@@ -22,6 +22,12 @@
   <div class="rep-alert" role="alert">Indique un tarif horaire valide en ariary, ou laisse le champ vide.</div>
   {% elif request.query_params.get("erreur") == "profil_trop_long" %}
   <div class="rep-alert" role="alert">Certains champs dépassent la longueur autorisée. Raccourcis-les puis réessaie.</div>
+  {% elif request.query_params.get("ok") == "demande_acceptee" %}
+  <div class="rep-alert rep-alert-ok" role="status">La demande a été acceptée.</div>
+  {% elif request.query_params.get("ok") == "demande_refusee" %}
+  <div class="rep-alert" role="status">La demande a été refusée.</div>
+  {% elif request.query_params.get("erreur") == "demande_indisponible" %}
+  <div class="rep-alert" role="alert">Cette demande n'est plus disponible ou ne t'est pas adressée.</div>
   {% endif %}
 
   {% if statut_repetiteur == "en_attente" %}
@@ -71,6 +77,59 @@
       <div class="rep-aside-detail"><strong>{% if utilisateur.tarif_horaire_repetiteur_ariary %}{{ "{:,.0f}".format(utilisateur.tarif_horaire_repetiteur_ariary).replace(",", " ") }} Ar{% else %}À définir{% endif %}</strong><span>Tarif horaire indicatif</span></div>
     </aside>
   </section>
+
+  <section class="rep-panel rep-incoming" id="rep-demandes">
+    <div class="rep-incoming-head">
+      <div>
+        <p class="rep-kicker">Espace professionnel</p>
+        <h2>Demandes d'accompagnement reçues</h2>
+        <p>Consulte les besoins scolaires et accepte ou refuse chaque demande. Les coordonnées personnelles des élèves restent masquées.</p>
+      </div>
+      <span class="rep-incoming-count">{{ demandes_accompagnement|length if demandes_accompagnement is defined else 0 }}</span>
+    </div>
+    {% if demandes_accompagnement %}
+      <div class="rep-incoming-list">
+        {% for item in demandes_accompagnement %}
+        <article class="rep-incoming-item">
+          <div class="rep-incoming-top">
+            <div>
+              <strong>{{ item.etudiant_nom }}</strong>
+              <span>{{ item.demande.date_creation.strftime("%d/%m/%Y à %H:%M") if item.demande.date_creation else "" }}</span>
+            </div>
+            {% if item.demande.statut == "en_attente" %}
+            <span class="rep-incoming-status">En attente</span>
+            {% elif item.demande.statut == "acceptee" %}
+            <span class="rep-incoming-status rep-incoming-status-ok">Acceptée</span>
+            {% else %}
+            <span class="rep-incoming-status">Refusée</span>
+            {% endif %}
+          </div>
+          <div class="rep-incoming-meta">
+            <span><b>Matière :</b> {{ item.demande.matiere }}</span>
+            <span><b>Niveau :</b> {{ item.demande.niveau }}</span>
+          </div>
+          <p class="rep-incoming-message">{{ item.demande.message }}</p>
+          {% if item.demande.statut == "en_attente" %}
+          <div class="rep-incoming-actions">
+            <form method="post" action="/repetiteur/demandes/{{ item.demande.id }}/traiter">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <input type="hidden" name="action" value="acceptee">
+              <button class="bouton bouton-primaire" type="submit">Accepter</button>
+            </form>
+            <form method="post" action="/repetiteur/demandes/{{ item.demande.id }}/traiter">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <input type="hidden" name="action" value="refusee">
+              <button class="bouton bouton-secondaire" type="submit">Refuser</button>
+            </form>
+          </div>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="rep-incoming-empty">Aucune demande reçue pour le moment. Ton profil vérifié peut maintenant apparaître dans l'annuaire des élèves.</p>
+    {% endif %}
+  </section>
   {% else %}
   <section class="rep-panel rep-verification">
     <span class="rep-illustration" aria-hidden="true">🔒</span>
@@ -97,6 +156,9 @@
 .rep-form textarea{resize:vertical}.rep-form button{justify-self:start;margin-top:.7rem}
 .rep-aside-detail{padding:.85rem 0;border-top:1px solid var(--content-border);display:grid;gap:.2rem;overflow-wrap:anywhere}.rep-aside-detail strong{font-size:.94rem}.rep-aside-detail span{font-size:.75rem;color:var(--content-text-muted)}
 .rep-alert{padding:.8rem 1rem;border:1px solid var(--content-border);border-radius:12px;margin-bottom:1rem;font-size:.9rem}.rep-alert-ok{color:var(--content-link)}
+.rep-incoming{margin-top:1rem}.rep-incoming-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}.rep-incoming-head h2{font-size:1.15rem}.rep-incoming-head p:not(.rep-kicker){max-width:700px}.rep-incoming-count{border:1px solid var(--content-border);border-radius:999px;padding:.4rem .7rem;font-weight:800}
+.rep-incoming-list{display:grid;gap:.8rem;margin-top:1rem}.rep-incoming-item{border:1px solid var(--content-border);border-radius:13px;padding:1rem;min-width:0}.rep-incoming-top{display:flex;justify-content:space-between;gap:.8rem;align-items:center;flex-wrap:wrap}.rep-incoming-top div{display:grid;gap:.15rem}.rep-incoming-top span{font-size:.72rem;color:var(--content-text-muted)}.rep-incoming-status{font-size:.72rem;font-weight:800;border:1px solid var(--content-border);border-radius:999px;padding:.35rem .6rem}.rep-incoming-status-ok{color:var(--content-link)}
+.rep-incoming-meta{display:flex;gap:1rem;flex-wrap:wrap;margin:.8rem 0;font-size:.8rem;color:var(--content-text-muted)}.rep-incoming-message{font-size:.9rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}.rep-incoming-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem}.rep-incoming-actions form{margin:0}.rep-incoming-empty{color:var(--content-text-muted);font-size:.9rem;padding:.7rem 0}
 @media(max-width:720px){.rep-grid{grid-template-columns:1fr}.rep-verification{display:block}.rep-hero{padding-top:.8rem}}
 </style>
 {% endblock %}

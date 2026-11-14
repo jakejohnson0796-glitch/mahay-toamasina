@@ -107,7 +107,10 @@ def test_dashboard_repetiteur_est_independant_du_dashboard_etudiant(monkeypatch)
     monkeypatch.setattr(dashboard_router, "utilisateur_courant", lambda *_args: utilisateur)
     appels = _capture_template_dashboard(monkeypatch)
 
-    dashboard_router.page_dashboard(SimpleNamespace(), SimpleNamespace())
+    dashboard_router.page_dashboard(
+        SimpleNamespace(),
+        SimpleNamespace(exec=lambda *_args: SimpleNamespace(all=lambda: [])),
+    )
 
     assert appels["template"] == "dashboard_repetiteur.html"
     assert appels["contexte"]["utilisateur"].role == RoleUtilisateur.REPETITEUR

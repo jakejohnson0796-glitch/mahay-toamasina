@@ -277,6 +277,10 @@
         <a href="/tuteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/tuteur') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/tuteur') else '' }}><span class="tb-icone">{{ icone("tuteur", 17) }}</span> Tuteur IA</a>
 
         <p class="tb-sidebar-groupe">Collaborer</p>
+        {% if utilisateur is defined and utilisateur and utilisateur.role == "etudiant" %}
+        <a href="/repetiteurs" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/repetiteurs' else '' }}" {{ 'aria-current="page"' if request.url.path == '/repetiteurs' else '' }}><span class="tb-icone">🧑‍🏫</span> Trouver un répétiteur</a>
+        <a href="/mes-demandes-repetiteur" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path == '/mes-demandes-repetiteur' else '' }}" {{ 'aria-current="page"' if request.url.path == '/mes-demandes-repetiteur' else '' }}><span class="tb-icone">✉️</span> Mes demandes</a>
+        {% endif %}
         <a href="/cercles" class="tb-sidebar-lien{{ ' tb-sidebar-lien-actif' if request.url.path.startswith('/cercles') else '' }}" {{ 'aria-current="page"' if request.url.path.startswith('/cercles') else '' }}>
           <span class="tb-icone">{{ icone("cercles", 17) }}</span> Mes cercles
           {% if nb_cercles_rejoints %}<span class="tb-sidebar-badge">{{ nb_cercles_rejoints }}</span>{% endif %}
