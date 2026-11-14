@@ -17,7 +17,7 @@ import re
 import unittest
 import tempfile
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 # DATABASE_URL doit etre fixee AVANT le premier import de app.* (le moteur
 # SQLAlchemy est cree une fois au niveau module dans app/database.py).
@@ -199,7 +199,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
 
     def test_websocket_signale_clairement_la_limite_de_debit(self):
         client_message_id = "debit-limite-001"
-        with patch("app.routers.cercles_router.limite_depassee", return_value=True):
+        with patch("app.routers.cercles_router.limite_depassee_async", new=AsyncMock(return_value=True)):
             with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
                 self.assertEqual(websocket.receive_json()["type"], "presence")
                 websocket.send_json({
