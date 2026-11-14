@@ -82,6 +82,14 @@ def test_projection_publique_ne_contient_aucune_coordonee_de_compte():
     assert "prive@example.mg" not in str(profil)
 
 
+
+def test_un_compte_repetiteur_banni_est_considere_indisponible():
+    repetiteur = _repetiteur()
+    repetiteur.banni = True
+
+    assert repetiteur_router._est_repetiteur_verifie(repetiteur) is False
+
+
 def test_projection_publique_masque_les_coordonnees_ecrites_dans_la_bio():
     repetiteur = _repetiteur()
     repetiteur.bio = "Cours de maths, contacte-moi à prive@example.mg"
