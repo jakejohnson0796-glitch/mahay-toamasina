@@ -144,7 +144,9 @@ app.include_router(revisions_router.router)
 app.include_router(gamification_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(legal_router.router)
-app.include_router(opportunites_route# FastAPI copie les routes d'un APIRouter au moment de include_router().
+app.include_router(opportunites_router.router)
+
+# FastAPI copie les routes d'un APIRouter au moment de include_router().
 # Si un module d'authentification a enregistré tardivement certaines routes
 # pendant l'initialisation des imports, on complète uniquement les couples
 # (chemin, méthodes) manquants. Les objets APIRoute d'origine sont réutilisés,
