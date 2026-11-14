@@ -134,6 +134,32 @@
     </article>
   </div>
 
+  <section class="admin-apercus-comptes" aria-labelledby="admin-apercus-historique-titre">
+    <div class="admin-apercus-intro">
+      <div>
+        <span class="ops-kicker">Traçabilité</span>
+        <h2 id="admin-apercus-historique-titre">Dernières actions en accès administrateur</h2>
+      </div>
+      <p>Les 50 dernières opérations tentées dans les comptes réels sont conservées avec l’administrateur, le compte cible, la route et le résultat HTTP.</p>
+    </div>
+    {% if historique_actions %}
+    <div class="admin-apercus-comptes-liste">
+      {% for evenement, compte_cible in historique_actions %}
+      <article class="admin-apercus-compte">
+        <div>
+          <strong>{{ compte_cible.nom }} · compte #{{ compte_cible.id }}</strong>
+          <span>Admin #{{ evenement.admin_id }} · {{ evenement.methode }} {{ evenement.chemin }}</span>
+          <small>{{ evenement.date_creation.strftime("%d/%m/%Y à %H:%M:%S") if evenement.date_creation else "Date inconnue" }}</small>
+        </div>
+        <span class="ops-badge {% if evenement.statut_http >= 200 and evenement.statut_http < 400 %}is-success{% else %}is-alert{% endif %}">HTTP {{ evenement.statut_http }}</span>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="admin-apercus-comptes-vide">Aucune action enregistrée pour le moment.</p>
+    {% endif %}
+  </section>
+
   <aside class="admin-apercus-note">
     <strong>À savoir pour les répétiteurs</strong>
     <p>
