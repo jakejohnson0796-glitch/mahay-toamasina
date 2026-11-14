@@ -32,12 +32,16 @@ def test_base_charge_katex_core_sans_auto_render_obligatoire():
     assert "rendu_ia.js" in page
 
 
-def test_security_csp_autorise_les_assets_katex_sans_ouvrir_script_src():
-    # MODIF : contrôle statique supplémentaire sur la politique CSP.
+def test_security_csp_garde_les_scripts_locaux_et_les_styles_necessaires():
     code = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
-    assert "https://cdn.jsdelivr.net" in code
+    assert "connect-src" in code
+    assert "script-src-attr 'none'" in code
     assert "style-src-attr 'unsafe-inline'" in code
     assert "'unsafe-inline'" not in code.split("script-src", 1)[1].split(";", 1)[0]
+    assert "https://cdn.jsdelivr.net" not in code
+    assert "https://unpkg.com" not in code
+    assert "wss: " not in code
+    assert "ws: " not in code
 
 
 def test_pages_ia_exposent_le_texte_brut_au_renderer():
