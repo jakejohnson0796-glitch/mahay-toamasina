@@ -66,7 +66,7 @@ PACKAGES: dict[str, dict[str, Any]] = {
         "version": "2.17.0",
         "target": "livekit",
         "license_label": "Apache-2.0",
-        "files_candidates": [(["dist/livekit-client.umd.min.js"], "livekit-client.umd.min.js")],
+        "files_candidates": [(["dist/livekit-client.umd.js"], "livekit-client.umd.js")],
         "license_candidates": ["LICENSE", "LICENSE.md", "LICENSE.txt"],
     },
 }
