@@ -32,7 +32,7 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.admin_security import action_admin_protegee  # noqa: E402
-from app.routers.cercles_router import _origine_websocket_autorisee  # noqa: E402
+from app.websocket_security import origine_websocket_autorisee as _origine_websocket_autorisee  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle,
     MessageCercle, MessageReaction, MessageMention, Notification, StatutCercle,
