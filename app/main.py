@@ -173,7 +173,11 @@ def _synchroniser_routes_tardives(*routeurs) -> None:
 
 # Les routes d'authentification et de dépôt de documents sont contrôlées ici :
 # la CI vérifie que les mutations sensibles sont réellement exposées avec CSRF.
-_synchroniser_routes_tardives(auth_router.router, documents_router.router)
+_synchroniser_routes_tardives(
+    auth_router.router,
+    documents_router.router,
+    notifications_router.router,
+)
 
 
 def _masquer_mot_de_passe(url: str) -> str:
