@@ -58,12 +58,14 @@ def upgrade() -> None:
     # conservés tels quels (rétrocompatibilité) ; seuls les nouveaux profils
     # déposés à partir de cette version attendent explicitement l'admin.
     op.execute(
-        "UPDATE utilisateur SET statut_verification_sponsor = 'approuve' "
-        "WHERE role = 'SPONSOR' AND profil_souhaite = 'sponsor'"
+        "UPDATE utilisateur SET profil_souhaite = 'sponsor', "
+        "statut_verification_sponsor = 'approuve' "
+        "WHERE role = 'SPONSOR'"
     )
     op.execute(
-        "UPDATE utilisateur SET statut_verification_responsable = 'approuve' "
-        "WHERE role = 'RESPONSABLE' AND profil_souhaite = 'responsable'"
+        "UPDATE utilisateur SET profil_souhaite = 'responsable', "
+        "statut_verification_responsable = 'approuve' "
+        "WHERE role = 'RESPONSABLE'"
     )
 
 
