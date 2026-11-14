@@ -124,3 +124,16 @@ def test_async_rate_limit_runs_the_blocking_backend_in_a_worker_thread(monkeypat
 
     assert resultat is True
     assert thread_ids and thread_ids[0] != main_thread
+
+
+def test_memory_fallback_does_not_grow_for_repeated_blocked_requests():
+    rate_limit._tentatives.clear()
+    rate_limit._fenetres_max.clear()
+    rate_limit._dernier_nettoyage = rate_limit.time.monotonic()
+
+    for i in range(3):
+        assert rate_limit._limite_depassee_memoire("flood:key", 3, 60) is False
+    for _ in range(5000):
+        assert rate_limit._limite_depassee_memoire("flood:key", 3, 60) is True
+
+    assert len(rate_limit._tentatives["flood:key"]) == 3
