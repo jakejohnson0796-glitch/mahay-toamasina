@@ -18,12 +18,11 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
         sa.Column("admin_id", sa.Integer(), nullable=False),
         sa.Column("utilisateur_cible_id", sa.Integer(), nullable=False),
+        sa.Column("utilisateur_cible_nom", sa.String(length=120), nullable=False),
         sa.Column("methode", sa.String(length=10), nullable=False),
         sa.Column("chemin", sa.String(length=240), nullable=False),
         sa.Column("statut_http", sa.Integer(), nullable=False),
         sa.Column("date_creation", sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(["admin_id"], ["utilisateur.id"], name="fk_journalactionadmin_admin"),
-        sa.ForeignKeyConstraint(["utilisateur_cible_id"], ["utilisateur.id"], name="fk_journalactionadmin_cible"),
     )
     op.create_index("ix_journalactionadmin_admin_id", "journalactionadmin", ["admin_id"])
     op.create_index("ix_journalactionadmin_utilisateur_cible_id", "journalactionadmin", ["utilisateur_cible_id"])
