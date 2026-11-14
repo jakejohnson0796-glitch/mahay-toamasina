@@ -7,6 +7,7 @@ ce repli n'a pas la garantie distribuée du compteur Redis.
 """
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import secrets
@@ -21,9 +22,9 @@ from .config import parametres
 
 MAX_CLES = 10_000
 _NETTOYAGE_INTERVALLE = 30.0
-_TTL_INDEX_MS = 3_660_000
 
 _tentatives: "OrderedDict[str, Deque[float]]" = OrderedDict()
+_fenetres_max: dict[str, int] = {}
 _verrou = Lock()
 _verrou_journal = Lock()
 _dernier_nettoyage = 0.0
@@ -131,8 +132,10 @@ def _limite_depassee_redis(
 
 def _purger_expirees(maintenant: float) -> None:
     for cle, historique in list(_tentatives.items()):
-        if not historique or maintenant - historique[-1] >= 3600:
+        fenetre = _fenetres_max.get(cle, 3600)
+        if not historique or maintenant - historique[-1] >= fenetre:
             _tentatives.pop(cle, None)
+            _fenetres_max.pop(cle, None)
 
 
 def _limite_depassee_memoire(cle: str, max_tentatives: int, fenetre_secondes: int) -> bool:
@@ -147,8 +150,10 @@ def _limite_depassee_memoire(cle: str, max_tentatives: int, fenetre_secondes: in
         if historique is None:
             historique = deque()
             _tentatives[cle] = historique
+            _fenetres_max[cle] = fenetre_secondes
         else:
             _tentatives.move_to_end(cle)
+            _fenetres_max[cle] = max(_fenetres_max.get(cle, 0), fenetre_secondes)
 
         seuil = maintenant - fenetre_secondes
         while historique and historique[0] <= seuil:
@@ -158,7 +163,8 @@ def _limite_depassee_memoire(cle: str, max_tentatives: int, fenetre_secondes: in
         historique.append(maintenant)
 
         while len(_tentatives) > MAX_CLES:
-            _tentatives.popitem(last=False)
+            ancienne_cle, _ = _tentatives.popitem(last=False)
+            _fenetres_max.pop(ancienne_cle, None)
 
         return deja_trop
 
@@ -180,3 +186,13 @@ def limite_depassee(cle: str, max_tentatives: int, fenetre_secondes: int) -> boo
         _noter_indisponibilite_redis(erreur)
 
     return _limite_depassee_memoire(cle, max_tentatives, fenetre_secondes)
+
+
+async def limite_depassee_async(cle: str, max_tentatives: int, fenetre_secondes: int) -> bool:
+    """Variante non bloquante pour les handlers et middlewares asynchrones."""
+    return await asyncio.to_thread(
+        limite_depassee,
+        cle,
+        max_tentatives,
+        fenetre_secondes,
+    )
