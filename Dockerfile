@@ -17,6 +17,17 @@ COPY . .
 # Le navigateur les sert ensuite depuis /static/vendor, sans dépendre d'un CDN.
 RUN python scripts/vendor_frontend_dependencies.py
 
+# Le serveur ne doit jamais exécuter l'application avec les privilèges root.
+# Seul le répertoire uploads doit être inscriptible à l'exécution.
+RUN groupadd --system mahay \
+    && useradd --system --gid mahay --home-dir /app --no-create-home mahay \
+    && mkdir -p /app/uploads \
+    && chown -R mahay:mahay /app/uploads \
+    && chmod 750 /app/uploads
+
+ENV HOME=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+USER mahay:mahay
+
 # Render transmet le trafic au port interne expose par le service (8080 par défaut).
 EXPOSE 8080
 
