@@ -108,3 +108,22 @@ def test_validateur_de_detection_refuse_les_fichiers_avec_extension_fausse():
             20 * 1024 * 1024,
             {".pdf"},
         )
+
+
+def test_detection_retourne_429_quand_le_moteur_global_est_sature(monkeypatch):
+    from app.text_extraction import ExtractionSaturee
+
+    def analyse(_contenu, _nom):
+        try:
+            raise ExtractionSaturee("Le moteur de lecture est occupé.")
+        finally:
+            documents_router._DETECTION_DOCUMENT_SEMAPHORE.release()
+
+    _preparer_route(monkeypatch, analyse)
+    response = asyncio.run(
+        documents_router.detect_document_automatique(
+            _request_test(), FichierTest(), object()
+        )
+    )
+    assert response.status_code == 429
+    assert response.headers.get("retry-after") == "15"
