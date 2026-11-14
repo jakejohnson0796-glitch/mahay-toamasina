@@ -20,8 +20,62 @@
     return francais;
   }
 
+  // Les actions applicatives enregistrées en arrière-plan (quiz, notes,
+  // chat, détection de documents, etc.) n'émettent pas toutes un submit HTML.
+  // Intercepter aussi les POST fetch pour ne pas contourner la confirmation.
+  var fetchOriginal = window.fetch.bind(window);
+  window.fetch = async function (input, init) {
+    if (!document.body || document.body.dataset.adminModeActif !== "1") {
+      return fetchOriginal(input, init);
+    }
+
+    var options = init || {};
+    var methode = String(options.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+    if (methode !== "POST") return fetchOriginal(input, init);
+
+    var url;
+    try {
+      var urlSource = input instanceof Request ? input.url : String(input);
+      url = new URL(urlSource, window.location.origin);
+    } catch (_) {
+      return fetchOriginal(input, init);
+    }
+    if (url.origin !== window.location.origin) return fetchOriginal(input, init);
+
+    var corps = options.body;
+    if (corps instanceof FormData && corps.has("admin_confirmation_password")) {
+      return fetchOriginal(input, init);
+    }
+
+    var entetes;
+    try {
+      entetes = new Headers(options.headers || (input instanceof Request ? input.headers : undefined));
+    } catch (_) {
+      entetes = new Headers();
+    }
+    if (entetes.has("X-Admin-Confirmation-Password")) {
+      return fetchOriginal(input, init);
+    }
+
+    var secret = window.prompt(
+      texteSelonLangue(
+        "Action dans un compte réel\n\nEntrez le mot de passe de confirmation administrateur :",
+        "Hetsika amin'ny kaonty tena izy\n\nAmpidiro ny tenimiafina fanamafisana :"
+      )
+    );
+    if (secret === null || !secret) {
+      return new Response(
+        JSON.stringify({ detail: "Action annulée : confirmation administrateur non fournie." }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    entetes.set("X-Admin-Confirmation-Password", secret);
+    var optionsProtegees = Object.assign({}, options, { headers: entetes });
+    return fetchOriginal(input, optionsProtegees);
+  };
+
   function actionProtegee(form) {
-    if (document.body.dataset.adminSession !== "1") return false;
     if (!form || (form.method || "get").toLowerCase() !== "post") return false;
 
     var url;
@@ -31,7 +85,10 @@
       return false;
     }
 
+    // Ne jamais transmettre le secret de confirmation à une destination externe.
     if (url.origin !== window.location.origin) return false;
+    if (document.body.dataset.adminModeActif === "1") return true;
+    if (document.body.dataset.adminSession !== "1") return false;
 
     var path = url.pathname;
     if (path === "/admin/securite/mot-de-passe-confirmation") return false;

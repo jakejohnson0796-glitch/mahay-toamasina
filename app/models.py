@@ -2429,3 +2429,21 @@ class EchangeDemandeMiseAJourCours(SQLModel, table=True):
     auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
     message: str = Field(max_length=5000)
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+class JournalActionAdmin(SQLModel, table=True):
+    """Trace les actions exécutées par un admin dans l'espace réel d'un compte."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    # IDs historiques sans FK : un compte supprimé ne doit pas supprimer
+    # ni empêcher la suppression de ses événements d'audit.
+    admin_id: int = Field(index=True)
+    utilisateur_cible_id: int = Field(index=True)
+    utilisateur_cible_nom: str = Field(max_length=120)
+    methode: str = Field(max_length=10)
+    chemin: str = Field(max_length=240)
+    statut_http: int
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        Index("ix_journalactionadmin_admin_date", "admin_id", "date_creation"),
+        Index("ix_journalactionadmin_cible_date", "utilisateur_cible_id", "date_creation"),
+    )

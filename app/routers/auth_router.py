@@ -902,7 +902,33 @@ def verifier_code_reinitialisation(
 
 
 @router.post("/deconnexion")
-def deconnexion(request: Request, _csrf: None = Depends(verifier_csrf)):
+def deconnexion(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    # Une déconnexion depuis un compte inspecté doit d'abord quitter le mode
+    # supervise : elle ne doit pas effacer l'identité admin conservée.
+    admin_id = request.session.get("admin_mode_actor_id")
+    empreinte_admin = request.session.get("admin_mode_actor_fingerprint")
+    if admin_id:
+        admin = session.get(Utilisateur, admin_id)
+        if (
+            admin
+            and not admin.banni
+            and admin.role == RoleUtilisateur.ADMIN
+            and empreinte_admin
+            and empreinte_session_utilisateur(admin) == empreinte_admin
+        ):
+            request.session.pop("admin_mode_actor_id", None)
+            request.session.pop("admin_mode_actor_fingerprint", None)
+            request.session.pop("admin_mode_target_id", None)
+            request.session["user_id"] = admin.id
+            request.session["auth_fingerprint"] = empreinte_session_utilisateur(admin)
+            request.session["_csrf_token"] = secrets.token_hex(32)
+            request.session.pop("notification_inactivite", None)
+            return RedirectResponse("/admin/apercus", status_code=303)
+
     request.session.clear()
     return RedirectResponse("/", status_code=303)
 

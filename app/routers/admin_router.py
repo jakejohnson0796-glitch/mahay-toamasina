@@ -17,7 +17,7 @@ from sqlmodel import Session, select, func
 from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..auth import utilisateur_courant, verifier_mot_de_passe
+from ..auth import empreinte_session_utilisateur, utilisateur_courant, verifier_mot_de_passe
 from ..models import (
     Utilisateur, RoleUtilisateur, NiveauScolaire, OptionScolaire, CycleEnseigne, CercleEtude, MembreCercle, RoleMembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
@@ -28,7 +28,7 @@ from ..models import (
     TacheIA, StatutTacheIA, PerformanceModeleIA, ProgressionNotion,
     CodeReinitialisationMotDePasse, DemandeCreationCercle, DemandeChangementFiliere,
     LienResponsableEleve, EvenementLienResponsableEleve, DemandeAccompagnement,
-    MessageReaction, MessageMention, FAQ, ActionGamification,
+    MessageReaction, MessageMention, FAQ, ActionGamification, JournalActionAdmin,
 )
 from ..storage import supprimer_fichier
 from .. import ai_metrics
@@ -451,15 +451,127 @@ def _donnees_apercu_etudiant() -> dict:
 
 @router.get("/admin/apercus")
 def page_admin_apercus(request: Request, session: Session = Depends(get_session)):
-    """Sélecteur des interfaces visibles par les différents profils."""
+    """Sélecteur des simulations et des comptes réels accessibles en mode supervise."""
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
+
+    recherche = (request.query_params.get("q") or "").strip()[:80]
+    roles_autorises = (
+        RoleUtilisateur.ETUDIANT,
+        RoleUtilisateur.PROFESSEUR,
+        RoleUtilisateur.REPETITEUR,
+    )
+    requete = (
+        select(Utilisateur)
+        .where(Utilisateur.role.in_(roles_autorises))
+        .where(Utilisateur.banni == False)  # noqa: E712
+    )
+    if recherche:
+        requete = requete.where(Utilisateur.nom.contains(recherche))
+    comptes_reels = session.exec(
+        requete.order_by(Utilisateur.id.desc()).limit(100)
+    ).all()
+    historique_actions = session.exec(
+        select(JournalActionAdmin)
+        .order_by(JournalActionAdmin.date_creation.desc())
+        .limit(50)
+    ).all()
+
     return templates.TemplateResponse(
         request,
         "admin_apercus.html",
-        {"utilisateur": admin},
+        {
+            "utilisateur": admin,
+            "comptes_reels": comptes_reels,
+            "recherche_comptes": recherche,
+            "nombre_comptes_limite": len(comptes_reels) == 100,
+            "historique_actions": historique_actions,
+        },
     )
+
+
+@router.post("/admin/apercus/acceder")
+def ouvrir_espace_reel_utilisateur(
+    request: Request,
+    utilisateur_id: int = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Ouvre temporairement l'application comme un compte réel, sous contrôle admin."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    if not admin.mot_de_passe_confirmation_admin_hash:
+        return RedirectResponse("/admin/securite?configurer=1", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    roles_autorises = {
+        RoleUtilisateur.ETUDIANT,
+        RoleUtilisateur.PROFESSEUR,
+        RoleUtilisateur.REPETITEUR,
+    }
+    if (
+        not cible
+        or cible.banni
+        or cible.role not in roles_autorises
+        or cible.id == admin.id
+    ):
+        return RedirectResponse("/admin/apercus?erreur=compte_indisponible", status_code=303)
+
+    # Tracer l'ouverture avant de basculer l'identité affichée dans la session.
+    session.add(
+        JournalActionAdmin(
+            admin_id=admin.id,
+            utilisateur_cible_id=cible.id,
+            utilisateur_cible_nom=(cible.nom or f"Compte #{cible.id}")[:120],
+            methode="POST",
+            chemin="/admin/apercus/acceder",
+            statut_http=303,
+        )
+    )
+    session.commit()
+
+    request.session["admin_mode_actor_id"] = admin.id
+    request.session["admin_mode_actor_fingerprint"] = empreinte_session_utilisateur(admin)
+    request.session["admin_mode_target_id"] = cible.id
+    request.session["user_id"] = cible.id
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(cible)
+    request.session["_csrf_token"] = secrets.token_hex(32)
+    request.session.pop("notification_inactivite", None)
+    return RedirectResponse("/dashboard", status_code=303)
+
+
+@router.post("/admin/apercus/quitter")
+def quitter_espace_reel_utilisateur(
+    request: Request,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Restaure la session admin seulement si son compte est toujours valide."""
+    admin_id = request.session.get("admin_mode_actor_id")
+    cible_id = request.session.get("admin_mode_target_id")
+    empreinte_admin = request.session.get("admin_mode_actor_fingerprint")
+    admin = session.get(Utilisateur, admin_id) if admin_id else None
+    if (
+        not admin
+        or admin.banni
+        or admin.role != RoleUtilisateur.ADMIN
+        or not empreinte_admin
+        or empreinte_session_utilisateur(admin) != empreinte_admin
+        or request.session.get("user_id") != cible_id
+    ):
+        request.session.clear()
+        return RedirectResponse("/", status_code=303)
+
+    request.session.pop("admin_mode_actor_id", None)
+    request.session.pop("admin_mode_actor_fingerprint", None)
+    request.session.pop("admin_mode_target_id", None)
+    request.session["user_id"] = admin.id
+    request.session["auth_fingerprint"] = empreinte_session_utilisateur(admin)
+    request.session["_csrf_token"] = secrets.token_hex(32)
+    request.session.pop("notification_inactivite", None)
+    return RedirectResponse("/admin/apercus", status_code=303)
 
 
 @router.get("/admin/apercus/{espace}")

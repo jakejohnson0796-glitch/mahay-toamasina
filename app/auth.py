@@ -58,17 +58,44 @@ def session_utilisateur_valide(session_data: dict, utilisateur: Utilisateur) -> 
 
 
 def utilisateur_courant(request: Request, session: Session = Depends(get_session)) -> Optional[Utilisateur]:
-    """Renvoie l'utilisateur connecte et rafraichit son activite de facon limitee."""
+    """Renvoie l'utilisateur courant et valide l'identite admin en mode d'acces supervise."""
     user_id = request.session.get("user_id")
     if not user_id:
         return None
+
+    admin_mode_id = request.session.get("admin_mode_actor_id")
+    if admin_mode_id:
+        administrateur = session.get(Utilisateur, admin_mode_id)
+        empreinte_admin = request.session.get("admin_mode_actor_fingerprint")
+        cible_id = request.session.get("admin_mode_target_id")
+        if (
+            not administrateur
+            or administrateur.banni
+            or administrateur.role != RoleUtilisateur.ADMIN
+            or not empreinte_admin
+            or empreinte_session_utilisateur(administrateur) != empreinte_admin
+            or cible_id != user_id
+        ):
+            request.session.clear()
+            return None
 
     utilisateur = session.get(Utilisateur, user_id)
     if not utilisateur or utilisateur.banni or not session_utilisateur_valide(request.session, utilisateur):
         request.session.clear()
         return None
 
-    enregistrer_activite(utilisateur, session)
+    if admin_mode_id and utilisateur.role not in {
+        RoleUtilisateur.ETUDIANT,
+        RoleUtilisateur.PROFESSEUR,
+        RoleUtilisateur.REPETITEUR,
+    }:
+        request.session.clear()
+        return None
+
+    # L'accès supervise ne doit pas rafraîchir artificiellement l'activité
+    # du compte utilisateur cible.
+    if not admin_mode_id:
+        enregistrer_activite(utilisateur, session)
     return utilisateur
 
 INTERVALLE_MAJ_ACTIVITE = timedelta(minutes=15)

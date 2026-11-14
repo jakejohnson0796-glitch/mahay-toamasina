@@ -8,20 +8,76 @@
       <span class="ops-kicker">Contrôle des interfaces · Administration</span>
       <h1>Voir MITARIDALA du côté des utilisateurs.</h1>
       <p>
-        Prévisualise les espaces tels qu'ils sont présentés aux différents profils.
-        L'aperçu utilise des données fictives et ne modifie aucun compte.
+        Examine les interfaces des différents profils. Tu peux aussi ouvrir un compte réel
+        en mode administrateur pour tester ses fonctions et effectuer des actions effectives.
       </p>
     </div>
     <div class="admin-apercus-hero-etat">
       <span class="admin-apercus-hero-icone" aria-hidden="true">◉</span>
-      <strong>Mode lecture seule</strong>
-      <span>Ton compte administrateur reste inchangé.</span>
+      <strong>Deux modes disponibles</strong>
+      <span>Simulation fictive ou accès interactif à un compte réel.</span>
     </div>
   </section>
 
   {% if request.query_params.get("erreur") == "espace_invalide" %}
   <div class="ops-alert ops-alert-warn">Cet espace d'aperçu n'existe pas. Choisis l'une des vues proposées ci-dessous.</div>
   {% endif %}
+
+  <section class="admin-apercus-comptes" aria-labelledby="admin-apercus-comptes-titre">
+    <div class="admin-apercus-intro">
+      <div>
+        <span class="ops-kicker">Accès interactif · Comptes réels</span>
+        <h2 id="admin-apercus-comptes-titre">Ouvrir l’espace d’un utilisateur</h2>
+      </div>
+      <p>Choisis un compte Élève / Étudiant, Enseignant ou Répétiteur. Tu retrouveras son véritable tableau de bord et ses données, avec ses autorisations normales.</p>
+    </div>
+
+    {% if request.query_params.get("erreur") == "compte_indisponible" %}
+    <div class="ops-alert ops-alert-warn">Ce compte n’est pas disponible pour l’accès interactif. Actualise la liste et réessaie.</div>
+    {% endif %}
+
+    <form method="get" action="/admin/apercus" class="admin-apercus-recherche">
+      <label for="admin-apercus-q">Rechercher un compte par son nom</label>
+      <div>
+        <input id="admin-apercus-q" type="search" name="q" value="{{ recherche_comptes or '' }}" maxlength="80" placeholder="Nom de l’utilisateur">
+        <button class="bouton bouton-secondaire" type="submit">Rechercher</button>
+      </div>
+    </form>
+
+    <div class="admin-apercus-comptes-liste">
+      {% for compte in comptes_reels %}
+      <article class="admin-apercus-compte">
+        <div>
+          <strong>{{ compte.nom }}</strong>
+          <span>Compte #{{ compte.id }} ·
+            {% if compte.role.value == "etudiant" %}Élève / Étudiant
+            {% elif compte.role.value == "professeur" %}Enseignant
+            {% else %}Répétiteur{% endif %}
+          </span>
+          {% if compte.role.value == "professeur" %}<small>Vérification : {{ compte.statut_verification_enseignant or "non renseignée" }}</small>{% elif compte.role.value == "repetiteur" %}<small>Vérification : {{ compte.statut_verification_repetiteur or "non renseignée" }}</small>{% endif %}
+        </div>
+        <form method="post" action="/admin/apercus/acceder">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <input type="hidden" name="utilisateur_id" value="{{ compte.id }}">
+          <label class="admin-apercus-confirmation">
+            <input type="checkbox" required>
+            Je confirme que mes actions seront réelles.
+          </label>
+          <button class="bouton bouton-primaire" type="submit">Accéder à cet espace →</button>
+        </form>
+      </article>
+      {% else %}
+      <p class="admin-apercus-comptes-vide">Aucun compte disponible pour cette recherche.</p>
+      {% endfor %}
+    </div>
+    {% if nombre_comptes_limite %}
+    <p class="admin-apercus-limite">100 comptes maximum affichés. Affine la recherche par nom pour trouver un autre compte.</p>
+    {% endif %}
+    <p class="admin-apercus-securite">
+      Chaque modification dans un compte réel demande le mot de passe de confirmation administrateur.
+      Les actions sont journalisées. Quitte le mode pour revenir à ton compte administrateur.
+    </p>
+  </section>
 
   <section class="admin-apercus-intro">
     <div>
@@ -77,6 +133,32 @@
       <a class="bouton bouton-primaire" href="/admin/apercus/repetiteur">Voir l'espace répétiteur <span aria-hidden="true">→</span></a>
     </article>
   </div>
+
+  <section class="admin-apercus-comptes" aria-labelledby="admin-apercus-historique-titre">
+    <div class="admin-apercus-intro">
+      <div>
+        <span class="ops-kicker">Traçabilité</span>
+        <h2 id="admin-apercus-historique-titre">Dernières actions en accès administrateur</h2>
+      </div>
+      <p>Les 50 dernières opérations tentées dans les comptes réels sont conservées avec l’administrateur, le compte cible, la route et le résultat HTTP.</p>
+    </div>
+    {% if historique_actions %}
+    <div class="admin-apercus-comptes-liste">
+      {% for evenement in historique_actions %}
+      <article class="admin-apercus-compte">
+        <div>
+          <strong>{{ evenement.utilisateur_cible_nom }} · compte #{{ evenement.utilisateur_cible_id }}</strong>
+          <span>Admin #{{ evenement.admin_id }} · {{ evenement.methode }} {{ evenement.chemin }}</span>
+          <small>{{ evenement.date_creation.strftime("%d/%m/%Y à %H:%M:%S") if evenement.date_creation else "Date inconnue" }}</small>
+        </div>
+        <span class="ops-badge {% if evenement.statut_http >= 200 and evenement.statut_http < 400 %}is-success{% else %}is-alert{% endif %}">HTTP {{ evenement.statut_http }}</span>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="admin-apercus-comptes-vide">Aucune action enregistrée pour le moment.</p>
+    {% endif %}
+  </section>
 
   <aside class="admin-apercus-note">
     <strong>À savoir pour les répétiteurs</strong>
