@@ -157,7 +157,10 @@ class TestSelectsVides(unittest.TestCase):
             self.assertIsNone(u)
 
 
-    def _inscrire_profil(self, telephone, *, role="etudiant", responsable=False, cycle=None):
+    def _inscrire_profil(
+        self, telephone, *, role="etudiant", responsable=False,
+        cycle=None, niveau_scolaire_id=None
+    ):
         client = TestClient(app)
         jeton = _jeton_csrf(client, "/inscription")
         donnees = {
@@ -172,6 +175,8 @@ class TestSelectsVides(unittest.TestCase):
             donnees["mode_responsable"] = "oui"
         if cycle:
             donnees["cycle_education"] = cycle
+        if niveau_scolaire_id is not None:
+            donnees["niveau_scolaire_id"] = str(niveau_scolaire_id)
         response = client.post("/inscription", data=donnees, follow_redirects=False)
         return client, response
 
@@ -267,49 +272,27 @@ class TestSelectsVides(unittest.TestCase):
             session.refresh(niveau)
             niveau_id = niveau.id
 
-        client, response = self._inscrire_profil("0340000115", role="etudiant", cycle="college")
-        # Le formulaire doit fournir une classe validée, comme le ferait le navigateur.
-        # On rejoue avec le même compte seulement si la première requête n'a pas créé de compte.
-        if response.status_code != 303:
-            jeton = _jeton_csrf(client, "/inscription")
-            response = client.post("/inscription", data={
-                "nom": "Élève inscription directe",
-                "telephone": "0340000115",
-                "mot_de_passe": "MotDePasse123!",
-                "role": "etudiant",
-                "cycle_education": "college",
-                "niveau_scolaire_id": str(niveau_id),
-                "accepter_conditions": "oui",
-                "_csrf": jeton,
-            }, follow_redirects=False)
-        else:
-            # Le cycle sans classe est refusé par la route ; aucun compte ne doit exister.
-            with Session(engine) as session:
-                from sqlmodel import select
-                created = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000115")).first()
-                if created is None:
-                    jeton = _jeton_csrf(client, "/inscription")
-                    response = client.post("/inscription", data={
-                        "nom": "Élève inscription directe",
-                        "telephone": "0340000115",
-                        "mot_de_passe": "MotDePasse123!",
-                        "role": "etudiant",
-                        "cycle_education": "college",
-                        "niveau_scolaire_id": str(niveau_id),
-                        "accepter_conditions": "oui",
-                        "_csrf": jeton,
-                    }, follow_redirects=False)
-
+        client, response = self._inscrire_profil(
+            "0340000115",
+            role="etudiant",
+            cycle="college",
+            niveau_scolaire_id=niveau_id,
+        )
         self.assertEqual(response.status_code, 303, response.text[:300])
         self.assertEqual(response.headers["location"], "/bienvenue")
         with Session(engine) as session:
             from sqlmodel import select
             user = session.exec(select(Utilisateur).where(Utilisateur.telephone == "0340000115")).first()
+            self.assertIsNotNone(user)
             self.assertEqual(user.role, RoleUtilisateur.ETUDIANT)
             self.assertEqual(user.profil_souhaite, "eleve")
             self.assertEqual(user.statut_verification_enseignant, "non_concerne")
             self.assertIsNotNone(
-                session.exec(select(AbonnementEtudiant).where(AbonnementEtudiant.utilisateur_id == user.id)).first()
+                session.exec(
+                    select(AbonnementEtudiant).where(
+                        AbonnementEtudiant.utilisateur_id == user.id
+                    )
+                ).first()
             )
 
 
