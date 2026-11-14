@@ -61,3 +61,40 @@ def details_validation_profil(utilisateur: Any) -> Optional[dict]:
 def profil_validation_requise(utilisateur: Any) -> bool:
     """Tout profil non-élève en attente/refusé est confiné à son suivi de demande."""
     return details_validation_profil(utilisateur) is not None
+
+
+def acces_interactif_admin_autorise(utilisateur: Any) -> bool:
+    """Autorise la supervision seulement si le profil effectif est cohérent.
+
+    Les demandes en attente ou refusées restent exclues, même si leur rôle
+    technique est encore ETUDIANT. Un ancien profil retiré peut retrouver
+    l'espace élève, sans réactiver ses anciennes permissions professionnelles.
+    """
+    if not utilisateur or getattr(utilisateur, "banni", False):
+        return False
+
+    role_obj = getattr(utilisateur, "role", "")
+    role = str(getattr(role_obj, "value", role_obj) or "")
+    profil = str(getattr(utilisateur, "profil_souhaite", "") or "")
+
+    if role == "etudiant":
+        if profil == "eleve":
+            return True
+        configuration = CHAMPS_VALIDATION_PROFIL.get(profil)
+        if not configuration:
+            return False
+        statut = str(
+            getattr(utilisateur, configuration["statut"], "non_concerne")
+            or "non_concerne"
+        )
+        return statut == "retire"
+
+    configuration = CHAMPS_VALIDATION_PROFIL.get(profil)
+    if not configuration or role != profil:
+        return False
+
+    statut = str(
+        getattr(utilisateur, configuration["statut"], "non_concerne")
+        or "non_concerne"
+    )
+    return statut == "approuve"
