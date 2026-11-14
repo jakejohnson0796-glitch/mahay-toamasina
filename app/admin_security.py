@@ -70,6 +70,15 @@ def confirmation_admin_configuree(utilisateur: Utilisateur) -> bool:
     return bool(utilisateur.mot_de_passe_confirmation_admin_hash)
 
 
+def compte_cible_supervise_valide(utilisateur: Optional[Utilisateur]) -> bool:
+    """Réutilise la règle centrale des profils validés avant/après chaque écriture."""
+    return bool(
+        utilisateur
+        and not utilisateur.banni
+        and acces_interactif_admin_autorise(utilisateur)
+    )
+
+
 def _etat_echecs(request: Request) -> tuple[int, Optional[datetime]]:
     nombre = int(request.session.get("admin_confirmation_echecs", 0) or 0)
     timestamp_texte = request.session.get("admin_confirmation_dernier_echec")
@@ -200,20 +209,10 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
 
             if mode_supervise:
                 cible = session.get(Utilisateur, user_id)
-                roles_autorises = {
-                    RoleUtilisateur.ETUDIANT,
-                    RoleUtilisateur.PROFESSEUR,
-                    RoleUtilisateur.REPETITEUR,
-                    RoleUtilisateur.SPONSOR,
-                    RoleUtilisateur.RESPONSABLE,
-                }
                 if (
                     cible_id != user_id
-                    or not cible
-                    or cible.banni
-                    or cible.role not in roles_autorises
+                    or not compte_cible_supervise_valide(cible)
                     or cible.id == utilisateur.id
-                    or not acces_interactif_admin_autorise(cible)
                     or not session_utilisateur_valide(request.session, cible)
                 ):
                     request.session.clear()
@@ -323,16 +322,7 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
             # son empreinte avec celle du compte cible.
             with Session(engine) as supervise_session:
                 cible_apres_action = supervise_session.get(Utilisateur, cible_id)
-                roles_autorises = {
-                    RoleUtilisateur.ETUDIANT,
-                    RoleUtilisateur.PROFESSEUR,
-                    RoleUtilisateur.REPETITEUR,
-                }
-                if (
-                    cible_apres_action
-                    and not cible_apres_action.banni
-                    and cible_apres_action.role in roles_autorises
-                ):
+                if compte_cible_supervise_valide(cible_apres_action):
                     request.session["auth_fingerprint"] = empreinte_session_utilisateur(cible_apres_action)
                 else:
                     request.session.clear()
