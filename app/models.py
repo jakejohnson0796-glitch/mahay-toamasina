@@ -465,6 +465,18 @@ class Utilisateur(SQLModel, table=True):
     verification_repetiteur_le: Optional[datetime] = None
     verification_repetiteur_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     motif_refus_repetiteur: Optional[str] = None
+    # Les comptes sponsor et responsable suivent le même contrôle préalable :
+    # leur inscription ne leur accorde jamais ces rôles avant approbation admin.
+    statut_verification_sponsor: str = Field(default="non_concerne", index=True, max_length=20)
+    demande_sponsor_le: Optional[datetime] = None
+    verification_sponsor_le: Optional[datetime] = None
+    verification_sponsor_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    motif_refus_sponsor: Optional[str] = None
+    statut_verification_responsable: str = Field(default="non_concerne", index=True, max_length=20)
+    demande_responsable_le: Optional[datetime] = None
+    verification_responsable_le: Optional[datetime] = None
+    verification_responsable_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    motif_refus_responsable: Optional[str] = None
     matieres_repetiteur: Optional[str] = Field(default=None, max_length=500)
     niveaux_repetiteur: Optional[str] = Field(default=None, max_length=500)
     tarif_horaire_repetiteur_ariary: Optional[int] = None
