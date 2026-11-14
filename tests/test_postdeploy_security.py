@@ -121,3 +121,15 @@ def test_page_expose_la_release():
     response = client.get("/connexion")
     assert response.status_code == 200
     assert f'data-release="{os.environ["GIT_COMMIT"][:12]}"' in response.text
+
+
+def test_host_header_inconnu_est_refuse():
+    client = TestClient(app)
+    response = client.get("/connexion", headers={"host": "host-injecte.invalid"})
+    assert response.status_code == 400
+
+
+def test_hote_canonique_render_est_accepte():
+    client = TestClient(app)
+    response = client.get("/connexion", headers={"host": "mitaridala.onrender.com"})
+    assert response.status_code == 200
