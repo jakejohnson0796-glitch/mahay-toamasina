@@ -87,3 +87,27 @@ def test_admin_confirmation_rate_limit_survives_session_rotation(monkeypatch):
     for _ in range(admin_security.MAX_ECHECS_CONFIRMATION_ADMIN):
         assert admin_security.limite_confirmation_admin_depassee(request, 456) is False
     assert admin_security.limite_confirmation_admin_depassee(request, 456) is True
+
+
+def test_supervised_account_remains_valid_after_write_only_while_profile_is_approved():
+    from app.admin_security import compte_cible_supervise_valide
+    from app.models import RoleUtilisateur, Utilisateur
+
+    for role, profil, statut in [
+        (RoleUtilisateur.SPONSOR, "sponsor", "approuve"),
+        (RoleUtilisateur.RESPONSABLE, "responsable", "approuve"),
+    ]:
+        cible = Utilisateur(
+            id=501,
+            nom="Profil approuvé",
+            telephone="0340000501",
+            mot_de_passe_hash="hash-test",
+            role=role,
+            profil_souhaite=profil,
+        )
+        setattr(cible, "statut_verification_" + profil, statut)
+        assert compte_cible_supervise_valide(cible) is True
+
+        setattr(cible, "statut_verification_" + profil, "en_attente")
+        assert compte_cible_supervise_valide(cible) is False
+
