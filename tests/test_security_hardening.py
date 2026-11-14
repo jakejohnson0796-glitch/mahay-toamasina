@@ -329,3 +329,10 @@ def test_docker_runtime_limits_websocket_frame_size_and_queue():
     dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
     assert "--ws-max-size 65536" in dockerfile
     assert "--ws-max-queue 32" in dockerfile
+
+
+def test_rate_limit_async_variant_runs_the_sync_limiter_without_blocking_contract():
+    from app.rate_limit import limite_depassee_async
+    import inspect
+
+    assert inspect.iscoroutinefunction(limite_depassee_async)
