@@ -15,6 +15,7 @@ def _admin():
         id=7,
         nom="Administrateur de test",
         role=RoleUtilisateur.ADMIN,
+        banni=False,
         mot_de_passe_confirmation_admin_hash="hash",
     )
 
@@ -324,6 +325,6 @@ def test_mode_admin_reel_affiche_un_bandeau_et_ne_bloque_pas_l_interface():
     assert "MODE ADMINISTRATEUR ACTIF" in base
     assert 'data-admin-mode-actif="1"' in base
     assert 'action="/admin/apercus/quitter"' in base
-    assert "data-admin-mode-actif === \"1\"" in script
+    assert 'dataset.adminModeActif === "1"' in script
     assert 'action="/admin/apercus/acceder"' in selecteur
     assert "mes actions seront réelles" in selecteur
