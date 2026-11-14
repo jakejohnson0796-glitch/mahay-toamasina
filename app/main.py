@@ -94,22 +94,59 @@ app.add_middleware(VersionedStaticAssetCacheMiddleware)
 
 # Rejeter les en-têtes Host arbitraires avant qu'ils puissent influencer
 # les URLs, cookies, redirections ou contrôles d'origine.
-_hotes_autorises = {
-    "mitaridala.onrender.com",
-    "mahay-toamasina.onrender.com",
-    "localhost",
-    "127.0.0.1",
-    "testserver",
-}
-_hote_canonique = urlsplit(parametres.seo_canonical_base_url).hostname
-if _hote_canonique:
-    _hotes_autorises.add(_hote_canonique.casefold())
-_hotes_autorises.update(
-    hote.strip().casefold()
-    for hote in os.getenv("TRUSTED_HOSTS", "").split(",")
-    if hote.strip()
+_HOTES_RENDU = {"mitaridala.onrender.com", "mahay-toamasina.onrender.com"}
+_HOTES_LOCAUX = {"localhost", "127.0.0.1", "testserver"}
+
+
+def _construire_hotes_autorises(
+    environnement: str,
+    url_canonique: str,
+    hotes_personnalises: str = "",
+) -> list[str]:
+    """Construit une liste d'hôtes exacts ; aucun loopback ni joker en production."""
+    production = (environnement or "").strip().casefold() == "production"
+    autorises = set(_HOTES_RENDU)
+    if not production:
+        autorises.update(_HOTES_LOCAUX)
+
+    try:
+        hote_canonique = urlsplit(url_canonique).hostname
+    except ValueError as erreur:
+        raise RuntimeError("SEO_CANONICAL_BASE_URL contient un hôte invalide.") from erreur
+    if hote_canonique:
+        hote_canonique = hote_canonique.casefold()
+        if production and hote_canonique in _HOTES_LOCAUX:
+            raise RuntimeError("SEO_CANONICAL_BASE_URL ne peut pas désigner localhost en production.")
+        autorises.add(hote_canonique)
+
+    for valeur in (hotes_personnalises or "").split(","):
+        hote = valeur.strip().casefold()
+        if not hote:
+            continue
+        # TRUSTED_HOSTS accepte des noms exacts, pas des URL, ports ou jokers.
+        if (
+            "*" in hote
+            or any(caractere in hote for caractere in "/\\:@?#")
+            or any(caractere.isspace() for caractere in hote)
+        ):
+            raise RuntimeError(
+                "TRUSTED_HOSTS doit contenir uniquement des noms d'hôte exacts séparés par des virgules."
+            )
+        if production and hote in _HOTES_LOCAUX:
+            raise RuntimeError("TRUSTED_HOSTS ne peut pas autoriser localhost en production.")
+        autorises.add(hote)
+
+    return sorted(autorises)
+
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=_construire_hotes_autorises(
+        parametres.environnement,
+        parametres.seo_canonical_base_url,
+        os.getenv("TRUSTED_HOSTS", ""),
+    ),
 )
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=sorted(_hotes_autorises))
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
