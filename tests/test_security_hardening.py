@@ -55,7 +55,10 @@ def test_strict_csp_garde_unsafe_inline_uniquement_pour_les_attributs_style():
     assert "style-src-attr 'unsafe-inline' 'unsafe-hashes'" in csp
     assert "script-src 'self' 'nonce-nonce-test-123' 'strict-dynamic'" in csp
     assert "style-src 'self' 'nonce-nonce-test-123'" in csp
-    assert "https://cdn.jsdelivr.net" in csp
+    assert "https://cdn.jsdelivr.net" not in csp
+    assert "https://unpkg.com" not in csp
+    assert "https://*.supabase.co" not in csp
+    assert "connect-src 'self' ws: wss:" not in csp
 
 
 def test_email_mfa_keeps_legacy_fingerprint_for_existing_accounts():
@@ -293,3 +296,18 @@ def test_email_not_configured_without_brevo_or_smtp(monkeypatch):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+def test_csp_autorise_uniquement_les_origines_supabase_et_livekit_configurees(monkeypatch):
+    from app.config import parametres
+    from app.security_headers import _construire_csp
+
+    monkeypatch.setattr(parametres, "supabase_url", "https://projet-test.supabase.co")
+    monkeypatch.setattr(parametres, "livekit_url", "wss://rtc.exemple.net/room")
+    csp = _construire_csp("nonce-isole")
+
+    assert "https://projet-test.supabase.co" in csp
+    assert "wss://rtc.exemple.net" in csp
+    assert "https://autre-projet.supabase.co" not in csp
+    assert "wss:" not in csp.replace("wss://mitaridala.onrender.com", "")
