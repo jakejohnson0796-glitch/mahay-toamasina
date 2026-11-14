@@ -473,8 +473,7 @@ def page_admin_apercus(request: Request, session: Session = Depends(get_session)
         requete.order_by(Utilisateur.id.desc()).limit(100)
     ).all()
     historique_actions = session.exec(
-        select(JournalActionAdmin, Utilisateur)
-        .join(Utilisateur, JournalActionAdmin.utilisateur_cible_id == Utilisateur.id)
+        select(JournalActionAdmin)
         .order_by(JournalActionAdmin.date_creation.desc())
         .limit(50)
     ).all()
@@ -525,6 +524,7 @@ def ouvrir_espace_reel_utilisateur(
         JournalActionAdmin(
             admin_id=admin.id,
             utilisateur_cible_id=cible.id,
+            utilisateur_cible_nom=(cible.nom or f"Compte #{cible.id}")[:120],
             methode="POST",
             chemin="/admin/apercus/acceder",
             statut_http=303,
