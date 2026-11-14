@@ -53,7 +53,7 @@ def _est_etudiant(utilisateur: Optional[Utilisateur]) -> bool:
 def _est_repetiteur_verifie(utilisateur: Optional[Utilisateur]) -> bool:
     return bool(
         utilisateur
-        and utilisateur.est_actif
+        and not utilisateur.banni
         and utilisateur.role == RoleUtilisateur.REPETITEUR
         and utilisateur.statut_verification_repetiteur == "approuve"
     )
@@ -95,7 +95,7 @@ def annuaire_repetiteurs(
     requete = select(Utilisateur).where(
         Utilisateur.role == RoleUtilisateur.REPETITEUR,
         Utilisateur.statut_verification_repetiteur == "approuve",
-        Utilisateur.est_actif.is_(True),
+        Utilisateur.banni.is_(False),
         Utilisateur.matieres_repetiteur.is_not(None),
         Utilisateur.niveaux_repetiteur.is_not(None),
     )
