@@ -2433,8 +2433,11 @@ class EchangeDemandeMiseAJourCours(SQLModel, table=True):
 class JournalActionAdmin(SQLModel, table=True):
     """Trace les actions exécutées par un admin dans l'espace réel d'un compte."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    admin_id: int = Field(foreign_key="utilisateur.id", index=True)
-    utilisateur_cible_id: int = Field(foreign_key="utilisateur.id", index=True)
+    # IDs historiques sans FK : un compte supprimé ne doit pas supprimer
+    # ni empêcher la suppression de ses événements d'audit.
+    admin_id: int = Field(index=True)
+    utilisateur_cible_id: int = Field(index=True)
+    utilisateur_cible_nom: str = Field(max_length=120)
     methode: str = Field(max_length=10)
     chemin: str = Field(max_length=240)
     statut_http: int
