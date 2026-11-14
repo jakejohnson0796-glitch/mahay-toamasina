@@ -45,6 +45,25 @@ def _origine_csp(url: str, schemes: set[str]) -> str | None:
     return f"{scheme}://{hote}{suffixe_port}"
 
 
+def _origine_websocket_csp(url: str) -> str | None:
+    """Construit l'origine WS(S) correspondant à une URL HTTP(S) confiée."""
+    if not url:
+        return None
+    try:
+        parsed = urlsplit(url.strip())
+        scheme = parsed.scheme.lower()
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return None
+    if not hostname or scheme not in {"https", "http", "wss", "ws"}:
+        return None
+    scheme_ws = "wss" if scheme in {"https", "wss"} else "ws"
+    hote = f"[{hostname}]" if ":" in hostname else hostname
+    suffixe_port = f":{port}" if port else ""
+    return f"{scheme_ws}://{hote}{suffixe_port}"
+
+
 def _construire_csp(nonce: str) -> str:
     # Les scripts pédagogiques et LiveKit sont servis depuis le même domaine.
     # Les seules connexions externes autorisées sont les origines exactes
@@ -58,6 +77,9 @@ def _construire_csp(nonce: str) -> str:
     livekit_origin = _origine_csp(parametres.livekit_url, {"wss", "ws", "https", "http"})
     if supabase_origin:
         connect_sources.append(supabase_origin)
+        supabase_ws_origin = _origine_websocket_csp(parametres.supabase_url)
+        if supabase_ws_origin:
+            connect_sources.append(supabase_ws_origin)
     if livekit_origin:
         connect_sources.append(livekit_origin)
 
