@@ -115,8 +115,18 @@ def _construire_hotes_autorises(
         raise RuntimeError("SEO_CANONICAL_BASE_URL contient un hôte invalide.") from erreur
     if hote_canonique:
         hote_canonique = hote_canonique.casefold()
-        if production and hote_canonique in _HOTES_LOCAUX:
-            raise RuntimeError("SEO_CANONICAL_BASE_URL ne peut pas désigner localhost en production.")
+        if (
+            "*" in hote_canonique
+            or any(caractere in hote_canonique for caractere in "/\\:@?#")
+            or any(caractere.isspace() for caractere in hote_canonique)
+        ):
+            raise RuntimeError("SEO_CANONICAL_BASE_URL doit désigner un nom d'hôte exact.")
+        if production and (
+            hote_canonique in _HOTES_LOCAUX
+            or hote_canonique.endswith(".localhost")
+            or hote_canonique == "::1"
+        ):
+            raise RuntimeError("SEO_CANONICAL_BASE_URL ne peut pas désigner une adresse locale en production.")
         autorises.add(hote_canonique)
 
     for valeur in (hotes_personnalises or "").split(","):
@@ -208,8 +218,9 @@ def _synchroniser_routes_tardives(*routeurs) -> None:
                 routes_montees.add(_cle)
 
 
-# Les routes d'authentification et de dépôt de documents sont contrôlées ici :
-# la CI vérifie que les mutations sensibles sont réellement exposées avec CSRF.
+# Les routeurs d'authentification, de documents et de notifications peuvent
+# recevoir des routes après include_router() via des imports croisés. La CI
+# vérifie que les mutations sensibles sont réellement exposées avec CSRF.
 _synchroniser_routes_tardives(
     auth_router.router,
     documents_router.router,
