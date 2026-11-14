@@ -66,6 +66,22 @@
                 {% else %}Statut non renseigné{% endif %}
               </small>
             {% endif %}
+            {% if u.profil_souhaite == "sponsor" %}
+              <small class="ops-table-date">
+                {% if u.statut_verification_sponsor == "en_attente" %}Validation sponsor en attente
+                {% elif u.statut_verification_sponsor == "approuve" %}Profil sponsor validé
+                {% elif u.statut_verification_sponsor == "refuse" %}Demande sponsor refusée
+                {% else %}Statut sponsor non renseigné{% endif %}
+              </small>
+            {% endif %}
+            {% if u.profil_souhaite == "responsable" %}
+              <small class="ops-table-date">
+                {% if u.statut_verification_responsable == "en_attente" %}Validation responsable en attente
+                {% elif u.statut_verification_responsable == "approuve" %}Profil responsable validé · rattachement enfant encore requis
+                {% elif u.statut_verification_responsable == "refuse" %}Demande responsable refusée
+                {% else %}Statut responsable non renseigné{% endif %}
+              </small>
+            {% endif %}
             {% if u.cycle_education %}
               <small class="ops-table-date">
                 {% if u.cycle_education == "college" %}Collège
@@ -117,6 +133,32 @@
               </form>
               {% else %}
               <small class="ops-table-date">Demande répétiteur déjà traitée</small>
+              {% endif %}
+              {% elif u.role.value == "etudiant" and u.profil_souhaite == "sponsor" %}
+              {% if u.statut_verification_sponsor == "en_attente" %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-sponsor">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Valider sponsor</button>
+              </form>
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-sponsor" data-confirm-message="Refuser la demande sponsor de {{ u.nom }} ?">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+              </form>
+              {% else %}
+              <small class="ops-table-date">Demande sponsor déjà traitée</small>
+              {% endif %}
+              {% elif u.role.value == "etudiant" and u.profil_souhaite == "responsable" %}
+              {% if u.statut_verification_responsable == "en_attente" %}
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-responsable">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Valider responsable</button>
+              </form>
+              <form method="post" action="/admin/utilisateurs/{{ u.id }}/refuser-responsable" data-confirm-message="Refuser la demande responsable de {{ u.nom }} ?">
+                <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+                <button class="bouton bouton-secondaire" type="submit">Refuser la demande</button>
+              </form>
+              {% else %}
+              <small class="ops-table-date">Demande responsable déjà traitée</small>
               {% endif %}
               {% elif u.role.value == "etudiant" %}
               <form method="post" action="/admin/utilisateurs/{{ u.id }}/promouvoir-professeur">
