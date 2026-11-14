@@ -1,0 +1,5 @@
+# Dépendance facultative pour un worker Docling dédié.
+# Ne pas ajouter ce fichier au Dockerfile du service web gratuit.
+# Docling télécharge/charge des modèles de mise en page : mesurer la mémoire
+# et le temps CPU sur un environnement dédié avant d'activer DOCLING_ENABLED.
+docling==2.150.1
