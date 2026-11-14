@@ -477,6 +477,7 @@ def liste_documents(
             }
 
     return templates.TemplateResponse(
+        request,
         "documents_list.html",
         {
             "request": request,
@@ -526,6 +527,7 @@ def formulaire_upload(request: Request, cercle_id: Optional[int] = None, session
         if cercle and cercle.niveau_scolaire_id else None
     )
     return templates.TemplateResponse(
+        request,
         "document_upload.html",
         {
             "request": request,
@@ -883,6 +885,7 @@ def upload_document(
         chemin_stocke = sauvegarder_fichier(fichier, reference_stockage)
     except FichierInvalide as erreur:
         return templates.TemplateResponse(
+            request,
             "document_upload.html",
             {
                 "request": request,
@@ -1030,6 +1033,7 @@ def upload_documents_multiples(
 
     def afficher_erreur(message: str, status_code: int = 400, details=None):
         return templates.TemplateResponse(
+            request,
             "document_upload.html",
             {
                 "request": request,
@@ -1442,6 +1446,7 @@ def upload_documents_multiples(
         message = "Aucun document n'a pu être envoyé. Consultez les détails et complétez les métadonnées."
 
     return templates.TemplateResponse(
+        request,
         "document_upload.html",
         {
             "request": request,
@@ -1634,6 +1639,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             ).first()
 
     return templates.TemplateResponse(
+        request,
         "document_parcours.html",
         {
             "request": request,
@@ -2253,6 +2259,7 @@ def panneau_moderation(request: Request, session: Session = Depends(get_session)
     ).all()
 
     return templates.TemplateResponse(
+        request,
         "moderation.html",
         {
             "request": request,
@@ -2352,6 +2359,7 @@ def formulaire_modifier_document(
         else None
     )
     return templates.TemplateResponse(
+        request,
         "moderation_document_modifier.html",
         {
             "request": request,
