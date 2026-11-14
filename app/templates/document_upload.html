@@ -694,7 +694,7 @@
             <li>
               <strong>{{ resultat.nom_fichier }}</strong> — {{ resultat.titre }} · {{ resultat.matiere }} ·
               {{ resultat.type_document }} · {{ resultat.annee }} · {{ resultat.filiere }}.
-              <span>{{ resultat.confiance }} % de confiance · {{ resultat.caracteres_extraits }} caractères lus · {{ resultat.source }}.</span>
+              <span>{{ resultat.confiance }} % de confiance · {{ resultat.caracteres_extraits }} caractères lus · {{ resultat.source }} · moteur : {{ resultat.moteur_extraction }}.</span>
               {% if resultat.caracteres_extraits == 0 %}
               <strong>Aucun texte n'a été extrait. La détection repose surtout sur le nom du fichier ; vérification manuelle nécessaire.</strong>
               {% elif resultat.confiance < 55 %}
