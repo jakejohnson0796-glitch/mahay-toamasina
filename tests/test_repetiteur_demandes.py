@@ -48,7 +48,7 @@ def _eleve():
         id=11,
         nom="Élève Exemple",
         role=RoleUtilisateur.ETUDIANT,
-        est_actif=True,
+        banni=False,
     )
 
 
@@ -57,7 +57,7 @@ def _repetiteur():
         id=22,
         nom="Répétiteur Vérifié",
         role=RoleUtilisateur.REPETITEUR,
-        est_actif=True,
+        banni=False,
         statut_verification_repetiteur="approuve",
         telephone="0341234567",
         email="prive@example.mg",
