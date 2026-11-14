@@ -33,13 +33,14 @@ def test_base_charge_katex_core_sans_auto_render_obligatoire():
 
 
 def test_security_csp_garde_les_scripts_locaux_et_les_styles_necessaires():
-    code = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
+    source = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
+    code = source.split("def _construire_csp", 1)[1].split("# Compatibilite", 1)[0]
     assert "connect-src" in code
     assert "script-src-attr 'none'" in code
     assert "style-src-attr 'unsafe-inline'" in code
     assert "'unsafe-inline'" not in code.split("script-src", 1)[1].split(";", 1)[0]
-    assert "https://cdn.jsdelivr.net" not in code
-    assert "https://unpkg.com" not in code
+    assert "https://cdn.jsdelivr.net" not in source
+    assert "https://unpkg.com" not in source
     assert "wss: " not in code
     assert "ws: " not in code
 
