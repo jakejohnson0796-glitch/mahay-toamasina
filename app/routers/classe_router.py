@@ -1710,8 +1710,17 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
 
         try:
             while True:
-                brut = await websocket.receive_json()
+                texte_recu = await websocket.receive_text()
+                if len(texte_recu.encode("utf-8")) > 64 * 1024:
+                    await websocket.close(code=1009)
+                    break
                 if limite_depassee(f"ws-tableau:user:{utilisateur.id}:{seance_id}", 240, 60):
+                    continue
+                try:
+                    brut = json.loads(texte_recu)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if not isinstance(brut, dict):
                     continue
                 type_evt = brut.get("type")
 
