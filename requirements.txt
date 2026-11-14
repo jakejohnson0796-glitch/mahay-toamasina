@@ -27,7 +27,7 @@ livekit-api==1.2.0           # generation des jetons audio/video/partage d'ecran
 pyotp==2.9.0                  # double authentification TOTP (gratuite, calculee localement)
 qrcode==7.4.2                 # QR code d'activation 2FA (aucun service externe)
 
-pytest==9.0.3
+pytest==9.2.0
 httpx==0.28.1
 
 snowballstemmer==3.1.1        # racines morphologiques françaises pour le fallback SQLite/dev
