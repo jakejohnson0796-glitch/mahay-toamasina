@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-from fastapi import FastAPI, APIRouter, Request, Depends
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
@@ -157,10 +157,9 @@ def _synchroniser_routes_authentification() -> None:
             getattr(_route, "path", None),
             frozenset(getattr(_route, "methods", None) or ()),
         )
-        for _route in app.routes
+        for _route in app.router.routes
         if getattr(_route, "methods", None)
     }
-    routeur_complementaire = APIRouter()
     for _route in auth_router.router.routes:
         _methodes = frozenset(getattr(_route, "methods", None) or ())
         _chemin = getattr(_route, "path", None)
@@ -168,10 +167,11 @@ def _synchroniser_routes_authentification() -> None:
             continue
         _cle = (_chemin, _methodes)
         if _cle not in routes_montees:
-            routeur_complementaire.routes.append(_route)
+            # Les APIRoute ont déjà construit leur dépendance FastAPI.
+            # Les rattacher telles quelles évite de les recompiler/perdre
+            # leur CSRF ou leurs validations de paramètres.
+            app.router.routes.append(_route)
             routes_montees.add(_cle)
-    if routeur_complementaire.routes:
-        app.include_router(routeur_complementaire)
 
 
 _synchroniser_routes_authentification()
