@@ -186,7 +186,7 @@ def test_renderer_ia_charge_uniquement_des_assets_locaux_et_garde_une_csp_strict
     assert "ws: wss:" not in csp
     assert "script-src-attr 'none'" in csp
     assert "'unsafe-inline'" not in csp.split("script-src", 1)[1].split(";", 1)[0]
-    assert "/static/vendor/livekit/livekit-client.umd.min.js" in salle
+    assert "/static/vendor/livekit/livekit-client.umd.js" in salle
     assert "https://cdn.jsdelivr.net/npm/livekit-client" not in salle
 
 
