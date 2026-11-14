@@ -6,6 +6,7 @@ Le secret n'est jamais stocke en clair ni dans la session.
 """
 
 import re
+import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -273,7 +274,9 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
 
             valide, detail = verifier_confirmation_admin(request, utilisateur, mot_de_passe)
             if not valide:
-                if limite_confirmation_admin_depassee(request, utilisateur.id):
+                if await asyncio.to_thread(
+                    limite_confirmation_admin_depassee, request, utilisateur.id
+                ):
                     return JSONResponse(
                         {"detail": "Trop de tentatives de confirmation administrateur. Réessayez plus tard."},
                         status_code=429,
