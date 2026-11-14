@@ -185,3 +185,16 @@ def test_migration_et_modele_exposent_des_statuts_distincts_pour_sponsor_et_resp
         "motif_refus_responsable",
     }
     assert attendues.issubset(colonnes)
+
+
+def test_websockets_chat_et_tableau_bloquent_les_profils_non_valides():
+    racine = __import__("pathlib").Path(__file__).resolve().parents[1]
+    cercles = (racine / "app" / "routers" / "cercles_router.py").read_text(encoding="utf-8")
+    classe = (racine / "app" / "routers" / "classe_router.py").read_text(encoding="utf-8")
+
+    assert "from ..profile_approval import profil_validation_requise" in cercles
+    assert "if profil_validation_requise(utilisateur):" in cercles
+    assert "if profil_validation_requise(utilisateur_frais):" in cercles
+    assert "from ..profile_approval import profil_validation_requise" in classe
+    assert "if utilisateur.banni or profil_validation_requise(utilisateur):" in classe
+    assert "if profil_validation_requise(utilisateur_frais):" in classe
