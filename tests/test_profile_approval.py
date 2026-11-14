@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 
 from fastapi.responses import RedirectResponse
@@ -188,7 +189,7 @@ def test_migration_et_modele_exposent_des_statuts_distincts_pour_sponsor_et_resp
 
 
 def test_websockets_chat_et_tableau_bloquent_les_profils_non_valides():
-    racine = __import__("pathlib").Path(__file__).resolve().parents[1]
+    racine = Path(__file__).resolve().parents[1]
     cercles = (racine / "app" / "routers" / "cercles_router.py").read_text(encoding="utf-8")
     classe = (racine / "app" / "routers" / "classe_router.py").read_text(encoding="utf-8")
 
