@@ -123,6 +123,18 @@ class Parametres:
     gemini_api_key: str = field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
     gemini_model: str = field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-3.8-flash"))
 
+    # --- Extraction documentaire Docling (optionnelle) ---
+    # Désactivé par défaut : Docling charge des modèles de mise en page/OCR
+    # gourmands. À activer seulement sur un worker disposant de mémoire suffisante.
+    docling_enabled: bool = field(
+        default_factory=lambda: os.getenv("DOCLING_ENABLED", "false").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
+    docling_table_structure: bool = field(
+        default_factory=lambda: os.getenv("DOCLING_TABLE_STRUCTURE", "false").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
+
     # --- Emails de récupération et MFA (app/email_utils.py) ---
     # Sur Render Free, EMAIL_TRANSPORT=brevo_api force l'API HTTPS/443 car
     # les ports SMTP sortants 25/465/587 y sont bloqués. L'offre Brevo gratuite
