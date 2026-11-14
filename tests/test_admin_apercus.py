@@ -45,10 +45,13 @@ def test_selecteur_apercu_est_accessible_a_l_admin(monkeypatch):
     appels = _capture_template(monkeypatch)
     monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: _admin())
 
-    reponse = admin_router.page_admin_apercus(SimpleNamespace(), SimpleNamespace())
+    request = SimpleNamespace(query_params=SimpleNamespace(get=lambda *_args: ""))
+    session = SimpleNamespace(exec=lambda *_args: SimpleNamespace(all=lambda: []))
+    reponse = admin_router.page_admin_apercus(request, session)
 
     assert reponse["template"] == "admin_apercus.html"
     assert reponse["contexte"]["utilisateur"].role == RoleUtilisateur.ADMIN
+    assert reponse["contexte"]["comptes_reels"] == []
 
 
 def test_apercus_utilisent_des_profils_fictifs_et_des_templates_distincts(monkeypatch):
@@ -223,3 +226,104 @@ def test_l_interface_apercu_est_marquee_lecture_seule_et_accessible_depuis_admin
     assert 'href="/admin/apercus/repetiteur"' in selecteur
     assert "Rôle indépendant" in selecteur
     assert "dashboard_repetiteur.html" in (ROOT / "app" / "routers" / "admin_router.py").read_text(encoding="utf-8")
+
+
+def test_admin_peut_ouvrir_un_compte_reel_sans_perdre_son_identite(monkeypatch):
+    admin = _admin()
+    cible = SimpleNamespace(
+        id=42,
+        nom="Compte élève",
+        role=RoleUtilisateur.ETUDIANT,
+        banni=False,
+    )
+    monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: admin)
+    monkeypatch.setattr(
+        admin_router,
+        "empreinte_session_utilisateur",
+        lambda utilisateur: f"fingerprint-{utilisateur.id}",
+    )
+    evenements = []
+    session = SimpleNamespace(
+        get=lambda _model, identifiant: cible if identifiant == cible.id else admin,
+        add=evenements.append,
+        commit=lambda: None,
+    )
+    request = SimpleNamespace(session={"user_id": admin.id, "auth_fingerprint": "fingerprint-7"})
+
+    reponse = admin_router.ouvrir_espace_reel_utilisateur(request, cible.id, session)
+
+    assert isinstance(reponse, RedirectResponse)
+    assert reponse.status_code == 303
+    assert reponse.headers["location"] == "/dashboard"
+    assert request.session["user_id"] == cible.id
+    assert request.session["admin_mode_actor_id"] == admin.id
+    assert request.session["admin_mode_target_id"] == cible.id
+    assert request.session["admin_mode_actor_fingerprint"] == "fingerprint-7"
+    assert request.session["auth_fingerprint"] == "fingerprint-42"
+    assert evenements[0].admin_id == admin.id
+    assert evenements[0].utilisateur_cible_id == cible.id
+
+
+def test_admin_peut_quitter_le_compte_reel_et_retrouver_sa_session(monkeypatch):
+    admin = _admin()
+    monkeypatch.setattr(
+        admin_router,
+        "empreinte_session_utilisateur",
+        lambda utilisateur: f"fingerprint-{utilisateur.id}",
+    )
+    request = SimpleNamespace(session={
+        "user_id": 42,
+        "auth_fingerprint": "fingerprint-42",
+        "admin_mode_actor_id": admin.id,
+        "admin_mode_actor_fingerprint": "fingerprint-7",
+        "admin_mode_target_id": 42,
+        "_csrf_token": "ancien",
+    })
+    session = SimpleNamespace(get=lambda _model, identifiant: admin if identifiant == admin.id else None)
+
+    reponse = admin_router.quitter_espace_reel_utilisateur(request, session)
+
+    assert isinstance(reponse, RedirectResponse)
+    assert reponse.status_code == 303
+    assert reponse.headers["location"] == "/admin/apercus"
+    assert request.session["user_id"] == admin.id
+    assert request.session["auth_fingerprint"] == "fingerprint-7"
+    assert "_csrf_token" in request.session
+    assert "admin_mode_actor_id" not in request.session
+    assert "admin_mode_target_id" not in request.session
+
+
+def test_admin_ne_peut_pas_ouvrir_un_compte_banni_ou_un_role_hors_perimetre(monkeypatch):
+    admin = _admin()
+    cible = SimpleNamespace(
+        id=88,
+        nom="Compte interdit",
+        role=RoleUtilisateur.SPONSOR,
+        banni=False,
+    )
+    monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: admin)
+    session = SimpleNamespace(
+        get=lambda *_args: cible,
+        add=lambda *_args: (_ for _ in ()).throw(AssertionError("aucun journal attendu")),
+        commit=lambda: (_ for _ in ()).throw(AssertionError("aucun commit attendu")),
+    )
+    request = SimpleNamespace(session={"user_id": admin.id, "auth_fingerprint": "fingerprint-7"})
+
+    reponse = admin_router.ouvrir_espace_reel_utilisateur(request, cible.id, session)
+
+    assert reponse.status_code == 303
+    assert reponse.headers["location"] == "/admin/apercus?erreur=compte_indisponible"
+    assert request.session.get("admin_mode_actor_id") is None
+
+
+def test_mode_admin_reel_affiche_un_bandeau_et_ne_bloque_pas_l_interface():
+    base = (ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
+    script = (ROOT / "app" / "static" / "js" / "admin-confirmation.js").read_text(encoding="utf-8")
+    selecteur = (ROOT / "app" / "templates" / "admin_apercus.html").read_text(encoding="utf-8")
+
+    assert "MODE ADMINISTRATEUR ACTIF" in base
+    assert 'data-admin-mode-actif="1"' in base
+    assert 'action="/admin/apercus/quitter"' in base
+    assert "data-admin-mode-actif === \"1\"" in script
+    assert 'action="/admin/apercus/acceder"' in selecteur
+    assert "mes actions seront réelles" in selecteur
