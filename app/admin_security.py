@@ -152,6 +152,7 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
 
         admin_id = request.session.get("admin_mode_actor_id") if mode_supervise else user_id
         cible_id = request.session.get("admin_mode_target_id") if mode_supervise else None
+        nom_cible = ""
 
         with Session(engine) as session:
             utilisateur = session.get(Utilisateur, admin_id)
@@ -194,6 +195,7 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                         {"detail": "Le compte cible de la session supervise n'est plus valide."},
                         status_code=403,
                     )
+                nom_cible = cible.nom or f"Compte #{cible.id}"
 
             # Le corps est mis en cache pour que la dépendance CSRF de la route
             # puisse encore relire le formulaire après ce contrôle.
@@ -252,6 +254,7 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                     evenement = JournalActionAdmin(
                         admin_id=admin_id,
                         utilisateur_cible_id=cible_id,
+                        utilisateur_cible_nom=nom_cible[:120],
                         methode=request.method.upper(),
                         chemin=request.url.path[:240],
                         statut_http=0,
@@ -277,6 +280,26 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                         audit_session.add(evenement)
                         audit_session.commit()
             raise
+
+        if mode_supervise:
+            # Certaines routes du compte permettent de modifier son mot de
+            # passe. Recalculer l'empreinte cible après le POST pour permettre
+            # à l'administrateur de continuer puis de quitter proprement.
+            with Session(engine) as supervise_session:
+                cible_apres_action = supervise_session.get(Utilisateur, cible_id)
+                roles_autorises = {
+                    RoleUtilisateur.ETUDIANT,
+                    RoleUtilisateur.PROFESSEUR,
+                    RoleUtilisateur.REPETITEUR,
+                }
+                if (
+                    cible_apres_action
+                    and not cible_apres_action.banni
+                    and cible_apres_action.role in roles_autorises
+                ):
+                    request.session["auth_fingerprint"] = empreinte_session_utilisateur(cible_apres_action)
+                else:
+                    request.session.clear()
 
         if identifiant_audit is not None:
             with Session(engine) as audit_session:
