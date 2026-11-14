@@ -39,6 +39,10 @@ jobs:
         run: python scripts/verify_migrations.py
       - name: Verifier la compilation
         run: python -m compileall -q app tests
+
+      # Contrôler les mutations sensibles avant les smokes navigateur et la suite longue.
+      - name: Vérifier rapidement les routes critiques et leurs protections CSRF
+        run: pytest -q tests/test_release_critical_paths.py
       - name: Verifier le contrat de deploiement Render
         run: python scripts/verify_deployment_contract.py
       - name: Vérifier l'identité de release et le renderer IA
@@ -69,11 +73,6 @@ jobs:
           node scripts/smoke_circle_hierarchy.mjs
           node scripts/smoke_tuteur_voice.mjs
           node scripts/smoke_revision_contrast.mjs
-
-      # Exécuter tôt les contrats de sécurité des routes critiques pour
-      # détecter immédiatement un endpoint POST manquant ou sans CSRF.
-      - name: Vérifier rapidement les routes critiques et leurs protections CSRF
-        run: pytest -q tests/test_release_critical_paths.py
 
       - name: Lancer les tests (un module par processus)
         run: |
