@@ -59,15 +59,22 @@ def _est_repetiteur_verifie(utilisateur: Optional[Utilisateur]) -> bool:
     )
 
 
+def _contenu_public_sans_contact(valeur: Optional[str]) -> str:
+    texte = " ".join((valeur or "").split())
+    if _CONTACT_INTERDIT.search(texte):
+        return "Une partie de cette présentation a été masquée pour protéger les coordonnées personnelles."
+    return texte[:1000]
+
+
 def _profil_public(utilisateur: Utilisateur) -> dict:
     """Projection en liste blanche : pas de téléphone, email, identifiant ni ID public."""
     return {
         "id": utilisateur.id,
         "nom": nom_public_repetiteur(utilisateur.nom),
-        "matieres": utilisateur.matieres_repetiteur or "",
-        "niveaux": utilisateur.niveaux_repetiteur or "",
+        "matieres": _contenu_public_sans_contact(utilisateur.matieres_repetiteur),
+        "niveaux": _contenu_public_sans_contact(utilisateur.niveaux_repetiteur),
         "tarif": utilisateur.tarif_horaire_repetiteur_ariary,
-        "presentation": utilisateur.bio or "",
+        "presentation": _contenu_public_sans_contact(utilisateur.bio),
     }
 
 
