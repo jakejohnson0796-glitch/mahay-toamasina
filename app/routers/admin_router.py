@@ -1150,9 +1150,15 @@ def promouvoir_professeur(request: Request, utilisateur_id: int, session: Sessio
         return RedirectResponse("/", status_code=303)
 
     cible = session.get(Utilisateur, utilisateur_id)
-    if cible and not cible.banni and cible.role == RoleUtilisateur.ETUDIANT:
-        # Attribution du rôle effectif par un admin : le profil déclaré
-        # seul ne suffit jamais. La décision est datée et auditée sur le compte.
+    if (
+        cible
+        and not cible.banni
+        and cible.role == RoleUtilisateur.ETUDIANT
+        and cible.profil_souhaite == "professeur"
+        and cible.statut_verification_enseignant == "en_attente"
+    ):
+        # Le rôle enseignant n'est attribué qu'après une demande explicite
+        # déposée à l'inscription et une décision administrative.
         cible.role = RoleUtilisateur.PROFESSEUR
         cible.profil_souhaite = "professeur"
         cible.statut_verification_enseignant = "approuve"
