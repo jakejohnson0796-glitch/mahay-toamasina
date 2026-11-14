@@ -11,7 +11,7 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Cours, Devoir, DemandeMiseAJourCours, Document, InscriptionCours, ProgressionNotion, RenduDevoir, RoleUtilisateur, Seance, StatutSeance, Utilisateur
+from ..models import Cours, Devoir, DemandeAccompagnement, DemandeMiseAJourCours, Document, InscriptionCours, ProgressionNotion, RenduDevoir, RoleUtilisateur, Seance, StatutSeance, Utilisateur
 from .. import dashboard as dashboard_module
 from .. import learning_recap
 
@@ -109,12 +109,34 @@ def page_dashboard(request: Request, session: Session = Depends(get_session)):
             and utilisateur.statut_verification_repetiteur in {"en_attente", "refuse"}
         )
     ):
+        demandes_accompagnement = []
+        if utilisateur.role == RoleUtilisateur.REPETITEUR and utilisateur.statut_verification_repetiteur == "approuve":
+            lignes_demandes = session.exec(
+                select(DemandeAccompagnement, Utilisateur)
+                .join(Utilisateur, Utilisateur.id == DemandeAccompagnement.etudiant_id)
+                .where(DemandeAccompagnement.repetiteur_id == utilisateur.id)
+                .order_by(DemandeAccompagnement.date_creation.desc())
+                .limit(40)
+            ).all()
+            for demande, etudiant in lignes_demandes:
+                morceaux_nom = [part for part in (etudiant.nom or "").strip().split() if part]
+                nom_public = (
+                    f"{morceaux_nom[0]} {morceaux_nom[-1][0].upper()}."
+                    if len(morceaux_nom) > 1
+                    else (morceaux_nom[0] if morceaux_nom else "Élève")
+                )
+                demandes_accompagnement.append({
+                    "demande": demande,
+                    "etudiant_nom": nom_public,
+                })
+
         return templates.TemplateResponse(
             request,
             "dashboard_repetiteur.html",
             {
                 "utilisateur": utilisateur,
                 "statut_repetiteur": getattr(utilisateur, "statut_verification_repetiteur", "non_concerne"),
+                "demandes_accompagnement": demandes_accompagnement,
             },
         )
 
