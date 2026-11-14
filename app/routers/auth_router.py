@@ -91,6 +91,37 @@ def _telephone_rate_key(telephone: str) -> str:
         return "invalide:" + hashlib.sha256(brute.encode("utf-8")).hexdigest()[:16]
 
 
+def _invalider_codes_reinitialisation(session: Session, utilisateur_id: int) -> None:
+    """Invalide tous les codes antérieurs avant d'émettre une nouvelle demande."""
+    session.execute(
+        sql_update(CodeReinitialisationMotDePasse)
+        .where(
+            CodeReinitialisationMotDePasse.utilisateur_id == utilisateur_id,
+            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+        )
+        .values(utilise=True)
+    )
+
+
+def _consommer_code_reinitialisation(
+    session: Session,
+    code_id: int,
+    utilisateur_id: int,
+) -> bool:
+    """Réserve atomiquement un code encore valide pour empêcher tout rejeu."""
+    resultat = session.execute(
+        sql_update(CodeReinitialisationMotDePasse)
+        .where(
+            CodeReinitialisationMotDePasse.id == code_id,
+            CodeReinitialisationMotDePasse.utilisateur_id == utilisateur_id,
+            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+            CodeReinitialisationMotDePasse.expire_le > datetime.utcnow(),
+        )
+        .values(utilise=True)
+    )
+    return resultat.rowcount == 1
+
+
 CYCLES_ENSEIGNEMENT_VALIDES = frozenset({"primaire", "college", "lycee", "universite"})
 
 
@@ -861,16 +892,8 @@ def demander_reinitialisation(
 
         if utilisateur and utilisateur.email and email_configure():
             code = f"{secrets.randbelow(1_000_000):06d}"
-            # Un seul code de récupération actif par compte : une nouvelle
-            # demande invalide immédiatement les anciens codes encore valides.
-            session.execute(
-                sql_update(CodeReinitialisationMotDePasse)
-                .where(
-                    CodeReinitialisationMotDePasse.utilisateur_id == utilisateur.id,
-                    CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
-                )
-                .values(utilise=True)
-            )
+            # Une nouvelle demande rend les anciens codes inutilisables.
+            _invalider_codes_reinitialisation(session, utilisateur.id)
             session.add(CodeReinitialisationMotDePasse(
                 utilisateur_id=utilisateur.id,
                 code_hash=hacher_mot_de_passe(code),
@@ -948,19 +971,9 @@ def verifier_code_reinitialisation(
     if not entree_correspondante:
         return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
 
-    # Consommation atomique : deux requêtes simultanées ne peuvent pas
-    # utiliser le même code valide pour modifier le mot de passe.
-    resultat_consommation = session.execute(
-        sql_update(CodeReinitialisationMotDePasse)
-        .where(
-            CodeReinitialisationMotDePasse.id == entree_correspondante.id,
-            CodeReinitialisationMotDePasse.utilisateur_id == user_id,
-            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
-            CodeReinitialisationMotDePasse.expire_le > datetime.utcnow(),
-        )
-        .values(utilise=True)
-    )
-    if resultat_consommation.rowcount != 1:
+    # La réservation atomique empêche deux requêtes concurrentes de rejouer
+    # un même code, même si elles l'ont toutes deux lu avant la mise à jour.
+    if not _consommer_code_reinitialisation(session, entree_correspondante.id, user_id):
         session.rollback()
         return templates.TemplateResponse(
             request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique}
