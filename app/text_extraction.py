@@ -15,6 +15,7 @@ Deux strategies, appliquees dans l'ordre :
 from pathlib import Path
 import shutil
 import subprocess
+from threading import BoundedSemaphore
 
 import pdfplumber
 
@@ -24,9 +25,22 @@ MAX_PAGES_PDF_OCR = 15
 MAX_TEXTE_EXTRAIT = 300_000
 MAX_OCR_DPI = 160
 MAX_PIXELS_IMAGE_OCR = 40_000_000
+MAX_EXTRACTIONS_SIMULTANEES = 2
+_SEMAPHORE_EXTRACTION = BoundedSemaphore(MAX_EXTRACTIONS_SIMULTANEES)
 
 
-def extraire_texte(chemin_fichier: str) -> str:
+class ExtractionSaturee(RuntimeError):
+    """Le moteur de lecture de documents atteint sa capacité sûre."""
+
+
+def _acquerir_slot_extraction() -> None:
+    if not _SEMAPHORE_EXTRACTION.acquire(blocking=False):
+        raise ExtractionSaturee(
+            "Le moteur de lecture est occupé. Réessayez dans quelques instants."
+        )
+
+
+def _extraire_texte_sans_limite(chemin_fichier: str) -> str:
     """Renvoie le texte du document, ou une chaine vide si l'extraction
     echoue completement (l'appelant doit gerer ce cas, voir ai_quiz.py)."""
     chemin = Path(chemin_fichier)
@@ -57,7 +71,7 @@ def extraire_texte(chemin_fichier: str) -> str:
     return ""
 
 
-def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
+def _extraire_passages_sans_limite(chemin_fichier: str) -> list[dict[str, str]]:
     """Extrait des passages avec un repère de provenance exploitable par le Tuteur.
 
     Les PDF textuels gardent leur numéro de page et les présentations leur
@@ -135,7 +149,7 @@ def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
 
     # OCR, images et formats sans repères fiables : la source reste identifiée
     # par le document, sans inventer une page ou une diapositive.
-    texte = extraire_texte(str(chemin)).strip()
+    texte = _extraire_texte_sans_limite(str(chemin)).strip()
     if texte:
         return [{
             "reference": "document (pagination indisponible)",
@@ -352,3 +366,21 @@ def _extraire_texte_pptx(chemin: Path) -> str:
         return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
     except Exception:
         return ""
+
+
+def extraire_texte(chemin_fichier: str) -> str:
+    """Extraction avec un maximum global de deux lectures lourdes simultanées."""
+    _acquerir_slot_extraction()
+    try:
+        return _extraire_texte_sans_limite(chemin_fichier)
+    finally:
+        _SEMAPHORE_EXTRACTION.release()
+
+
+def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:
+    """Extraction avec sources, sous le même plafond global que l'OCR."""
+    _acquerir_slot_extraction()
+    try:
+        return _extraire_passages_sans_limite(chemin_fichier)
+    finally:
+        _SEMAPHORE_EXTRACTION.release()
