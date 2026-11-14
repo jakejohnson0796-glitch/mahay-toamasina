@@ -472,6 +472,12 @@ def page_admin_apercus(request: Request, session: Session = Depends(get_session)
     comptes_reels = session.exec(
         requete.order_by(Utilisateur.id.desc()).limit(100)
     ).all()
+    historique_actions = session.exec(
+        select(JournalActionAdmin, Utilisateur)
+        .join(Utilisateur, JournalActionAdmin.utilisateur_cible_id == Utilisateur.id)
+        .order_by(JournalActionAdmin.date_creation.desc())
+        .limit(50)
+    ).all()
 
     return templates.TemplateResponse(
         request,
@@ -481,6 +487,7 @@ def page_admin_apercus(request: Request, session: Session = Depends(get_session)
             "comptes_reels": comptes_reels,
             "recherche_comptes": recherche,
             "nombre_comptes_limite": len(comptes_reels) == 100,
+            "historique_actions": historique_actions,
         },
     )
 
