@@ -146,6 +146,21 @@ app.include_router(onboarding_router.router)
 app.include_router(legal_router.router)
 app.include_router(opportunites_router.router)
 
+# Garantit le montage des anciens formulaires de complétion du profil.
+# Le routeur d'authentification expose ces deux handlers avec leur dépendance
+# CSRF ; ce garde-fou évite qu'un import circulaire ou un enregistrement
+# tardif laisse un formulaire visible sans endpoint POST correspondant.
+for _chemin, _endpoint, _nom in (
+    ("/securite/universite", auth_router.modifier_universite, "modifier_universite"),
+    ("/securite/niveau", auth_router.modifier_niveau, "modifier_niveau"),
+):
+    if not any(
+        getattr(_route, "path", None) == _chemin
+        and "POST" in (getattr(_route, "methods", None) or set())
+        for _route in app.routes
+    ):
+        app.add_api_route(_chemin, _endpoint, methods=["POST"], name=f"{_nom}_securite_profil")
+
 
 def _masquer_mot_de_passe(url: str) -> str:
     """Renvoie l'URL de connexion avec le mot de passe remplace par ****,
