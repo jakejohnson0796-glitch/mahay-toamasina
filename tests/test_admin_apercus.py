@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from fastapi.responses import RedirectResponse
 
+from app import auth as auth_module
 from app.models import RoleUtilisateur
 from app.routers import admin_router, dashboard_router
 
@@ -227,6 +228,8 @@ def test_l_interface_apercu_est_marquee_lecture_seule_et_accessible_depuis_admin
     assert 'href="/admin/apercus/repetiteur"' in selecteur
     assert "Rôle indépendant" in selecteur
     assert "dashboard_repetiteur.html" in (ROOT / "app" / "routers" / "admin_router.py").read_text(encoding="utf-8")
+    assert "Sponsor / Partenaire" in selecteur
+    assert "Parent / Responsable légal" in selecteur
 
 
 def test_admin_peut_ouvrir_un_compte_reel_sans_perdre_son_identite(monkeypatch):
@@ -235,6 +238,7 @@ def test_admin_peut_ouvrir_un_compte_reel_sans_perdre_son_identite(monkeypatch):
         id=42,
         nom="Compte élève",
         role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
         banni=False,
     )
     monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: admin)
@@ -294,19 +298,21 @@ def test_admin_peut_quitter_le_compte_reel_et_retrouver_sa_session(monkeypatch):
     assert "admin_mode_target_id" not in request.session
 
 
-def test_admin_ne_peut_pas_ouvrir_un_compte_banni_ou_un_role_hors_perimetre(monkeypatch):
+def test_admin_ne_peut_pas_ouvrir_un_profil_non_valide(monkeypatch):
     admin = _admin()
     cible = SimpleNamespace(
         id=88,
-        nom="Compte interdit",
-        role=RoleUtilisateur.SPONSOR,
+        nom="Demande sponsor en attente",
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="sponsor",
+        statut_verification_sponsor="en_attente",
         banni=False,
     )
     monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: admin)
     session = SimpleNamespace(
         get=lambda *_args: cible,
         add=lambda *_args: (_ for _ in ()).throw(AssertionError("aucun journal attendu")),
-        commit=lambda: (_ for _ in ()).throw(AssertionError("aucun commit attendu")),
+        commit=lambda: (_ for _args in ()).throw(AssertionError("aucun commit attendu")),
     )
     request = SimpleNamespace(session={"user_id": admin.id, "auth_fingerprint": "fingerprint-7"})
 
@@ -315,6 +321,117 @@ def test_admin_ne_peut_pas_ouvrir_un_compte_banni_ou_un_role_hors_perimetre(monk
     assert reponse.status_code == 303
     assert reponse.headers["location"] == "/admin/apercus?erreur=compte_indisponible"
     assert request.session.get("admin_mode_actor_id") is None
+
+
+def test_supervision_admin_ouvre_les_espaces_sponsor_et_responsable(monkeypatch):
+    admin = _admin()
+    cas = [
+        (RoleUtilisateur.SPONSOR, "sponsor", "statut_verification_sponsor", "/sponsoring"),
+        (RoleUtilisateur.RESPONSABLE, "responsable", "statut_verification_responsable", "/famille"),
+    ]
+    for role, profil, champ_statut, destination in cas:
+        cible = SimpleNamespace(
+            id=42,
+            nom="Compte validé",
+            role=role,
+            profil_souhaite=profil,
+            banni=False,
+            **{champ_statut: "approuve"},
+        )
+        monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: admin)
+        monkeypatch.setattr(
+            admin_router,
+            "empreinte_session_utilisateur",
+            lambda utilisateur: f"fingerprint-{utilisateur.id}",
+        )
+        evenements = []
+        session = SimpleNamespace(
+            get=lambda _model, identifiant: cible if identifiant == cible.id else admin,
+            add=evenements.append,
+            commit=lambda: None,
+        )
+        request = SimpleNamespace(session={"user_id": admin.id, "auth_fingerprint": "fingerprint-7"})
+
+        reponse = admin_router.ouvrir_espace_reel_utilisateur(request, cible.id, session)
+
+        assert reponse.status_code == 303
+        assert reponse.headers["location"] == destination
+        assert request.session["admin_mode_actor_id"] == admin.id
+        assert request.session["admin_mode_target_id"] == cible.id
+        assert evenements[0].admin_id == admin.id
+
+
+def test_mode_supervise_valide_sponsor_et_responsable_a_chaque_requete(monkeypatch):
+    admin = _admin()
+    monkeypatch.setattr(
+        auth_module,
+        "empreinte_session_utilisateur",
+        lambda utilisateur: "admin-fingerprint" if utilisateur.id == admin.id else "target-fingerprint",
+    )
+    for role, profil, champ_statut in [
+        (RoleUtilisateur.SPONSOR, "sponsor", "statut_verification_sponsor"),
+        (RoleUtilisateur.RESPONSABLE, "responsable", "statut_verification_responsable"),
+    ]:
+        cible = SimpleNamespace(
+            id=42,
+            nom="Compte validé",
+            role=role,
+            profil_souhaite=profil,
+            banni=False,
+            **{champ_statut: "approuve"},
+        )
+        request = SimpleNamespace(session={
+            "user_id": cible.id,
+            "auth_fingerprint": "target-fingerprint",
+            "admin_mode_actor_id": admin.id,
+            "admin_mode_actor_fingerprint": "admin-fingerprint",
+            "admin_mode_target_id": cible.id,
+        })
+        session = SimpleNamespace(
+            get=lambda _model, identifiant: admin if identifiant == admin.id else cible
+        )
+        assert auth_module.utilisateur_courant(request, session) is cible
+
+    cible = SimpleNamespace(
+        id=42,
+        nom="Demande responsable en attente",
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="responsable",
+        statut_verification_responsable="en_attente",
+        banni=False,
+    )
+    request = SimpleNamespace(session={
+        "user_id": cible.id,
+        "auth_fingerprint": "target-fingerprint",
+        "admin_mode_actor_id": admin.id,
+        "admin_mode_actor_fingerprint": "admin-fingerprint",
+        "admin_mode_target_id": cible.id,
+    })
+    session = SimpleNamespace(
+        get=lambda _model, identifiant: admin if identifiant == admin.id else cible
+    )
+    assert auth_module.utilisateur_courant(request, session) is None
+    assert request.session == {}
+
+
+def test_liste_acces_interactif_inclut_les_profils_approuves_et_exclut_les_attentes(monkeypatch):
+    monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: _admin())
+    _capture_template(monkeypatch)
+    requetes = []
+    session = SimpleNamespace(
+        exec=lambda statement: (requetes.append(statement) or SimpleNamespace(all=lambda: []))
+    )
+    request = SimpleNamespace(query_params=SimpleNamespace(get=lambda *_args: ""))
+
+    admin_router.page_admin_apercus(request, session)
+
+    sql = str(requetes[0])
+    parametres = requetes[0].compile().params
+    assert "statut_verification_sponsor" in sql
+    assert "statut_verification_responsable" in sql
+    assert "profil_souhaite" in sql
+    assert "approuve" in parametres.values()
+    assert "en_attente" not in parametres.values()
 
 
 def test_mode_admin_reel_affiche_un_bandeau_et_ne_bloque_pas_l_interface():
