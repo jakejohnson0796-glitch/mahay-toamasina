@@ -12,12 +12,16 @@ Deux strategies, appliquees dans l'ordre :
    installés. Si ces dépendances système manquent en développement local,
    l'extraction retombe sur le texte disponible sans faire planter l'appli.
 """
+from dataclasses import dataclass
+import logging
 from pathlib import Path
 import shutil
 import subprocess
 from threading import BoundedSemaphore
 
 import pdfplumber
+
+logger = logging.getLogger(__name__)
 
 SEUIL_CARACTERES_PDF_TEXTE = 100  # en dessous de ca, on suppose que c'est un scan
 MAX_PAGES_PDF_TEXTE = 60
@@ -40,7 +44,7 @@ def _acquerir_slot_extraction() -> None:
         )
 
 
-def _extraire_texte_sans_limite(chemin_fichier: str) -> str:
+def _extraire_texte_sans_limite_legacy(chemin_fichier: str) -> str:
     """Renvoie le texte du document, ou une chaine vide si l'extraction
     echoue completement (l'appelant doit gerer ce cas, voir ai_quiz.py)."""
     chemin = Path(chemin_fichier)
@@ -51,7 +55,7 @@ def _extraire_texte_sans_limite(chemin_fichier: str) -> str:
         # sélectionnables et pages scannées. On OCR uniquement les pages
         # pauvres en texte au lieu de désactiver l'OCR dès qu'une couverture
         # contient quelques lignes sélectionnables.
-        return _extraire_texte_pdf(chemin)
+        return _extraire_texte_pdf_legacy(chemin)
 
     if suffixe in (".docx",):
         return _extraire_texte_docx(chemin)
@@ -70,6 +74,89 @@ def _extraire_texte_sans_limite(chemin_fichier: str) -> str:
 
     return ""
 
+
+
+@dataclass(frozen=True)
+class ResultatExtraction:
+    """Texte extrait et moteur effectivement utilisé pour ce fichier."""
+
+    texte: str
+    moteur: str
+
+
+def _texte_docling_utilisable(texte: str) -> bool:
+    """Filtre prudent : un résultat vide/bruité repart vers l'ancien OCR."""
+    texte = (texte or "").strip()
+    if len(texte) < 120:
+        return False
+    visibles = [caractere for caractere in texte if not caractere.isspace()]
+    if not visibles:
+        return False
+    alphanumeriques = sum(caractere.isalnum() for caractere in visibles)
+    taux_alphanumerique = alphanumeriques / len(visibles)
+    taux_remplacement = texte.count("\ufffd") / max(1, len(texte))
+    return alphanumeriques >= 50 and taux_alphanumerique >= 0.18 and taux_remplacement <= 0.01
+
+
+def _extraire_texte_detaille_sans_limite(chemin_fichier: str) -> ResultatExtraction:
+    """Extrait le texte et décrit le moteur, sans exposer le contenu dans les logs."""
+    chemin = Path(chemin_fichier)
+    suffixe = chemin.suffix.lower()
+
+    if suffixe == ".pdf":
+        # Docling est réservé aux PDF de taille raisonnable. On garde le plafond
+        # historique de pages avant de démarrer un pipeline de modèles.
+        try:
+            with pdfplumber.open(chemin) as pdf:
+                nombre_pages = len(pdf.pages)
+        except Exception:
+            nombre_pages = MAX_PAGES_PDF_TEXTE + 1
+
+        if nombre_pages <= MAX_PAGES_PDF_TEXTE:
+            try:
+                from .docling_extraction import docling_actif, extraire_pdf_docling
+
+                if docling_actif():
+                    texte_docling = extraire_pdf_docling(
+                        chemin,
+                        max_caracteres=MAX_TEXTE_EXTRAIT,
+                    )
+                    if _texte_docling_utilisable(texte_docling):
+                        return ResultatExtraction(
+                            texte=texte_docling[:MAX_TEXTE_EXTRAIT],
+                            moteur="Docling (OCR intégré si nécessaire)",
+                        )
+            except Exception as erreur:
+                # Une dépendance facultative ne doit jamais casser le dépôt.
+                logger.warning(
+                    "Repli extracteur PDF classique (%s).",
+                    type(erreur).__name__,
+                )
+
+        return ResultatExtraction(
+            texte=_extraire_texte_pdf_legacy(chemin),
+            moteur="pdfplumber + Tesseract",
+        )
+
+    texte = _extraire_texte_sans_limite_legacy(str(chemin))
+    if suffixe == ".docx":
+        moteur = "python-docx"
+    elif suffixe == ".pptx":
+        moteur = "python-pptx"
+    elif suffixe in {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}:
+        moteur = "Tesseract OCR"
+    elif suffixe == ".doc":
+        moteur = "antiword"
+    elif suffixe == ".ppt":
+        moteur = "catppt"
+    else:
+        moteur = "extracteur classique"
+    return ResultatExtraction(texte=texte, moteur=moteur)
+
+
+def _extraire_texte_sans_limite(chemin_fichier: str) -> str:
+    """Compatibilité avec les anciens appelants qui attendent une chaîne."""
+    return _extraire_texte_detaille_sans_limite(chemin_fichier).texte
 
 def _extraire_passages_sans_limite(chemin_fichier: str) -> list[dict[str, str]]:
     """Extrait des passages avec un repère de provenance exploitable par le Tuteur.
@@ -158,7 +245,7 @@ def _extraire_passages_sans_limite(chemin_fichier: str) -> list[dict[str, str]]:
     return []
 
 
-def _extraire_texte_pdf(chemin: Path) -> str:
+def _extraire_texte_pdf_legacy(chemin: Path) -> str:
     morceaux = []
     nombre_pages_ocr = 0
     try:
@@ -214,6 +301,11 @@ def _extraire_texte_pdf(chemin: Path) -> str:
     except Exception:
         return ""
     return "\n".join(morceaux)[:MAX_TEXTE_EXTRAIT]
+
+
+def _extraire_texte_pdf(chemin: Path) -> str:
+    """Alias de compatibilité pour les tests et anciens appelants internes."""
+    return _extraire_texte_pdf_legacy(chemin)
 
 
 def _langue_tesseract(pytesseract) -> str:
@@ -368,13 +460,18 @@ def _extraire_texte_pptx(chemin: Path) -> str:
         return ""
 
 
-def extraire_texte(chemin_fichier: str) -> str:
-    """Extraction avec un maximum global de deux lectures lourdes simultanées."""
+def extraire_texte_detaille(chemin_fichier: str) -> ResultatExtraction:
+    """Extraction détaillée sous le même plafond global que l'OCR."""
     _acquerir_slot_extraction()
     try:
-        return _extraire_texte_sans_limite(chemin_fichier)
+        return _extraire_texte_detaille_sans_limite(chemin_fichier)
     finally:
         _SEMAPHORE_EXTRACTION.release()
+
+
+def extraire_texte(chemin_fichier: str) -> str:
+    """API historique conservée pour les appels qui ne demandent que le texte."""
+    return extraire_texte_detaille(chemin_fichier).texte
 
 
 def extraire_passages_avec_sources(chemin_fichier: str) -> list[dict[str, str]]:

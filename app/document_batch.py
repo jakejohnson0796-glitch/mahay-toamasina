@@ -10,7 +10,7 @@ from typing import Any, Sequence
 
 from .document_classifier import classifier_document
 from .storage import ouvrir_fichier_local
-from .text_extraction import extraire_texte, ExtractionSaturee
+from .text_extraction import extraire_texte_detaille, ExtractionSaturee
 
 MAX_DOCUMENTS_PAR_LOT = 15
 MAX_TAILLE_DOCUMENT_PAR_LOT = 120 * 1024 * 1024
@@ -30,7 +30,8 @@ def _analyser_document_local(
     filiere_id_fournie: int | None = None,
 ) -> dict[str, Any]:
     """Extrait puis classe un fichier. Cette fonction est sûre pour un worker."""
-    texte = extraire_texte(chemin_local)
+    extraction = extraire_texte_detaille(chemin_local)
+    texte = extraction.texte
     classification = classifier_document(
         nom_fichier=nom_fichier,
         texte=texte or "",
@@ -44,6 +45,7 @@ def _analyser_document_local(
     return {
         "classification": classification,
         "caracteres_extraits": len(texte or ""),
+        "moteur_extraction": extraction.moteur,
     }
 
 
