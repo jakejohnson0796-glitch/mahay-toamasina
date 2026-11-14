@@ -134,7 +134,7 @@ def _version_asset(chemin_relatif: str) -> str:
                 return "0"
         else:
             return "0"
-    contenu_hash = hashlib.md5(contenu).hexdigest()[:8]
+    contenu_hash = hashlib.sha256(contenu).hexdigest()[:16]
     release = parametres.release_commit[:12] if parametres.release_commit else "unknown"
     return f"{contenu_hash}-{release}"
 
