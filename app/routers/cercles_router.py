@@ -46,7 +46,7 @@ from .. import referentiel_academique
 from ..web_utils import entier_ou_none
 from ..referentiel import NIVEAUX, NIVEAUX_LIBELLES
 from ..recherche import clause_recherche_cercles
-from ..rate_limit import limite_depassee
+from ..rate_limit import limite_depassee, limite_depassee_async
 from .. import gamification
 
 router = APIRouter()
@@ -2884,7 +2884,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 continue
 
             client_message_id = _identifier_message_client(donnees_recues)
-            if limite_depassee(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
+            if await limite_depassee_async(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
                 await _erreur_message_websocket(
                     websocket,
                     "limite_debit",
