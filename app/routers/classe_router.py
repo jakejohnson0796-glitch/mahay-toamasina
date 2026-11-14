@@ -35,7 +35,7 @@ from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_
 from ..text_extraction import extraire_texte
 from .. import classe_correction
 from .. import classe_notes
-from ..rate_limit import limite_depassee
+from ..rate_limit import limite_depassee, limite_depassee_async
 from .. import gamification
 from .. import quiz as quiz_module
 from .. import ai_queue, course_revision
@@ -1714,7 +1714,9 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
                 if len(texte_recu.encode("utf-8")) > 64 * 1024:
                     await websocket.close(code=1009)
                     break
-                if limite_depassee(f"ws-tableau:user:{utilisateur.id}:{seance_id}", 240, 60):
+                if await limite_depassee_async(
+                    f"ws-tableau:user:{utilisateur.id}:{seance_id}", 240, 60
+                ):
                     continue
                 try:
                     brut = json.loads(texte_recu)
