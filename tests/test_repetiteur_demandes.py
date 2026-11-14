@@ -121,7 +121,7 @@ def test_un_eleve_peut_envoyer_une_demande_a_un_repetiteur_verifie(monkeypatch):
     assert not hasattr(demande, "email")
 
 
-def test_une_demande_ne_peut_pas_continir_un_numero_ou_un_lien(monkeypatch):
+def test_une_demande_ne_peut_pas_contenir_un_numero_ou_un_lien(monkeypatch):
     eleve = _eleve()
     session = _SessionFausse(cible=_repetiteur())
     monkeypatch.setattr(repetiteur_router, "utilisateur_courant", lambda *_args: eleve)
@@ -218,6 +218,48 @@ def test_un_repetiteur_non_valide_ne_peut_pas_accepter_une_demande(monkeypatch):
 
     assert demande.statut == "en_attente"
     assert session.commits == 0
+
+
+
+def test_un_eleve_ne_peut_pas_envoyer_plus_de_cinq_demandes_en_attente(monkeypatch):
+    eleve = _eleve()
+    session = _SessionFausse(
+        cible=_repetiteur(),
+        resultats=[_Resultat([
+            SimpleNamespace(repetiteur_id=31),
+            SimpleNamespace(repetiteur_id=32),
+            SimpleNamespace(repetiteur_id=33),
+            SimpleNamespace(repetiteur_id=34),
+            SimpleNamespace(repetiteur_id=35),
+        ])],
+    )
+    monkeypatch.setattr(repetiteur_router, "utilisateur_courant", lambda *_args: eleve)
+
+    reponse = repetiteur_router.creer_demande_accompagnement(
+        SimpleNamespace(),
+        22,
+        "Mathématiques",
+        "Terminale",
+        "Je souhaite travailler les fonctions.",
+        session,
+        None,
+    )
+
+    assert isinstance(reponse, RedirectResponse)
+    assert "limite_demandes" in reponse.headers["location"]
+    assert session.ajoutes == []
+    assert session.commits == 0
+
+
+def test_l_annuaire_est_reserve_aux_eleves_connectes(monkeypatch):
+    admin = SimpleNamespace(id=3, role=RoleUtilisateur.ADMIN)
+    monkeypatch.setattr(repetiteur_router, "utilisateur_courant", lambda *_args: admin)
+    session = _SessionFausse()
+
+    reponse = repetiteur_router.annuaire_repetiteurs(SimpleNamespace(), None, session)
+
+    assert isinstance(reponse, RedirectResponse)
+    assert reponse.headers["location"] == "/dashboard"
 
 
 def test_un_eleve_ne_peut_pas_utiliser_la_route_de_traitement_repetiteur(monkeypatch):
