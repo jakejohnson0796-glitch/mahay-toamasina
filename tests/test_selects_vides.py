@@ -265,6 +265,7 @@ class TestSelectsVides(unittest.TestCase):
                 cycle="college",
                 ordre=1,
                 est_active=True,
+                source_officielle=referentiel.source_officielle,
                 statut_validation="verifie",
             )
             session.add(niveau)
