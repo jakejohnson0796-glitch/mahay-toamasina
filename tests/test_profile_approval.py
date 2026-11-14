@@ -269,3 +269,59 @@ def test_compte_banni_ne_peut_jamais_etre_supervise():
         profil_souhaite="eleve",
     )
     assert not acces_interactif_admin_autorise(eleve_banni)
+
+
+def test_admin_ne_peut_pas_promouvoir_un_eleve_sans_demande_enseignant(monkeypatch):
+    cible = SimpleNamespace(
+        id=31,
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
+        statut_verification_enseignant="non_concerne",
+        cycle_education=None,
+    )
+    session = _SessionFausse(cible)
+    monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: _admin())
+
+    response = admin_router.promouvoir_professeur(
+        SimpleNamespace(), cible.id, session, None
+    )
+
+    assert isinstance(response, RedirectResponse)
+    assert cible.role == RoleUtilisateur.ETUDIANT
+    assert cible.profil_souhaite == "eleve"
+    assert cible.statut_verification_enseignant == "non_concerne"
+    assert session.commits == 0
+
+
+def test_admin_valide_professeur_uniquement_apres_demande_en_attente(monkeypatch):
+    cible = SimpleNamespace(
+        id=32,
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="professeur",
+        statut_verification_enseignant="en_attente",
+        cycle_education=None,
+        motif_refus_enseignant="",
+    )
+    session = _SessionFausse(cible)
+    monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: _admin())
+
+    response = admin_router.promouvoir_professeur(
+        SimpleNamespace(), cible.id, session, None
+    )
+
+    assert isinstance(response, RedirectResponse)
+    assert cible.role == RoleUtilisateur.PROFESSEUR
+    assert cible.statut_verification_enseignant == "approuve"
+    assert cible.verification_enseignant_par_id == 7
+    assert cible.verification_enseignant_le is not None
+    assert session.commits == 1
+
+
+def test_interface_admin_ne_propose_pas_de_role_professeur_sans_candidature():
+    racine = Path(__file__).resolve().parents[1]
+    template = (racine / "app" / "templates" / "admin_utilisateurs.html").read_text(encoding="utf-8")
+    assert 'u.role.value == "etudiant" and u.profil_souhaite == "professeur"' in template
+    assert "Attribuer rôle professeur" not in template
+    assert "Valider enseignant" in template
