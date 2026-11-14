@@ -133,3 +133,16 @@ def test_hote_canonique_render_est_accepte():
     client = TestClient(app)
     response = client.get("/connexion", headers={"host": "mitaridala.onrender.com"})
     assert response.status_code == 200
+
+
+def test_supabase_realtime_origin_is_allowlisted_as_websocket_only_when_configured(monkeypatch):
+    from app.config import parametres
+    from app.security_headers import _construire_csp
+
+    monkeypatch.setattr(parametres, "supabase_url", "https://projet-test.supabase.co")
+    monkeypatch.setattr(parametres, "livekit_url", "wss://rtc.exemple.net")
+    csp = _construire_csp("nonce-test")
+
+    assert "wss://projet-test.supabase.co" in csp
+    assert "wss://rtc.exemple.net" in csp
+    assert "wss://autre-projet.supabase.co" not in csp
