@@ -1224,6 +1224,128 @@ def refuser_demande_repetiteur(
     return RedirectResponse("/admin/utilisateurs", status_code=303)
 
 
+@router.post("/admin/utilisateurs/{utilisateur_id}/promouvoir-sponsor")
+def approuver_demande_sponsor(
+    request: Request,
+    utilisateur_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Accorde le rôle sponsor uniquement après approbation administrative."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if (
+        cible
+        and not cible.banni
+        and cible.role == RoleUtilisateur.ETUDIANT
+        and cible.profil_souhaite == "sponsor"
+        and cible.statut_verification_sponsor == "en_attente"
+    ):
+        cible.role = RoleUtilisateur.SPONSOR
+        cible.statut_verification_sponsor = "approuve"
+        cible.verification_sponsor_le = datetime.utcnow()
+        cible.verification_sponsor_par_id = admin.id
+        cible.motif_refus_sponsor = None
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/refuser-sponsor")
+def refuser_demande_sponsor(
+    request: Request,
+    utilisateur_id: int,
+    motif: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Refuse une demande sponsor sans lui accorder le rôle partenaire."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if (
+        cible
+        and cible.role == RoleUtilisateur.ETUDIANT
+        and cible.profil_souhaite == "sponsor"
+        and cible.statut_verification_sponsor == "en_attente"
+    ):
+        cible.statut_verification_sponsor = "refuse"
+        cible.verification_sponsor_le = datetime.utcnow()
+        cible.verification_sponsor_par_id = admin.id
+        cible.motif_refus_sponsor = (motif.strip()[:500] or None)
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/promouvoir-responsable")
+def approuver_demande_responsable(
+    request: Request,
+    utilisateur_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Accorde le rôle responsable après contrôle admin du profil déclaré."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if (
+        cible
+        and not cible.banni
+        and cible.role == RoleUtilisateur.ETUDIANT
+        and cible.profil_souhaite == "responsable"
+        and cible.statut_verification_responsable == "en_attente"
+    ):
+        cible.role = RoleUtilisateur.RESPONSABLE
+        cible.statut_verification_responsable = "approuve"
+        cible.verification_responsable_le = datetime.utcnow()
+        cible.verification_responsable_par_id = admin.id
+        cible.motif_refus_responsable = None
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
+@router.post("/admin/utilisateurs/{utilisateur_id}/refuser-responsable")
+def refuser_demande_responsable(
+    request: Request,
+    utilisateur_id: int,
+    motif: str = Form(""),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Refuse une demande responsable sans attribuer l'accès famille."""
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    cible = session.get(Utilisateur, utilisateur_id)
+    if (
+        cible
+        and cible.role == RoleUtilisateur.ETUDIANT
+        and cible.profil_souhaite == "responsable"
+        and cible.statut_verification_responsable == "en_attente"
+    ):
+        cible.statut_verification_responsable = "refuse"
+        cible.verification_responsable_le = datetime.utcnow()
+        cible.verification_responsable_par_id = admin.id
+        cible.motif_refus_responsable = (motif.strip()[:500] or None)
+        session.add(cible)
+        session.commit()
+
+    return RedirectResponse("/admin/utilisateurs", status_code=303)
+
+
 @router.post("/admin/utilisateurs/{utilisateur_id}/retrograder-etudiant")
 def retrograder_etudiant(request: Request, utilisateur_id: int, session: Session = Depends(get_session), _csrf: None = Depends(verifier_csrf)):
     """Retire le statut PROFESSEUR ou ADMIN d'un utilisateur (retour a
