@@ -15,7 +15,7 @@ from ..database import get_session
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import utilisateur_courant, hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
@@ -2141,21 +2141,3 @@ def desactiver_2fa_email(
     session.commit()
     request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     return RedirectResponse("/securite?email_2fa_desactive=1", status_code=303)
-
-
-
-@router.post("/notifications/inactivite/lue")
-def marquer_notification_inactivite_lue(
-    request: Request,
-    session: Session = Depends(get_session),
-    _csrf: None = Depends(verifier_csrf),
-):
-    notification_data = request.session.pop("notification_inactivite", None)
-    if notification_data:
-        notification_id = notification_data.get("notification_id")
-        notification = session.get(Notification, notification_id) if notification_id else None
-        if notification and notification.destinataire_id == request.session.get("user_id") and notification.type_notification == TypeNotification.INACTIVITE_3_JOURS:
-            notification.lu = True
-            session.add(notification)
-            session.commit()
-    return RedirectResponse("/", status_code=303)
