@@ -22,8 +22,6 @@
 
   function actionProtegee(form) {
     if (!form || (form.method || "get").toLowerCase() !== "post") return false;
-    if (document.body.dataset.adminModeActif === "1") return true;
-    if (document.body.dataset.adminSession !== "1") return false;
 
     var url;
     try {
@@ -32,7 +30,10 @@
       return false;
     }
 
+    // Ne jamais transmettre le secret de confirmation à une destination externe.
     if (url.origin !== window.location.origin) return false;
+    if (document.body.dataset.adminModeActif === "1") return true;
+    if (document.body.dataset.adminSession !== "1") return false;
 
     var path = url.pathname;
     if (path === "/admin/securite/mot-de-passe-confirmation") return false;
