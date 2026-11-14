@@ -33,16 +33,26 @@ def test_base_charge_katex_core_sans_auto_render_obligatoire():
 
 
 def test_security_csp_garde_les_scripts_locaux_et_les_styles_necessaires():
+    from app.security_headers import _construire_csp
+
     source = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
-    code = source.split("def _construire_csp", 1)[1].split("# Compatibilite", 1)[0]
-    assert "connect-src" in code
-    assert "script-src-attr 'none'" in code
-    assert "style-src-attr 'unsafe-inline'" in code
-    assert "'unsafe-inline'" not in code.split("script-src", 1)[1].split(";", 1)[0]
+    csp = _construire_csp("nonce-test")
+    directives = {
+        directive.strip().split(" ", 1)[0]: directive.strip()
+        for directive in csp.split(";")
+        if directive.strip()
+    }
+    connect_sources = directives["connect-src"].split()[1:]
+
+    assert "script-src-attr 'none'" in directives["script-src-attr 'none'"]
+    assert directives["style-src-attr"].startswith("style-src-attr 'unsafe-inline'")
+    assert "'unsafe-inline'" not in directives["script-src"].split()
+    assert "wss://mitaridala.onrender.com" in connect_sources
+    assert "wss://mahay-toamasina.onrender.com" in connect_sources
+    assert "wss:" not in connect_sources
+    assert "ws:" not in connect_sources
     assert "https://cdn.jsdelivr.net" not in source
     assert "https://unpkg.com" not in source
-    assert "wss: " not in code
-    assert "ws: " not in code
 
 
 def test_pages_ia_exposent_le_texte_brut_au_renderer():
