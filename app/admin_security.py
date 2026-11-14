@@ -224,7 +224,10 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                     status_code=413,
                 )
             formulaire = await request.form()
-            mot_de_passe = formulaire.get("admin_confirmation_password")
+            mot_de_passe = (
+                formulaire.get("admin_confirmation_password")
+                or request.headers.get("x-admin-confirmation-password")
+            )
 
             if not confirmation_admin_configuree(utilisateur):
                 return JSONResponse(
