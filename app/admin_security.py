@@ -14,9 +14,9 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .auth import session_utilisateur_valide, verifier_mot_de_passe
+from .auth import empreinte_session_utilisateur, session_utilisateur_valide, verifier_mot_de_passe
 from .database import engine
-from .models import RoleUtilisateur, Utilisateur
+from .models import JournalActionAdmin, RoleUtilisateur, Utilisateur
 
 
 LONGUEUR_MIN_CONFIRMATION_ADMIN = 12
@@ -128,35 +128,74 @@ def verifier_confirmation_admin(
 
 
 class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
-    """Bloque les actions admin tant que le secret de confirmation n'est pas valide.
+    """Protège les POST admin et toutes les écritures faites en accès supervise.
 
-    Le secret est fourni par le formulaire sous forme de champ cache rempli
-    par static/js/admin-confirmation.js. Cela donne une vraie enforcement
-    serveur : desactiver JavaScript ne permet pas de contourner la protection.
+    En accès supervise, le mot de passe de confirmation est exigé pour chaque
+    POST et une ligne d'audit est créée avant l'exécution de la route. Une
+    écriture ne part donc pas si le journal ne peut pas être persisté.
     """
 
     async def dispatch(self, request: Request, call_next):
-        if request.method.upper() != "POST" or not action_admin_protegee(request.url.path):
+        mode_supervise = bool(request.session.get("admin_mode_actor_id"))
+        if request.method.upper() != "POST" or (
+            not action_admin_protegee(request.url.path) and not mode_supervise
+        ):
             return await call_next(request)
 
         user_id = request.session.get("user_id")
         if not user_id:
+            if mode_supervise:
+                request.session.clear()
+                return JSONResponse({"detail": "Session supervise invalide."}, status_code=403)
             return await call_next(request)
 
+        admin_id = request.session.get("admin_mode_actor_id") if mode_supervise else user_id
+        cible_id = request.session.get("admin_mode_target_id") if mode_supervise else None
+
         with Session(engine) as session:
-            utilisateur = session.get(Utilisateur, user_id)
+            utilisateur = session.get(Utilisateur, admin_id)
+            empreinte_attendue = (
+                request.session.get("admin_mode_actor_fingerprint")
+                if mode_supervise else request.session.get("auth_fingerprint")
+            )
             if (
                 not utilisateur
+                or utilisateur.banni
                 or utilisateur.role != RoleUtilisateur.ADMIN
-                or not session_utilisateur_valide(request.session, utilisateur)
+                or not empreinte_attendue
+                or empreinte_session_utilisateur(utilisateur) != empreinte_attendue
             ):
+                if mode_supervise:
+                    request.session.clear()
+                    return JSONResponse(
+                        {"detail": "La session administrateur d'origine n'est plus valide."},
+                        status_code=403,
+                    )
                 return await call_next(request)
 
-            # BaseHTTPMiddleware utilise un Request intermediaire. Lire
-            # request.form() directement ici consomme le flux body ; la
-            # dependance CSRF de la route, executee ensuite, recevrait alors
-            # un formulaire vide et repondrait 403. request.body() met le
-            # contenu en cache, puis request.form() peut le relire normalement.
+            if mode_supervise:
+                cible = session.get(Utilisateur, user_id)
+                roles_autorises = {
+                    RoleUtilisateur.ETUDIANT,
+                    RoleUtilisateur.PROFESSEUR,
+                    RoleUtilisateur.REPETITEUR,
+                }
+                if (
+                    cible_id != user_id
+                    or not cible
+                    or cible.banni
+                    or cible.role not in roles_autorises
+                    or cible.id == utilisateur.id
+                    or not session_utilisateur_valide(request.session, cible)
+                ):
+                    request.session.clear()
+                    return JSONResponse(
+                        {"detail": "Le compte cible de la session supervise n'est plus valide."},
+                        status_code=403,
+                    )
+
+            # Le corps est mis en cache pour que la dépendance CSRF de la route
+            # puisse encore relire le formulaire après ce contrôle.
             longueur_annoncee = request.headers.get("content-length")
             try:
                 longueur_annoncee = int(longueur_annoncee) if longueur_annoncee is not None else None
@@ -199,4 +238,45 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
             if not valide:
                 return JSONResponse({"detail": detail}, status_code=403)
 
-        return await call_next(request)
+        identifiant_audit = None
+        if mode_supervise:
+            try:
+                with Session(engine) as audit_session:
+                    evenement = JournalActionAdmin(
+                        admin_id=admin_id,
+                        utilisateur_cible_id=cible_id,
+                        methode=request.method.upper(),
+                        chemin=request.url.path[:240],
+                        statut_http=0,
+                    )
+                    audit_session.add(evenement)
+                    audit_session.commit()
+                    audit_session.refresh(evenement)
+                    identifiant_audit = evenement.id
+            except Exception:
+                return JSONResponse(
+                    {"detail": "Journalisation indisponible : action annulée par sécurité."},
+                    status_code=503,
+                )
+
+        try:
+            reponse = await call_next(request)
+        except Exception:
+            if identifiant_audit is not None:
+                with Session(engine) as audit_session:
+                    evenement = audit_session.get(JournalActionAdmin, identifiant_audit)
+                    if evenement:
+                        evenement.statut_http = 500
+                        audit_session.add(evenement)
+                        audit_session.commit()
+            raise
+
+        if identifiant_audit is not None:
+            with Session(engine) as audit_session:
+                evenement = audit_session.get(JournalActionAdmin, identifiant_audit)
+                if evenement:
+                    evenement.statut_http = reponse.status_code
+                    audit_session.add(evenement)
+                    audit_session.commit()
+
+        return reponse
