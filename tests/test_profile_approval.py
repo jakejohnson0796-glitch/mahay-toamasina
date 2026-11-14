@@ -4,7 +4,11 @@ from types import SimpleNamespace
 from fastapi.responses import RedirectResponse
 
 from app.models import RoleUtilisateur, Utilisateur
-from app.profile_approval import details_validation_profil, profil_validation_requise
+from app.profile_approval import (
+    acces_interactif_admin_autorise,
+    details_validation_profil,
+    profil_validation_requise,
+)
 from app.routers import admin_router
 from app.force_password_change import chemin_autorise_pendant_validation
 
@@ -208,3 +212,116 @@ def test_websockets_chat_et_tableau_bloquent_les_profils_non_valides():
     assert "from ..profile_approval import profil_validation_requise" in classe
     assert "if utilisateur.banni or profil_validation_requise(utilisateur):" in classe
     assert "if profil_validation_requise(utilisateur_frais):" in classe
+
+
+def test_supervision_admin_exige_un_role_effectif_et_un_profil_approuve():
+    profils_valides = [
+        ("professeur", "professeur", "statut_verification_enseignant"),
+        ("repetiteur", "repetiteur", "statut_verification_repetiteur"),
+        ("sponsor", "sponsor", "statut_verification_sponsor"),
+        ("responsable", "responsable", "statut_verification_responsable"),
+    ]
+    for profil, role, champ_statut in profils_valides:
+        valide = SimpleNamespace(
+            banni=False,
+            profil_souhaite=profil,
+            role=SimpleNamespace(value=role),
+            **{champ_statut: "approuve"},
+        )
+        assert acces_interactif_admin_autorise(valide)
+
+        en_attente = SimpleNamespace(
+            banni=False,
+            profil_souhaite=profil,
+            role=SimpleNamespace(value="etudiant"),
+            **{champ_statut: "en_attente"},
+        )
+        assert not acces_interactif_admin_autorise(en_attente)
+
+        refuse = SimpleNamespace(
+            banni=False,
+            profil_souhaite=profil,
+            role=SimpleNamespace(value="etudiant"),
+            **{champ_statut: "refuse"},
+        )
+        assert not acces_interactif_admin_autorise(refuse)
+
+    eleve = SimpleNamespace(
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
+    )
+    assert acces_interactif_admin_autorise(eleve)
+
+    ancien_repetiteur = SimpleNamespace(
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="repetiteur",
+        statut_verification_repetiteur="retire",
+    )
+    assert acces_interactif_admin_autorise(ancien_repetiteur)
+
+
+def test_compte_banni_ne_peut_jamais_etre_supervise():
+    eleve_banni = SimpleNamespace(
+        banni=True,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
+    )
+    assert not acces_interactif_admin_autorise(eleve_banni)
+
+
+def test_admin_ne_peut_pas_promouvoir_un_eleve_sans_demande_enseignant(monkeypatch):
+    cible = SimpleNamespace(
+        id=31,
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="eleve",
+        statut_verification_enseignant="non_concerne",
+        cycle_education=None,
+    )
+    session = _SessionFausse(cible)
+    monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: _admin())
+
+    response = admin_router.promouvoir_professeur(
+        SimpleNamespace(), cible.id, session, None
+    )
+
+    assert isinstance(response, RedirectResponse)
+    assert cible.role == RoleUtilisateur.ETUDIANT
+    assert cible.profil_souhaite == "eleve"
+    assert cible.statut_verification_enseignant == "non_concerne"
+    assert session.commits == 0
+
+
+def test_admin_valide_professeur_uniquement_apres_demande_en_attente(monkeypatch):
+    cible = SimpleNamespace(
+        id=32,
+        banni=False,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="professeur",
+        statut_verification_enseignant="en_attente",
+        cycle_education=None,
+        motif_refus_enseignant="",
+    )
+    session = _SessionFausse(cible)
+    monkeypatch.setattr(admin_router, "_admin_requis", lambda *_args: _admin())
+
+    response = admin_router.promouvoir_professeur(
+        SimpleNamespace(), cible.id, session, None
+    )
+
+    assert isinstance(response, RedirectResponse)
+    assert cible.role == RoleUtilisateur.PROFESSEUR
+    assert cible.statut_verification_enseignant == "approuve"
+    assert cible.verification_enseignant_par_id == 7
+    assert cible.verification_enseignant_le is not None
+    assert session.commits == 1
+
+
+def test_interface_admin_ne_propose_pas_de_role_professeur_sans_candidature():
+    racine = Path(__file__).resolve().parents[1]
+    template = (racine / "app" / "templates" / "admin_utilisateurs.html").read_text(encoding="utf-8")
+    assert 'u.role.value == "etudiant" and u.profil_souhaite == "professeur"' in template
+    assert "Attribuer rôle professeur" not in template
+    assert "Valider enseignant" in template

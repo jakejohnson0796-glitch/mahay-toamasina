@@ -15,6 +15,7 @@ from sqlmodel import Session, select
 
 from .database import get_session
 from .models import Utilisateur, RoleUtilisateur, Notification, TypeNotification
+from .profile_approval import acces_interactif_admin_autorise
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -84,11 +85,7 @@ def utilisateur_courant(request: Request, session: Session = Depends(get_session
         request.session.clear()
         return None
 
-    if admin_mode_id and utilisateur.role not in {
-        RoleUtilisateur.ETUDIANT,
-        RoleUtilisateur.PROFESSEUR,
-        RoleUtilisateur.REPETITEUR,
-    }:
+    if admin_mode_id and not acces_interactif_admin_autorise(utilisateur):
         request.session.clear()
         return None
 
