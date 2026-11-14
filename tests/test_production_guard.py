@@ -50,15 +50,15 @@ def test_configuration_livekit_doit_etre_complete() -> None:
 
 def test_csp_production_n_utilise_pas_unsafe_inline_hors_style_attr() -> None:
     csp = _construire_csp("nonce-test")
-    # MODIF : la directive autorise explicitement unsafe-inline uniquement
-    # pour style-src-attr, car KaTeX génère des attributs style.
+    # Les bibliothèques sont servies localement ; seule la police Google reste externe.
     script_src = csp.split("script-src ", 1)[1].split(";", 1)[0]
     style_src = csp.split("style-src ", 1)[1].split(";", 1)[0]
     style_attr = csp.split("style-src-attr ", 1)[1].split(";", 1)[0]
     assert "'unsafe-inline'" not in script_src
     assert "'unsafe-inline'" not in style_src
     assert "'unsafe-inline'" in style_attr
-    assert "https://cdn.jsdelivr.net" in style_src
+    assert "'self'" in style_src
+    assert "https://cdn.jsdelivr.net" not in style_src
     assert "script-src-attr 'none'" in csp
     assert "frame-ancestors 'none'" in csp
     assert "object-src 'none'" in csp
