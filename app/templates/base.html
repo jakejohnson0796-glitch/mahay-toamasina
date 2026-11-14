@@ -160,7 +160,8 @@
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') or request.url.path in ['/famille', '/admin/responsables-eleves'] %} page-classe{% endif %}{% if (request.url.path.startswith('/admin') and not mode_apercu_admin) or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
-  {% if utilisateur is defined and utilisateur and utilisateur.role == "admin" %}data-admin-session="1"{% endif %}
+  {% if (utilisateur is defined and utilisateur and utilisateur.role == "admin") or request.session.get("admin_mode_actor_id") %}data-admin-session="1"{% endif %}
+  {% if request.session.get("admin_mode_actor_id") %}data-admin-mode-actif="1"{% endif %}
 >
 {% from "components/icone.html" import icone %}
 {% from "components/avatar.html" import avatar_utilisateur %}
@@ -209,7 +210,18 @@
   de config StrictUndefined dans templating.py), donc le badge ne
   s'affiche que la ou la donnee existe reellement. Rien d'invente.
 #}
-{% if mode_apercu_admin %}
+{% if request.session.get("admin_mode_actor_id") %}
+<aside class="admin-apercu-bandeau" role="status" aria-live="polite">
+  <div class="admin-apercu-bandeau-texte">
+    <strong>MODE ADMINISTRATEUR ACTIF · {{ utilisateur.nom }}</strong>
+    <span>Tu agis dans ce compte réel. Les changements sont effectifs, chaque formulaire exige ta confirmation et les actions sont journalisées.</span>
+  </div>
+  <form method="post" action="/admin/apercus/quitter">
+    <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+    <button type="submit" class="admin-apercu-quitter">Revenir à l’administration <span aria-hidden="true">×</span></button>
+  </form>
+</aside>
+{% elif mode_apercu_admin %}
 <aside class="admin-apercu-bandeau" role="status" aria-live="polite">
   <div class="admin-apercu-bandeau-texte">
     <strong>APERÇU EN LECTURE SEULE · {{ mode_apercu_titre }}</strong>
