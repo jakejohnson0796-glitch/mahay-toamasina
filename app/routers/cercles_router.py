@@ -35,6 +35,7 @@ from ..models import (
     MessageReaction, TypeReaction, MessageMention, Notification, TypeNotification,
 )
 from ..auth import utilisateur_courant, session_utilisateur_valide
+from ..profile_approval import profil_validation_requise
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, supprimer_fichier
@@ -2852,6 +2853,10 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
             _journaliser_refus_ws(cercle_id, "compte_banni")
             await websocket.close(code=4403)
             return
+        if profil_validation_requise(utilisateur):
+            _journaliser_refus_ws(cercle_id, "profil_non_valide")
+            await websocket.close(code=4403)
+            return
 
         cercle = session.get(CercleEtude, cercle_id)
         if not cercle:
@@ -2985,6 +2990,9 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                     or utilisateur_frais.banni
                 ):
                     await websocket.close(code=4401)
+                    break
+                if profil_validation_requise(utilisateur_frais):
+                    await websocket.close(code=4403)
                     break
                 if not cercle_frais or cercle_frais.statut != StatutCercle.ACTIF:
                     await websocket.close(code=4403)

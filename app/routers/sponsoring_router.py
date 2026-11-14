@@ -57,6 +57,15 @@ def demander_contact(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    # La demande commerciale est réservée aux profils sponsor approuvés.
+    # L'inscription au profil sponsor elle-même suit un parcours admin distinct.
+    if (
+        utilisateur.role != RoleUtilisateur.SPONSOR
+        or utilisateur.profil_souhaite != "sponsor"
+        or getattr(utilisateur, "statut_verification_sponsor", "non_concerne") != "approuve"
+    ):
+        return RedirectResponse("/sponsoring?profil_sponsor_requis=1", status_code=303)
+
     abonnement = Abonnement(
         utilisateur_id=utilisateur.id,
         message=(message or "").strip()[:LONGUEUR_MAX_MESSAGE] or None,

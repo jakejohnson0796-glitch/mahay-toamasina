@@ -8,6 +8,28 @@ from .auth import session_utilisateur_valide
 from .database import engine
 from .models import RoleUtilisateur, Utilisateur
 from .responsable_portal import chemin_autorise_responsable
+from .profile_approval import profil_validation_requise
+
+
+def chemin_autorise_pendant_validation(method: str, path: str) -> bool:
+    """Autorise seulement le suivi de demande, la sécurité et la déconnexion."""
+    method = (method or "GET").upper()
+    if path == "/demande-validation" and method in {"GET", "HEAD"}:
+        return True
+    if path == "/securite" and method in {"GET", "HEAD"}:
+        return True
+    if path == "/securite/mot-de-passe" and method == "POST":
+        return True
+    if path == "/deconnexion" and method == "POST":
+        return True
+    if path.startswith("/static/") and method in {"GET", "HEAD"}:
+        return True
+    if path in {"/health", "/ready", "/favicon.ico"} and method in {"GET", "HEAD"}:
+        return True
+    # Pages d'aide publiques et lecture seule, utiles pour joindre le support.
+    if path in {"/contact", "/faq", "/cadre-legal", "/a-propos"} and method in {"GET", "HEAD"}:
+        return True
+    return False
 
 
 def chemin_autorise_pendant_changement(method: str, path: str) -> bool:
@@ -62,6 +84,16 @@ class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
                 ):
                     return RedirectResponse("/securite?obligatoire=1", status_code=303)
 
+                mode_admin_supervise = bool(request.session.get("admin_mode_actor_id"))
+                if (
+                    not mode_admin_supervise
+                    and profil_validation_requise(utilisateur)
+                    and not chemin_autorise_pendant_validation(
+                        request.method, request.url.path
+                    )
+                ):
+                    return RedirectResponse("/demande-validation", status_code=303)
+
                 est_responsable = (
                     utilisateur.role == RoleUtilisateur.RESPONSABLE
                     or (
@@ -69,8 +101,13 @@ class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
                         and utilisateur.role != RoleUtilisateur.ADMIN
                     )
                 )
-                if est_responsable and not chemin_autorise_responsable(
-                    request.method, request.url.path, user_id_int
+                if (
+                    not mode_admin_supervise
+                    and est_responsable
+                    and not profil_validation_requise(utilisateur)
+                    and not chemin_autorise_responsable(
+                        request.method, request.url.path, user_id_int
+                    )
                 ):
                     return RedirectResponse("/famille", status_code=303)
 

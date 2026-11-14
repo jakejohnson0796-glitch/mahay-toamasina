@@ -27,6 +27,7 @@ from .. import subscription
 from ..storage import sauvegarder_avatar, obtenir_url_telechargement, supprimer_fichier, stockage_distant_actif, FichierInvalide
 from ..email_utils import envoyer_email, email_configure, EmailNonConfigure
 from ..conditions_legales import VERSION_CONDITIONS
+from ..profile_approval import details_validation_profil, profil_validation_requise
 
 
 def _ip_client(request: Request) -> str:
@@ -43,6 +44,8 @@ def _redirection_apres_connexion(utilisateur: Utilisateur) -> RedirectResponse:
     au lieu de dependre de l'utilisateur pour aller le chercher lui-meme."""
     if utilisateur.doit_changer_mot_de_passe:
         return RedirectResponse("/securite", status_code=303)
+    if profil_validation_requise(utilisateur):
+        return RedirectResponse("/demande-validation", status_code=303)
     return RedirectResponse("/", status_code=303)
 
 router = APIRouter()
@@ -213,6 +216,9 @@ def inscription(
     )
     est_demande_enseignant = profil_demande == "professeur"
     est_demande_repetiteur = profil_demande == "repetiteur"
+    est_demande_sponsor = profil_demande == "sponsor"
+    est_demande_responsable = False
+
     if role not in (
         RoleUtilisateur.ETUDIANT,
         RoleUtilisateur.PROFESSEUR,
@@ -222,18 +228,26 @@ def inscription(
         role = RoleUtilisateur.ETUDIANT
         profil_demande = "eleve"
         est_demande_enseignant = False
-    if est_demande_enseignant or est_demande_repetiteur:
-        # L'inscription ne confère aucun rôle professionnel avant validation.
+        est_demande_repetiteur = False
+        est_demande_sponsor = False
+
+    # Tous les profils autres que l'élève sont des demandes : le rôle effectif
+    # reste ETUDIANT comme valeur technique minimale, mais l'accès à la
+    # plateforme est bloqué par le middleware jusqu'à la décision admin.
+    if est_demande_enseignant or est_demande_repetiteur or est_demande_sponsor:
         role = RoleUtilisateur.ETUDIANT
 
-    # Le compte responsable reste un compte sans privilège spécial.
-    # Le portail est accessible uniquement après rattachement vérifié.
+    # Le responsable légal doit lui aussi être approuvé avant d'obtenir
+    # RoleUtilisateur.RESPONSABLE. Le rattachement à un enfant reste une
+    # deuxième vérification administrative distincte.
     est_responsable = mode_responsable == "oui"
     if est_responsable:
-        role = RoleUtilisateur.RESPONSABLE
+        role = RoleUtilisateur.ETUDIANT
         profil_demande = "responsable"
         est_demande_enseignant = False
         est_demande_repetiteur = False
+        est_demande_sponsor = False
+        est_demande_responsable = True
 
     # Compatibilité avec les anciens formulaires/tests et liens : un choix
     # universitaire historique est interprété comme le cycle université si
@@ -263,7 +277,7 @@ def inscription(
     option_scolaire_obj = None
     etablissement_scolaire_obj = None
 
-    if role in (RoleUtilisateur.SPONSOR, RoleUtilisateur.RESPONSABLE) or est_demande_repetiteur:
+    if profil_demande in {"sponsor", "repetiteur", "responsable"}:
         # Les comptes sponsor, répétiteur et responsable n'ont pas de rattachement pédagogique.
         universite_id_nettoye = None
         composante_id_nettoye = None
@@ -471,6 +485,10 @@ def inscription(
         demande_enseignant_le=(datetime.utcnow() if est_demande_enseignant else None),
         statut_verification_repetiteur=("en_attente" if est_demande_repetiteur else "non_concerne"),
         demande_repetiteur_le=(datetime.utcnow() if est_demande_repetiteur else None),
+        statut_verification_sponsor=("en_attente" if est_demande_sponsor else "non_concerne"),
+        demande_sponsor_le=(datetime.utcnow() if est_demande_sponsor else None),
+        statut_verification_responsable=("en_attente" if est_demande_responsable else "non_concerne"),
+        demande_responsable_le=(datetime.utcnow() if est_demande_responsable else None),
         mention_id=mention_id_nettoye,
         filiere_id=filiere_id_nettoye,
         faculte_id=composante_id_nettoye,
@@ -496,7 +514,7 @@ def inscription(
     session.commit()
     session.refresh(utilisateur)
 
-    if utilisateur.role == RoleUtilisateur.ETUDIANT and utilisateur.profil_souhaite != "repetiteur":
+    if utilisateur.role == RoleUtilisateur.ETUDIANT and utilisateur.profil_souhaite == "eleve":
         subscription.creer_essai_gratuit(session, utilisateur)
 
     # Notification interne : chaque administrateur recoit une alerte.
@@ -504,13 +522,44 @@ def inscription(
     session.commit()
 
     _ouvrir_session_authentifiee(request, utilisateur)
-    if utilisateur.profil_souhaite == "responsable":
+    if profil_validation_requise(utilisateur):
+        return RedirectResponse("/demande-validation", status_code=303)
+    if utilisateur.role == RoleUtilisateur.RESPONSABLE:
         return RedirectResponse("/famille", status_code=303)
-    if utilisateur.profil_souhaite == "repetiteur":
+    if utilisateur.role == RoleUtilisateur.REPETITEUR:
         return RedirectResponse("/dashboard", status_code=303)
     if utilisateur.role == RoleUtilisateur.ETUDIANT:
         return RedirectResponse("/bienvenue", status_code=303)
     return RedirectResponse("/", status_code=303)
+
+
+
+
+@router.get("/demande-validation")
+def suivre_demande_validation(request: Request, session: Session = Depends(get_session)):
+    """Ecran unique de suivi pour les profils non élèves en attente ou refusés."""
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+
+    demande = details_validation_profil(utilisateur)
+    if not demande:
+        if utilisateur.role == RoleUtilisateur.RESPONSABLE:
+            return RedirectResponse("/famille", status_code=303)
+        if utilisateur.role == RoleUtilisateur.SPONSOR:
+            return RedirectResponse("/sponsoring", status_code=303)
+        return RedirectResponse("/dashboard", status_code=303)
+
+    return templates.TemplateResponse(
+        request,
+        "demande_validation.html",
+        {"utilisateur": utilisateur, "demande": demande},
+        headers={
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
 
 
 @router.get("/connexion")

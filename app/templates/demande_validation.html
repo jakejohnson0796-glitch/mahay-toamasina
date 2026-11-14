@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block titre %}Validation du profil — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="ops-page">
+  <section class="ops-status-hero">
+    <div class="ops-status-main">
+      <span class="ops-kicker">Validation des profils · MITARIDALA</span>
+      {% if demande.statut == "en_attente" %}
+      <h1>Ta demande est en cours d’examen.</h1>
+      <p>Le profil « {{ demande.libelle }} » doit être approuvé par l’administration avant l’activation de ses fonctionnalités.</p>
+      {% else %}
+      <h1>Ta demande n’a pas été approuvée.</h1>
+      <p>Le profil « {{ demande.libelle }} » n’est pas activé. Ton compte reste limité à cette page de suivi.</p>
+      {% endif %}
+    </div>
+    <div class="ops-status-side">
+      {% if demande.statut == "en_attente" %}
+      <strong class="ops-badge is-alert">En attente</strong>
+      <span>Décision administrative requise</span>
+      {% else %}
+      <strong class="ops-badge is-alert">Refusée</strong>
+      <span>Profil non activé</span>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="ops-admin-group">
+    <h2>Suivi de ta demande</h2>
+    <div class="ops-admin-items">
+      <div class="ops-admin-item">
+        <span><strong>Profil demandé</strong><span>{{ demande.libelle }}</span></span>
+      </div>
+      <div class="ops-admin-item">
+        <span><strong>Envoyée le</strong><span>{{ demande.date_demande.strftime("%d/%m/%Y à %H:%M") if demande.date_demande else "Date non disponible" }}</span></span>
+      </div>
+      {% if demande.date_decision %}
+      <div class="ops-admin-item">
+        <span><strong>Décision</strong><span>{{ demande.date_decision.strftime("%d/%m/%Y à %H:%M") }}</span></span>
+      </div>
+      {% endif %}
+    </div>
+    {% if demande.motif %}
+    <div class="ops-alert ops-alert-warn">
+      <strong>Motif communiqué par l’administration</strong>
+      <p>{{ demande.motif }}</p>
+    </div>
+    {% endif %}
+  </section>
+
+  {% if demande.profil == "responsable" %}
+  <section class="ops-admin-group">
+    <h2>Protection des informations familiales</h2>
+    <p>L’approbation du profil responsable légal ne suffit pas à consulter la scolarité d’un enfant. Un administrateur doit aussi vérifier l’autorité légale et valider séparément le rattachement à chaque élève.</p>
+  </section>
+  {% elif demande.profil == "sponsor" %}
+  <section class="ops-admin-group">
+    <h2>Activation du partenariat</h2>
+    <p>L’approbation du profil sponsor autorise l’accès à l’espace partenaire. L’activation d’un partenariat commercial et de sa mise en avant reste une validation distincte par l’administration.</p>
+  </section>
+  {% endif %}
+
+  <section class="ops-admin-group">
+    <h2>En attendant</h2>
+    <p>Tu ne peux pas utiliser les fonctionnalités réservées à un élève ou à un autre rôle pendant l’examen de cette demande. Tu peux modifier les paramètres de sécurité ou te déconnecter.</p>
+    <div class="ops-admin-items">
+      <a class="ops-admin-item" href="/securite">
+        <span><strong>Paramètres de sécurité</strong><span>Gérer ton mot de passe et la sécurité du compte.</span></span>
+        <span class="ops-badge">Ouvrir</span>
+      </a>
+      <a class="ops-admin-item" href="/contact">
+        <span><strong>Contacter MITARIDALA</strong><span>Poser une question sur ta demande.</span></span>
+        <span class="ops-badge">Aide</span>
+      </a>
+    </div>
+    <form method="post" action="/deconnexion" class="ops-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-secondaire" type="submit">Se déconnecter</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

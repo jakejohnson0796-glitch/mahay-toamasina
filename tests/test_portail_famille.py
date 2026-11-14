@@ -311,7 +311,10 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
 
     assert 'mode_responsable: str = Form("")' in auth
     assert 'profil_demande = "responsable"' in auth
-    assert "role = RoleUtilisateur.RESPONSABLE" in auth
+    assert "est_demande_responsable = True" in auth
+    assert "role = RoleUtilisateur.ETUDIANT" in auth
+    assert 'statut_verification_responsable=("en_attente" if est_demande_responsable else "non_concerne")' in auth
+    assert "profil_validation_requise(utilisateur)" in auth
     assert 'return RedirectResponse("/famille", status_code=303)' in auth
     assert 'id="mode_responsable"' in register
     assert 'modeResponsable.addEventListener("change", actualiser)' in ui
