@@ -30,8 +30,8 @@ LONGUEUR_MAX_MESSAGE = 800
 # Interdit les coordonnées directes et liens dans les premiers échanges :
 # la demande reste dans MITARIDALA et ne révèle pas les numéros des comptes.
 _CONTACT_INTERDIT = re.compile(
-    r"(?:https?://|www\\.|[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}|"
-    r"(?:\\+?261|0)\\s*(?:32|33|34|38)(?:[\\s.-]?\\d){7}\\b)",
+    r"(?:https?://|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|"
+    r"(?:\+?261|0)\s*(?:32|33|34|38)(?:[\s.-]?\d){7}\b)",
     re.IGNORECASE,
 )
 
