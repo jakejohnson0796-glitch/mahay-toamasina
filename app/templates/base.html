@@ -354,7 +354,7 @@
         {{ avatar_utilisateur(utilisateur, taille=30) }}
         <span class="tb-sidebar-compte-identite">
           <span class="tb-sidebar-compte-nom">{{ utilisateur.nom.split(" ")[0] }}</span>
-          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% elif utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable" %}Responsable légal{% elif utilisateur.role == "professeur" %}Enseignant{% elif utilisateur.role == "etudiant" %}Élève / étudiant{% else %}Mon compte{% endif %}</span>
+          <span class="tb-sidebar-compte-role">{% if utilisateur.role == "admin" %}Administrateur{% elif utilisateur.role == "responsable" or utilisateur.profil_souhaite == "responsable" %}Responsable légal{% elif utilisateur.role == "professeur" %}Enseignant{% elif utilisateur.role == "repetiteur" or utilisateur.profil_souhaite == "repetiteur" %}Répétiteur{% elif utilisateur.role == "sponsor" or utilisateur.profil_souhaite == "sponsor" %}Sponsor{% elif utilisateur.profil_souhaite == "professeur" %}Enseignant · en attente{% elif utilisateur.role == "etudiant" %}Élève / étudiant{% else %}Mon compte{% endif %}</span>
           {% set jours_compte = calculer_jours_inactivite(utilisateur) %}
           <span class="tb-sidebar-compte-activite">{{ jours_compte }} j. inactif</span>
         </span>
