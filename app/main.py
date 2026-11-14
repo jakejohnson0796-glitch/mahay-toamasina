@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Res
 from fastapi.staticfiles import StaticFiles
 from .templating import templates
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlmodel import Session, select, func
 
 from .config import parametres
@@ -91,6 +92,72 @@ app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(EnTetesSecuriteMiddleware, https_actif=parametres.environnement == "production")
 app.add_middleware(VersionedStaticAssetCacheMiddleware)
 
+# Rejeter les en-têtes Host arbitraires avant qu'ils puissent influencer
+# les URLs, cookies, redirections ou contrôles d'origine.
+_HOTES_RENDU = {"mitaridala.onrender.com", "mahay-toamasina.onrender.com"}
+_HOTES_LOCAUX = {"localhost", "127.0.0.1", "testserver"}
+
+
+def _construire_hotes_autorises(
+    environnement: str,
+    url_canonique: str,
+    hotes_personnalises: str = "",
+) -> list[str]:
+    """Construit une liste d'hôtes exacts ; aucun loopback ni joker en production."""
+    production = (environnement or "").strip().casefold() == "production"
+    autorises = set(_HOTES_RENDU)
+    if not production:
+        autorises.update(_HOTES_LOCAUX)
+
+    try:
+        hote_canonique = urlsplit(url_canonique).hostname
+    except ValueError as erreur:
+        raise RuntimeError("SEO_CANONICAL_BASE_URL contient un hôte invalide.") from erreur
+    if hote_canonique:
+        hote_canonique = hote_canonique.casefold()
+        if (
+            "*" in hote_canonique
+            or any(caractere in hote_canonique for caractere in "/\\:@?#")
+            or any(caractere.isspace() for caractere in hote_canonique)
+        ):
+            raise RuntimeError("SEO_CANONICAL_BASE_URL doit désigner un nom d'hôte exact.")
+        if production and (
+            hote_canonique in _HOTES_LOCAUX
+            or hote_canonique.endswith(".localhost")
+            or hote_canonique == "::1"
+        ):
+            raise RuntimeError("SEO_CANONICAL_BASE_URL ne peut pas désigner une adresse locale en production.")
+        autorises.add(hote_canonique)
+
+    for valeur in (hotes_personnalises or "").split(","):
+        hote = valeur.strip().casefold()
+        if not hote:
+            continue
+        # TRUSTED_HOSTS accepte des noms exacts, pas des URL, ports ou jokers.
+        if (
+            "*" in hote
+            or any(caractere in hote for caractere in "/\\:@?#")
+            or any(caractere.isspace() for caractere in hote)
+        ):
+            raise RuntimeError(
+                "TRUSTED_HOSTS doit contenir uniquement des noms d'hôte exacts séparés par des virgules."
+            )
+        if production and hote in _HOTES_LOCAUX:
+            raise RuntimeError("TRUSTED_HOSTS ne peut pas autoriser localhost en production.")
+        autorises.add(hote)
+
+    return sorted(autorises)
+
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=_construire_hotes_autorises(
+        parametres.environnement,
+        parametres.seo_canonical_base_url,
+        os.getenv("TRUSTED_HOSTS", ""),
+    ),
+)
+
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 app.include_router(auth_router.router)
@@ -125,6 +192,40 @@ app.include_router(gamification_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(legal_router.router)
 app.include_router(opportunites_router.router)
+
+# FastAPI copie les routes d'un APIRouter au moment de include_router().
+# Certains imports croisés enregistrent tardivement des routes après cette copie.
+# On synchronise les routeurs concernés en réutilisant les APIRoute déjà construites :
+# leurs dépendances (dont verifier_csrf), validations et paramètres restent intacts.
+def _synchroniser_routes_tardives(*routeurs) -> None:
+    routes_montees = {
+        (
+            getattr(_route, "path", None),
+            frozenset(getattr(_route, "methods", None) or ()),
+        )
+        for _route in app.router.routes
+        if getattr(_route, "methods", None)
+    }
+    for _routeur in routeurs:
+        for _route in _routeur.routes:
+            _methodes = frozenset(getattr(_route, "methods", None) or ())
+            _chemin = getattr(_route, "path", None)
+            if not _chemin or not _methodes:
+                continue
+            _cle = (_chemin, _methodes)
+            if _cle not in routes_montees:
+                app.router.routes.append(_route)
+                routes_montees.add(_cle)
+
+
+# Les routeurs d'authentification, de documents et de notifications peuvent
+# recevoir des routes après include_router() via des imports croisés. La CI
+# vérifie que les mutations sensibles sont réellement exposées avec CSRF.
+_synchroniser_routes_tardives(
+    auth_router.router,
+    documents_router.router,
+    notifications_router.router,
+)
 
 
 def _masquer_mot_de_passe(url: str) -> str:

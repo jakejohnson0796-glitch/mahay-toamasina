@@ -36,6 +36,7 @@ from ..models import (
 )
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..profile_approval import profil_validation_requise
+from ..websocket_security import origine_websocket_autorisee
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, supprimer_fichier
@@ -45,7 +46,7 @@ from .. import referentiel_academique
 from ..web_utils import entier_ou_none
 from ..referentiel import NIVEAUX, NIVEAUX_LIBELLES
 from ..recherche import clause_recherche_cercles
-from ..rate_limit import limite_depassee
+from ..rate_limit import limite_depassee, limite_depassee_async
 from .. import gamification
 
 router = APIRouter()
@@ -66,38 +67,6 @@ def _journaliser_refus_ws(cercle_id: int, motif: str) -> None:
         return
     _DERNIER_LOG_REFUS_WS[cle] = maintenant
     logger.warning("Refus WebSocket cercle: cercle_id=%s motif=%s", cercle_id, motif)
-
-
-def _origine_websocket_autorisee(websocket: WebSocket) -> bool:
-    """Refuse les sockets navigateur initiées depuis un autre site.
-
-    Les navigateurs envoient Origin pour l'ouverture WebSocket. On exige
-    une origine HTTP(S) complète, sans identifiants/chemin/query, dont
-    l'hôte correspond exactement à l'en-tête Host reçu par l'application.
-    Les clients sans Origin sont refusés eux aussi : aucune route du chat
-    ne doit dépendre d'une connexion WebSocket cross-origin.
-    """
-    origine = (websocket.headers.get("origin") or "").strip()
-    hote_requete = (websocket.headers.get("host") or "").strip()
-    if not origine or not hote_requete or origine.lower() == "null":
-        return False
-    try:
-        analysee = urlsplit(origine)
-    except ValueError:
-        return False
-    if (
-        analysee.scheme.lower() not in {"http", "https"}
-        or not analysee.netloc
-        or analysee.username is not None
-        or analysee.password is not None
-        or analysee.path not in {"", "/"}
-        or analysee.query
-        or analysee.fragment
-    ):
-        return False
-    if parametres.environnement == "production" and analysee.scheme.lower() != "https":
-        return False
-    return analysee.netloc.casefold() == hote_requete.casefold()
 
 
 LONGUEUR_MAX_MESSAGE = 2000
@@ -2828,7 +2797,7 @@ def _identifier_message_client(donnees: dict) -> Optional[str]:
 
 @router.websocket("/cercles/{cercle_id}/ws")
 async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
-    if not _origine_websocket_autorisee(websocket):
+    if not origine_websocket_autorisee(websocket):
         _journaliser_refus_ws(cercle_id, "origine_refusee")
         await websocket.close(code=4403)
         return
@@ -2915,7 +2884,7 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                 continue
 
             client_message_id = _identifier_message_client(donnees_recues)
-            if limite_depassee(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
+            if await limite_depassee_async(f"ws-cercle:user:{user_id}:{cercle_id}", 60, 60):
                 await _erreur_message_websocket(
                     websocket,
                     "limite_debit",

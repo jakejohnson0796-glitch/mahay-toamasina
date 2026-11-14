@@ -25,7 +25,10 @@ def test_csp_reelle_sur_reponse_http():
     assert "script-src-attr 'none'" in csp
     assert "style-src-attr 'unsafe-inline' 'unsafe-hashes'" in csp
     assert "strict-dynamic" in csp
-    assert "https://cdn.jsdelivr.net" in csp
+    assert "https://cdn.jsdelivr.net" not in csp
+    assert "https://unpkg.com" not in csp
+    assert "https://*.supabase.co" not in csp
+    assert "connect-src 'self' ws: wss:" not in csp
     assert "strict-dynamic" in csp
 
     match = re.search(r"script-src[^;]*'nonce-([^']+)'", csp)
@@ -118,3 +121,62 @@ def test_page_expose_la_release():
     response = client.get("/connexion")
     assert response.status_code == 200
     assert f'data-release="{os.environ["GIT_COMMIT"][:12]}"' in response.text
+
+
+def test_host_header_inconnu_est_refuse():
+    client = TestClient(app)
+    response = client.get("/connexion", headers={"host": "host-injecte.invalid"})
+    assert response.status_code == 400
+
+
+def test_hote_canonique_render_est_accepte():
+    client = TestClient(app)
+    response = client.get("/connexion", headers={"host": "mitaridala.onrender.com"})
+    assert response.status_code == 200
+
+
+def test_supabase_realtime_origin_is_allowlisted_as_websocket_only_when_configured(monkeypatch):
+    from app.config import parametres
+    from app.security_headers import _construire_csp
+
+    monkeypatch.setattr(parametres, "supabase_url", "https://projet-test.supabase.co")
+    monkeypatch.setattr(parametres, "livekit_url", "wss://rtc.exemple.net")
+    csp = _construire_csp("nonce-test")
+
+    assert "wss://projet-test.supabase.co" in csp
+    assert "wss://rtc.exemple.net" in csp
+    assert "wss://autre-projet.supabase.co" not in csp
+
+
+def test_supabase_storage_documentation_requires_a_private_bucket():
+    from pathlib import Path
+
+    exemple = Path(".env.example").read_text(encoding="utf-8")
+    assert "bucket PRIVE" in exemple
+    assert "URL signees temporaires" in exemple
+    assert "public, si vous voulez" not in exemple
+
+def test_trusted_hosts_exclut_loopback_et_jokers_en_production():
+    import pytest
+    from app.main import _construire_hotes_autorises
+
+    hotes = _construire_hotes_autorises(
+        "production",
+        "https://mitaridala.onrender.com",
+    )
+    assert "mitaridala.onrender.com" in hotes
+    assert "localhost" not in hotes
+    assert "127.0.0.1" not in hotes
+    assert "testserver" not in hotes
+
+    with pytest.raises(RuntimeError):
+        _construire_hotes_autorises(
+            "production",
+            "https://mitaridala.onrender.com",
+            "*.exemple.com",
+        )
+    with pytest.raises(RuntimeError):
+        _construire_hotes_autorises(
+            "production",
+            "https://localhost",
+        )

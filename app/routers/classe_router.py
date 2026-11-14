@@ -27,6 +27,7 @@ from ..csrf import verifier_csrf
 from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..profile_approval import profil_validation_requise
+from ..websocket_security import origine_websocket_autorisee
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
 from ..ws_manager import gestionnaire
@@ -34,7 +35,7 @@ from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_
 from ..text_extraction import extraire_texte
 from .. import classe_correction
 from .. import classe_notes
-from ..rate_limit import limite_depassee
+from ..rate_limit import limite_depassee, limite_depassee_async
 from .. import gamification
 from .. import quiz as quiz_module
 from .. import ai_queue, course_revision
@@ -1672,6 +1673,10 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
     cours de route) : un client qui bidouillerait son JS ne peut pas
     dessiner sans autorisation reelle, seulement casser sa propre
     experience locale."""
+    if not origine_websocket_autorisee(websocket):
+        await websocket.close(code=4403)
+        return
+
     with Session(engine) as session:
         user_id = websocket.session.get("user_id")
         if not user_id:
@@ -1705,8 +1710,19 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
 
         try:
             while True:
-                brut = await websocket.receive_json()
-                if limite_depassee(f"ws-tableau:user:{utilisateur.id}:{seance_id}", 240, 60):
+                texte_recu = await websocket.receive_text()
+                if len(texte_recu.encode("utf-8")) > 64 * 1024:
+                    await websocket.close(code=1009)
+                    break
+                if await limite_depassee_async(
+                    f"ws-tableau:user:{utilisateur.id}:{seance_id}", 240, 60
+                ):
+                    continue
+                try:
+                    brut = json.loads(texte_recu)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if not isinstance(brut, dict):
                     continue
                 type_evt = brut.get("type")
 

@@ -15,7 +15,7 @@ from ..database import get_session
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, Notification, TypeNotification
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import utilisateur_courant, hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
@@ -89,6 +89,37 @@ def _telephone_rate_key(telephone: str) -> str:
     except TelephoneInvalide:
         brute = (telephone or "").strip().casefold()[:128]
         return "invalide:" + hashlib.sha256(brute.encode("utf-8")).hexdigest()[:16]
+
+
+def _invalider_codes_reinitialisation(session: Session, utilisateur_id: int) -> None:
+    """Invalide tous les codes antérieurs avant d'émettre une nouvelle demande."""
+    session.execute(
+        sql_update(CodeReinitialisationMotDePasse)
+        .where(
+            CodeReinitialisationMotDePasse.utilisateur_id == utilisateur_id,
+            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+        )
+        .values(utilise=True)
+    )
+
+
+def _consommer_code_reinitialisation(
+    session: Session,
+    code_id: int,
+    utilisateur_id: int,
+) -> bool:
+    """Réserve atomiquement un code encore valide pour empêcher tout rejeu."""
+    resultat = session.execute(
+        sql_update(CodeReinitialisationMotDePasse)
+        .where(
+            CodeReinitialisationMotDePasse.id == code_id,
+            CodeReinitialisationMotDePasse.utilisateur_id == utilisateur_id,
+            CodeReinitialisationMotDePasse.utilise == False,  # noqa: E712
+            CodeReinitialisationMotDePasse.expire_le > datetime.utcnow(),
+        )
+        .values(utilise=True)
+    )
+    return resultat.rowcount == 1
 
 
 CYCLES_ENSEIGNEMENT_VALIDES = frozenset({"primaire", "college", "lycee", "universite"})
@@ -861,6 +892,8 @@ def demander_reinitialisation(
 
         if utilisateur and utilisateur.email and email_configure():
             code = f"{secrets.randbelow(1_000_000):06d}"
+            # Une nouvelle demande rend les anciens codes inutilisables.
+            _invalider_codes_reinitialisation(session, utilisateur.id)
             session.add(CodeReinitialisationMotDePasse(
                 utilisateur_id=utilisateur.id,
                 code_hash=hacher_mot_de_passe(code),
@@ -938,11 +971,22 @@ def verifier_code_reinitialisation(
     if not entree_correspondante:
         return templates.TemplateResponse(request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique})
 
+    # La réservation atomique empêche deux requêtes concurrentes de rejouer
+    # un même code, même si elles l'ont toutes deux lu avant la mise à jour.
+    if not _consommer_code_reinitialisation(session, entree_correspondante.id, user_id):
+        session.rollback()
+        return templates.TemplateResponse(
+            request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique}
+        )
+
     utilisateur = session.get(Utilisateur, user_id)
-    entree_correspondante.utilise = True
+    if not utilisateur:
+        session.rollback()
+        return templates.TemplateResponse(
+            request, "mot_de_passe_oublie_code.html", {"erreur": erreur_generique}
+        )
     utilisateur.mot_de_passe_hash = hacher_mot_de_passe(nouveau_mot_de_passe)
     utilisateur.doit_changer_mot_de_passe = False
-    session.add(entree_correspondante)
     session.add(utilisateur)
     session.commit()
     request.session.pop("en_attente_reinit_user_id", None)
@@ -2097,21 +2141,3 @@ def desactiver_2fa_email(
     session.commit()
     request.session["auth_fingerprint"] = empreinte_session_utilisateur(utilisateur)
     return RedirectResponse("/securite?email_2fa_desactive=1", status_code=303)
-
-
-
-@router.post("/notifications/inactivite/lue")
-def marquer_notification_inactivite_lue(
-    request: Request,
-    session: Session = Depends(get_session),
-    _csrf: None = Depends(verifier_csrf),
-):
-    notification_data = request.session.pop("notification_inactivite", None)
-    if notification_data:
-        notification_id = notification_data.get("notification_id")
-        notification = session.get(Notification, notification_id) if notification_id else None
-        if notification and notification.destinataire_id == request.session.get("user_id") and notification.type_notification == TypeNotification.INACTIVITE_3_JOURS:
-            notification.lu = True
-            session.add(notification)
-            session.commit()
-    return RedirectResponse("/", status_code=303)

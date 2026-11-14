@@ -32,12 +32,27 @@ def test_base_charge_katex_core_sans_auto_render_obligatoire():
     assert "rendu_ia.js" in page
 
 
-def test_security_csp_autorise_les_assets_katex_sans_ouvrir_script_src():
-    # MODIF : contrôle statique supplémentaire sur la politique CSP.
-    code = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
-    assert "https://cdn.jsdelivr.net" in code
-    assert "style-src-attr 'unsafe-inline'" in code
-    assert "'unsafe-inline'" not in code.split("script-src", 1)[1].split(";", 1)[0]
+def test_security_csp_garde_les_scripts_locaux_et_les_styles_necessaires():
+    from app.security_headers import _construire_csp
+
+    source = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
+    csp = _construire_csp("nonce-test")
+    directives = {
+        directive.strip().split(" ", 1)[0]: directive.strip()
+        for directive in csp.split(";")
+        if directive.strip()
+    }
+    connect_sources = directives["connect-src"].split()[1:]
+
+    assert directives["script-src-attr"] == "script-src-attr 'none'"
+    assert directives["style-src-attr"].startswith("style-src-attr 'unsafe-inline'")
+    assert "'unsafe-inline'" not in directives["script-src"].split()
+    assert "wss://mitaridala.onrender.com" in connect_sources
+    assert "wss://mahay-toamasina.onrender.com" in connect_sources
+    assert "wss:" not in connect_sources
+    assert "ws:" not in connect_sources
+    assert "https://cdn.jsdelivr.net" not in source
+    assert "https://unpkg.com" not in source
 
 
 def test_pages_ia_exposent_le_texte_brut_au_renderer():
@@ -165,24 +180,25 @@ def test_contexte_notion_tuteur_separe_visuellement_le_libelle():
     assert ".ai-target-context .ai-kicker{display:block;" in css
 
 
-def test_renderer_ia_prevoit_un_cdn_de_secours_sans_affaiblir_la_csp():
+def test_renderer_ia_charge_uniquement_des_assets_locaux_et_garde_une_csp_stricte():
     base = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
     loader = (ROOT / "app/static/js/charger-dependances-ia.js").read_text(encoding="utf-8")
     csp = (ROOT / "app/security_headers.py").read_text(encoding="utf-8")
+    salle = (ROOT / "app/templates/classe_salle.html").read_text(encoding="utf-8")
 
     assert "charger-dependances-ia.js" in base
     assert base.index("charger-dependances-ia.js") < base.index("rendu_ia.js")
-    assert 'var principal = "https://cdn.jsdelivr.net/"' in loader
-    assert 'var secours = "https://unpkg.com/"' in loader
-    assert 'DELAI_MAX_MS = 2500' in loader
-    assert 'principal + "npm/katex@0.19.1/dist/katex.min.js"' in loader
-    assert 'secours + "katex@0.19.1/dist/katex.min.js"' in loader
-    assert 'principal + "npm/marked@18.1.1/lib/marked.umd.js"' in loader
-    assert 'secours + "dompurify@3.4.17/dist/purify.min.js"' in loader
-    assert "window.rendreTous(document)" in loader
-    assert "https://unpkg.com" in csp
+    assert 'var local = "/static/vendor/"' in loader
+    assert "cdn.jsdelivr.net" not in loader
+    assert "unpkg.com" not in loader
+    assert "https://cdn.jsdelivr.net" not in csp
+    assert "https://unpkg.com" not in csp
+    assert "connect-src" in csp
+    assert "ws: wss:" not in csp
     assert "script-src-attr 'none'" in csp
     assert "'unsafe-inline'" not in csp.split("script-src", 1)[1].split(";", 1)[0]
+    assert "/static/vendor/livekit/livekit-client.umd.js" in salle
+    assert "https://cdn.jsdelivr.net/npm/livekit-client" not in salle
 
 
 def test_dependances_frontend_ia_sont_empaquetees_et_verifiees():
@@ -197,6 +213,7 @@ def test_dependances_frontend_ia_sont_empaquetees_et_verifiees():
         ('"marked": {', '"version": "18.1.1"'),
         ('"dompurify": {', '"version": "3.4.17"'),
         ('"@highlightjs/cdn-assets": {', '"version": "11.12.0"'),
+        ('"livekit-client": {', '"version": "2.17.0"'),
     ):
         assert package_name in vendor
         assert version in vendor

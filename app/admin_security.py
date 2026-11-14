@@ -6,6 +6,7 @@ Le secret n'est jamais stocke en clair ni dans la session.
 """
 
 import re
+import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -17,6 +18,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .auth import empreinte_session_utilisateur, session_utilisateur_valide, verifier_mot_de_passe
 from .database import engine
 from .models import JournalActionAdmin, RoleUtilisateur, Utilisateur
+from .profile_approval import acces_interactif_admin_autorise
+from .client_ip import adresse_ip_client
+from .rate_limit import limite_depassee
 from .request_limits import limite_corps_requete
 
 
@@ -67,6 +71,15 @@ def confirmation_admin_configuree(utilisateur: Utilisateur) -> bool:
     return bool(utilisateur.mot_de_passe_confirmation_admin_hash)
 
 
+def compte_cible_supervise_valide(utilisateur: Optional[Utilisateur]) -> bool:
+    """Réutilise la règle centrale des profils validés avant/après chaque écriture."""
+    return bool(
+        utilisateur
+        and not utilisateur.banni
+        and acces_interactif_admin_autorise(utilisateur)
+    )
+
+
 def _etat_echecs(request: Request) -> tuple[int, Optional[datetime]]:
     nombre = int(request.session.get("admin_confirmation_echecs", 0) or 0)
     timestamp_texte = request.session.get("admin_confirmation_dernier_echec")
@@ -105,6 +118,26 @@ def enregistrer_echec_confirmation_admin(request: Request, maintenant: Optional[
 def reinitialiser_echecs_confirmation_admin(request: Request) -> None:
     request.session.pop("admin_confirmation_echecs", None)
     request.session.pop("admin_confirmation_dernier_echec", None)
+
+
+def limite_confirmation_admin_depassee(request: Request, admin_id: int) -> bool:
+    """Applique un blocage partagé par compte et par IP après des échecs.
+
+    Les deux compteurs sont toujours incrémentés : le contrôle par compte
+    empêche la rotation d'IP, celui par IP ralentit les rafales multi-comptes.
+    Redis rend ces limites communes aux sessions et aux redémarrages.
+    """
+    compte_bloque = limite_depassee(
+        f"admin-confirmation:compte:{admin_id}",
+        MAX_ECHECS_CONFIRMATION_ADMIN,
+        int(FENETRE_ECHECS_CONFIRMATION_ADMIN.total_seconds()),
+    )
+    ip_bloquee = limite_depassee(
+        f"admin-confirmation:ip:{adresse_ip_client(request)}",
+        MAX_ECHECS_CONFIRMATION_ADMIN * 4,
+        int(FENETRE_ECHECS_CONFIRMATION_ADMIN.total_seconds()),
+    )
+    return bool(compte_bloque or ip_bloquee)
 
 
 def verifier_confirmation_admin(
@@ -177,16 +210,9 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
 
             if mode_supervise:
                 cible = session.get(Utilisateur, user_id)
-                roles_autorises = {
-                    RoleUtilisateur.ETUDIANT,
-                    RoleUtilisateur.PROFESSEUR,
-                    RoleUtilisateur.REPETITEUR,
-                }
                 if (
                     cible_id != user_id
-                    or not cible
-                    or cible.banni
-                    or cible.role not in roles_autorises
+                    or not compte_cible_supervise_valide(cible)
                     or cible.id == utilisateur.id
                     or not session_utilisateur_valide(request.session, cible)
                 ):
@@ -248,6 +274,13 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
 
             valide, detail = verifier_confirmation_admin(request, utilisateur, mot_de_passe)
             if not valide:
+                if await asyncio.to_thread(
+                    limite_confirmation_admin_depassee, request, utilisateur.id
+                ):
+                    return JSONResponse(
+                        {"detail": "Trop de tentatives de confirmation administrateur. Réessayez plus tard."},
+                        status_code=429,
+                    )
                 return JSONResponse({"detail": detail}, status_code=403)
 
         identifiant_audit = None
@@ -292,16 +325,7 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
             # son empreinte avec celle du compte cible.
             with Session(engine) as supervise_session:
                 cible_apres_action = supervise_session.get(Utilisateur, cible_id)
-                roles_autorises = {
-                    RoleUtilisateur.ETUDIANT,
-                    RoleUtilisateur.PROFESSEUR,
-                    RoleUtilisateur.REPETITEUR,
-                }
-                if (
-                    cible_apres_action
-                    and not cible_apres_action.banni
-                    and cible_apres_action.role in roles_autorises
-                ):
+                if compte_cible_supervise_valide(cible_apres_action):
                     request.session["auth_fingerprint"] = empreinte_session_utilisateur(cible_apres_action)
                 else:
                     request.session.clear()

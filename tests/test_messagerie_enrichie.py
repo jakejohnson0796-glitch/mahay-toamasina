@@ -17,7 +17,7 @@ import re
 import unittest
 import tempfile
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 # DATABASE_URL doit etre fixee AVANT le premier import de app.* (le moteur
 # SQLAlchemy est cree une fois au niveau module dans app/database.py).
@@ -32,7 +32,7 @@ from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
 from app.auth import hacher_mot_de_passe  # noqa: E402
 from app.admin_security import action_admin_protegee  # noqa: E402
-from app.routers.cercles_router import _origine_websocket_autorisee  # noqa: E402
+from app.websocket_security import origine_websocket_autorisee as _origine_websocket_autorisee  # noqa: E402
 from app.models import (  # noqa: E402
     Utilisateur, RoleUtilisateur, CercleEtude, MembreCercle, RoleMembreCercle,
     MessageCercle, MessageReaction, MessageMention, Notification, StatutCercle,
@@ -199,7 +199,7 @@ class TestMessagerieEnrichie(unittest.TestCase):
 
     def test_websocket_signale_clairement_la_limite_de_debit(self):
         client_message_id = "debit-limite-001"
-        with patch("app.routers.cercles_router.limite_depassee", return_value=True):
+        with patch("app.routers.cercles_router.limite_depassee_async", new=AsyncMock(return_value=True)):
             with self.sarah.websocket_connect(f"/cercles/{self.cercle_id}/ws", headers={"origin": "https://testserver"}) as websocket:
                 self.assertEqual(websocket.receive_json()["type"], "presence")
                 websocket.send_json({

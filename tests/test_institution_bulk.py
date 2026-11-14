@@ -89,12 +89,16 @@ def test_recuperation_mot_de_passe_accepte_un_identifiant_institutionnel(monkeyp
     class FausseSession:
         def __init__(self):
             self.requetes = 0
+            self.invalidation_codes = 0
             self.ajouts = []
             self.commits = 0
 
         def exec(self, _requete):
             self.requetes += 1
             return Resultat()
+
+        def execute(self, _requete):
+            self.invalidation_codes += 1
 
         def add(self, objet):
             self.ajouts.append(objet)
@@ -122,6 +126,7 @@ def test_recuperation_mot_de_passe_accepte_un_identifiant_institutionnel(monkeyp
     assert response.headers["location"] == "/mot-de-passe-oublie/code"
     assert request.session["en_attente_reinit_user_id"] == utilisateur.id
     assert session.requetes == 1
+    assert session.invalidation_codes == 1
     assert session.commits == 1
     assert len(emails) == 1
     assert session.ajouts[0].utilisateur_id == utilisateur.id

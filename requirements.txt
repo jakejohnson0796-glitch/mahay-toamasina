@@ -1,22 +1,23 @@
-fastapi==0.111.0
+# Starlette est résolue par FastAPI : ne pas l'épingler séparément.
+fastapi==0.162.7
 uvicorn[standard]==0.30.1
 sqlmodel==0.0.19
 passlib==1.7.4
 bcrypt==4.0.1
-python-multipart==0.0.9
-jinja2==3.1.4
+python-multipart==0.0.33
+jinja2==3.1.6
 itsdangerous==2.2.0
 
 # --- Ajoute pour Supabase / IA / cercles d'etude ---
-python-dotenv==1.0.1
+python-dotenv==1.2.4
 psycopg2-binary==2.9.9      # driver Postgres, necessaire si DATABASE_URL pointe vers Supabase
 redis==8.1.0                 # file rapide partagee entre web et workers via Render Key Value
 supabase==2.31.0             # client Supabase (DB alternative + Storage)
 groq==1.6.0                  # generation de quiz par IA (API gratuite, console.groq.com)
-pdfplumber==0.11.4           # extraction de texte des PDF (pour le quiz IA)
+pdfplumber==0.11.10           # extraction PDF, pdfminer.six corrige et Pillow >= 12.2
 pytesseract==0.3.13          # OCR optionnel (scans/images) - necessite le binaire Tesseract
 pdf2image==1.17.0            # OCR optionnel sur PDF scannes - necessite poppler-utils
-Pillow==10.4.0
+Pillow==13.0.0
 python-docx==1.1.2
 reportlab==5.0.1              # génération locale de fiches PDF téléchargeables
 python-pptx==0.6.23
@@ -26,7 +27,7 @@ livekit-api==1.2.0           # generation des jetons audio/video/partage d'ecran
 pyotp==2.9.0                  # double authentification TOTP (gratuite, calculee localement)
 qrcode==7.4.2                 # QR code d'activation 2FA (aucun service externe)
 
-pytest==8.3.5
+pytest==9.0.3
 httpx==0.28.1
 
 snowballstemmer==3.1.1        # racines morphologiques françaises pour le fallback SQLite/dev

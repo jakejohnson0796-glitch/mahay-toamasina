@@ -1,45 +1,19 @@
-/* Chargement borné des dépendances IA : CDN principal puis secours.
-   Le contenu des étudiants reste dans le navigateur ; seules les bibliothèques
-   publiques sont chargées. Chaque origine dispose d'un délai maximal. */
+/* Chargement borné des dépendances IA locales.
+   Les bibliothèques sont vérifiées par SHA-512 pendant le build ; aucun CDN
+   JavaScript externe n'est contacté pendant l'exécution du site. */
 (function (window, document) {
   "use strict";
 
   var DELAI_MAX_MS = 2500;
   var local = "/static/vendor/";
-  var principal = "https://cdn.jsdelivr.net/";
   var versionsLocales = { katex: "0.19.1", marked: "18.1.1", purify: "3.4.17", highlight: "11.12.0" };
-  var secours = "https://unpkg.com/";
   var ressources = {
-    css: [
-      local + "katex/katex.min.css?v=" + versionsLocales.katex,
-      principal + "npm/katex@0.19.1/dist/katex.min.css",
-      secours + "katex@0.19.1/dist/katex.min.css"
-    ],
-    katex: [
-      local + "katex/katex.min.js?v=" + versionsLocales.katex,
-      principal + "npm/katex@0.19.1/dist/katex.min.js",
-      secours + "katex@0.19.1/dist/katex.min.js"
-    ],
-    mhchem: [
-      local + "katex/contrib/mhchem.min.js?v=" + versionsLocales.katex,
-      principal + "npm/katex@0.19.1/dist/contrib/mhchem.min.js",
-      secours + "katex@0.19.1/dist/contrib/mhchem.min.js"
-    ],
-    marked: [
-      local + "marked/marked.min.js?v=" + versionsLocales.marked,
-      principal + "npm/marked@18.1.1/lib/marked.umd.js",
-      secours + "marked@18.1.1/lib/marked.umd.js"
-    ],
-    purify: [
-      local + "dompurify/purify.min.js?v=" + versionsLocales.purify,
-      principal + "npm/dompurify@3.4.17/dist/purify.min.js",
-      secours + "dompurify@3.4.17/dist/purify.min.js"
-    ],
-    highlight: [
-      local + "highlightjs/highlight.min.js?v=" + versionsLocales.highlight,
-      principal + "gh/highlightjs/cdn-release@11.12.0/build/highlight.min.js",
-      secours + "@highlightjs/cdn-assets@11.12.0/highlight.min.js"
-    ]
+    css: [local + "katex/katex.min.css?v=" + versionsLocales.katex],
+    katex: [local + "katex/katex.min.js?v=" + versionsLocales.katex],
+    mhchem: [local + "katex/contrib/mhchem.min.js?v=" + versionsLocales.katex],
+    marked: [local + "marked/marked.min.js?v=" + versionsLocales.marked],
+    purify: [local + "dompurify/purify.min.js?v=" + versionsLocales.purify],
+    highlight: [local + "highlightjs/highlight.min.js?v=" + versionsLocales.highlight]
   };
 
   var promesseChargement = null;
@@ -91,6 +65,9 @@
         resolve(Boolean(ok && disponible()));
       }
 
+      // Propager le nonce aux scripts dynamiques pour la CSP stricte.
+      var scriptAutorise = document.querySelector("script[nonce]");
+      if (scriptAutorise) script.nonce = scriptAutorise.nonce;
       script.src = url;
       script.async = true;
       script.onload = function () { finir(true); };

@@ -19,7 +19,12 @@ def test_classe_salle_template_conserve_les_blocs_attendus():
     assert '{% endblock %}' in source
     assert 'id="salle-virtuelle"' in source
     assert 'id="form-chat-salle"' in source
-    assert 'livekit-client@2.17.0' in source
+    assert '/static/vendor/livekit/livekit-client.umd.js?v=2.17.0' in source
+    assert 'https://cdn.jsdelivr.net/npm/livekit-client' not in source
+    vendor = (ROOT / "scripts" / "vendor_frontend_dependencies.py").read_text(encoding="utf-8")
+    assert '"livekit-client": {' in vendor
+    assert '"version": "2.17.0"' in vendor
+    assert 'actual_integrity != integrity' in vendor
 
 
 

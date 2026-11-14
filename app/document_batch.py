@@ -10,7 +10,7 @@ from typing import Any, Sequence
 
 from .document_classifier import classifier_document
 from .storage import ouvrir_fichier_local
-from .text_extraction import extraire_texte
+from .text_extraction import extraire_texte, ExtractionSaturee
 
 MAX_DOCUMENTS_PAR_LOT = 15
 MAX_TAILLE_DOCUMENT_PAR_LOT = 120 * 1024 * 1024
@@ -102,6 +102,8 @@ def analyser_documents_stockes(
                 index = futures[future]
                 try:
                     resultats[index] = future.result()
+                except ExtractionSaturee as erreur:
+                    resultats[index] = {"erreur": str(erreur)}
                 except Exception:
                     resultats[index] = {
                         "erreur": "L'extraction ou la classification de ce fichier a échoué."

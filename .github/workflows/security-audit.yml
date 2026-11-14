@@ -1,0 +1,52 @@
+name: Security audit
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-dependencies-and-static-analysis:
+    name: Audit Python dependencies and source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Audit des vulnérabilités des dépendances
+        run: |
+          python -m pip install --upgrade pip-audit
+          pip-audit --strict -r requirements.txt
+
+      - name: Analyse statique Bandit (sévérité et confiance élevées)
+        run: |
+          python -m pip install --upgrade bandit
+          bandit -r app -lll -iii -x app/static,app/templates
+
+  secret-detection:
+    name: Detect accidentally committed secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan Gitleaks de l'historique Git
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -39,6 +39,30 @@ jobs:
         run: python scripts/verify_migrations.py
       - name: Verifier la compilation
         run: python -m compileall -q app tests
+
+      # Contrôler les mutations sensibles avant les smokes navigateur et la suite longue.
+      - name: Diagnostiquer le montage des routes d'authentification
+        run: |
+          python - <<'PY'
+          from app.main import app
+          from app.routers import auth_router
+
+          paths = ("/connexion/2fa", "/profil/photo", "/securite/universite", "/securite/niveau")
+          for path in paths:
+              app_routes = [
+                  sorted(route.methods or [])
+                  for route in app.routes
+                  if getattr(route, "path", None) == path and hasattr(route, "methods")
+              ]
+              router_routes = [
+                  sorted(route.methods or [])
+                  for route in auth_router.router.routes
+                  if getattr(route, "path", None) == path and hasattr(route, "methods")
+              ]
+              print(f"ROUTE_DIAGNOSTIC {path} app={app_routes} auth_router={router_routes}")
+          PY
+      - name: Vérifier rapidement les routes critiques et leurs protections CSRF
+        run: pytest -q tests/test_release_critical_paths.py
       - name: Verifier le contrat de deploiement Render
         run: python scripts/verify_deployment_contract.py
       - name: Vérifier l'identité de release et le renderer IA
@@ -69,6 +93,7 @@ jobs:
           node scripts/smoke_circle_hierarchy.mjs
           node scripts/smoke_tuteur_voice.mjs
           node scripts/smoke_revision_contrast.mjs
+
       - name: Lancer les tests (un module par processus)
         run: |
           set -e
