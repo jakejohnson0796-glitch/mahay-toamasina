@@ -1232,6 +1232,33 @@ class ThemeDuJour(SQLModel, table=True):
     date_creation: datetime = Field(default_factory=datetime.utcnow)
 
 
+class DemandeAccompagnement(SQLModel, table=True):
+    """Demande privée de soutien scolaire entre un élève et un répétiteur vérifié.
+
+    Aucun téléphone, email, adresse ou lien de contact n'est stocké ici.
+    Les coordonnées des deux comptes restent invisibles dans les vues.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    etudiant_id: int = Field(foreign_key="utilisateur.id", index=True)
+    repetiteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    matiere: str = Field(max_length=120)
+    niveau: str = Field(max_length=120)
+    message: str = Field(max_length=800)
+    statut: str = Field(default="en_attente", index=True, max_length=20)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_traitement: Optional[datetime] = None
+
+    __table_args__ = (
+        CheckConstraint("etudiant_id <> repetiteur_id", name="ck_demandeaccompagnement_distinct"),
+        CheckConstraint(
+            "statut IN ('en_attente', 'acceptee', 'refusee')",
+            name="ck_demandeaccompagnement_statut",
+        ),
+        Index("ix_demandeaccompagnement_repetiteur_statut", "repetiteur_id", "statut"),
+        Index("ix_demandeaccompagnement_etudiant_statut", "etudiant_id", "statut"),
+    )
+
+
 class StatutDemandeAdhesion(str, Enum):
     EN_ATTENTE = "en_attente"
     ACCEPTEE = "acceptee"
