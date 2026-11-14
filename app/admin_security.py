@@ -281,10 +281,12 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                         audit_session.commit()
             raise
 
-        if mode_supervise:
+        if mode_supervise and request.session.get("admin_mode_actor_id") == admin_id:
             # Certaines routes du compte permettent de modifier son mot de
             # passe. Recalculer l'empreinte cible après le POST pour permettre
             # à l'administrateur de continuer puis de quitter proprement.
+            # Si la route vient de restaurer la session admin, ne pas écraser
+            # son empreinte avec celle du compte cible.
             with Session(engine) as supervise_session:
                 cible_apres_action = supervise_session.get(Utilisateur, cible_id)
                 roles_autorises = {
