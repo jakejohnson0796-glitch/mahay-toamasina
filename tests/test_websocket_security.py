@@ -61,3 +61,16 @@ def test_websocket_origin_comparison_includes_port(monkeypatch):
     assert origine_websocket_autorisee(
         _websocket("http://localhost:8001", "localhost:8000")
     ) is False
+
+
+def test_circle_and_class_websockets_share_the_origin_guard():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    circles = (root / "app/routers/cercles_router.py").read_text(encoding="utf-8")
+    classes = (root / "app/routers/classe_router.py").read_text(encoding="utf-8")
+
+    assert "from ..websocket_security import origine_websocket_autorisee" in circles
+    assert "if not origine_websocket_autorisee(websocket):" in circles
+    assert "from ..websocket_security import origine_websocket_autorisee" in classes
+    assert "if not origine_websocket_autorisee(websocket):" in classes
