@@ -50,6 +50,7 @@ def _preparer_redis(monkeypatch, redis_client):
 
 def test_rate_limit_store_is_bounded():
     rate_limit._tentatives.clear()
+    rate_limit._fenetres_max.clear()
     for i in range(rate_limit.MAX_CLES + 250):
         rate_limit._limite_depassee_memoire(f"attaque:{i}", 1, 60)
     assert len(rate_limit._tentatives) <= rate_limit.MAX_CLES
@@ -105,3 +106,21 @@ def test_memory_fallback_keeps_keys_until_their_longest_window_expires(monkeypat
     rate_limit._purger_expirees(now[0])
     assert "long-window" not in rate_limit._tentatives
     assert "long-window" not in rate_limit._fenetres_max
+
+
+def test_async_rate_limit_runs_the_blocking_backend_in_a_worker_thread(monkeypatch):
+    import asyncio
+    import threading
+
+    thread_ids = []
+
+    def fake_limiter(cle, maximum, window):
+        thread_ids.append(threading.get_ident())
+        return cle == "async:test" and maximum == 3 and window == 60
+
+    monkeypatch.setattr(rate_limit, "limite_depassee", fake_limiter)
+    main_thread = threading.get_ident()
+    resultat = asyncio.run(rate_limit.limite_depassee_async("async:test", 3, 60))
+
+    assert resultat is True
+    assert thread_ids and thread_ids[0] != main_thread
