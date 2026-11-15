@@ -13,17 +13,17 @@
     </a>
 
     <div class="auth-showcase-copy">
-      <p class="auth-kicker">Créer ton espace d’étude</p>
-      <h1>Un seul espace pour apprendre, réviser et collaborer.</h1>
+      <p class="auth-kicker">Rejoindre MITARIDALA</p>
+      <h1>Un espace adapté à ton rôle dans la communauté éducative.</h1>
       <p>
-        Crée ton compte en quelques étapes. Ton profil académique aide ensuite
-        à organiser les ressources et les cercles autour de ton parcours.
+        Élève, étudiant, enseignant, répétiteur ou partenaire : choisis ton profil
+        pour découvrir un parcours d’inscription adapté à tes besoins.
       </p>
 
-      <div class="auth-benefices" aria-label="Ce que votre compte donne accès à">
-        <div class="auth-benefice"><span class="auth-benefice-icon">01</span><span>Un profil étudiant adapté à ton parcours académique.</span></div>
-        <div class="auth-benefice"><span class="auth-benefice-icon">02</span><span>Des ressources, quiz et outils d’apprentissage réunis au même endroit.</span></div>
-        <div class="auth-benefice"><span class="auth-benefice-icon">03</span><span>Des espaces d’étude pour travailler avec d’autres étudiants.</span></div>
+      <div class="auth-benefices" aria-label="Les possibilités offertes par MITARIDALA">
+        <div class="auth-benefice"><span class="auth-benefice-icon">01</span><span>Apprendre, réviser et progresser avec un espace étudiant.</span></div>
+        <div class="auth-benefice"><span class="auth-benefice-icon">02</span><span>Enseigner ou accompagner les apprenants après validation du profil.</span></div>
+        <div class="auth-benefice"><span class="auth-benefice-icon">03</span><span>Soutenir la communauté éducative comme partenaire ou sponsor.</span></div>
       </div>
     </div>
 
@@ -41,13 +41,14 @@
         </div>
 
         <div class="auth-card-main">
-          <h2 id="titre-inscription">Créer votre espace.</h2>
-          <p class="auth-card-intro">Quelques informations pour préparer votre compte et votre parcours.</p>
+          <h2 id="titre-inscription">Quel profil veux-tu créer ?</h2>
+          <p class="auth-card-intro">Commence par choisir ton rôle. Les informations demandées ensuite s’adapteront à ton choix.</p>
 
           <div class="auth-progress" data-auth-progress aria-label="Progression de l’inscription">
-            <div class="auth-step is-active" data-step="1"><span class="auth-step-num">01</span><span class="auth-step-label">Compte</span></div>
-            <div class="auth-step" data-step="2"><span class="auth-step-num">02</span><span class="auth-step-label">Parcours</span></div>
-            <div class="auth-step" data-step="3"><span class="auth-step-num">03</span><span class="auth-step-label">Finaliser</span></div>
+            <div class="auth-step is-active" data-step="1"><span class="auth-step-num">01</span><span class="auth-step-label">Profil</span></div>
+            <div class="auth-step" data-step="2"><span class="auth-step-num">02</span><span class="auth-step-label">Compte</span></div>
+            <div class="auth-step" data-step="3"><span class="auth-step-num">03</span><span class="auth-step-label">Parcours</span></div>
+            <div class="auth-step" data-step="4"><span class="auth-step-num">04</span><span class="auth-step-label">Finaliser</span></div>
           </div>
 
           {% if erreur %}
@@ -63,11 +64,59 @@
                 data-filiere-id="filiere_id"
                 data-info-tronc-id="info-tronc-commun">
             <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <select id="role" class="auth-profile-sync" tabindex="-1" aria-hidden="true">
+              <option value="">Choisir un profil</option>
+              <option value="etudiant">Élève / étudiant(e)</option>
+              <option value="professeur">Professeur / enseignant(e)</option>
+              <option value="repetiteur">Répétiteur / répétitrice</option>
+              <option value="sponsor">Sponsor / partenaire</option>
+            </select>
+
+            <fieldset id="bloc-choix-profil" class="auth-field auth-profile-selection" aria-describedby="profil-selection-aide validation-profils-aide">
+              <legend>À qui s’adresse ce compte ? <span class="auth-required" aria-hidden="true">*</span></legend>
+              <p class="auth-profile-intro">Sélectionne le profil qui correspond à ton utilisation de MITARIDALA.</p>
+              <div class="auth-profile-grid">
+                <label class="auth-profile-card">
+                  <input type="radio" name="role" value="etudiant" required>
+                  <span class="auth-profile-icon" aria-hidden="true">🎓</span>
+                  <span class="auth-profile-copy"><strong>Élève / étudiant(e)</strong><small>Apprendre, réviser, suivre les cours et progresser.</small></span>
+                  <span class="auth-profile-check" aria-hidden="true">✓</span>
+                </label>
+                <label class="auth-profile-card">
+                  <input type="radio" name="role" value="professeur" required>
+                  <span class="auth-profile-icon" aria-hidden="true">📚</span>
+                  <span class="auth-profile-copy"><strong>Professeur / enseignant(e)</strong><small>Enseigner, partager des cours et accompagner les apprenants.</small></span>
+                  <span class="auth-profile-check" aria-hidden="true">✓</span>
+                </label>
+                <label class="auth-profile-card">
+                  <input type="radio" name="role" value="repetiteur" required>
+                  <span class="auth-profile-icon" aria-hidden="true">🧑‍🏫</span>
+                  <span class="auth-profile-copy"><strong>Répétiteur / répétitrice</strong><small>Proposer un accompagnement et des séances de soutien.</small></span>
+                  <span class="auth-profile-check" aria-hidden="true">✓</span>
+                </label>
+                <label class="auth-profile-card">
+                  <input type="radio" name="role" value="sponsor" required>
+                  <span class="auth-profile-icon" aria-hidden="true">🤝</span>
+                  <span class="auth-profile-copy"><strong>Sponsor / partenaire</strong><small>Soutenir les apprenants ou proposer des services utiles.</small></span>
+                  <span class="auth-profile-check" aria-hidden="true">✓</span>
+                </label>
+              </div>
+              <p class="auth-help" id="profil-selection-aide">Tu pourras compléter ton profil après la création du compte.</p>
+              <p class="auth-role-note" id="validation-profils-aide">L’élève / étudiant peut commencer immédiatement. Les demandes de professeur, enseignant, répétiteur et sponsor sont vérifiées par l’administration avant l’accès à l’espace correspondant. Le choix du profil n’accorde jamais de droits automatiquement.</p>
+            </fieldset>
+
+            <div class="auth-field auth-profile-responsable">
+              <label class="auth-profile-responsable-card" for="mode_responsable">
+                <input type="checkbox" id="mode_responsable" name="mode_responsable" value="oui">
+                <span class="auth-profile-icon" aria-hidden="true">👨‍👩‍👧</span>
+                <span class="auth-profile-copy"><strong>Parent / responsable légal</strong><small>Demander un espace famille, soumis à validation administrative et vérification du lien avec chaque enfant.</small></span>
+              </label>
+            </div>
 
             <div class="auth-section">
               <div class="auth-section-head">
                 <div>
-                  <p class="auth-section-title">1. Votre compte</p>
+                  <p class="auth-section-title">2. Votre compte</p>
                   <p class="auth-section-caption">Les informations de base pour vous identifier.</p>
                 </div>
               </div>
@@ -112,30 +161,12 @@
                 <p class="auth-help" id="mot-de-passe-aide">8 à 72 caractères. Le contrôle visuel est indicatif ; la validation définitive reste côté serveur.</p>
               </div>
 
-              <div class="auth-field">
-                <label for="role">Votre profil <span class="auth-required" aria-hidden="true">*</span></label>
-                <div class="auth-input-wrap">
-                  <select id="role" name="role" required>
-                    <option value="etudiant" selected>Élève / étudiant(e)</option>
-                    <option value="professeur">Professeur / enseignant(e)</option>
-                    <option value="repetiteur">Répétiteur / répétitrice</option>
-                    <option value="sponsor">Sponsor / commerce / service étudiant</option>
-                  </select>
-                </div>
-                <div class="auth-role-note">Seul le profil élève / étudiant est activé directement. Toute demande pour devenir enseignant, professeur, répétiteur, sponsor ou responsable légal doit être approuvée par l’administration avant l’accès à l’espace correspondant. Le choix du profil ne donne jamais de droits automatiquement.</div>
-              </div>
-              <div class="auth-field">
-                <div class="auth-legal-checkbox">
-                  <input type="checkbox" id="mode_responsable" name="mode_responsable" value="oui">
-                  <label for="mode_responsable">Je demande un profil parent / responsable légal. L’administration doit d’abord approuver le profil, puis vérifier séparément le lien avec chaque enfant avant tout accès aux informations scolaires.</label>
-                </div>
-              </div>
             </div>
 
             <div id="bloc-academique" class="auth-section auth-academic" data-academic-section>
               <div class="auth-section-head">
                 <div>
-                  <p class="auth-section-title">2. Votre parcours académique</p>
+                  <p class="auth-section-title">3. Votre parcours académique</p>
                   <p class="auth-section-caption">Ces informations organisent les ressources et les cercles proposés.</p>
                 </div>
               </div>
@@ -268,7 +299,7 @@
           </form>
 
           <p class="auth-switch">Déjà inscrit(e) ? <a href="/connexion"><strong>Se connecter</strong></a></p>
-          <p class="auth-footer-note">L’élève / étudiant peut commencer immédiatement. Les profils enseignant, professeur, répétiteur, sponsor et responsable légal restent bloqués jusqu’à leur validation par un administrateur.</p>
+          <p class="auth-footer-note">Chaque compte est protégé par les règles de validation de MITARIDALA. Les accès enseignants, répétiteurs, sponsors et responsables légaux ne sont ouverts qu’après approbation administrative.</p>
         </div>
       </div>
     </div>
