@@ -133,7 +133,7 @@ function fixture(name, theme) {
     '</div></main><footer class="pied">MITARIDALA — Aide et contact</footer></div></div></body></html>';
 }
 
-const widths = [265, 320, 360, 390, 430, 540, 768, 820, 1024, 1280, 1440];
+const widths = [265, 280, 320, 360, 390, 430, 540, 720, 768, 820, 912, 960, 1024, 1152, 1280, 1440, 1600, 1920];
 const scenarios = ["dashboard", "documents", "quiz", "circle", "class", "admin", "auth"];
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({
@@ -210,6 +210,11 @@ try {
           navRect: r(nav),
           anchors: anchors.map(r),
           labels,
+          labelFontSizes: anchors.map((anchor) => {
+            const spans = Array.from(anchor.querySelectorAll(":scope > span"));
+            const label = spans.length ? spans[spans.length - 1] : anchor;
+            return Number.parseFloat(getComputedStyle(label).fontSize) || 0;
+          }),
           anchorCount: anchors.length
         };
       });
@@ -300,8 +305,12 @@ try {
         }
         for (let i = 0; i < result.anchors.length; i += 1) {
           const item = result.anchors[i];
-          if (!item || item.x < -1 || item.right > width + 1 || item.height < 44) {
+          if (!item || item.x < -1 || item.right > width + 1 || item.height < 44 || (width <= 300 && item.width < 43.5)) {
             failures.push(scenario + " @ " + width + "px: zone tactile incorrecte pour l'onglet " + result.labels[i] + " " + JSON.stringify(item));
+            break;
+          }
+          if (result.labelFontSizes[i] < 9) {
+            failures.push(scenario + " @ " + width + "px: libellé mobile trop petit (" + result.labelFontSizes[i] + "px)");
             break;
           }
           if (i > 0 && item.x < result.anchors[i - 1].right - 1) {
@@ -311,6 +320,49 @@ try {
         }
       } else if (result.navDisplay !== "none") {
         failures.push(scenario + " @ " + width + "px: la navigation mobile apparaît sur grand écran");
+      }
+    }
+  }
+
+
+  // Contrôle complémentaire des téléphones en paysage, des tablettes et des
+  // fenêtres très basses : la barre fixe ne doit ni déborder ni masquer le contenu.
+  const orientations = [
+    { width: 390, height: 320 },
+    { width: 844, height: 390 },
+    { width: 932, height: 430 },
+    { width: 1280, height: 720 }
+  ];
+  for (const scenario of ["dashboard", "documents", "circle", "class", "admin", "auth"]) {
+    await page.setContent(fixture(scenario, "clair"), { waitUntil: "domcontentloaded" });
+    for (const viewport of orientations) {
+      await page.setViewportSize(viewport);
+      const state = await page.evaluate(() => {
+        const main = document.querySelector("main");
+        const nav = document.querySelector(".navigation-mobile-fixe");
+        const rect = (node) => {
+          if (!node) return null;
+          const box = node.getBoundingClientRect();
+          return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height };
+        };
+        return {
+          documentWidth: document.documentElement.scrollWidth,
+          bodyWidth: document.body.scrollWidth,
+          main: rect(main),
+          nav: rect(nav),
+          navDisplay: nav ? getComputedStyle(nav).display : "missing"
+        };
+      });
+      checks += 1;
+      if (state.documentWidth > viewport.width + 1 || state.bodyWidth > viewport.width + 1) {
+        failures.push(scenario + " paysage/tablette @ " + viewport.width + "x" + viewport.height + ": débordement horizontal");
+      }
+      if (state.main && (state.main.left < -1 || state.main.right > viewport.width + 1)) {
+        failures.push(scenario + " paysage/tablette @ " + viewport.width + "x" + viewport.height + ": contenu principal hors écran");
+      }
+      if (viewport.width <= 768 && state.navDisplay !== "none" &&
+          (!state.nav || state.nav.left < -1 || state.nav.right > viewport.width + 1 || state.nav.bottom > viewport.height + 1)) {
+        failures.push(scenario + " paysage @ " + viewport.width + "x" + viewport.height + ": navigation fixe hors écran");
       }
     }
   }
@@ -335,4 +387,4 @@ if (failures.length) {
   for (const failure of failures.slice(0, 30)) console.error(" - " + failure);
   process.exit(1);
 }
-console.log("Smoke responsive global OK : " + checks + " états (7 familles de pages, 11 largeurs de 265 à 1440 px, thèmes clair/sombre, 6 onglets mobiles sans chevauchement).");
+console.log("Smoke responsive global OK : " + checks + " états (7 familles de pages, largeurs de 265 à 1920 px, paysages/tablettes, thèmes clair/sombre, navigation et cibles tactiles).");
