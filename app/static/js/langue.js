@@ -3368,6 +3368,7 @@
     "Parent / responsable légal": "Parent / legal guardian",
     "Demander un espace famille, soumis à validation administrative et vérification du lien avec chaque enfant.": "Request a family space. It requires administrator approval and separate verification of the relationship with each child.",
     "Chaque compte est protégé par les règles de validation de MITARIDALA. Les accès enseignants, répétiteurs, sponsors et responsables légaux ne sont ouverts qu’après approbation administrative.": "Every account is protected by MITARIDALA's approval rules. Teacher, tutor, sponsor, and legal guardian spaces are available only after administrator approval.",
+    "Les possibilités offertes par MITARIDALA": "Opportunities offered by MITARIDALA",
     "Créer un compte": "Create an account",
     "Nom": "Name",
     "Prénom": "First name",
