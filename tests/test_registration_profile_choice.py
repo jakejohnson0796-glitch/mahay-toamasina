@@ -71,3 +71,36 @@ def test_parent_responsable_reste_un_parcours_distinct_et_valide():
 def test_template_inscription_compile():
     env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
     assert env.get_template("register.html") is not None
+
+
+def test_nouveaux_libelles_inscription_sont_traduits_en_malgache_et_anglais():
+    language = lire("app/static/js/langue.js")
+    libelles = [
+        "Un espace adapté à ton rôle dans la communauté éducative.",
+        "Élève, étudiant, enseignant, répétiteur ou partenaire : choisis ton profil pour découvrir un parcours d’inscription adapté à tes besoins.",
+        "Apprendre, réviser et progresser avec un espace étudiant.",
+        "Enseigner ou accompagner les apprenants après validation du profil.",
+        "Soutenir la communauté éducative comme partenaire ou sponsor.",
+        "Quel profil veux-tu créer ?",
+        "Commence par choisir ton rôle. Les informations demandées ensuite s’adapteront à ton choix.",
+        "À qui s’adresse ce compte ?",
+        "Sélectionne le profil qui correspond à ton utilisation de MITARIDALA.",
+        "Élève / étudiant(e)",
+        "Professeur / enseignant(e)",
+        "Répétiteur / répétitrice",
+        "Sponsor / partenaire",
+        "Apprendre, réviser, suivre les cours et progresser.",
+        "Enseigner, partager des cours et accompagner les apprenants.",
+        "Proposer un accompagnement et des séances de soutien.",
+        "Soutenir les apprenants ou proposer des services utiles.",
+        "Tu pourras compléter ton profil après la création du compte.",
+        "L’élève / étudiant peut commencer immédiatement. Les demandes de professeur, enseignant, répétiteur et sponsor sont vérifiées par l’administration avant l’accès à l’espace correspondant. Le choix du profil n’accorde jamais de droits automatiquement.",
+        "Parent / responsable légal",
+        "Demander un espace famille, soumis à validation administrative et vérification du lien avec chaque enfant.",
+        "Chaque compte est protégé par les règles de validation de MITARIDALA. Les accès enseignants, répétiteurs, sponsors et responsables légaux ne sont ouverts qu’après approbation administrative.",
+    ]
+
+    for libelle in libelles:
+        assert language.count(f'"{libelle}":') == 2, (
+            f"Le libellé doit exister dans les dictionnaires malagasy et anglais : {libelle}"
+        )
