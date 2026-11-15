@@ -55,3 +55,25 @@ def test_dashboard_progress_css_braces_are_balanced_and_motion_is_accessible():
             depth -= 1
         assert depth >= 0, "CSS contains an unmatched closing brace"
     assert depth == 0, "CSS contains an unmatched opening brace"
+
+
+def test_student_visual_refresh_is_limited_to_student_dashboard_and_admin_preview():
+    template = DASHBOARD.read_text(encoding="utf-8")
+    main_class = template.split("{% block main_classe %}", 1)[1].split("{% endblock %}", 1)[0]
+    assert "main-tb" in main_class
+    assert "dashboard-eleve-page" in main_class
+    assert 'utilisateur.role == "etudiant"' in main_class
+    assert 'mode_apercu_espace == "etudiant"' in main_class
+
+
+def test_student_dashboard_visual_refresh_has_responsive_cards_and_accessible_motion():
+    css = CSS.read_text(encoding="utf-8")
+    scope = ".main-tb.dashboard-eleve-page"
+    assert f"{scope} .tb-hero" in css
+    assert f"{scope} .tb-acces-rapide" in css
+    assert f"{scope} .tb-carte-reprendre" in css
+    assert f"{scope} .tb-grille-stats" in css
+    assert "@media (max-width: 1120px)" in css
+    assert "@media (max-width: 820px)" in css
+    assert "@media (max-width: 600px)" in css
+    assert "@media (prefers-reduced-motion: reduce)" in css
