@@ -8,7 +8,7 @@ FOUNDATION = ROOT / "app" / "static" / "responsive-overrides.css"
 
 def test_viewport_enables_ios_safe_area_layout():
     base = BASE.read_text(encoding="utf-8")
-    assert 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"' in base
+    assert 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"' in base
 
 
 def test_all_page_stylesheets_are_loaded_before_the_single_global_responsive_layer():
