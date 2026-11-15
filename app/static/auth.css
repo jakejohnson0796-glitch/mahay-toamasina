@@ -441,3 +441,70 @@ html[data-theme="sombre"] .auth-step.is-active,html[data-theme="sombre"] .auth-s
   .auth-step { grid-template-columns:1fr;justify-items:center;gap:.2rem;padding:.38rem .2rem; }
   .auth-step-label { max-width:100%;font-size:.55rem; }
 }
+
+
+/* Galerie des apprenants malagasy dans le panneau de présentation. */
+.auth-school-gallery {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.58rem;
+  width:100%;
+  max-width:33rem;
+  margin:1.35rem 0 .35rem;
+}
+.auth-school-scene {
+  position:relative;
+  isolation:isolate;
+  min-width:0;
+  overflow:hidden;
+  margin:0;
+  aspect-ratio:4 / 5;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:16px;
+  background:#123b3e;
+  box-shadow:0 14px 28px rgba(0,0,0,.16);
+}
+.auth-school-scene img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.auth-school-scene::after {
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:24% 0 0;
+  background:linear-gradient(180deg,transparent 8%,rgba(3,25,27,.84) 100%);
+  pointer-events:none;
+}
+.auth-school-scene figcaption {
+  position:absolute;
+  z-index:1;
+  inset:auto .62rem .68rem;
+  display:grid;
+  gap:.08rem;
+  color:#fff;
+}
+.auth-school-scene figcaption strong {
+  font-size:.69rem;
+  line-height:1.2;
+}
+.auth-school-scene figcaption span {
+  color:rgba(255,255,255,.78);
+  font-size:.55rem;
+  line-height:1.3;
+}
+.auth-showcase .auth-school-note {
+  margin:.35rem 0 0;
+  color:rgba(239,249,246,.70);
+  font-size:.68rem;
+  line-height:1.45;
+}
+@media (max-width:680px) {
+  .auth-school-gallery { gap:.45rem; margin-top:1rem; }
+  .auth-school-scene { border-radius:13px; }
+  .auth-school-scene figcaption { inset:auto .48rem .55rem; }
+  .auth-school-scene figcaption strong { font-size:.64rem; }
+  .auth-school-scene figcaption span { font-size:.51rem; }
+}
