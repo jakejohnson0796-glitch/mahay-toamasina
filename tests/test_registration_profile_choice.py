@@ -64,7 +64,7 @@ def test_parent_responsable_reste_un_parcours_distinct_et_valide():
     assert 'id="mode_responsable"' in template
     assert 'modeResponsable.addEventListener("change", actualiser)' in ui
     assert 'roleField.hidden = estResponsable' in ui
-    assert 'if (est_responsable)' in route
+    assert 'if est_responsable:' in route
     assert 'profil_demande = "responsable"' in route
 
 
