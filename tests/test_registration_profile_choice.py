@@ -76,6 +76,8 @@ def test_template_inscription_compile():
 def test_nouveaux_libelles_inscription_sont_traduits_en_malgache_et_anglais():
     language = lire("app/static/js/langue.js")
     libelles = [
+        "Rejoindre MITARIDALA",
+        "Les possibilités offertes par MITARIDALA",
         "Un espace adapté à ton rôle dans la communauté éducative.",
         "Élève, étudiant, enseignant, répétiteur ou partenaire : choisis ton profil pour découvrir un parcours d’inscription adapté à tes besoins.",
         "Apprendre, réviser et progresser avec un espace étudiant.",
