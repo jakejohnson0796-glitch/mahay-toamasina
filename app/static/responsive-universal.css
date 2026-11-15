@@ -1,7 +1,7 @@
 /*
  * MITARIDALA — socle responsive transversal.
  * Cette feuille est chargée en dernier depuis base.html pour harmoniser
- * les pages et corriger les conflits des styles hérités sans ajouter
+ * les pages après leurs styles spécifiques sans ajouter
  * un framework CSS en doublon.
  */
 
@@ -433,3 +433,136 @@ table {
 .avatar-cercle.avatar-taille-32 { width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; }
 .avatar-cercle.avatar-taille-34 { width: 34px; height: 34px; min-width: 34px; max-width: 34px; min-height: 34px; }
 .avatar-cercle.avatar-taille-72 { width: 72px; height: 72px; min-width: 72px; max-width: 72px; min-height: 72px; }
+
+
+/*
+ * Compatibilité multi-appareils — couche finale.
+ * Les dimensions dépendent de l'espace disponible et des capacités tactiles,
+ * jamais de la marque ou du modèle du téléphone.
+ */
+:root {
+  --gm-touch-target: 44px;
+  --gm-mobile-nav-height: 3.5rem;
+}
+
+html {
+  scroll-padding-block-start: max(1rem, env(safe-area-inset-top, 0px));
+  scroll-padding-block-end: calc(var(--gm-mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (max-width: 768px) {
+  .app-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: calc(max(5.25rem, var(--gm-mobile-nav-height) + 0.75rem) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-entete-app {
+    padding-block-start: max(0.35rem, env(safe-area-inset-top, 0px));
+    padding-inline-start: max(0.35rem, env(safe-area-inset-left, 0px));
+    padding-inline-end: max(0.35rem, env(safe-area-inset-right, 0px));
+  }
+
+  .navigation-mobile-fixe {
+    min-height: var(--gm-touch-target);
+    padding-inline-start: max(0.2rem, env(safe-area-inset-left, 0px)) !important;
+    padding-inline-end: max(0.2rem, env(safe-area-inset-right, 0px)) !important;
+    padding-block-end: max(0.25rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .navigation-mobile-lien {
+    min-width: var(--gm-touch-target);
+    min-height: var(--gm-touch-target) !important;
+  }
+
+  .navigation-mobile-lien > span:not(.navigation-mobile-icone) {
+    font-size: clamp(0.58rem, 2.2vw, 0.68rem) !important;
+    line-height: 1.15;
+  }
+
+  .app-page :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+    min-height: var(--gm-touch-target);
+    font-size: 16px !important;
+  }
+
+  .app-page :is(button, .bouton, input[type="button"], input[type="submit"], input[type="reset"]) {
+    min-height: var(--gm-touch-target);
+  }
+}
+
+@media (max-width: 300px) {
+  .navigation-mobile-fixe {
+    gap: 0 !important;
+    padding-inline: 0 !important;
+    grid-template-columns: repeat(6, minmax(44px, 1fr)) !important;
+    justify-content: start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .navigation-mobile-lien {
+    min-width: 44px !important;
+    padding-inline: 0 !important;
+  }
+}
+
+/* Commandes plus faciles à viser sur les écrans tactiles, y compris les
+   tablettes en mode paysage dont la largeur dépasse le breakpoint mobile. */
+@media (hover: none) and (pointer: coarse) {
+  :is(
+    button,
+    .bouton,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"],
+    .tb-sidebar-lien,
+    .tb-sidebar-collapse,
+    .sidebar-bouton-mobile,
+    .mobile-entete-app-notifications,
+    .mobile-entete-app-avatar
+  ) {
+    min-height: max(var(--gm-touch-target), 44px);
+    touch-action: manipulation;
+  }
+
+  :is(.tb-sidebar-lien, .tb-sidebar-collapse, .sidebar-bouton-mobile,
+      .mobile-entete-app-notifications, .mobile-entete-app-avatar) {
+    min-width: 44px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  html {
+    scroll-padding-block-end: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-page {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Préférences système de contraste et navigation au clavier. */
+@media (prefers-contrast: more) {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 3px;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(button, .bouton, input, select, textarea) {
+    border: 1px solid ButtonText;
+  }
+
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+}

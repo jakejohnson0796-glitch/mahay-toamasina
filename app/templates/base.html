@@ -4,7 +4,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <script nonce="{{ csp_nonce(request) }}">
   /* Pose [data-theme] AVANT le chargement de style.css (script inline
      bloquant, pas defer) pour eviter un flash du mauvais theme au
@@ -22,6 +22,10 @@
 <link rel="icon" type="image/svg+xml" href="/static/images/site/mitaridala-mark.svg">
 <link rel="alternate icon" type="image/svg+xml" href="/static/images/site/mitaridala-icon.svg">
 <link rel="apple-touch-icon" href="/static/icones/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MITARIDALA">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0D4645">
 <meta name="robots" content="{{ seo_robots(request) }}">
 <link rel="canonical" href="{{ seo_canonical_url(request) }}">
@@ -138,7 +142,7 @@
 {% if request.url.path.startswith("/securite/2fa/") %}
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/mfa-setup.js?v={{ version_asset('js/mfa-setup.js') }}" defer></script>
 {% endif %}
-<link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
+
 <link rel="stylesheet" href="/static/interface-polish.css?v={{ version_asset('interface-polish.css') }}">
 <link rel="stylesheet" href="/static/opportunites.css?v={{ version_asset('opportunites.css') }}">
 <link rel="stylesheet" href="/static/back-navigation.css?v={{ version_asset('back-navigation.css') }}">
@@ -157,6 +161,8 @@
 {% if request.url.path.startswith("/admin/apercus") or mode_apercu_admin %}
 <link rel="stylesheet" href="/static/admin-apercu.css?v={{ version_asset('admin-apercu.css') }}">
 {% endif %}
+  <!-- Couche responsive finale, après les styles propres à chaque page. -->
+  <link rel="stylesheet" href="/static/responsive-universal.css?v={{ version_asset('responsive-universal.css') }}">
 </head>
 <body data-release="{{ release_version() }}" data-ai-renderer="direct-katex-v3"
   class="{% if request.url.path in ['/connexion', '/inscription', '/mot-de-passe-oublie', '/mot-de-passe-oublie/code', '/connexion/2fa'] %}page-auth{% endif %}{% if request.url.path.startswith('/classe') or request.url.path in ['/famille', '/admin/responsables-eleves'] %} page-classe{% endif %}{% if (request.url.path.startswith('/admin') and not mode_apercu_admin) or request.url.path in ['/abonnement', '/sponsoring', '/securite'] %} page-ops{% endif %}"
