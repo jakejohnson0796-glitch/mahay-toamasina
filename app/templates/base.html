@@ -219,7 +219,7 @@
 {% if request.session.get("admin_mode_actor_id") %}
 <aside class="admin-apercu-bandeau" role="status" aria-live="polite">
   <div class="admin-apercu-bandeau-texte">
-    <strong>MODE ADMINISTRATEUR ACTIF · {{ utilisateur.nom }}</strong>
+    <strong>MODE ADMINISTRATEUR ACTIF{% if utilisateur is defined and utilisateur %} · {{ utilisateur.nom }}{% endif %}</strong>
     <span>Tu agis dans ce compte réel. Les changements sont effectifs, chaque formulaire exige ta confirmation et les actions sont journalisées.</span>
   </div>
   <form method="post" action="/admin/apercus/quitter">

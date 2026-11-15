@@ -448,3 +448,23 @@ def test_mode_admin_reel_affiche_un_bandeau_et_ne_bloque_pas_l_interface():
     assert "x-admin-confirmation-password" in (ROOT / "app" / "admin_security.py").read_text(encoding="utf-8")
     assert 'action="/admin/apercus/acceder"' in selecteur
     assert "mes actions seront réelles" in selecteur
+
+
+def test_bandeau_mode_admin_ne_plante_pas_si_utilisateur_absent_du_contexte():
+    from jinja2 import Environment
+
+    base = (ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
+    debut = base.index('{% if request.session.get("admin_mode_actor_id") %}')
+    fin = base.index("{% elif mode_apercu_admin %}", debut)
+    bandeau = base[debut:fin]
+
+    expression_nom = '{% if utilisateur is defined and utilisateur %} · {{ utilisateur.nom }}{% endif %}'
+    assert expression_nom in bandeau
+
+    rendu = Environment().from_string(
+        "MODE ADMINISTRATEUR ACTIF" + expression_nom
+    )
+    assert rendu.render() == "MODE ADMINISTRATEUR ACTIF"
+    assert rendu.render(utilisateur=SimpleNamespace(nom="Administrateur de test")) == (
+        "MODE ADMINISTRATEUR ACTIF · Administrateur de test"
+    )
