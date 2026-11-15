@@ -106,3 +106,40 @@ def test_nouveaux_libelles_inscription_sont_traduits_en_malgache_et_anglais():
         assert language.count(f'"{libelle}":') == 2, (
             f"Le libellé doit exister dans les dictionnaires malagasy et anglais : {libelle}"
         )
+
+
+
+def test_galerie_des_apprenants_malagasy_est_complete_et_accessible():
+    template = lire("app/templates/register.html")
+    images = [
+        ("images/mitaridala-primaire.webp", "Primaire"),
+        ("images/mitaridala-college.webp", "Collège"),
+        ("images/mitaridala-universite.webp", "Université"),
+    ]
+    for chemin, niveau in images:
+        assert chemin in template
+        assert niveau in template
+        assert (ROOT / "app" / "static" / chemin).is_file()
+
+    assert 'class="auth-school-gallery"' in template
+    assert "Un même chemin, du primaire à l’université." in template
+
+
+def test_nouveaux_libelles_de_la_galerie_sont_traduits_en_malgache_et_anglais():
+    language = lire("app/static/js/langue.js")
+    libelles = [
+        "Primaire",
+        "Collège",
+        "Université",
+        "Les premiers apprentissages",
+        "Grandir et progresser",
+        "Construire son avenir",
+        "Un même chemin, du primaire à l’université.",
+        "Écoliers malagasy du primaire se rendant à l’école avec leurs sacs.",
+        "Élèves malagasy du collège allant en cours avec leurs cahiers.",
+        "Étudiants malagasy de l’université marchant vers le campus avec leurs livres.",
+    ]
+    for libelle in libelles:
+        assert language.count(f'"{libelle}":') == 2, (
+            f"Le libellé doit exister dans les dictionnaires malagasy et anglais : {libelle}"
+        )
