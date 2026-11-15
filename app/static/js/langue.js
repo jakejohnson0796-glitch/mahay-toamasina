@@ -513,7 +513,6 @@
     "Crée ton compte en quelques étapes. Ton profil académique aide ensuite à organiser les ressources et les cercles autour de ton parcours.": "Mamoròna kaonty amin'ny dingana vitsivitsy. Ny mombamomba anao ara-pianarana dia hanampy handamina ireo loharano sy vondrona mifanaraka amin'ny fianaranao.",
     "Création de compte": "Famoronana kaonty",
     "Les possibilités offertes par MITARIDALA": "Ireo fahafahana atolotry ny MITARIDALA",
-    "Les possibilités offertes par MITARIDALA": "Opportunities offered by MITARIDALA",
     "Un espace adapté à ton rôle dans la communauté éducative.": "Sehatra mifanaraka amin'ny andraikitrao eo amin'ny fiarahamonina fanabeazana.",
     "Élève, étudiant, enseignant, répétiteur ou partenaire : choisis ton profil pour découvrir un parcours d’inscription adapté à tes besoins.": "Mpianatra, mpampianatra, mpampianatra mpanampy na mpiara-miombon'antoka: fidio ny mombamomba anao hahazoana dingana fisoratana anarana mifanaraka amin'ny filanao.",
     "Apprendre, réviser et progresser avec un espace étudiant.": "Mianatra, mamerina lesona ary mandroso amin'ny sehatra natokana ho an'ny mpianatra.",
