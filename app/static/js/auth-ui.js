@@ -104,7 +104,9 @@
   function initialiserRoleEtProgression() {
     const roleSelect = document.getElementById("role");
     const modeResponsable = document.getElementById("mode_responsable");
-    const roleField = roleSelect ? roleSelect.closest(".auth-field") : null;
+    const roleField = document.getElementById("bloc-choix-profil");
+    const roleOptions = Array.from(document.querySelectorAll('input[name="role"]'));
+    const roleCards = Array.from(document.querySelectorAll(".auth-profile-card"));
     const blocAcademique = document.getElementById("bloc-academique");
     const cycleSelect = document.getElementById("cycle_education");
     const blocUniversite = document.getElementById("bloc-universite");
@@ -120,7 +122,7 @@
       universite: "Université / enseignement supérieur"
     };
     const progress = document.querySelector("[data-auth-progress]");
-    if (!roleSelect || !blocAcademique || !progress) return;
+    if (!roleSelect || !roleOptions.length || !blocAcademique || !progress) return;
 
     const champsUniversitaires = [
       document.getElementById("universite_id"),
@@ -164,6 +166,20 @@
         (roleSelect.value === "etudiant" || roleSelect.value === "professeur");
     }
 
+    function profilChoisi() {
+      return Boolean(
+        (modeResponsable && modeResponsable.checked) ||
+        roleOptions.some(function (option) { return option.checked; })
+      );
+    }
+
+    function actualiserCartesProfil() {
+      roleCards.forEach(function (carte) {
+        const option = carte.querySelector('input[name="role"]');
+        carte.classList.toggle("is-selected", Boolean(option && option.checked));
+      });
+    }
+
     function cycleValide() {
       return Boolean(cycleSelect && ["primaire", "college", "lycee", "universite"].includes(cycleSelect.value));
     }
@@ -199,6 +215,11 @@
       const estResponsable = Boolean(modeResponsable && modeResponsable.checked);
       if (roleField) roleField.hidden = estResponsable;
       if (roleSelect) roleSelect.disabled = estResponsable;
+      roleOptions.forEach(function (option) {
+        option.disabled = estResponsable;
+        option.required = !estResponsable;
+      });
+      actualiserCartesProfil();
       const estUniversitaire = profilActif && cycleSelect && cycleSelect.value === "universite";
       const estScolaire = profilActif && cycleSelect && ["primaire", "college", "lycee"].includes(cycleSelect.value);
       const estProfesseur = roleSelect.value === "professeur";
@@ -254,16 +275,25 @@
       if (optionScolaire) optionScolaire.required = false;
       if (etablissementScolaire) etablissementScolaire.required = false;
 
-      if (!compteComplet()) {
+      if (!profilChoisi()) {
         setEtapeActive(1);
-      } else if (profilActif && !academiqueComplete()) {
+      } else if (!compteComplet()) {
         setEtapeActive(2);
-      } else {
+      } else if (profilActif && !academiqueComplete()) {
         setEtapeActive(3);
+      } else {
+        setEtapeActive(4);
       }
     }
 
     roleSelect.addEventListener("change", actualiser);
+    roleOptions.forEach(function (option) {
+      option.addEventListener("change", function () {
+        if (!option.checked) return;
+        roleSelect.value = option.value;
+        roleSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
     if (modeResponsable) modeResponsable.addEventListener("change", actualiser);
     if (cycleSelect) cycleSelect.addEventListener("change", actualiser);
     champsCompte.forEach(function (champ) {
@@ -274,6 +304,8 @@
       champ.addEventListener("change", actualiser);
     });
 
+    const roleSelectionnee = roleOptions.find(function (option) { return option.checked; });
+    roleSelect.value = roleSelectionnee ? roleSelectionnee.value : "";
     actualiser();
   }
   function initialiser() {
