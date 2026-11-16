@@ -214,8 +214,7 @@ jobs:
       - name: Verifier la revision courante
         run: alembic current
       - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
-        run: pytest -q tests/test_postgres_referentiel_smoke.py
-; then
+        run: pytest -q tests/test_postgres_referentiel_smoke.py; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
