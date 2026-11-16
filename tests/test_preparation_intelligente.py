@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.models import ProgressionNotion
 from app.preparation_intelligente import construire_bilans_matieres
@@ -78,3 +78,23 @@ def test_bilan_ignore_les_matieres_dupliquees_sans_creer_de_fausse_progression()
     )
 
     assert [bilan["matiere"] for bilan in bilans] == ["Chimie", "Physique"]
+
+
+def test_bilan_compare_dates_naives_et_avec_fuseau_horaire():
+    maintenant = datetime(2026, 11, 11, 9, 0, tzinfo=timezone(timedelta(hours=3)))
+    revision_naive_utc = _progression(
+        "Mathématiques", "Terminale", 35,
+        revision=datetime(2026, 11, 11, 5, 0),
+    )
+    revision_zonee_future = _progression(
+        "Mathématiques", "Terminale", 65,
+        revision=datetime(2026, 11, 11, 13, 0, tzinfo=timezone(timedelta(hours=3))),
+    )
+    bilan = construire_bilans_matieres(
+        ["Mathématiques"],
+        [revision_naive_utc, revision_zonee_future],
+        niveau="Terminale",
+        maintenant=maintenant,
+    )[0]
+
+    assert "1 révision arrivée à échéance" in bilan["resume"]
