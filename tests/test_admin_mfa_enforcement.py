@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from pathlib import Path
 
 from app.force_password_change import chemin_autorise_pendant_configuration_mfa_admin
 from app.models import RoleUtilisateur
