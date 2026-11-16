@@ -197,6 +197,7 @@ class AdminActionConfirmationMiddleware(BaseHTTPMiddleware):
                 not utilisateur
                 or utilisateur.banni
                 or utilisateur.role != RoleUtilisateur.ADMIN
+                or not utilisateur.totp_active
                 or not empreinte_attendue
                 or empreinte_session_utilisateur(utilisateur) != empreinte_attendue
             ):

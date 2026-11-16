@@ -11,6 +11,16 @@
 {% if profil_academique.coherent %}{% set score = score + 1 %}{% endif %}
 
 <div class="ops-page">
+  {% if utilisateur.role.value == "admin" and not utilisateur.totp_active %}
+  <div class="ops-alert ops-alert-danger" role="alert">
+    <strong>Configuration obligatoire pour l'administrateur.</strong>
+    Active une application TOTP avant d'accéder au tableau de bord, aux données des élèves ou au mode superviseur. Le code par e-mail ne remplace pas cette protection.
+    Les autres pages resteront verrouillées jusqu'à la validation du premier code TOTP.
+  </div>
+  {% endif %}
+  {% if request.query_params.get("erreur") == "totp_admin_obligatoire" %}
+  <div class="ops-alert ops-alert-danger" role="alert">La double authentification TOTP est obligatoire pour les administrateurs et ne peut pas être désactivée depuis ce compte.</div>
+  {% endif %}
   {% if utilisateur.doit_changer_mot_de_passe %}
   <div class="ops-alert ops-alert-warn" role="alert">
     <strong>Action obligatoire : définis ton mot de passe personnel.</strong>
@@ -142,12 +152,16 @@
           <p class="ops-security-card-intro">Google Authenticator, Microsoft Authenticator ou toute application compatible TOTP génère les codes sur ton appareil. Aucun SMS ni service d'envoi n'est nécessaire.</p>
           {% if utilisateur.totp_active %}
             <div class="ops-security-status"><span class="ops-security-dot is-on"></span><div><strong>Activée</strong><span>Un code généré par l'application est accepté à la connexion.</span></div></div>
+            {% if utilisateur.role.value == "admin" %}
+            <div class="ops-alert ops-alert-info" role="status">Cette protection est obligatoire pour les administrateurs. Pour un changement d'appareil, utilise une procédure de récupération administrateur vérifiée.</div>
+            {% else %}
             <form method="post" action="/securite/2fa/desactiver" class="ops-form">
               <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
               <label for="mot_de_passe_desactiver">Mot de passe actuel pour désactiver cette méthode</label>
               <input type="password" id="mot_de_passe_desactiver" name="mot_de_passe" required autocomplete="current-password">
               <button class="bouton bouton-danger" type="submit">Désactiver l'application TOTP</button>
             </form>
+            {% endif %}
           {% else %}
             <form method="post" action="/securite/2fa/demarrer" class="ops-form">
               <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">

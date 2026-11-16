@@ -26,6 +26,9 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_DB_FICHIER}"
 os.environ.setdefault("SESSION_SECRET_KEY", "cle-de-test-uniquement-jamais-en-production")
 
 from starlette.testclient import TestClient  # noqa: E402
+from starlette.websockets import WebSocketDisconnect  # noqa: E402
+import pyotp  # noqa: E402
+from app.totp_2fa import generer_secret_totp  # noqa: E402
 from sqlmodel import SQLModel, Session, select  # noqa: E402
 
 from app.main import app  # noqa: E402
@@ -56,6 +59,8 @@ def _creer_client_connecte(
             telephone=telephone,
             mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
             role=role,
+            totp_secret=(generer_secret_totp() if role == RoleUtilisateur.ADMIN else None),
+            totp_active=(role == RoleUtilisateur.ADMIN),
         )
         session.add(utilisateur)
         session.commit()
@@ -71,6 +76,22 @@ def _creer_client_connecte(
         follow_redirects=False,
     )
     assert reponse.status_code in (302, 303), f"Connexion echouee : {reponse.status_code} {reponse.text[:300]}"
+    if role == RoleUtilisateur.ADMIN:
+        page_2fa = client.get("/connexion/2fa")
+        jeton_2fa = re.search(r'name="_csrf" value="([^"]+)"', page_2fa.text).group(1)
+        with Session(engine) as session:
+            admin = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == telephone)
+            ).one()
+            secret_totp = admin.totp_secret
+        reponse_2fa = client.post(
+            "/connexion/2fa",
+            data={"code": pyotp.TOTP(secret_totp).now(), "methode": "totp", "_csrf": jeton_2fa},
+            follow_redirects=False,
+        )
+        assert reponse_2fa.status_code in (302, 303), (
+            f"Vérification TOTP échouée : {reponse_2fa.status_code} {reponse_2fa.text[:300]}"
+        )
     client.utilisateur_id = utilisateur_id  # pratique pour les assertions
     return client
 
@@ -362,6 +383,40 @@ class TestMessagerieEnrichie(unittest.TestCase):
         self.assertFalse(_origine_websocket_autorisee(SimpleNamespace(
             headers={"origin": "https://testserver/chemin", "host": "testserver"}
         )))
+
+    def test_administrateur_sans_totp_ne_peut_pas_ouvrir_le_websocket_du_cercle(self):
+        telephone = "0341000099"
+        with Session(engine) as session:
+            session.add(
+                Utilisateur(
+                    nom="Admin sans TOTP",
+                    telephone=telephone,
+                    mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
+                    role=RoleUtilisateur.ADMIN,
+                    totp_active=False,
+                    totp_secret=None,
+                )
+            )
+            session.commit()
+
+        client = TestClient(app)
+        page = client.get("/connexion")
+        jeton = re.search(r'name="_csrf" value="([^"]+)"', page.text).group(1)
+        reponse = client.post(
+            "/connexion",
+            data={"telephone": telephone, "mot_de_passe": "MotDePasse123!", "_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertEqual(reponse.status_code, 303)
+        self.assertEqual(reponse.headers.get("location"), "/securite?admin_mfa_obligatoire=1")
+
+        with self.assertRaises(WebSocketDisconnect) as fermeture:
+            with client.websocket_connect(
+                f"/cercles/{self.cercle_id}/ws",
+                headers={"origin": "https://testserver"},
+            ):
+                pass
+        self.assertEqual(fermeture.exception.code, 4403)
 
     def test_administrateur_ne_cree_pas_de_demande_adhesion_inutile(self):
         administrateur = _creer_client_connecte(

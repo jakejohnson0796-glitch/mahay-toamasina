@@ -1,0 +1,10 @@
+# Les changements d'authentification, d'autorisations et de secrets doivent être revus.
+* @jakejohnson0796-glitch
+/app/auth.py @jakejohnson0796-glitch
+/app/admin_security.py @jakejohnson0796-glitch
+/app/client_ip.py @jakejohnson0796-glitch
+/app/force_password_change.py @jakejohnson0796-glitch
+/app/routers/auth_router.py @jakejohnson0796-glitch
+/app/routers/admin_router.py @jakejohnson0796-glitch
+/app/routers/documents_router.py @jakejohnson0796-glitch
+/.github/workflows/ @jakejohnson0796-glitch

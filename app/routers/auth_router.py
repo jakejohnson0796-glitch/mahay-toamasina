@@ -7,7 +7,7 @@ import hashlib
 import secrets
 
 from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, HTTPException
-from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.responses import RedirectResponse, FileResponse, Response
 from sqlalchemy import update as sql_update
 from sqlmodel import Session, select
 
@@ -15,7 +15,7 @@ from ..database import get_session
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere
+from ..models import Utilisateur, RoleUtilisateur, Filiere, Mention, Universite, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, CycleEnseigne, CodeSecours2FA, CodeEmail2FA, CodeReinitialisationMotDePasse, DemandeChangementFiliere, StatutDemandeChangementFiliere, CercleEtude, MembreCercle, StatutCercle
 from .. import referentiel_academique
 from ..referentiel import NIVEAUX
 from ..auth import utilisateur_courant, hacher_mot_de_passe, verifier_mot_de_passe, empreinte_session_utilisateur, creer_rappel_inactivite_si_necessaire, jours_inactivite, notifier_nouvelle_inscription_aux_admins
@@ -44,6 +44,8 @@ def _redirection_apres_connexion(utilisateur: Utilisateur) -> RedirectResponse:
     au lieu de dependre de l'utilisateur pour aller le chercher lui-meme."""
     if utilisateur.doit_changer_mot_de_passe:
         return RedirectResponse("/securite", status_code=303)
+    if utilisateur.role == RoleUtilisateur.ADMIN and not utilisateur.totp_active:
+        return RedirectResponse("/securite?admin_mfa_obligatoire=1", status_code=303)
     if profil_validation_requise(utilisateur):
         return RedirectResponse("/demande-validation", status_code=303)
     return RedirectResponse("/", status_code=303)
@@ -1577,24 +1579,87 @@ def supprimer_photo_profil(
     return RedirectResponse("/securite?ok=photo_supprimee", status_code=303)
 
 
-@router.get("/profil/photo/{utilisateur_id}")
-def afficher_photo_profil(utilisateur_id: int, session: Session = Depends(get_session)):
-    """Sert la photo de profil d'un utilisateur. Volontairement PUBLIC
-    (pas de verification de session) : un avatar affiche dans un cercle
-    d'etude ou l'administration doit etre visible par les autres
-    membres/admins, exactement comme un document approuve est
-    telechargeable par n'importe qui -- aucune donnee sensible n'est
-    exposee (juste l'image elle-meme). Meme pattern que
-    documents_router.telecharger_document() : redirection vers l'URL
-    publique Supabase si le stockage distant est actif, sinon lecture
-    directe du disque local."""
-    utilisateur = session.get(Utilisateur, utilisateur_id)
-    if not utilisateur or not utilisateur.photo_chemin:
-        raise HTTPException(status_code=404)
+_AVATAR_PRIVE_SECOURS = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+    '<rect width="64" height="64" rx="32" fill="#e8eef0"/>'
+    '<circle cx="32" cy="24" r="12" fill="#8a9ba3"/>'
+    '<path d="M10 58c2-13 10-20 22-20s20 7 22 20" fill="#8a9ba3"/>'
+    '</svg>'
+)
 
+
+def _reponse_avatar_prive_secours() -> Response:
+    """Image neutre pour les visiteurs et les comptes sans droit de consultation.
+
+    Garder un SVG générique évite les images cassées dans les listes tout en
+    empêchant de déduire l'existence d'un compte ou de récupérer sa photo.
+    """
+    return Response(
+        content=_AVATAR_PRIVE_SECOURS,
+        media_type="image/svg+xml",
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
+
+
+def _peut_voir_photo_profil(session: Session, visiteur: Optional[Utilisateur], cible_id: int) -> bool:
+    """Autorise le propriétaire, l'admin ou un membre d'un cercle actif commun."""
+    if not visiteur:
+        return False
+    if visiteur.id == cible_id or visiteur.role == RoleUtilisateur.ADMIN:
+        return True
+
+    cercles_actifs_visiteur = (
+        select(MembreCercle.cercle_id)
+        .join(CercleEtude, CercleEtude.id == MembreCercle.cercle_id)
+        .where(
+            MembreCercle.utilisateur_id == visiteur.id,
+            CercleEtude.statut == StatutCercle.ACTIF,
+        )
+    )
+    partage = session.exec(
+        select(MembreCercle.id).where(
+            MembreCercle.utilisateur_id == cible_id,
+            MembreCercle.cercle_id.in_(cercles_actifs_visiteur),
+        )
+    ).first()
+    return partage is not None
+
+
+@router.get("/profil/photo/{utilisateur_id}")
+def afficher_photo_profil(
+    request: Request,
+    utilisateur_id: int,
+    session: Session = Depends(get_session),
+):
+    """Sert une photo uniquement au propriétaire, à l'admin ou aux membres d'un cercle commun."""
+    visiteur = utilisateur_courant(request, session)
+    utilisateur = session.get(Utilisateur, utilisateur_id)
+    if (
+        not utilisateur
+        or not utilisateur.photo_chemin
+        or not _peut_voir_photo_profil(session, visiteur, utilisateur_id)
+    ):
+        return _reponse_avatar_prive_secours()
+
+    entetes_privees = {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Robots-Tag": "noindex, nofollow",
+    }
     if stockage_distant_actif():
-        return RedirectResponse(obtenir_url_telechargement(utilisateur.photo_chemin, expires_in=300, telechargement=False))
-    return FileResponse(utilisateur.photo_chemin)
+        return RedirectResponse(
+            obtenir_url_telechargement(
+                utilisateur.photo_chemin,
+                expires_in=60,
+                telechargement=False,
+            ),
+            headers=entetes_privees,
+        )
+    return FileResponse(utilisateur.photo_chemin, headers=entetes_privees)
 
 
 # Longueur max de la bio ("A propos", voir Utilisateur.bio) : une courte
@@ -1908,6 +1973,8 @@ def desactiver_2fa(
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        return RedirectResponse("/securite?erreur=totp_admin_obligatoire", status_code=303)
 
     # Desactiver la 2FA est une action sensible (retire une protection) :
     # on redemande le mot de passe, meme si la session est deja ouverte —

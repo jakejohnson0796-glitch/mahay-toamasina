@@ -41,7 +41,17 @@ from . import ai_worker, jeux_classiques_router
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="MITARIDALA — Madagascar")
+def _configuration_documentation(environnement: str) -> dict[str, str | None]:
+    """Expose OpenAPI/Swagger uniquement hors production."""
+    if (environnement or "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+
+
+app = FastAPI(
+    title="MITARIDALA — Madagascar",
+    **_configuration_documentation(parametres.environnement),
+)
 
 # --- Garde-fou : refuse de demarrer en production avec la cle de demo ---
 # Un secret par defaut connu de tous (present dans .env.example, donc

@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .auth import session_utilisateur_valide
+from .auth import session_utilisateur_valide, empreinte_session_utilisateur
 from .database import engine
 from .models import RoleUtilisateur, Utilisateur
 from .responsable_portal import chemin_autorise_responsable
@@ -42,6 +42,26 @@ def chemin_autorise_pendant_changement(method: str, path: str) -> bool:
     if path == "/deconnexion" and method == "POST":
         return True
     if path.startswith("/static/") and method in {"GET", "HEAD"}:
+        return True
+    return False
+
+
+def chemin_autorise_pendant_configuration_mfa_admin(method: str, path: str) -> bool:
+    """Limite un administrateur sans TOTP à l'enrôlement MFA et à la sortie."""
+    method = (method or "get").upper()
+    if path == "/securite" and method in {"GET", "HEAD"}:
+        return True
+    if path == "/securite/2fa/configurer" and method in {"GET", "HEAD"}:
+        return True
+    if path in {"/securite/2fa/demarrer", "/securite/2fa/confirmer"} and method == "POST":
+        return True
+    if path == "/securite/mot-de-passe" and method == "POST":
+        return True
+    if path == "/deconnexion" and method == "POST":
+        return True
+    if path.startswith("/static/") and method in {"GET", "HEAD"}:
+        return True
+    if path in {"/health", "/ready", "/favicon.ico"} and method in {"GET", "HEAD"}:
         return True
     return False
 
@@ -85,6 +105,29 @@ class ForcePasswordChangeMiddleware(BaseHTTPMiddleware):
                     return RedirectResponse("/securite?obligatoire=1", status_code=303)
 
                 mode_admin_supervise = bool(request.session.get("admin_mode_actor_id"))
+                if mode_admin_supervise:
+                    admin_id = request.session.get("admin_mode_actor_id")
+                    admin = session.get(Utilisateur, admin_id)
+                    empreinte_admin = request.session.get("admin_mode_actor_fingerprint")
+                    if (
+                        not admin
+                        or admin.banni
+                        or admin.role != RoleUtilisateur.ADMIN
+                        or not admin.totp_active
+                        or not empreinte_admin
+                        or empreinte_session_utilisateur(admin) != empreinte_admin
+                    ):
+                        request.session.clear()
+                        return RedirectResponse("/connexion", status_code=303)
+                elif (
+                    utilisateur.role == RoleUtilisateur.ADMIN
+                    and not utilisateur.totp_active
+                    and not chemin_autorise_pendant_configuration_mfa_admin(
+                        request.method, request.url.path
+                    )
+                ):
+                    return RedirectResponse("/securite?admin_mfa_obligatoire=1", status_code=303)
+
                 if (
                     not mode_admin_supervise
                     and profil_validation_requise(utilisateur)
