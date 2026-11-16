@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from app.plan_examen_hebdomadaire import construire_plan_hebdomadaire
@@ -83,3 +83,16 @@ def test_quiz_cible_la_progression_exacte_pour_adapter_la_difficulte():
     assert "ProgressionNotion.matiere == matiere_selectionnee" in source
     assert "ProgressionNotion.notion == sujet_libre" in source
     assert "ProgressionNotion.niveau == niveau" in source
+
+
+def test_plan_compare_dates_naives_et_avec_fuseau_horaire():
+    maintenant = datetime(2026, 11, 11, 9, 0, tzinfo=timezone(timedelta(hours=3)))
+    echue_naive = _notion("Mathématiques", "Fractions", 75, datetime(2026, 11, 11, 5, 0), identifiant=1)
+    future_zonee = _notion("Français", "Accords", 75, datetime(2026, 11, 11, 13, 0, tzinfo=timezone(timedelta(hours=3))), identifiant=2)
+
+    plan = construire_plan_hebdomadaire([future_zonee, echue_naive], maintenant=maintenant)
+
+    taches = plan[0]["taches"]
+    assert [tache["notion"] for tache in taches] == ["Fractions", "Accords"]
+    assert taches[0]["revision_due"] is True
+    assert taches[1]["revision_due"] is False
