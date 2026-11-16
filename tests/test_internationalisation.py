@@ -77,6 +77,7 @@ def test_options_academiques_creees_en_javascript_sont_protegees():
 
 def test_confirmations_administrateur_sont_bilingues_hors_du_dom():
     js = (ROOT / "app" / "static" / "js" / "admin-confirmation.js").read_text(encoding="utf-8")
+    dialogue = (ROOT / "app" / "static" / "js" / "admin-confirmation-dialog.js").read_text(encoding="utf-8")
     assert "function texteSelonLangue(francais, malagasy)" in js
-    assert "Hetsika fitantanana voaaro" in js
+    assert "Hetsika fitantanana voaaro" in dialogue
     assert "Nolavina ny fanamafisan’ny mpitantana." in js
