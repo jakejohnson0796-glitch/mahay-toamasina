@@ -47,7 +47,7 @@
               '<path d="m9 12 2 2 4-4"></path>' +
             '</svg>' +
           '</span>' +
-          '<span class="admin-confirmation-dialog__eyebrow">' + t("SÉCURITÉ ADMINISTRATEUR", "FIAROVANA NY MPITANTANA") + '</span>' +
+          '<span class="admin-confirmation-dialog__eyebrow">' + t("SÉCURITÉ ADMINISTRATEUR", "Hetsika fitantanana voaaro") + '</span>' +
           '<span class="admin-confirmation-dialog__secure"><i aria-hidden="true"></i>' + t("Connexion protégée", "Fifandraisana voaaro") + '</span>' +
         '</header>' +
         '<div class="admin-confirmation-dialog__content">' +
