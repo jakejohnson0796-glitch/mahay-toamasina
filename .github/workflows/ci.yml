@@ -195,3 +195,50 @@ jobs:
         run: alembic current
       - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
         run: pytest -q tests/test_postgres_referentiel_smoke.py
+  docker-python-compat:
+    name: Docker Python ${{ matrix.python-version }} smoke
+    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.15"]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Construire l'image avec la version Python ciblée
+        run: >-
+          docker build --pull
+          --build-arg PYTHON_BASE_IMAGE=python:${{ matrix.python-version }}-slim
+          --tag mahay-smoke:${{ matrix.python-version }} .
+      - name: Démarrer le conteneur et vérifier /health
+        env:
+          IMAGE_TAG: mahay-smoke:${{ matrix.python-version }}
+        run: |
+          set -euo pipefail
+          docker run --detach --name mahay-smoke \
+            --publish 127.0.0.1:18080:8080 \
+            --env ENVIRONNEMENT=developpement \
+            --env SESSION_SECRET_KEY=ci-only-not-for-production \
+            --env DATABASE_URL=sqlite:////tmp/mahay-ci.db \
+            --env GIT_COMMIT="$GITHUB_SHA" \
+            "$IMAGE_TAG"
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:18080/health > /tmp/mahay-health.json; then
+              cat /tmp/mahay-health.json
+              python -c 'import json; assert json.load(open("/tmp/mahay-health.json", encoding="utf-8"))["status"] == "ok"'
+              docker exec mahay-smoke python --version
+              exit 0
+            fi
+            if [ "$(docker inspect --format='{{.State.Running}}' mahay-smoke)" != "true" ]; then
+              echo "Le conteneur s'est arrêté avant le health check."
+              docker logs mahay-smoke || true
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Le health check n'a pas répondu dans le délai prévu."
+          docker logs mahay-smoke || true
+          exit 1
+      - name: Afficher les logs en cas d'échec
+        if: failure()
+        run: docker logs mahay-smoke || true
