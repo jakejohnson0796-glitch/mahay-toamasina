@@ -21,6 +21,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_DB_FICHIER}"
 os.environ.setdefault("SESSION_SECRET_KEY", "cle-de-test-uniquement-jamais-en-production")
 
 from starlette.testclient import TestClient  # noqa: E402
+import pyotp  # noqa: E402
 from sqlmodel import SQLModel, Session, select  # noqa: E402
 
 from app.main import app  # noqa: E402
@@ -39,6 +40,20 @@ def _connecter(client, telephone, mot_de_passe):
         follow_redirects=False,
     )
     assert reponse.status_code in (302, 303), reponse.text
+    if reponse.headers.get("location") == "/connexion/2fa":
+        page_2fa = client.get("/connexion/2fa")
+        jeton_2fa = re.search(r'name="_csrf" value="([^"]+)"', page_2fa.text).group(1)
+        with Session(engine) as session:
+            utilisateur = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == telephone)
+            ).one()
+            secret_totp = utilisateur.totp_secret
+        reponse_2fa = client.post(
+            "/connexion/2fa",
+            data={"code": pyotp.TOTP(secret_totp).now(), "methode": "totp", "_csrf": jeton_2fa},
+            follow_redirects=False,
+        )
+        assert reponse_2fa.status_code in (302, 303), reponse_2fa.text
     # Le jeton CSRF est stocke en session (voir app/csrf.py), pas
     # regenere par requete : celui obtenu avant la connexion reste valide
     # apres (meme session/cookie), pas besoin d'en relire un nouveau sur
@@ -185,7 +200,14 @@ class TestModerationSalle(unittest.TestCase):
 
     def test_admin_peut_moderer_nimporte_quel_cours(self):
         with Session(engine) as session:
-            admin = Utilisateur(nom="Admin", telephone="0341100009", mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"), role=RoleUtilisateur.ADMIN)
+            admin = Utilisateur(
+                nom="Admin",
+                telephone="0341100009",
+                mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
+                role=RoleUtilisateur.ADMIN,
+                totp_secret=pyotp.random_base32(),
+                totp_active=True,
+            )
             session.add(admin)
             session.commit()
         client = TestClient(app)
