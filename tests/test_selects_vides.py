@@ -25,7 +25,8 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_DB_FICHIER}"
 os.environ.setdefault("SESSION_SECRET_KEY", "cle-de-test-uniquement-jamais-en-production")
 
 from starlette.testclient import TestClient  # noqa: E402
-from sqlmodel import Session  # noqa: E402
+import pyotp  # noqa: E402
+from sqlmodel import Session, select  # noqa: E402
 
 from app.main import app  # noqa: E402
 from app.database import engine  # noqa: E402
@@ -49,6 +50,26 @@ def _connecter(client: TestClient, telephone: str, mot_de_passe: str = "MotDePas
         follow_redirects=False,
     )
     assert reponse.status_code == 303, f"Echec connexion: {reponse.status_code} {reponse.text[:200]}"
+    if reponse.headers.get("location") == "/connexion/2fa":
+        page_2fa = client.get("/connexion/2fa")
+        jeton_2fa = re.search(r'name="_csrf" value="([^"]+)"', page_2fa.text).group(1)
+        with Session(engine) as session:
+            admin = session.exec(
+                select(Utilisateur).where(Utilisateur.telephone == telephone)
+            ).one()
+            secret_totp = admin.totp_secret
+        reponse_2fa = client.post(
+            "/connexion/2fa",
+            data={
+                "code": pyotp.TOTP(secret_totp).now(),
+                "methode": "totp",
+                "_csrf": jeton_2fa,
+            },
+            follow_redirects=False,
+        )
+        assert reponse_2fa.status_code == 303, (
+            f"Echec verification TOTP: {reponse_2fa.status_code} {reponse_2fa.text[:200]}"
+        )
 
 
 class TestSelectsVides(unittest.TestCase):
@@ -75,6 +96,8 @@ class TestSelectsVides(unittest.TestCase):
                 mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
                 mot_de_passe_confirmation_admin_hash=hacher_mot_de_passe("ConfirmationAdmin123!"),
                 role=RoleUtilisateur.ADMIN,
+                totp_secret=pyotp.random_base32(),
+                totp_active=True,
             )
             session.add(admin); session.commit(); session.refresh(admin)
             cls.admin_id = admin.id
