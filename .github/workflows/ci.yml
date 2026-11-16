@@ -102,6 +102,177 @@ jobs:
             timeout 300s pytest -q "$test_file"
           done
 
+  docker-compat-changes:
+    name: Detect Docker compatibility changes
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Detecter les fichiers qui affectent l'image et son demarrage
+        id: filter
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -Eq '^(Dockerfile|requirements\.txt|app/|scripts/vendor_frontend_dependencies\.py|\.github/workflows/ci\.yml)    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    env:
+      ENVIRONNEMENT: developpement
+      SESSION_SECRET_KEY: ci-only-not-for-production
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mahay_ci
+      SUPABASE_BUCKET: documents
+      GIT_COMMIT: ${{ github.sha }}
+      MITARIDALA_MIGRATION_CONCURRENCY_SMOKE: "1"
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mahay_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mahay_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Installer les dependances
+        run: python -m pip install -r requirements.txt
+      - name: Préparer le contrat Supabase Storage pour le smoke test
+        run: |
+          python - <<'PY'
+          import os
+          import psycopg2
+
+          conn = psycopg2.connect(os.environ["DATABASE_URL"])
+          conn.autocommit = True
+          cur = conn.cursor()
+          # Emule les rôles Data API Supabase pendant le smoke PostgreSQL.
+          # Ils doivent exister avant les migrations pour tester les grants
+          # actuels et par défaut, sans créer de comptes capables de se connecter.
+          for role in ("anon", "authenticated", "service_role"):
+              cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (role,))
+              if cur.fetchone() is None:
+                  cur.execute(f'CREATE ROLE "{role}" NOLOGIN')
+          # Simule les grants de service_role présents sur les tables Supabase.
+          # La migration doit les préserver tout en retirant ceux des rôles publics.
+          cur.execute(
+              "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
+              "GRANT ALL PRIVILEGES ON TABLES TO service_role"
+          )
+          cur.execute(
+              "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
+              "GRANT ALL PRIVILEGES ON SEQUENCES TO service_role"
+          )
+          cur.execute(
+              "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public "
+              "GRANT EXECUTE ON FUNCTIONS TO service_role"
+          )
+          cur.execute("CREATE SCHEMA IF NOT EXISTS storage")
+          cur.execute(
+              """
+              CREATE TABLE IF NOT EXISTS storage.buckets (
+                  id text PRIMARY KEY,
+                  public boolean NOT NULL DEFAULT true,
+                  file_size_limit bigint,
+                  allowed_mime_types text[]
+              )
+              """
+          )
+          cur.execute(
+              """
+              INSERT INTO storage.buckets (id, public)
+              VALUES ('documents', true)
+              ON CONFLICT (id) DO NOTHING
+              """
+          )
+          cur.close()
+          conn.close()
+          PY
+      - name: Verifier le graphe des migrations Alembic
+        run: python scripts/verify_migrations.py
+      - name: Appliquer toutes les migrations PostgreSQL
+        run: alembic upgrade head
+      - name: Rejouer les migrations pour verifier l'idempotence
+        run: alembic upgrade head
+      - name: Verifier la revision courante
+        run: alembic current
+      - name: Tester le démarrage réel et le référentiel Excel sur PostgreSQL
+        run: pytest -q tests/test_postgres_referentiel_smoke.py
+; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  docker-compat:
+    name: Docker smoke · Python ${{ matrix.python-version }}
+    needs: docker-compat-changes
+    if: needs.docker-compat-changes.outputs.run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.15"]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Construire l'image Docker
+        run: |
+          docker build --pull \
+            --build-arg PYTHON_BASE_IMAGE="python:${{ matrix.python-version }}-slim" \
+            --tag "mahay-python-compat:${{ matrix.python-version }}" .
+      - name: Demarrer le conteneur et verifier /health
+        shell: bash
+        run: |
+          container="mahay-python-compat-${{ matrix.python-version }}"
+          cleanup() {
+            docker logs "$container" || true
+            docker rm --force "$container" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker run --detach --name "$container" \
+            --publish 127.0.0.1:8080:8080 \
+            --env ENVIRONNEMENT=developpement \
+            --env SESSION_SECRET_KEY=ci-only-not-for-production \
+            --env DATABASE_URL=sqlite:////tmp/mahay-compat.db \
+            --env PORT=8080 \
+            "mahay-python-compat:${{ matrix.python-version }}"
+
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent http://127.0.0.1:8080/health; then
+              echo
+              exit 0
+            fi
+            running="$(docker inspect --format='{{.State.Running}}' "$container" 2>/dev/null || true)"
+            if [[ "$running" != "true" ]]; then
+              echo "Le conteneur s'est arrêté avant de répondre à /health."
+              break
+            fi
+            sleep 2
+          done
+
+          echo "Échec du smoke /health pour Python ${{ matrix.python-version }}."
+          docker logs "$container" || true
+          exit 1
+
   postgres-smoke:
     timeout-minutes: 15
     runs-on: ubuntu-24.04
