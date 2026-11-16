@@ -6,8 +6,15 @@ progression artificielle lorsque l'élève n'a pas encore de résultats.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Iterable, Any
+
+
+def _en_utc(valeur: datetime) -> datetime:
+    """Normalise les dates naïves (historiquement UTC) et les dates zonées en UTC."""
+    if valeur.tzinfo is None or valeur.utcoffset() is None:
+        return valeur.replace(tzinfo=timezone.utc)
+    return valeur.astimezone(timezone.utc)
 
 
 _JOURS = ("Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche")
@@ -37,7 +44,7 @@ def construire_plan_hebdomadaire(
             continue
         vus.add(cle)
         prochaine = getattr(progression, "prochaine_revision_le", None)
-        due = bool(prochaine and prochaine <= instant)
+        due = bool(prochaine and _en_utc(prochaine) <= _en_utc(instant))
         try:
             score = max(0, min(100, int(getattr(progression, "score_maitrise", 0) or 0)))
         except (TypeError, ValueError):
