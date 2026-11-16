@@ -32,21 +32,16 @@ def test_un_admin_avec_totp_peut_reprendre_le_parcours_normal():
     assert response.headers["location"] == "/"
 
 
-def test_un_admin_sans_totp_ne_peut_pas_desactiver_son_facteur():
+def test_un_admin_ne_peut_pas_desactiver_son_facteur(monkeypatch):
     admin = SimpleNamespace(role=RoleUtilisateur.ADMIN, totp_active=True)
-    monkeypatch_session = SimpleNamespace()
-    auth_router.utilisateur_courant = lambda *_args: admin
-    try:
-        response = auth_router.desactiver_2fa(
-            SimpleNamespace(),
-            mot_de_passe="mot-de-passe-de-test",
-            session=monkeypatch_session,
-            _csrf=None,
-        )
-    finally:
-        # Le test ne doit pas laisser de remplacement global dans auth_router.
-        from app.auth import utilisateur_courant
-        auth_router.utilisateur_courant = utilisateur_courant
+    monkeypatch.setattr(auth_router, "utilisateur_courant", lambda *_args: admin)
+
+    response = auth_router.desactiver_2fa(
+        SimpleNamespace(),
+        mot_de_passe="mot-de-passe-de-test",
+        session=SimpleNamespace(),
+        _csrf=None,
+    )
 
     assert response.status_code == 303
     assert response.headers["location"] == "/securite?erreur=totp_admin_obligatoire"
