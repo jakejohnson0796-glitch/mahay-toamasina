@@ -4,8 +4,15 @@ Les résultats proviennent exclusivement des ProgressionNotion de l'utilisateur
 et du niveau actuellement déclaré. Une matière sans historique reste « à évaluer ».
 """
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
+
+
+def _en_utc(valeur: datetime) -> datetime:
+    """Traite les anciens datetime naïfs comme UTC et normalise les dates zonées."""
+    if valeur.tzinfo is None or valeur.utcoffset() is None:
+        return valeur.replace(tzinfo=timezone.utc)
+    return valeur.astimezone(timezone.utc)
 
 
 def _cle(texte: Any) -> str:
@@ -85,7 +92,7 @@ def construire_bilans_matieres(
         revisions_echues = 0
         for progression, diagnostic in diagnostics:
             prochaine = getattr(progression, "prochaine_revision_le", None)
-            echue = bool(prochaine and prochaine <= instant)
+            echue = bool(prochaine and _en_utc(prochaine) <= _en_utc(instant))
             revisions_echues += int(echue)
             if not diagnostic["maitrise_confirmee"] or echue:
                 a_revoir += 1
