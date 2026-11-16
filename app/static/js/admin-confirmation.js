@@ -57,19 +57,13 @@
       return fetchOriginal(input, init);
     }
 
-    var secret = window.prompt(
-      texteSelonLangue(
-        "Action dans un compte réel\n\nEntrez le mot de passe de confirmation administrateur :",
-        "Hetsika amin'ny kaonty tena izy\n\nAmpidiro ny tenimiafina fanamafisana :"
-      )
-    );
-    if (secret === null || !secret) {
+    var secret = await window.demanderConfirmationAdmin();
+    if (secret === null) {
       return new Response(
         JSON.stringify({ detail: "Action annulée : confirmation administrateur non fournie." }),
         { status: 403, headers: { "Content-Type": "application/json" } }
       );
     }
-
     entetes.set("X-Admin-Confirmation-Password", secret);
     var optionsProtegees = Object.assign({}, options, { headers: entetes });
     return fetchOriginal(input, optionsProtegees);
@@ -115,17 +109,8 @@
 
     event.preventDefault();
 
-    var motDePasse = window.prompt(
-      texteSelonLangue("Action administrateur protégée\n\nEntrez votre mot de passe de confirmation :", "Hetsika fitantanana voaaro\n\nAmpidiro ny tenimiafina fanamafisana :")
-    );
-
+    var motDePasse = await window.demanderConfirmationAdmin();
     if (motDePasse === null) return;
-
-    if (!motDePasse) {
-      window.alert(texteSelonLangue("Le mot de passe de confirmation est requis.", "Ilaina ny tenimiafina fanamafisana."));
-      return;
-    }
-
     form.dataset.adminConfirmationEnCours = "1";
 
     var boutons = form.querySelectorAll("button[type='submit'], input[type='submit']");
@@ -189,7 +174,7 @@
         } catch (_) {
           erreur = null;
         }
-        window.alert(
+        window.notifierConfirmationAdmin(
           (erreur && erreur.detail) ||
           texteSelonLangue("La confirmation administrateur a été refusée.", "Nolavina ny fanamafisan’ny mpitantana.")
         );
@@ -197,7 +182,7 @@
       }
 
       if (!reponse.ok) {
-        window.alert(texteSelonLangue("L'action administrateur n'a pas pu être exécutée.", "Tsy afaka nanatanteraka ilay hetsika fitantanana."));
+        window.notifierConfirmationAdmin(texteSelonLangue("L'action administrateur n'a pas pu être exécutée.", "Tsy afaka nanatanteraka ilay hetsika fitantanana."));
         return;
       }
 
@@ -206,7 +191,7 @@
       // l'écran final à afficher.
       window.location.assign(reponse.url || form.action);
     } catch (_) {
-      window.alert(texteSelonLangue("Impossible de joindre le serveur. Réessayez.", "Tsy afaka nifandray tamin’ny mpizara. Andramo indray."));
+      window.notifierConfirmationAdmin(texteSelonLangue("Impossible de joindre le serveur. Réessayez.", "Tsy afaka nifandray tamin’ny mpizara. Andramo indray."));
     } finally {
       delete form.dataset.adminConfirmationEnCours;
       boutons.forEach(function (bouton) {
