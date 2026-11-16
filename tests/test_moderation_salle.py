@@ -21,6 +21,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_DB_FICHIER}"
 os.environ.setdefault("SESSION_SECRET_KEY", "cle-de-test-uniquement-jamais-en-production")
 
 from starlette.testclient import TestClient  # noqa: E402
+from starlette.websockets import WebSocketDisconnect  # noqa: E402
 import pyotp  # noqa: E402
 from sqlmodel import SQLModel, Session, select  # noqa: E402
 
@@ -167,6 +168,35 @@ class TestModerationSalle(unittest.TestCase):
             data={"_csrf": jeton},
         )
         self.assertEqual(reponse.status_code, 403)
+
+    def test_admin_sans_totp_ne_peut_pas_ouvrir_le_websocket_du_tableau(self):
+        telephone = "0341100099"
+        with Session(engine) as session:
+            session.add(
+                Utilisateur(
+                    nom="Admin sans TOTP",
+                    telephone=telephone,
+                    mot_de_passe_hash=hacher_mot_de_passe("MotDePasse123!"),
+                    role=RoleUtilisateur.ADMIN,
+                    totp_active=False,
+                    totp_secret=None,
+                )
+            )
+            session.commit()
+
+        client = TestClient(app)
+        jeton = _connecter(client, telephone, "MotDePasse123!")
+        self.assertEqual(
+            client.get("/securite").status_code,
+            200,
+        )
+        with self.assertRaises(WebSocketDisconnect) as fermeture:
+            with client.websocket_connect(
+                f"/classe/seances/{self.seance_id}/tableau/ws",
+                headers={"origin": "https://testserver"},
+            ):
+                pass
+        self.assertEqual(fermeture.exception.code, 4403)
 
     def test_professeur_dun_autre_cours_ne_peut_pas_moderer(self):
         client = TestClient(app)

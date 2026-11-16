@@ -60,6 +60,16 @@ def test_seul_le_parcours_mfa_reste_ouvert_aux_admins_sans_totp():
     assert not chemin_autorise_pendant_configuration_mfa_admin("POST", "/admin/utilisateurs/12/valider")
 
 
+def test_les_deux_websockets_refusent_un_admin_sans_totp():
+    racine = Path(__file__).resolve().parents[1]
+    cercles = (racine / "app" / "routers" / "cercles_router.py").read_text(encoding="utf-8")
+    tableau = (racine / "app" / "routers" / "classe_router.py").read_text(encoding="utf-8")
+
+    garde = "utilisateur.role == RoleUtilisateur.ADMIN and not utilisateur.totp_active"
+    assert garde in cercles
+    assert garde in tableau
+
+
 def test_documentation_api_est_desactivee_en_production():
     configuration = _configuration_documentation("production")
 

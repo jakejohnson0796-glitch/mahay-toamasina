@@ -2822,6 +2822,10 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
             _journaliser_refus_ws(cercle_id, "compte_banni")
             await websocket.close(code=4403)
             return
+        if utilisateur.role == RoleUtilisateur.ADMIN and not utilisateur.totp_active:
+            _journaliser_refus_ws(cercle_id, "mfa_admin_requise")
+            await websocket.close(code=4403)
+            return
         if profil_validation_requise(utilisateur):
             _journaliser_refus_ws(cercle_id, "profil_non_valide")
             await websocket.close(code=4403)
@@ -2959,6 +2963,12 @@ async def salon_cercle_websocket(websocket: WebSocket, cercle_id: int):
                     or utilisateur_frais.banni
                 ):
                     await websocket.close(code=4401)
+                    break
+                if (
+                    utilisateur_frais.role == RoleUtilisateur.ADMIN
+                    and not utilisateur_frais.totp_active
+                ):
+                    await websocket.close(code=4403)
                     break
                 if profil_validation_requise(utilisateur_frais):
                     await websocket.close(code=4403)

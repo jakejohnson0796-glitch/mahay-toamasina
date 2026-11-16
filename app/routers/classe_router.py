@@ -1690,6 +1690,9 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
         if utilisateur.banni or profil_validation_requise(utilisateur):
             await websocket.close(code=4403)
             return
+        if utilisateur.role == RoleUtilisateur.ADMIN and not utilisateur.totp_active:
+            await websocket.close(code=4403)
+            return
 
         seance = session.get(Seance, seance_id)
         if not seance:
@@ -1749,6 +1752,12 @@ async def tableau_ws(websocket: WebSocket, seance_id: int):
                         or not cours_frais
                     ):
                         await websocket.close(code=4401)
+                        break
+                    if (
+                        utilisateur_frais.role == RoleUtilisateur.ADMIN
+                        and not utilisateur_frais.totp_active
+                    ):
+                        await websocket.close(code=4403)
                         break
                     if profil_validation_requise(utilisateur_frais):
                         await websocket.close(code=4403)
