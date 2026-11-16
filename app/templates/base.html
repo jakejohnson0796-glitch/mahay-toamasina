@@ -68,6 +68,8 @@
 {% endif %}
 <link rel="stylesheet" href="/static/sidebar.css?v={{ version_asset('sidebar.css') }}">
 <link rel="stylesheet" href="/static/responsive.css?v={{ version_asset('responsive.css') }}">
+<link rel="stylesheet" href="/static/admin-confirmation.css?v={{ version_asset('admin-confirmation.css') }}">
+<script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation-dialog.js?v={{ version_asset('js/admin-confirmation-dialog.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/admin-confirmation.js?v={{ version_asset('js/admin-confirmation.js') }}" defer></script>
 <script nonce="{{ csp_nonce(request) }}" src="/static/js/pwa.js?v={{ version_asset('js/pwa.js') }}" defer></script>
 {% if request.url.path in ["/notifications", "/mes-revisions", "/mon-parcours"] or (request.url.path == "/dashboard" and not (utilisateur is defined and utilisateur and (utilisateur.role == "professeur" or utilisateur.role == "repetiteur" or (utilisateur.profil_souhaite == "repetiteur" and utilisateur.statut_verification_repetiteur != "retire")))) or (mode_apercu_admin and mode_apercu_espace == "etudiant") %}<link rel="stylesheet" href="/static/student-hub.css?v={{ version_asset('student-hub.css') }}">{% endif %}
