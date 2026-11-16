@@ -84,7 +84,7 @@ def test_photo_profil_est_visible_aux_membres_du_meme_cercle_actif(monkeypatch):
     assert response.headers["cache-control"] == "private, no-store"
 
 
-def test_proprietaire_et_administrateur_n'ont_pas_besoin_d'une_requete_cercle():
+def test_proprietaire_et_administrateur_nont_pas_besoin_dune_requete_cercle():
     session = _PhotoSession()
     proprietaire = SimpleNamespace(id=42, role=RoleUtilisateur.ETUDIANT)
     administrateur = SimpleNamespace(id=99, role=RoleUtilisateur.ADMIN)
