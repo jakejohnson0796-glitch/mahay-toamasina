@@ -197,7 +197,10 @@ def creer_bulletin(
     ).first()
     eleve = session.get(Utilisateur, eleve_identifiant)
     periode_validee = _periode_canonique(session, cours_id, periode)
-    if not inscription or not eleve or eleve.banni or not periode_validee:
+    if (
+        not inscription or not eleve or eleve.banni
+        or eleve.role != RoleUtilisateur.ETUDIANT or not periode_validee
+    ):
         return RedirectResponse(_url_bulletins(cours_id, erreur="periode_ou_eleve_invalide"), status_code=303)
 
     appreciation_validee = (appreciation or "").strip()[:2000] or None
@@ -301,6 +304,8 @@ def publier_bulletin(
         return RedirectResponse("/classe", status_code=303)
     if bulletin.statut != "brouillon":
         return RedirectResponse(_url_bulletins(cours.id, erreur="bulletin_deja_publie"), status_code=303)
+    if eleve.role != RoleUtilisateur.ETUDIANT or eleve.banni:
+        return RedirectResponse(_url_bulletins(cours.id, erreur="eleve_non_inscrit"), status_code=303)
     if not session.exec(
         select(InscriptionCours).where(
             InscriptionCours.cours_id == cours.id,
@@ -395,6 +400,9 @@ def responsable_autorise_bulletin(
         or bulletin.statut != "publie"
     ):
         return False
+    eleve = session.get(Utilisateur, bulletin.utilisateur_id)
+    if not eleve or eleve.banni or eleve.role != RoleUtilisateur.ETUDIANT:
+        return False
     return session.exec(
         select(LienResponsableEleve).where(
             LienResponsableEleve.responsable_id == utilisateur.id,
@@ -428,7 +436,7 @@ def telecharger_bulletin_general_famille(
         )
     ).first()
     eleve = session.get(Utilisateur, eleve_id)
-    if not lien_actif or not eleve or eleve.banni:
+    if not lien_actif or not eleve or eleve.banni or eleve.role != RoleUtilisateur.ETUDIANT:
         return RedirectResponse("/famille", status_code=303)
 
     bulletins = session.exec(
