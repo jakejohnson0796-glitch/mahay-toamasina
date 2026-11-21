@@ -21,3 +21,24 @@
 @media(max-width:850px){.de-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.de-actions{grid-template-columns:1fr}.de-course-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.de-page{padding:.8rem}.de-hero{display:block;border-radius:20px}.de-status{margin-top:1rem}.de-stat{padding:.9rem}.de-stat strong{font-size:1.7rem}.de-section-heading{display:block}.de-text-link{display:inline-block;margin-top:.65rem}.de-course-bottom{align-items:flex-start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.de-action{transition:none}.de-action:hover{transform:none}}
+
+
+/* File de travail pédagogique : actions fondées sur les données enregistrées. */
+.de-work-queue{margin:1.4rem 0 1.9rem}
+.de-work-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.de-work-card{min-width:0;padding:1.1rem;border:1px solid var(--content-border,#dce6e2);border-radius:20px;background:var(--content-surface,#fff)}
+.de-work-card-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding-bottom:.8rem;border-bottom:1px solid var(--content-border,#dce6e2)}
+.de-work-eyebrow{display:block;margin-bottom:.2rem;color:var(--content-text-muted,#647574);font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.de-work-card h3{margin:0;font-size:1rem}
+.de-work-total{display:grid;place-items:center;min-width:2.5rem;height:2.5rem;padding:0 .55rem;border-radius:13px;background:rgba(13,70,69,.09);color:var(--content-link,#0d6460);font-size:1.1rem;font-variant-numeric:tabular-nums}
+.de-work-list{display:grid}
+.de-work-row{display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:.8rem 0;border-bottom:1px solid var(--content-border,#dce6e2)}
+.de-work-row:last-child{border-bottom:0;padding-bottom:0}
+.de-work-row>div{min-width:0;display:grid;gap:.18rem}
+.de-work-row strong{font-size:.82rem;overflow-wrap:anywhere}
+.de-work-row span{color:var(--content-text-muted,#647574);font-size:.72rem}
+.de-work-row a{flex-shrink:0;color:var(--content-link,#0d6460);font-size:.72rem;font-weight:800;text-decoration:none}
+.de-work-row a:hover{text-decoration:underline}
+.de-work-empty{margin:.9rem 0 0;color:var(--content-text-muted,#647574);font-size:.8rem;line-height:1.5}
+@media(max-width:850px){.de-work-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.de-work-row{align-items:flex-start;flex-direction:column}.de-work-row a{white-space:normal}}
