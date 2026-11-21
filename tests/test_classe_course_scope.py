@@ -311,6 +311,7 @@ def test_identifiant_optionnel_refuse_les_valeurs_ambigues(valeur):
 def test_formulaire_cours_scolaire_et_universitaire_se_compile():
     env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
     assert env.get_template("classe_liste.html") is not None
+    assert env.get_template("classe_detail.html") is not None
 
     template = (ROOT / "app" / "templates" / "classe_liste.html").read_text(encoding="utf-8")
     script = (ROOT / "app" / "static" / "classe-cours-create.js").read_text(encoding="utf-8")
@@ -323,3 +324,6 @@ def test_formulaire_cours_scolaire_et_universitaire_se_compile():
     assert "/api/scolaire/niveaux/" in script
     assert "ProgrammeMatiereScolaire.statut_validation == \"verifie\"" in route
     assert "CycleEnseigne.utilisateur_id == utilisateur.id" in route
+    assert 'if cours.portee_academique == "scolaire"' in route
+    detail = (ROOT / "app" / "templates" / "classe_detail.html").read_text(encoding="utf-8")
+    assert 'readonly aria-describedby="cours-referentiel-aide"' in detail
