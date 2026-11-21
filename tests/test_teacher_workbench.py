@@ -37,6 +37,7 @@ def test_pointages_lot_normalise_statuts_et_justificatifs():
         {"utilisateur_id": 1, "statut": "absent"},
     ]),
     json.dumps([{"utilisateur_id": True, "statut": "present"}]),
+    json.dumps([{"utilisateur_id": 12.5, "statut": "present"}]),
     json.dumps([{"utilisateur_id": 1, "statut": "present", "justificatif": 123}]),
 ])
 def test_pointages_lot_refuse_donnees_invalides(payload):
@@ -98,6 +99,11 @@ def test_registre_presence_utilise_un_enregistrement_groupe_avec_csrf():
     assert "InscriptionCours.utilisateur_id.in_(identifiants)" in route
     assert "MAX_POINTAGES_LOT = 500" in route
 
+
+
+def test_tableau_de_bord_compte_aussi_les_corrections_inachevees():
+    source = (ROOT / "app" / "routers" / "dashboard_router.py").read_text(encoding="utf-8")
+    assert "RenduDevoir.note.is_(None) | RenduDevoir.date_correction.is_(None)" in source
 
 def test_tableau_enseignant_affiche_les_actions_reelles_a_traiter():
     source = (ROOT / "app" / "templates" / "dashboard_enseignant.html").read_text(encoding="utf-8")
