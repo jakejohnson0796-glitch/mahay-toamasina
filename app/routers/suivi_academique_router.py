@@ -50,7 +50,7 @@ MAX_POINTAGES_LOT = 500
 
 def normaliser_pointages_lot(contenu_json: str) -> list[dict]:
     """Valide un registre groupé, borné et sans identifiants en double."""
-    if not isinstance(contenu_json, str) or len(contenu_json) > 250_000:
+    if not isinstance(contenu_json, str) or len(contenu_json) > 750_000:
         raise ValueError("Le registre envoyé est trop volumineux.")
     try:
         donnees = json.loads(contenu_json)
@@ -66,10 +66,12 @@ def normaliser_pointages_lot(contenu_json: str) -> list[dict]:
         valeur_id = ligne.get("utilisateur_id")
         if isinstance(valeur_id, bool):
             raise ValueError("Un identifiant d'étudiant est invalide.")
-        try:
-            utilisateur_id = int(valeur_id)
-        except (TypeError, ValueError) as erreur:
-            raise ValueError("Un identifiant d'étudiant est invalide.") from erreur
+        if isinstance(valeur_id, int):
+            utilisateur_id = valeur_id
+        elif isinstance(valeur_id, str) and valeur_id.strip().isdigit():
+            utilisateur_id = int(valeur_id.strip())
+        else:
+            raise ValueError("Un identifiant d'étudiant doit être un entier positif.")
         if utilisateur_id <= 0 or utilisateur_id in identifiants:
             raise ValueError("Les identifiants doivent être positifs et uniques.")
         identifiants.add(utilisateur_id)
