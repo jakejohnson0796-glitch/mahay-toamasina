@@ -119,6 +119,19 @@ def _referentiel_scolaire_courant(session: Session) -> Optional[ReferentielScola
     ).first()
 
 
+def _id_optionnel_formulaire(valeur: Optional[str]) -> Optional[int]:
+    """Convertit un identifiant de formulaire vide en None et rejette les valeurs ambiguës."""
+    if valeur is None or not valeur.strip():
+        return None
+    texte = valeur.strip()
+    if not texte.isdecimal():
+        raise ValueError("cible_scolaire_incomplete")
+    identifiant = int(texte)
+    if identifiant <= 0:
+        raise ValueError("cible_scolaire_incomplete")
+    return identifiant
+
+
 def _valider_cible_cours_scolaire(
     session: Session,
     utilisateur: Utilisateur,
@@ -463,10 +476,10 @@ def creer_cours(
     niveau: Optional[str] = Form(None),
     portee_academique: str = Form("universitaire"),
     cycle_scolaire: Optional[str] = Form(None),
-    niveau_scolaire_id: Optional[int] = Form(None),
-    option_scolaire_id: Optional[int] = Form(None),
-    matiere_scolaire_id: Optional[int] = Form(None),
-    etablissement_scolaire_id: Optional[int] = Form(None),
+    niveau_scolaire_id: Optional[str] = Form(None),
+    option_scolaire_id: Optional[str] = Form(None),
+    matiere_scolaire_id: Optional[str] = Form(None),
+    etablissement_scolaire_id: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     objectifs: Optional[str] = Form(None),
     session: Session = Depends(get_session),
@@ -501,10 +514,10 @@ def creer_cours(
             niveau_ref, option_ref, matiere_ref, etablissement_ref = _valider_cible_cours_scolaire(
                 session,
                 utilisateur,
-                niveau_id=niveau_scolaire_id,
-                option_id=option_scolaire_id,
-                matiere_id=matiere_scolaire_id,
-                etablissement_id=etablissement_scolaire_id,
+                niveau_id=_id_optionnel_formulaire(niveau_scolaire_id),
+                option_id=_id_optionnel_formulaire(option_scolaire_id),
+                matiere_id=_id_optionnel_formulaire(matiere_scolaire_id),
+                etablissement_id=_id_optionnel_formulaire(etablissement_scolaire_id),
                 cycle_declare=cycle_scolaire,
             )
         except ValueError as erreur:
