@@ -94,11 +94,12 @@ def _cycles_enseignes_utilisateur(session: Session, utilisateur: Utilisateur) ->
     if utilisateur.role == RoleUtilisateur.ADMIN:
         return list(CYCLES_ENSEIGNEMENT_VALIDES)
 
-    cycles = set(session.exec(
-        select(CycleEnseigne.cycle_education).where(
+    declarations = session.exec(
+        select(CycleEnseigne).where(
             CycleEnseigne.utilisateur_id == utilisateur.id
         )
-    ).all())
+    ).all()
+    cycles = {declaration.cycle_education for declaration in declarations}
     cycle_profil = (utilisateur.cycle_education or "").strip().lower()
     if cycle_profil in CYCLES_ENSEIGNEMENT_VALIDES:
         cycles.add(cycle_profil)
