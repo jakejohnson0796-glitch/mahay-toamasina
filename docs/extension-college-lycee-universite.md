@@ -225,3 +225,17 @@ La migration d'amorçage importe des entrées de repérage à partir de la carto
 Le relevé amorcé n'est pas un recensement exhaustif. Il reste à comparer les 24 régions avec les nombres affichés par METFP, à corriger les doublons et libellés, à documenter les établissements et filières manquants, à intégrer plus largement les référentiels de formation/certification publiés et à confirmer l'offre annuelle réelle avec une source adaptée. Aucun rapport ne doit qualifier la liste de complète tant que ce rapprochement n'est pas démontré.
 
 La règle principale : **la base de données décrit fidèlement les programmes réels ; l'IA et l'interface consomment ce référentiel, elles ne l'inventent pas.**
+
+
+## Création de cours par les enseignants
+
+La création d'un cours virtuel distingue maintenant deux parcours :
+
+- **Université / enseignement supérieur** : le professeur conserve les champs texte libres pour la matière et le niveau (L1, L2, L3, Master, etc.). Les anciens cours restent compatibles.
+- **Parcours scolaire** : le professeur choisit un cycle qu'il a déclaré enseigner, puis une classe, une série/option si elle existe et une matière proposées par les API du référentiel. Seules les entrées actives et vérifiées sont proposées.
+
+Le serveur ne fait pas confiance aux identifiants transmis par le navigateur : il recontrôle le référentiel courant, le cycle du professeur, la classe, la série, la matière et son association à un programme validé. Un établissement peut être associé facultativement uniquement s'il est actif et vérifié ; ce rattachement ne prouve pas à lui seul que l'établissement propose effectivement l'offre pour l'année sélectionnée.
+
+Pour éviter qu'un cours scolaire dérive du référentiel, ses libellés matière/niveau sont des instantanés issus des références vérifiées et ne sont pas modifiables en texte libre depuis les paramètres du cours. Une actualisation de référentiel ultérieure devra être explicitement contrôlée et historisée.
+
+Les parcours ETFP ne sont pas encore proposés dans ce formulaire : le modèle `Cours` n'a pas encore de clé vers `ParcoursTechniqueProfessionnel` ni d'offre ETFP par établissement. Ils nécessitent une extension de schéma distincte avant d'être activés.

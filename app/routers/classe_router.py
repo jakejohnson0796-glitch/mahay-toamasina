@@ -17,14 +17,14 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse, Response
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
 from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance)
+from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance, CycleEnseigne, ReferentielScolaire, NiveauScolaire, OptionScolaire, MatiereScolaire, ProgrammeMatiereScolaire, EtablissementScolaire)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..profile_approval import profil_validation_requise
 from ..websocket_security import origine_websocket_autorisee
@@ -78,6 +78,157 @@ def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
             InscriptionCours.utilisateur_id == utilisateur_id,
         )
     ).first() is not None
+
+
+CYCLES_ENSEIGNEMENT_VALIDES = ("primaire", "college", "lycee", "universite")
+ORDRE_CYCLES_ENSEIGNEMENT = {
+    "primaire": 0,
+    "college": 1,
+    "lycee": 2,
+    "universite": 3,
+}
+
+
+def _cycles_enseignes_utilisateur(session: Session, utilisateur: Utilisateur) -> list[str]:
+    """Renvoie uniquement les cycles déclarés, avec un repli universitaire historique."""
+    if utilisateur.role == RoleUtilisateur.ADMIN:
+        return list(CYCLES_ENSEIGNEMENT_VALIDES)
+
+    declarations = session.exec(
+        select(CycleEnseigne).where(
+            CycleEnseigne.utilisateur_id == utilisateur.id
+        )
+    ).all()
+    cycles = {declaration.cycle_education for declaration in declarations}
+    cycle_profil = (utilisateur.cycle_education or "").strip().lower()
+    if cycle_profil in CYCLES_ENSEIGNEMENT_VALIDES:
+        cycles.add(cycle_profil)
+
+    # Les anciens enseignants universitaires approuvés n'avaient pas tous
+    # une ligne CycleEnseigne. On conserve leur parcours existant sans leur
+    # ouvrir automatiquement les cycles scolaires.
+    if not cycles:
+        cycles.add("universite")
+    return sorted(cycles, key=lambda item: ORDRE_CYCLES_ENSEIGNEMENT.get(item, 99))
+
+
+def _referentiel_scolaire_courant(session: Session) -> Optional[ReferentielScolaire]:
+    return session.exec(
+        select(ReferentielScolaire)
+        .where(ReferentielScolaire.statut.notin_(("historique", "archive")))
+        .order_by(ReferentielScolaire.date_creation.desc(), ReferentielScolaire.id.desc())
+    ).first()
+
+
+def _id_optionnel_formulaire(valeur: Optional[str]) -> Optional[int]:
+    """Convertit un identifiant de formulaire vide en None et rejette les valeurs ambiguës."""
+    if valeur is None or not valeur.strip():
+        return None
+    texte = valeur.strip()
+    if not texte.isdecimal():
+        raise ValueError("cible_scolaire_incomplete")
+    identifiant = int(texte)
+    if identifiant <= 0:
+        raise ValueError("cible_scolaire_incomplete")
+    return identifiant
+
+
+def _valider_cible_cours_scolaire(
+    session: Session,
+    utilisateur: Utilisateur,
+    *,
+    niveau_id: Optional[int],
+    option_id: Optional[int],
+    matiere_id: Optional[int],
+    etablissement_id: Optional[int],
+    cycle_declare: Optional[str] = None,
+) -> tuple[NiveauScolaire, Optional[OptionScolaire], MatiereScolaire, Optional[EtablissementScolaire]]:
+    """Vérifie chaque référence scolaire dans le référentiel courant avant création."""
+    referentiel = _referentiel_scolaire_courant(session)
+    if not referentiel:
+        raise ValueError("referentiel_scolaire_indisponible")
+
+    if niveau_id is None or matiere_id is None:
+        raise ValueError("cible_scolaire_incomplete")
+
+    niveau = session.get(NiveauScolaire, niveau_id)
+    if (
+        not niveau
+        or niveau.referentiel_id != referentiel.id
+        or not niveau.est_actif
+        or niveau.statut_validation != "verifie"
+    ):
+        raise ValueError("niveau_scolaire_invalide")
+
+    cycles_autorises = set(_cycles_enseignes_utilisateur(session, utilisateur))
+    cycle_formulaire = (cycle_declare or "").strip().lower()
+    if cycle_formulaire and cycle_formulaire != niveau.cycle:
+        raise ValueError("niveau_scolaire_invalide")
+    if utilisateur.role != RoleUtilisateur.ADMIN and niveau.cycle not in cycles_autorises:
+        raise ValueError("cycle_non_autorise")
+
+    option = None
+    options_compatibles: list[int] = []
+    if option_id is not None:
+        option = session.get(OptionScolaire, option_id)
+        if (
+            not option
+            or option.referentiel_id != referentiel.id
+            or option.niveau_id != niveau.id
+            or not option.est_active
+            or option.statut_validation != "verifie"
+        ):
+            raise ValueError("option_scolaire_invalide")
+        options_compatibles.append(option.id)
+        if option.parent_option_id is not None:
+            parent = session.get(OptionScolaire, option.parent_option_id)
+            if (
+                not parent
+                or parent.referentiel_id != referentiel.id
+                or parent.niveau_id != niveau.id
+                or parent.parent_option_id is not None
+                or not parent.est_active
+                or parent.statut_validation != "verifie"
+            ):
+                raise ValueError("option_scolaire_invalide")
+            options_compatibles.append(parent.id)
+
+    matiere = session.get(MatiereScolaire, matiere_id)
+    if (
+        not matiere
+        or not matiere.est_active
+        or matiere.statut_validation != "verifie"
+    ):
+        raise ValueError("matiere_scolaire_invalide")
+
+    requete_programme = select(ProgrammeMatiereScolaire.id).where(
+        ProgrammeMatiereScolaire.referentiel_id == referentiel.id,
+        ProgrammeMatiereScolaire.niveau_id == niveau.id,
+        ProgrammeMatiereScolaire.matiere_id == matiere.id,
+        ProgrammeMatiereScolaire.statut_validation == "verifie",
+    )
+    if options_compatibles:
+        requete_programme = requete_programme.where(
+            or_(
+                ProgrammeMatiereScolaire.option_id.is_(None),
+                ProgrammeMatiereScolaire.option_id.in_(options_compatibles),
+            )
+        )
+    else:
+        requete_programme = requete_programme.where(
+            ProgrammeMatiereScolaire.option_id.is_(None)
+        )
+    if not session.exec(requete_programme).first():
+        raise ValueError("matiere_hors_programme")
+
+    etablissement = None
+    if etablissement_id is not None:
+        etablissement = session.get(EtablissementScolaire, etablissement_id)
+        if not etablissement or not etablissement.est_actif or not etablissement.est_verifie:
+            raise ValueError("etablissement_scolaire_invalide")
+
+    return niveau, option, matiere, etablissement
+
 
 
 def _ids_seances_terminees_sans_fiche(
@@ -276,10 +427,45 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
     )
     session.commit()
 
+    est_professeur = _est_professeur(utilisateur)
+    cycles_enseignes = (
+        _cycles_enseignes_utilisateur(session, utilisateur)
+        if est_professeur
+        else []
+    )
+    etablissements_scolaires = []
+    referentiel_scolaire = None
+    if est_professeur:
+        referentiel_scolaire = _referentiel_scolaire_courant(session)
+        etablissements_scolaires = session.exec(
+            select(EtablissementScolaire)
+            .where(
+                EtablissementScolaire.est_actif == True,  # noqa: E712
+                EtablissementScolaire.est_verifie == True,  # noqa: E712
+            )
+            .order_by(EtablissementScolaire.region, EtablissementScolaire.nom)
+            .limit(100)
+        ).all()
+
+    cycles_scolaires = [cycle for cycle in cycles_enseignes if cycle in {"primaire", "college", "lycee"}]
+    portee_cours_defaut = (
+        "scolaire"
+        if cycles_scolaires and "universite" not in cycles_enseignes
+        else "universitaire"
+    )
+
     return templates.TemplateResponse(
         request,
         "classe_liste.html",
-        {"utilisateur": utilisateur, "cours_visibles": cours_visibles, "est_professeur": _est_professeur(utilisateur)},
+        {
+            "utilisateur": utilisateur,
+            "cours_visibles": cours_visibles,
+            "est_professeur": est_professeur,
+            "cycles_enseignes": cycles_enseignes,
+            "portee_cours_defaut": portee_cours_defaut,
+            "etablissements_scolaires": etablissements_scolaires,
+            "referentiel_scolaire": referentiel_scolaire,
+        },
     )
 
 
@@ -287,8 +473,14 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
 def creer_cours(
     request: Request,
     nom: str = Form(...),
-    matiere: str = Form(...),
-    niveau: str = Form(...),
+    matiere: Optional[str] = Form(None),
+    niveau: Optional[str] = Form(None),
+    portee_academique: str = Form("universitaire"),
+    cycle_scolaire: Optional[str] = Form(None),
+    niveau_scolaire_id: Optional[str] = Form(None),
+    option_scolaire_id: Optional[str] = Form(None),
+    matiere_scolaire_id: Optional[str] = Form(None),
+    etablissement_scolaire_id: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     objectifs: Optional[str] = Form(None),
     session: Session = Depends(get_session),
@@ -299,15 +491,73 @@ def creer_cours(
         return RedirectResponse("/classe", status_code=303)
 
     nom = " ".join((nom or "").split())
-    matiere = " ".join((matiere or "").split())
-    niveau = " ".join((niveau or "").split())
-    if not nom or len(nom) > 120 or not matiere or len(matiere) > 100 or not niveau or len(niveau) > 80:
+    portee = (portee_academique or "universitaire").strip().lower()
+    if not nom or len(nom) > 120:
         return RedirectResponse("/classe?erreur=champs_cours_invalides#nouveau-cours", status_code=303)
+
+    if portee == "universitaire":
+        cycles_autorises = set(_cycles_enseignes_utilisateur(session, utilisateur))
+        if utilisateur.role != RoleUtilisateur.ADMIN and "universite" not in cycles_autorises:
+            return RedirectResponse("/classe?erreur=cycle_non_autorise#nouveau-cours", status_code=303)
+        matiere = " ".join((matiere or "").split())
+        niveau = " ".join((niveau or "").split())
+        if not matiere or len(matiere) > 100 or not niveau or len(niveau) > 80:
+            return RedirectResponse("/classe?erreur=champs_cours_invalides#nouveau-cours", status_code=303)
+        donnees_academiques = {
+            "portee_academique": "universitaire",
+            "niveau_scolaire_id": None,
+            "option_scolaire_id": None,
+            "matiere_scolaire_id": None,
+            "etablissement_scolaire_id": None,
+        }
+    elif portee == "scolaire":
+        try:
+            niveau_ref, option_ref, matiere_ref, etablissement_ref = _valider_cible_cours_scolaire(
+                session,
+                utilisateur,
+                niveau_id=_id_optionnel_formulaire(niveau_scolaire_id),
+                option_id=_id_optionnel_formulaire(option_scolaire_id),
+                matiere_id=_id_optionnel_formulaire(matiere_scolaire_id),
+                etablissement_id=_id_optionnel_formulaire(etablissement_scolaire_id),
+                cycle_declare=cycle_scolaire,
+            )
+        except ValueError as erreur:
+            code_erreur = str(erreur)
+            if code_erreur not in {
+                "referentiel_scolaire_indisponible",
+                "cible_scolaire_incomplete",
+                "niveau_scolaire_invalide",
+                "cycle_non_autorise",
+                "option_scolaire_invalide",
+                "matiere_scolaire_invalide",
+                "matiere_hors_programme",
+                "etablissement_scolaire_invalide",
+            }:
+                code_erreur = "cible_scolaire_invalide"
+            return RedirectResponse(
+                f"/classe?erreur={code_erreur}#nouveau-cours",
+                status_code=303,
+            )
+
+        matiere = matiere_ref.libelle.strip()
+        niveau = niveau_ref.libelle.strip()
+        if option_ref:
+            niveau = f"{niveau} · {option_ref.libelle.strip()}"
+        donnees_academiques = {
+            "portee_academique": "scolaire",
+            "niveau_scolaire_id": niveau_ref.id,
+            "option_scolaire_id": option_ref.id if option_ref else None,
+            "matiere_scolaire_id": matiere_ref.id,
+            "etablissement_scolaire_id": etablissement_ref.id if etablissement_ref else None,
+        }
+    else:
+        return RedirectResponse("/classe?erreur=portee_invalide#nouveau-cours", status_code=303)
 
     cours = Cours(
         nom=nom,
         matiere=matiere,
         niveau=niveau,
+        **donnees_academiques,
         description=(description or "").strip()[:3000] or None,
         objectifs=(objectifs or "").strip()[:3000] or None,
         professeur_id=utilisateur.id,
@@ -337,9 +587,23 @@ def modifier_cours(
         return RedirectResponse("/classe", status_code=303)
 
     nom = " ".join((nom or "").split())
-    matiere = " ".join((matiere or "").split())
-    niveau = " ".join((niveau or "").split())
-    if not nom or len(nom) > 120 or not matiere or len(matiere) > 100 or not niveau or len(niveau) > 80:
+    if cours.portee_academique == "scolaire":
+        # Matière et niveau sont des instantanés du référentiel vérifié :
+        # les champs reçus du navigateur ne peuvent pas les désynchroniser.
+        matiere = cours.matiere
+        niveau = cours.niveau
+    else:
+        matiere = " ".join((matiere or "").split())
+        niveau = " ".join((niveau or "").split())
+
+    champs_universitaires_invalides = (
+        cours.portee_academique != "scolaire"
+        and (
+            not matiere or len(matiere) > 100
+            or not niveau or len(niveau) > 80
+        )
+    )
+    if not nom or len(nom) > 120 or champs_universitaires_invalides:
         return RedirectResponse(f"/classe/{cours_id}?erreur=champs_cours_invalides#parametres-cours", status_code=303)
 
     cours.nom = nom
