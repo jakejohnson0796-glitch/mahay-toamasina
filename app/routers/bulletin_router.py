@@ -115,6 +115,16 @@ def gestion_bulletins(
         .order_by(BulletinScolaire.date_modification.desc(), BulletinScolaire.id.desc())
         .limit(300)
     ).all()
+    ids_eleves_bulletins = sorted({item.utilisateur_id for item in bulletins_modeles})
+    eleves_par_id = (
+        {
+            eleve.id: eleve
+            for eleve in session.exec(
+                select(Utilisateur).where(Utilisateur.id.in_(ids_eleves_bulletins))
+            ).all()
+        }
+        if ids_eleves_bulletins else {}
+    )
     ids_bulletins = [item.id for item in bulletins_modeles if item.id is not None]
     evenements = (
         session.exec(
@@ -132,6 +142,7 @@ def gestion_bulletins(
     bulletins = [
         {
             "bulletin": bulletin,
+            "eleve": eleves_par_id.get(bulletin.utilisateur_id),
             "snapshot": lire_snapshot_bulletin(bulletin.snapshot_json),
             "historique": historique_par_id.get(bulletin.id, []),
         }
