@@ -13,6 +13,7 @@ from ..auth import utilisateur_courant
 from ..bulletins import (
     construire_snapshot_bulletin,
     generer_pdf_bulletin,
+    generer_pdf_bulletin_general,
     lire_snapshot_bulletin,
     normaliser_periode,
 )
@@ -401,6 +402,69 @@ def responsable_autorise_bulletin(
             LienResponsableEleve.statut == "actif",
         )
     ).first() is not None
+
+
+@router.get("/famille/bulletins/periode/telecharger")
+def telecharger_bulletin_general_famille(
+    request: Request,
+    eleve_id: int,
+    periode: str,
+    session: Session = Depends(get_session),
+):
+    utilisateur = utilisateur_courant(request, session)
+    if not utilisateur:
+        return RedirectResponse("/connexion", status_code=303)
+    if (
+        utilisateur.role != RoleUtilisateur.RESPONSABLE
+        or utilisateur.profil_souhaite != "responsable"
+    ):
+        return RedirectResponse("/dashboard", status_code=303)
+
+    lien_actif = session.exec(
+        select(LienResponsableEleve).where(
+            LienResponsableEleve.responsable_id == utilisateur.id,
+            LienResponsableEleve.eleve_id == eleve_id,
+            LienResponsableEleve.statut == "actif",
+        )
+    ).first()
+    eleve = session.get(Utilisateur, eleve_id)
+    if not lien_actif or not eleve or eleve.banni:
+        return RedirectResponse("/famille", status_code=303)
+
+    bulletins = session.exec(
+        select(BulletinScolaire)
+        .where(
+            BulletinScolaire.utilisateur_id == eleve_id,
+            BulletinScolaire.statut == "publie",
+        )
+        .order_by(BulletinScolaire.date_publication.desc())
+        .limit(300)
+    ).all()
+    snapshots = []
+    for bulletin in bulletins:
+        snapshot = lire_snapshot_bulletin(bulletin.snapshot_json)
+        if snapshot and normaliser_periode(
+            str(snapshot.get("periode") or bulletin.periode)
+        ).casefold() == normaliser_periode(periode).casefold():
+            snapshots.append(snapshot)
+    if not snapshots:
+        return RedirectResponse("/famille", status_code=303)
+
+    try:
+        pdf = generer_pdf_bulletin_general(snapshots, periode)
+    except ValueError:
+        return RedirectResponse("/famille", status_code=303)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="bulletin-general-{eleve_id}.pdf"',
+            "Cache-Control": "private, no-store",
+            "Pragma": "no-cache",
+            "X-Content-Type-Options": "nosniff",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
 
 
 @router.get("/famille/bulletins/{bulletin_id}/telecharger")
