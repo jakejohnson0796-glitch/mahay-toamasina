@@ -9,6 +9,7 @@ from sqlmodel import SQLModel, Session, create_engine
 from app.bulletins import construire_snapshot_bulletin, generer_pdf_bulletin, generer_pdf_bulletin_general, lire_snapshot_bulletin
 from app.models import (
     BulletinScolaire,
+    BulletinScolaireEvenement,
     Cours,
     Devoir,
     LienResponsableEleve,
@@ -22,6 +23,10 @@ from app.models import (
 from app.responsable_portal import chemin_autorise_responsable
 from app.admin_security import action_admin_protegee
 from app.routers.bulletin_router import responsable_autorise_bulletin
+from app.routers.admin_router import (
+    _nettoyer_bulletins_pour_suppression_compte,
+    _supprimer_bulletins_du_cours,
+)
 
 
 @pytest.fixture()
@@ -162,6 +167,96 @@ def test_pdf_est_genere_depuis_le_snapshot_et_les_snapshots_invalides_sont_refus
     assert lire_snapshot_bulletin(__import__("json").dumps(snapshot))["moyenne"] == 17
     assert lire_snapshot_bulletin('{"version":1,"evaluations":"invalide"}') is None
     assert lire_snapshot_bulletin("{") is None
+
+
+def test_suppression_compte_efface_ses_bulletins_et_anonymise_les_acteurs(db):
+    compte_supprime = _utilisateur("Compte supprimé", "03400001401", RoleUtilisateur.PROFESSEUR)
+    autre_prof = _utilisateur("Autre professeur", "03400001402", RoleUtilisateur.PROFESSEUR)
+    eleve_conserve = _utilisateur("Élève conservé", "03400001403")
+    db.add_all([compte_supprime, autre_prof, eleve_conserve])
+    db.commit()
+    for user in (compte_supprime, autre_prof, eleve_conserve):
+        db.refresh(user)
+    cours = Cours(nom="Sciences", matiere="Sciences", niveau="3e", professeur_id=autre_prof.id)
+    db.add(cours)
+    db.commit()
+    db.refresh(cours)
+    bulletin_eleve_supprime = BulletinScolaire(
+        cours_id=cours.id, utilisateur_id=compte_supprime.id, periode="T1",
+        cree_par_id=compte_supprime.id, publie_par_id=compte_supprime.id,
+        statut="publie", snapshot_json='{"version":1,"evaluations":[]}',
+    )
+    bulletin_conserve = BulletinScolaire(
+        cours_id=cours.id, utilisateur_id=eleve_conserve.id, periode="T1",
+        cree_par_id=compte_supprime.id, publie_par_id=compte_supprime.id,
+        statut="publie", snapshot_json='{"version":1,"evaluations":[]}',
+    )
+    db.add_all([bulletin_eleve_supprime, bulletin_conserve])
+    db.commit()
+    db.refresh(bulletin_eleve_supprime)
+    db.refresh(bulletin_conserve)
+    id_bulletin_supprime = bulletin_eleve_supprime.id
+    id_bulletin_conserve = bulletin_conserve.id
+    db.add_all([
+        BulletinScolaireEvenement(
+            bulletin_id=id_bulletin_supprime, acteur_id=compte_supprime.id, action="publication",
+            details_json='{}',
+        ),
+        BulletinScolaireEvenement(
+            bulletin_id=id_bulletin_conserve, acteur_id=compte_supprime.id, action="publication",
+            details_json='{}',
+        ),
+    ])
+    db.commit()
+
+    _nettoyer_bulletins_pour_suppression_compte(db, compte_supprime.id)
+    db.commit()
+    assert db.get(BulletinScolaire, id_bulletin_supprime) is None
+    conserve = db.get(BulletinScolaire, id_bulletin_conserve)
+    assert conserve is not None
+    assert conserve.cree_par_id is None
+    assert conserve.publie_par_id is None
+    evenements = db.exec(
+        select(BulletinScolaireEvenement).where(
+            BulletinScolaireEvenement.bulletin_id == id_bulletin_conserve
+        )
+    ).all()
+    assert len(evenements) == 1
+    assert evenements[0].acteur_id is None
+
+
+def test_suppression_cours_efface_les_bulletins_et_le_journal_associe(db):
+    prof = _utilisateur("Prof cours supprimé", "03400001501", RoleUtilisateur.PROFESSEUR)
+    eleve = _utilisateur("Élève cours supprimé", "03400001502")
+    db.add_all([prof, eleve])
+    db.commit()
+    db.refresh(prof)
+    db.refresh(eleve)
+    cours = Cours(nom="Cours supprimé", matiere="SVT", niveau="6e", professeur_id=prof.id)
+    db.add(cours)
+    db.commit()
+    db.refresh(cours)
+    bulletin = BulletinScolaire(
+        cours_id=cours.id, utilisateur_id=eleve.id, periode="T2",
+        statut="brouillon",
+    )
+    db.add(bulletin)
+    db.commit()
+    db.refresh(bulletin)
+    db.add(BulletinScolaireEvenement(
+        bulletin_id=bulletin.id, acteur_id=prof.id, action="creation", details_json="{}",
+    ))
+    db.commit()
+    bulletin_id = bulletin.id
+
+    _supprimer_bulletins_du_cours(db, cours.id)
+    db.commit()
+    assert db.get(BulletinScolaire, bulletin_id) is None
+    assert db.exec(
+        select(BulletinScolaireEvenement).where(
+            BulletinScolaireEvenement.bulletin_id == bulletin_id
+        )
+    ).all() == []
 
 
 def test_pdf_bulletin_general_regroupe_plusieurs_matieres_et_calcule_la_moyenne_par_matiere():
