@@ -316,3 +316,196 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
 
     document.build(story)
     return sortie.getvalue()
+
+
+
+def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) -> bytes:
+    """Génère le bulletin récapitulatif multi-matières d'une période.
+
+    Chaque matière contribue une fois à la moyenne générale, car le
+    référentiel actuel ne fournit pas encore de coefficient officiel
+    transversal entre matières. Les coefficients d'évaluation restent
+    appliqués dans chaque moyenne de matière.
+    """
+    periode_normalisee = normaliser_periode(periode)
+    valides = [
+        snapshot for snapshot in snapshots
+        if isinstance(snapshot, dict)
+        and snapshot.get("version") == 1
+        and isinstance(snapshot.get("evaluations"), list)
+        and normaliser_periode(str(snapshot.get("periode") or "")).casefold()
+            == periode_normalisee.casefold()
+    ]
+    if not valides or not periode_normalisee:
+        raise ValueError("Aucun bulletin publié pour cette période.")
+
+    eleves = {str(item.get("eleve") or "") for item in valides}
+    if len(eleves) != 1:
+        raise ValueError("Les bulletins ne concernent pas le même élève.")
+
+    # Il ne peut y avoir qu'un bulletin par cours et par période ; on
+    # déduplique néanmoins le snapshot pour résister à des données incohérentes.
+    uniques: dict[str, dict[str, Any]] = {}
+    for snapshot in valides:
+        cle = str(snapshot.get("cours") or snapshot.get("matiere") or "").casefold()
+        uniques.setdefault(cle, snapshot)
+    matieres = list(uniques.values())
+    if not matieres:
+        raise ValueError("Aucun bulletin exploitable.")
+
+    moyenne_generale = round(
+        sum(float(item.get("moyenne") or 0) for item in matieres) / len(matieres),
+        2,
+    )
+    eleve = next(iter(eleves)) or "Élève"
+    sortie = BytesIO()
+    document = SimpleDocTemplate(
+        sortie,
+        pagesize=A4,
+        rightMargin=16 * mm,
+        leftMargin=16 * mm,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+        title=f"Bulletin scolaire général - {eleve}",
+        author="MITARIDALA",
+        subject=f"Bulletin général {periode_normalisee}",
+    )
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(
+        name="BulletinGeneralSubTitle",
+        parent=styles["Heading2"],
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#334155"),
+        spaceAfter=7,
+    ))
+    styles.add(ParagraphStyle(
+        name="BulletinGeneralSmall",
+        parent=styles["BodyText"],
+        fontSize=8,
+        leading=11,
+    ))
+    styles.add(ParagraphStyle(
+        name="BulletinGeneralBody",
+        parent=styles["BodyText"],
+        fontSize=9,
+        leading=13,
+    ))
+
+    story = [
+        Paragraph("MITARIDALA", styles["Title"]),
+        Paragraph("BULLETIN SCOLAIRE — RÉCAPITULATIF GÉNÉRAL", styles["BulletinGeneralSubTitle"]),
+        Spacer(1, 3 * mm),
+        Paragraph(f"<b>Élève :</b> {_texte_paragraphe(eleve)}", styles["BodyText"]),
+        Paragraph(f"<b>Période :</b> {_texte_paragraphe(periode_normalisee)}", styles["BodyText"]),
+        Spacer(1, 4 * mm),
+        Paragraph(
+            f"<b>Moyenne générale : {moyenne_generale:.2f} / 20</b> "
+            f"— {len(matieres)} matière(s) publiée(s)",
+            styles["Heading2"],
+        ),
+        Paragraph(
+            "Chaque matière publiée compte une fois dans cette moyenne générale. "
+            "À l'intérieur de chaque matière, les évaluations sont pondérées par leur coefficient.",
+            styles["BulletinGeneralSmall"],
+        ),
+        Spacer(1, 4 * mm),
+    ]
+
+    lignes = [[
+        Paragraph("<b>Matière</b>", styles["BulletinGeneralSmall"]),
+        Paragraph("<b>Cours / niveau</b>", styles["BulletinGeneralSmall"]),
+        Paragraph("<b>Enseignant</b>", styles["BulletinGeneralSmall"]),
+        Paragraph("<b>Moyenne</b>", styles["BulletinGeneralSmall"]),
+        Paragraph("<b>Notes</b>", styles["BulletinGeneralSmall"]),
+    ]]
+    for snapshot in matieres:
+        lignes.append([
+            Paragraph(_texte_paragraphe(snapshot.get("matiere")), styles["BulletinGeneralSmall"]),
+            Paragraph(
+                _texte_paragraphe(
+                    " · ".join(
+                        part for part in [
+                            str(snapshot.get("cours") or ""),
+                            str(snapshot.get("niveau") or ""),
+                        ] if part
+                    )
+                ),
+                styles["BulletinGeneralSmall"],
+            ),
+            Paragraph(_texte_paragraphe(snapshot.get("professeur")), styles["BulletinGeneralSmall"]),
+            f"{float(snapshot.get('moyenne') or 0):.2f}/20",
+            str(int(snapshot.get("nb_notes") or 0)),
+        ])
+    table = Table(
+        lignes,
+        colWidths=[33 * mm, 49 * mm, 36 * mm, 27 * mm, 17 * mm],
+        repeatRows=1,
+        hAlign="LEFT",
+    )
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e293b")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#cbd5e1")),
+        ("ALIGN", (3, 1), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.extend([table, Spacer(1, 5 * mm)])
+
+    for snapshot in matieres:
+        titre = " · ".join(
+            part for part in [
+                str(snapshot.get("matiere") or "Matière"),
+                str(snapshot.get("cours") or ""),
+            ] if part
+        )
+        story.append(Paragraph(_texte_paragraphe(titre), styles["Heading3"]))
+        appreciation = snapshot.get("appreciation_generale") or "Aucune appréciation générale."
+        story.append(Paragraph(_texte_paragraphe(appreciation), styles["BulletinGeneralBody"]))
+        for evaluation in snapshot.get("evaluations", []):
+            if not isinstance(evaluation, dict):
+                continue
+            detail = (
+                f"{_texte_paragraphe(evaluation.get('evaluation'))} — "
+                f"{float(evaluation.get('note') or 0):.2f}/"
+                f"{float(evaluation.get('bareme') or 0):.2f} "
+                f"({float(evaluation.get('note_sur_20') or 0):.2f}/20)"
+            )
+            story.append(Paragraph(detail, styles["BulletinGeneralSmall"]))
+        story.append(Spacer(1, 2 * mm))
+
+    presence_total = {statut: 0 for statut in _STATUTS_PRESENCE}
+    seances_total = 0
+    pointages_total = 0
+    for snapshot in matieres:
+        seances_total += int(snapshot.get("nb_seances") or 0)
+        pointages_total += int(snapshot.get("nb_pointages") or 0)
+        presence = snapshot.get("presences") or {}
+        for statut in _STATUTS_PRESENCE:
+            presence_total[statut] += int(presence.get(statut) or 0)
+
+    story.extend([
+        Spacer(1, 4 * mm),
+        Paragraph("Assiduité — cumul des séances des cours publiés", styles["Heading3"]),
+        Paragraph(
+            f"Séances : {seances_total} · Pointages : {pointages_total} · "
+            f"Présences : {presence_total['present']} · "
+            f"Absences : {presence_total['absent']} · "
+            f"Retards : {presence_total['retard']} · "
+            f"Excusées : {presence_total['excuse']}",
+            styles["BulletinGeneralSmall"],
+        ),
+        Spacer(1, 6 * mm),
+        Paragraph(
+            "Ce récapitulatif compile les bulletins publiés dans MITARIDALA. "
+            "Il ne contient aucune matière dont le bulletin n'a pas été publié.",
+            styles["BulletinGeneralSmall"],
+        ),
+    ])
+    document.build(story)
+    return sortie.getvalue()
