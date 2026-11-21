@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column("date_modification", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column("date_publication", sa.DateTime(), nullable=True),
-        sa.Column("snapshot_json", sa.Text(), nullable=False, server_default="{}"),
+        sa.Column("snapshot_json", sa.String(), nullable=False, server_default="{}"),
         sa.UniqueConstraint(
             "cours_id", "utilisateur_id", "periode",
             name="uq_bulletinscolaire_cours_eleve_periode",
@@ -56,7 +56,7 @@ def upgrade() -> None:
         sa.Column("bulletin_id", sa.Integer(), sa.ForeignKey("bulletinscolaire.id"), nullable=False),
         sa.Column("acteur_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=True),
         sa.Column("action", sa.String(length=20), nullable=False),
-        sa.Column("details_json", sa.Text(), nullable=False, server_default="{}"),
+        sa.Column("details_json", sa.String(), nullable=False, server_default="{}"),
         sa.Column("date_evenement", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.CheckConstraint(
             "action IN ('creation', 'modification', 'publication', 'reouverture')",
