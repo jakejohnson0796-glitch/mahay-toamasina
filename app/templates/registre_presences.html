@@ -1,10 +1,75 @@
 {% extends "base.html" %}
 {% block titre %}Registre des présences — {{ seance.titre }} — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
-{% block contenu %}<div class="classe-page"><p class="classe-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / Registre des présences</p>
-<header class="classe-detail-head"><div><h1>Registre des présences</h1><p class="classe-detail-meta">{{ seance.titre }} · Les connexions à la salle ne sont pas automatiquement considérées comme des présences validées.</p></div></header>
-{% if request.query_params.get("enregistre") %}<div class="info" role="status">Pointage enregistré.</div>{% endif %}{% if request.query_params.get("erreur") %}<div class="erreur" role="alert">Impossible d'enregistrer le pointage. Vérifie l'étudiant et le statut.</div>{% endif %}
-<section class="classe-section-card"><h2>Pointage individuel</h2><div class="classe-list">{% for l in lignes %}<article class="classe-row"><div class="classe-row-main"><strong>{{ l.utilisateur.nom }}</strong><span>Temps connecté observé : {{ l.duree_secondes // 60 }} min · {{ l.pointage.statut.value if l.pointage else "à renseigner" }}</span></div>
-<form method="post" action="/classe/seances/{{ seance.id }}/registre-presences/pointage" class="classe-row-actions"><input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}"><input type="hidden" name="utilisateur_id" value="{{ l.utilisateur.id }}"><label class="sr-only" for="statut-{{ l.utilisateur.id }}">Statut</label>
-<select id="statut-{{ l.utilisateur.id }}" name="statut" required>{% for v,t in [("a_renseigner","À renseigner"),("present","Présent"),("absent","Absent"),("retard","En retard"),("excuse","Excusé")] %}<option value="{{ v }}" {% if (l.pointage.statut.value if l.pointage else "a_renseigner") == v %}selected{% endif %}>{{ t }}</option>{% endfor %}</select>
-<input name="justificatif" maxlength="1200" value="{{ l.pointage.justificatif if l.pointage else '' }}" placeholder="Justificatif / remarque (facultatif)" aria-label="Justificatif ou remarque"><button class="bouton bouton-secondaire" type="submit">Enregistrer</button></form></article>{% else %}<p>Aucun étudiant inscrit.</p>{% endfor %}</div></section></div>{% endblock %}
+{% block contenu %}
+<div class="classe-page">
+  <p class="classe-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / Registre des présences</p>
+  <header class="classe-detail-head">
+    <div>
+      <h1>Registre des présences</h1>
+      <p class="classe-detail-meta">{{ seance.titre }} · Les connexions à la salle ne sont pas automatiquement considérées comme des présences validées.</p>
+    </div>
+  </header>
+  {% if request.query_params.get("enregistre_lot") %}
+  <div class="info" role="status">{{ request.query_params.get("enregistre_lot") }} pointage(s) enregistré(s) en une seule opération.</div>
+  {% elif request.query_params.get("enregistre") %}
+  <div class="info" role="status">Pointage enregistré.</div>
+  {% endif %}
+  {% if request.query_params.get("erreur") %}
+  <div class="erreur" role="alert">Le registre n'a pas été enregistré. Vérifie les statuts et les étudiants inscrits à ce cours.</div>
+  {% endif %}
+
+  <section class="classe-section-card" aria-labelledby="appel-rapide-title">
+    <div class="classe-form-head">
+      <div>
+        <h2 id="appel-rapide-title">Fiche d'appel rapide</h2>
+        <p>Renseigne toute la classe, puis enregistre une seule fois. Les statuts déjà saisis sont préremplis.</p>
+      </div>
+      <span class="classe-course-badge">{{ lignes|length }} apprenant(s)</span>
+    </div>
+    <form method="post" action="/classe/seances/{{ seance.id }}/registre-presences/lot" data-presence-bulk-form>
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <input type="hidden" name="pointages_json" value="[]" data-presence-payload>
+      <div class="classe-toolbar">
+        <div class="classe-toolbar-left">
+          <button class="bouton bouton-secondaire" type="button" data-presence-all-present {% if not lignes %}disabled{% endif %}>Marquer toute la classe présente</button>
+        </div>
+        <div class="classe-toolbar-right">
+          <span class="classe-field-help" data-presence-summary role="status" aria-live="polite">Préparation du registre…</span>
+          <button class="bouton bouton-primaire" type="submit" data-presence-submit {% if not lignes %}disabled{% endif %}>Enregistrer tous les pointages</button>
+        </div>
+      </div>
+      <div class="classe-table-scroll">
+        <table class="classe-table">
+          <thead>
+            <tr><th scope="col">Apprenant</th><th scope="col">Connexion observée</th><th scope="col">Statut de présence</th><th scope="col">Justificatif / remarque</th></tr>
+          </thead>
+          <tbody>
+            {% for l in lignes %}
+            <tr data-presence-row data-presence-user-id="{{ l.utilisateur.id }}">
+              <th scope="row">{{ l.utilisateur.nom }}</th>
+              <td>{{ l.duree_secondes // 60 }} min</td>
+              <td>
+                <label class="sr-only" for="statut-{{ l.utilisateur.id }}">Statut de {{ l.utilisateur.nom }}</label>
+                <select id="statut-{{ l.utilisateur.id }}" data-presence-status>
+                  {% for v,t in [("a_renseigner","À renseigner"),("present","Présent"),("absent","Absent"),("retard","En retard"),("excuse","Excusé")] %}
+                  <option value="{{ v }}" {% if (l.pointage.statut.value if l.pointage else "a_renseigner") == v %}selected{% endif %}>{{ t }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <label class="sr-only" for="justificatif-{{ l.utilisateur.id }}">Remarque pour {{ l.utilisateur.nom }}</label>
+                <input id="justificatif-{{ l.utilisateur.id }}" type="text" maxlength="1200" value="{{ l.pointage.justificatif if l.pointage else '' }}" data-presence-note placeholder="Facultatif">
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">Aucun étudiant inscrit à ce cours.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </section>
+</div>
+<script src="/static/registre-presences.js?v=20261121" defer></script>
+{% endblock %}
