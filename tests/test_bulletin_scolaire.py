@@ -11,7 +11,6 @@ from app.models import (
     BulletinScolaire,
     Cours,
     Devoir,
-    InscriptionCours,
     LienResponsableEleve,
     PointagePresence,
     RoleUtilisateur,
