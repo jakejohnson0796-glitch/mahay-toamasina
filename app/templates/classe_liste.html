@@ -245,6 +245,7 @@
     <article class="classe-course-card">
       <div class="classe-course-top">
         <span class="classe-course-icon" aria-hidden="true">{{ icone("classe", 19) }}</span>
+        <span class="classe-course-badge">{% if cours.portee_academique == "scolaire" %}Parcours scolaire{% else %}Université{% endif %}</span>
         <span class="classe-course-badge">{{ cours.niveau }}</span>
       </div>
       <h2 class="classe-course-title">{{ cours.nom }}</h2>
