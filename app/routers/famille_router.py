@@ -12,6 +12,7 @@ from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
 from ..models import (
+    BulletinScolaire,
     Cours,
     Devoir,
     EvenementLienResponsableEleve,
@@ -26,6 +27,7 @@ from ..models import (
 )
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
+from ..bulletins import lire_snapshot_bulletin
 
 router = APIRouter()
 
@@ -174,6 +176,27 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             (pointage.utilisateur_id, pointage.seance_id), []
         ).append(pointage)
 
+    bulletins_modeles = (
+        session.exec(
+            select(BulletinScolaire)
+            .where(
+                BulletinScolaire.utilisateur_id.in_(ids_eleves),
+                BulletinScolaire.cours_id.in_(ids_cours),
+                BulletinScolaire.statut == "publie",
+            )
+            .order_by(BulletinScolaire.date_publication.desc())
+            .limit(500)
+        ).all()
+        if ids_cours and ids_eleves else []
+    )
+    bulletins_par_eleve: dict[int, list[dict]] = {}
+    for bulletin in bulletins_modeles:
+        snapshot = lire_snapshot_bulletin(bulletin.snapshot_json)
+        if snapshot:
+            bulletins_par_eleve.setdefault(bulletin.utilisateur_id, []).append({
+                "bulletin": bulletin,
+                "snapshot": snapshot,
+            })
     enfants = []
     for lien in liens_valides:
         eleve = eleves_par_id[lien.eleve_id]
@@ -271,6 +294,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             "eleve": eleve,
             "type_lien": _TYPES_LIEN.get(lien.type_lien, "Responsable"),
             "cours": cours_infos,
+            "bulletins": bulletins_par_eleve.get(eleve.id, []),
         })
     return enfants
 
