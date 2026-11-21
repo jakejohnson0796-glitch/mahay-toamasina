@@ -35,6 +35,17 @@
             </div>
             <span class="classe-course-badge">{{ enfant.bulletins|length }} bulletin(s)</span>
           </div>
+          {% if enfant.moyennes_bulletins_periode %}
+            <h4>Moyenne générale des matières déjà publiées</h4>
+            <div class="classe-list">
+              {% for resultat in enfant.moyennes_bulletins_periode %}
+                <div class="classe-row">
+                  <span><strong>{{ resultat.periode }}</strong><small>{{ resultat.nb_matieres }} matière(s) publiée(s)</small></span>
+                  <strong>{{ "%.2f"|format(resultat.moyenne) }} / 20</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
           <div class="classe-list">
             {% for entree in enfant.bulletins %}
               <div class="classe-row">
