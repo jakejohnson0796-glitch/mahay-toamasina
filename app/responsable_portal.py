@@ -5,6 +5,16 @@ def chemin_autorise_responsable(method: str, path: str, user_id: int) -> bool:
     method = (method or "GET").upper()
     if method in {"GET", "HEAD"} and path.startswith("/static/"):
         return True
+    if method in {"GET", "HEAD"}:
+        segments = (path or "").strip("/").split("/")
+        if (
+            len(segments) == 4
+            and segments[0] == "famille"
+            and segments[1] == "bulletins"
+            and segments[2].isdecimal()
+            and segments[3] == "telecharger"
+        ):
+            return True
     if method in {"GET", "HEAD"} and path in {
         "/famille",
         "/securite",
