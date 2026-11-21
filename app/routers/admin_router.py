@@ -29,6 +29,7 @@ from ..models import (
     TacheIA, StatutTacheIA, PerformanceModeleIA, ProgressionNotion,
     CodeReinitialisationMotDePasse, DemandeCreationCercle, DemandeChangementFiliere,
     LienResponsableEleve, EvenementLienResponsableEleve, DemandeAccompagnement,
+    BulletinScolaire, BulletinScolaireEvenement,
     MessageReaction, MessageMention, FAQ, ActionGamification, JournalActionAdmin,
 )
 from ..storage import supprimer_fichier
@@ -1513,6 +1514,64 @@ def _cascade_supprimer_cercle(session: Session, cercle_id: int) -> None:
     _supprimer_cercle_et_contenu(session, cercle_id)
 
 
+def _supprimer_bulletins_du_cours(session: Session, cours_id: int) -> None:
+    """Supprime les bulletins et leur journal si le cours est supprimé."""
+    bulletins = session.exec(
+        select(BulletinScolaire).where(BulletinScolaire.cours_id == cours_id)
+    ).all()
+    ids = [item.id for item in bulletins if item.id is not None]
+    if ids:
+        for evenement in session.exec(
+            select(BulletinScolaireEvenement).where(BulletinScolaireEvenement.bulletin_id.in_(ids))
+        ).all():
+            session.delete(evenement)
+    for bulletin in bulletins:
+        session.delete(bulletin)
+
+
+def _nettoyer_bulletins_pour_suppression_compte(session: Session, utilisateur_id: int) -> None:
+    """Efface les bulletins de l'élève supprimé et anonymise les acteurs.
+
+    Les bulletins d'autres élèves restent disponibles si leur créateur ou
+    leur enseignant est supprimé ; seul le lien vers l'ancien compte disparaît.
+    Le journal d'un bulletin supprimé avec son élève est supprimé avec lui.
+    """
+    bulletins_eleve = session.exec(
+        select(BulletinScolaire).where(BulletinScolaire.utilisateur_id == utilisateur_id)
+    ).all()
+    ids_bulletins_eleve = [item.id for item in bulletins_eleve if item.id is not None]
+    if ids_bulletins_eleve:
+        for evenement in session.exec(
+            select(BulletinScolaireEvenement).where(
+                BulletinScolaireEvenement.bulletin_id.in_(ids_bulletins_eleve)
+            )
+        ).all():
+            session.delete(evenement)
+        for bulletin in bulletins_eleve:
+            session.delete(bulletin)
+
+    for bulletin in session.exec(
+        select(BulletinScolaire).where(
+            BulletinScolaire.utilisateur_id != utilisateur_id,
+            (BulletinScolaire.cree_par_id == utilisateur_id)
+            | (BulletinScolaire.publie_par_id == utilisateur_id),
+        )
+    ).all():
+        if bulletin.cree_par_id == utilisateur_id:
+            bulletin.cree_par_id = None
+        if bulletin.publie_par_id == utilisateur_id:
+            bulletin.publie_par_id = None
+        session.add(bulletin)
+
+    for evenement in session.exec(
+        select(BulletinScolaireEvenement).where(
+            BulletinScolaireEvenement.acteur_id == utilisateur_id
+        )
+    ).all():
+        evenement.acteur_id = None
+        session.add(evenement)
+
+
 def _cascade_supprimer_cours(session: Session, cours_id: int) -> None:
     """Supprime definitivement un Cours et tout son contenu propre
     (seances + tableau blanc + presences, devoirs + rendus, inscriptions)."""
@@ -1537,6 +1596,8 @@ def _cascade_supprimer_cours(session: Session, cours_id: int) -> None:
                 supprimer_fichier(rendu.chemin_fichier)
             session.delete(rendu)
         session.delete(devoir)
+
+    _supprimer_bulletins_du_cours(session, cours_id)
 
     for inscription in session.exec(select(InscriptionCours).where(InscriptionCours.cours_id == cours_id)).all():
         session.delete(inscription)
@@ -1974,6 +2035,8 @@ async def supprimer_utilisateur(
         )
     ).all():
         session.delete(demande_accompagnement)
+
+    _nettoyer_bulletins_pour_suppression_compte(session, utilisateur_id)
 
     # Verifie explicitement qu'aucune FK directe vers le compte ne reste
     # avant de supprimer la ligne Utilisateur.
