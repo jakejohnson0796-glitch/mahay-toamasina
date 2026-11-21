@@ -112,8 +112,10 @@
 
       remplirMatieres(matieres);
       message(matieres.length
-        ? options.length + " série(s) / option(s) et " + matieres.length + " matière(s) vérifiée(s)."
-        : "Aucune matière générale vérifiée pour cette classe. Vérifie la série ou choisis un autre niveau.");
+        ? options.length + " série(s) / option(s) et " + matieres.length + " matière(s) vérifiée(s) sans série."
+        : options.length
+          ? options.length + " série(s) / option(s) disponibles. Choisis-en une pour charger les matières correspondantes."
+          : "Aucune matière vérifiée n'est associée à cette classe pour le moment.");
     } catch (error) {
       if (id === subjectRequestId) message(error.message || "Impossible de charger le programme.");
     }
