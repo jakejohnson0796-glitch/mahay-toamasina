@@ -83,6 +83,54 @@
     </a>
   </section>
 
+  <section class="de-work-queue" aria-labelledby="de-work-title">
+    <div class="de-section-heading">
+      <div>
+        <p class="de-kicker">Organisation du travail</p>
+        <h2 id="de-work-title">Actions à traiter</h2>
+        <p>Les priorités ci-dessous proviennent des devoirs déposés et des présences réellement enregistrées.</p>
+      </div>
+    </div>
+    <div class="de-work-grid">
+      <article class="de-work-card">
+        <div class="de-work-card-head">
+          <div><span class="de-work-eyebrow">Évaluations</span><h3>Copies à corriger</h3></div>
+          <strong class="de-work-total">{{ actions_a_traiter.nb_copies }}</strong>
+        </div>
+        {% if actions_a_traiter.corrections %}
+        <div class="de-work-list">
+          {% for item in actions_a_traiter.corrections %}
+          <div class="de-work-row">
+            <div><strong>{{ item.devoir.titre }}</strong><span>{{ item.cours.nom }}</span></div>
+            <a href="/classe/devoirs/{{ item.devoir.id }}">{{ item.nb_copies }} copie(s) · Ouvrir</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="de-work-empty">Aucune copie déposée en attente de correction.</p>
+        {% endif %}
+      </article>
+      <article class="de-work-card">
+        <div class="de-work-card-head">
+          <div><span class="de-work-eyebrow">Suivi des classes</span><h3>Appels à compléter</h3></div>
+          <strong class="de-work-total">{{ actions_a_traiter.pointages|length }}</strong>
+        </div>
+        {% if actions_a_traiter.pointages %}
+        <div class="de-work-list">
+          {% for item in actions_a_traiter.pointages %}
+          <div class="de-work-row">
+            <div><strong>{{ item.seance.titre }}</strong><span>{{ item.cours.nom }}</span></div>
+            <a href="/classe/seances/{{ item.seance.id }}/registre-presences">{{ item.nb_pointages_manquants }} pointage(s) · Compléter</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="de-work-empty">Aucun appel incomplet détecté sur les séances terminées récentes.</p>
+        {% endif %}
+      </article>
+    </div>
+  </section>
+
   <section class="de-courses" aria-labelledby="de-courses-title">
     <div class="de-section-heading">
       <div><p class="de-kicker">Gestion pédagogique</p><h2 id="de-courses-title">Mes cours et mes classes</h2><p>Chaque espace est limité aux cours dont tu es le professeur.</p></div>

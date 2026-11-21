@@ -11,13 +11,98 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import Cours, Devoir, DemandeAccompagnement, DemandeMiseAJourCours, Document, InscriptionCours, ProgressionNotion, RenduDevoir, RoleUtilisateur, Seance, StatutSeance, Utilisateur
+from ..models import Cours, Devoir, DemandeAccompagnement, DemandeMiseAJourCours, Document, InscriptionCours, PointagePresence, ProgressionNotion, RenduDevoir, RoleUtilisateur, Seance, StatutPointage, StatutSeance, Utilisateur
 from .. import dashboard as dashboard_module
 from .. import learning_recap
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
+
+
+def _construire_actions_a_traiter_enseignant(
+    session: Session,
+    utilisateur: Utilisateur,
+    cours: list[Cours],
+) -> dict:
+    """File d'actions calculée depuis les cours propres et les données réelles."""
+    ids_cours = [item.id for item in cours if item.id is not None]
+    if not ids_cours:
+        return {"corrections": [], "pointages": [], "nb_copies": 0}
+
+    lignes_corrections = session.exec(
+        select(Devoir, Cours, func.count(RenduDevoir.id))
+        .join(Cours, Cours.id == Devoir.cours_id)
+        .join(RenduDevoir, RenduDevoir.devoir_id == Devoir.id)
+        .where(
+            Cours.professeur_id == utilisateur.id,
+            Devoir.archive == False,  # noqa: E712
+            RenduDevoir.note.is_(None),
+        )
+        .group_by(Devoir.id, Cours.id)
+        .order_by(Devoir.date_creation, Devoir.id)
+        .limit(8)
+    ).all()
+    corrections = [
+        {"devoir": devoir, "cours": cours_ligne, "nb_copies": int(nombre or 0)}
+        for devoir, cours_ligne, nombre in lignes_corrections
+    ]
+
+    seances_terminees = session.exec(
+        select(Seance, Cours)
+        .join(Cours, Cours.id == Seance.cours_id)
+        .where(
+            Cours.professeur_id == utilisateur.id,
+            Seance.statut == StatutSeance.TERMINEE,
+        )
+        .order_by(Seance.date_creation.desc(), Seance.id.desc())
+        .limit(100)
+    ).all()
+    ids_seances = [seance.id for seance, _ in seances_terminees if seance.id is not None]
+    ids_cours_seances = sorted({cours_ligne.id for _, cours_ligne in seances_terminees})
+    pointages_a_completer = []
+    if ids_seances and ids_cours_seances:
+        inscriptions = session.exec(
+            select(InscriptionCours).where(
+                InscriptionCours.cours_id.in_(ids_cours_seances)
+            )
+        ).all()
+        inscrits_par_cours: dict[int, set[int]] = {}
+        for inscription in inscriptions:
+            inscrits_par_cours.setdefault(inscription.cours_id, set()).add(
+                inscription.utilisateur_id
+            )
+
+        pointages = session.exec(
+            select(PointagePresence).where(
+                PointagePresence.seance_id.in_(ids_seances)
+            )
+        ).all()
+        pointes_par_seance: dict[int, set[int]] = {}
+        for pointage in pointages:
+            statut = getattr(pointage.statut, "value", str(pointage.statut))
+            if statut != StatutPointage.A_RENSEIGNER.value:
+                pointes_par_seance.setdefault(pointage.seance_id, set()).add(
+                    pointage.utilisateur_id
+                )
+
+        for seance, cours_ligne in seances_terminees:
+            inscrits = inscrits_par_cours.get(cours_ligne.id, set())
+            manquants = inscrits - pointes_par_seance.get(seance.id, set())
+            if manquants:
+                pointages_a_completer.append({
+                    "seance": seance,
+                    "cours": cours_ligne,
+                    "nb_pointages_manquants": len(manquants),
+                })
+            if len(pointages_a_completer) >= 8:
+                break
+
+    return {
+        "corrections": corrections,
+        "pointages": pointages_a_completer,
+        "nb_copies": sum(item["nb_copies"] for item in corrections),
+    }
 
 
 def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> dict:
@@ -43,6 +128,7 @@ def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> 
                 "copies_a_corriger": 0,
             },
             "cours_enseignes": [],
+            "actions_a_traiter": {"corrections": [], "pointages": [], "nb_copies": 0},
         }
 
     nb_inscriptions = int(
@@ -69,7 +155,7 @@ def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> 
             .join(Cours, Cours.id == Devoir.cours_id)
             .where(
                 Cours.professeur_id == utilisateur.id,
-                RenduDevoir.note == None,  # noqa: E711
+                (RenduDevoir.note.is_(None) | RenduDevoir.date_correction.is_(None)),
             )
         ).one() or 0
     )
@@ -93,6 +179,9 @@ def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> 
             "copies_a_corriger": copies_a_corriger,
         },
         "cours_enseignes": cours_enseignes,
+        "actions_a_traiter": _construire_actions_a_traiter_enseignant(
+            session, utilisateur, cours
+        ),
     }
 
 
