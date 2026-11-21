@@ -1,8 +1,6 @@
 """Tests des bulletins officiels, calculs, PDF et droits familiaux."""
 
 from datetime import datetime
-from pathlib import Path
-
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
@@ -23,6 +21,7 @@ from app.models import (
     Utilisateur,
 )
 from app.responsable_portal import chemin_autorise_responsable
+from app.admin_security import action_admin_protegee
 from app.routers.bulletin_router import responsable_autorise_bulletin
 
 
@@ -250,6 +249,17 @@ def test_une_reouverture_peut_conserver_l_ancienne_version_dans_le_journal(db):
     db.commit()
     evenement = db.query(BulletinScolaireEvenement).filter_by(bulletin_id=bulletin.id).one()
     assert "14.5" in evenement.details_json
+
+
+
+def test_actions_admin_bulletin_exigent_la_confirmation_admin():
+    assert action_admin_protegee("/classe/12/bulletins/creer") is True
+    assert action_admin_protegee("/classe/bulletins/42/modifier") is True
+    assert action_admin_protegee("/classe/bulletins/42/publier") is True
+    assert action_admin_protegee("/classe/bulletins/42/reouvrir") is True
+    assert action_admin_protegee("/classe/bulletins/42/consulter") is False
+    assert action_admin_protegee("/classe/12/etudiants") is False
+
 
 
 def test_liste_blanche_responsable_limite_le_telechargement_a_un_id_numerique():
