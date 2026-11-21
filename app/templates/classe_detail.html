@@ -101,8 +101,17 @@
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <div class="classe-form-grid">
           <div class="classe-field"><label for="cours_nom">Nom</label><input id="cours_nom" name="nom" maxlength="120" required value="{{ cours.nom }}"></div>
-          <div class="classe-field"><label for="cours_matiere">Matière</label><input id="cours_matiere" name="matiere" maxlength="100" required value="{{ cours.matiere }}"></div>
-          <div class="classe-field"><label for="cours_niveau">Niveau</label><input id="cours_niveau" name="niveau" maxlength="80" required value="{{ cours.niveau }}"></div>
+          <div class="classe-field">
+            <label for="cours_matiere">Matière</label>
+            <input id="cours_matiere" name="matiere" maxlength="100" value="{{ cours.matiere }}" {% if cours.portee_academique == "scolaire" %}readonly aria-describedby="cours-referentiel-aide"{% else %}required{% endif %}>
+          </div>
+          <div class="classe-field">
+            <label for="cours_niveau">Niveau</label>
+            <input id="cours_niveau" name="niveau" maxlength="80" value="{{ cours.niveau }}" {% if cours.portee_academique == "scolaire" %}readonly aria-describedby="cours-referentiel-aide"{% else %}required{% endif %}>
+          </div>
+          {% if cours.portee_academique == "scolaire" %}
+          <p class="classe-field-help classe-field-full" id="cours-referentiel-aide">La matière et le niveau proviennent du référentiel scolaire vérifié. Ils ne peuvent pas être modifiés comme du texte libre.</p>
+          {% endif %}
           <div class="classe-field classe-field-full"><label for="cours_description">Description</label><textarea id="cours_description" name="description" rows="2" maxlength="3000">{{ cours.description or "" }}</textarea></div>
           <div class="classe-field classe-field-full"><label for="cours_objectifs">Objectifs pédagogiques</label><textarea id="cours_objectifs" name="objectifs" rows="3" maxlength="3000">{{ cours.objectifs or "" }}</textarea></div>
         </div>
