@@ -134,6 +134,7 @@ def construire_snapshot_bulletin(
     return {
         "version": 1,
         "eleve": eleve.nom,
+        "cours_id": cours.id,
         "cours": cours.nom,
         "matiere": cours.matiere,
         "niveau": cours.niveau,
@@ -347,7 +348,7 @@ def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) 
     # déduplique néanmoins le snapshot pour résister à des données incohérentes.
     uniques: dict[str, dict[str, Any]] = {}
     for snapshot in valides:
-        cle = str(snapshot.get("cours") or snapshot.get("matiere") or "").casefold()
+        cle = str(snapshot.get("cours_id") or snapshot.get("cours") or snapshot.get("matiere") or "").casefold()
         uniques.setdefault(cle, snapshot)
     matieres = list(uniques.values())
     if not matieres:
