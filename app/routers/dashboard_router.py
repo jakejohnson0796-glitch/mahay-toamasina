@@ -155,7 +155,7 @@ def donnees_dashboard_enseignant(session: Session, utilisateur: Utilisateur) -> 
             .join(Cours, Cours.id == Devoir.cours_id)
             .where(
                 Cours.professeur_id == utilisateur.id,
-                RenduDevoir.note == None,  # noqa: E711
+                (RenduDevoir.note.is_(None) | RenduDevoir.date_correction.is_(None)),
             )
         ).one() or 0
     )
