@@ -53,7 +53,6 @@ def _construire_actions_a_traiter_enseignant(
         .join(Cours, Cours.id == Seance.cours_id)
         .where(
             Cours.professeur_id == utilisateur.id,
-            Cours.id.in_(ids_cours),
             Seance.statut == StatutSeance.TERMINEE,
         )
         .order_by(Seance.date_creation.desc(), Seance.id.desc())
