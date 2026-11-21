@@ -4,7 +4,7 @@ from datetime import datetime
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.bulletins import construire_snapshot_bulletin, generer_pdf_bulletin, generer_pdf_bulletin_general, lire_snapshot_bulletin
 from app.models import (
