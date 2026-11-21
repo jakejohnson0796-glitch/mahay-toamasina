@@ -183,6 +183,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             notes = []
             total_pondere = 0.0
             poids_total = 0.0
+            totaux_par_periode: dict[str, dict] = {}
             for rendu in rendus_par_eleve_cours.get((eleve.id, cours.id), []):
                 devoir = devoirs_par_id.get(rendu.devoir_id)
                 if not devoir or devoir.bareme <= 0 or rendu.note is None:
@@ -191,6 +192,29 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
                 poids = max(float(devoir.coefficient or 1), 0.1)
                 total_pondere += sur_vingt * poids
                 poids_total += poids
+
+                # Les périodes sont regroupées sans tenir compte de la casse.
+                # La date de correction sert seulement à placer la période la
+                # plus récente en premier ; elle n'est pas exposée au responsable.
+                periode = (devoir.periode or "").strip() or "Sans période"
+                cle_periode = periode.casefold()
+                stats_periode = totaux_par_periode.setdefault(
+                    cle_periode,
+                    {
+                        "periode": periode,
+                        "total_pondere": 0.0,
+                        "poids_total": 0.0,
+                        "nb_notes": 0,
+                        "date_recente": "",
+                    },
+                )
+                stats_periode["total_pondere"] += sur_vingt * poids
+                stats_periode["poids_total"] += poids
+                stats_periode["nb_notes"] += 1
+                date_correction = str(rendu.date_correction or "")
+                if date_correction > stats_periode["date_recente"]:
+                    stats_periode["date_recente"] = date_correction
+
                 notes.append({
                     "devoir": devoir,
                     "note": rendu.note,
@@ -198,6 +222,25 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
                     "appreciation": rendu.appreciation_prof,
                     "date_correction": rendu.date_correction,
                 })
+
+            moyennes_periode = [
+                {
+                    "periode": stats["periode"],
+                    "moyenne": round(
+                        stats["total_pondere"] / stats["poids_total"], 2
+                    ),
+                    "nb_notes": stats["nb_notes"],
+                }
+                for stats in sorted(
+                    totaux_par_periode.values(),
+                    key=lambda item: (
+                        item["date_recente"],
+                        item["periode"].casefold(),
+                    ),
+                    reverse=True,
+                )
+                if stats["poids_total"] > 0
+            ]
 
             seances_cours = seances_par_cours.get(cours.id, [])
             compteurs = {statut: 0 for statut in _STATUTS_PRESENCE}
@@ -217,6 +260,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
                 "cours": cours,
                 "notes": notes[:8],
                 "moyenne": round(total_pondere / poids_total, 2) if poids_total else None,
+                "moyennes_periode": moyennes_periode,
                 "nb_notes": len(notes),
                 "nb_seances": len(seances_cours),
                 "nb_pointages": sum(compteurs.values()),
