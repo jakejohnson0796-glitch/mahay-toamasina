@@ -39,7 +39,7 @@ jobs:
           bandit -r app -lll -iii -x app/static,app/templates
 
   secret-detection:
-    name: Detect accidentally committed secrets
+    name: 1. Detect accidentally committed secrets
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
