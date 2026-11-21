@@ -100,7 +100,7 @@ def _catalogue(session):
     return referentiel, niveau, option, matiere
 
 
-def _professeur(session, *, cycle="lycee", cycles=()):
+def _professeur(session, *, cycle="lycee", cycles=(), telephone="+261340000777"):
     professeur = Utilisateur(
         nom="Professeur de test",
         telephone=telephone,
