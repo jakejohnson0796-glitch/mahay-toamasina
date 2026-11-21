@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block titre %}Bulletins — {{ cours.nom }} — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="classe-page">
+  <p class="classe-breadcrumb"><a href="/classe/{{ cours.id }}">{{ cours.nom }}</a> / Bulletins officiels</p>
+  <header class="classe-detail-head">
+    <div>
+      <h1>Bulletins officiels</h1>
+      <p class="classe-detail-meta">{{ cours.matiere }} · {{ cours.niveau }} · Publication contrôlée par l'enseignant responsable du cours.</p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/classe/{{ cours.id }}">Retour au cours</a>
+  </header>
+
+  <section class="classe-section-card" role="note">
+    <h2>Avant publication</h2>
+    <p>Les bulletins sont préparés à partir des évaluations corrigées de la période sélectionnée. Une note corrigée n'est pas, à elle seule, un bulletin officiel. La famille ne voit le document qu'après sa publication explicite.</p>
+    <p class="classe-field-help">Après publication, le contenu est figé. Pour effectuer une correction, rouvre le bulletin en indiquant un motif : l'ancienne version sera conservée dans l'historique et le bulletin sera temporairement masqué à la famille.</p>
+  </section>
+
+  {% if erreur == "eleve_invalide" or erreur == "periode_ou_eleve_invalide" %}
+    <div class="erreur" role="alert">Choisis un élève actuellement inscrit à ce cours et une période contenant au moins une évaluation.</div>
+  {% elif erreur == "bulletin_deja_publie" %}
+    <div class="erreur" role="alert">Ce bulletin est déjà publié. Rouvre-le avec un motif avant de le corriger.</div>
+  {% elif erreur == "bulletin_existant" %}
+    <div class="erreur" role="alert">Un bulletin existe déjà pour cet élève et cette période. Actualise la page.</div>
+  {% elif erreur == "aucune_note_corrigee" %}
+    <div class="erreur" role="alert">Publication impossible : aucune note corrigée et validée n'est disponible pour cette période.</div>
+  {% elif erreur == "eleve_non_inscrit" %}
+    <div class="erreur" role="alert">Cet élève n'est plus inscrit à ce cours. Le bulletin n'a pas été publié.</div>
+  {% elif erreur == "bulletin_non_publie" %}
+    <div class="erreur" role="alert">Seul un bulletin publié peut être rouvert.</div>
+  {% elif erreur == "motif_requis" %}
+    <div class="erreur" role="alert">Un motif est obligatoire pour rouvrir un bulletin publié.</div>
+  {% endif %}
+
+  {% if succes == "brouillon_cree" %}
+    <div class="info" role="status">Le brouillon du bulletin a été créé.</div>
+  {% elif succes == "brouillon_enregistre" %}
+    <div class="info" role="status">Le brouillon a été enregistré.</div>
+  {% elif succes == "bulletin_publie" %}
+    <div class="info" role="status">Le bulletin est publié. La famille autorisée peut maintenant le consulter et télécharger son PDF.</div>
+  {% elif succes == "bulletin_reouvert" %}
+    <div class="info" role="status">Le bulletin a été rouvert. L'ancienne version reste conservée dans l'historique.</div>
+  {% endif %}
+
+  <section class="classe-section-card">
+    <div class="classe-form-head">
+      <div>
+        <h2>Préparer un bulletin</h2>
+        <p>Un bulletin est créé pour un élève, une matière et une période.</p>
+      </div>
+    </div>
+    {% if eleves and periodes %}
+    <form method="post" action="/classe/{{ cours.id }}/bulletins/creer" class="classe-form-grid">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label>
+        Élève
+        <select name="eleve_id" required>
+          <option value="">Sélectionner un élève</option>
+          {% for eleve in eleves %}
+          <option value="{{ eleve.id }}">{{ eleve.nom }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Période
+        <select name="periode" required>
+          <option value="">Sélectionner une période</option>
+          {% for periode in periodes %}
+          <option value="{{ periode }}">{{ periode }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="classe-form-full">
+        Appréciation générale de l'enseignant
+        <textarea name="appreciation" maxlength="2000" rows="4" placeholder="Points forts, acquis à consolider et conseils de progression…"></textarea>
+      </label>
+      <div class="classe-form-actions">
+        <button class="bouton bouton-primaire" type="submit">Créer ou enregistrer le brouillon</button>
+      </div>
+    </form>
+    {% elif not eleves %}
+      <p class="classe-empty-stage">Aucun étudiant n'est inscrit à ce cours.</p>
+    {% else %}
+      <p class="classe-empty-stage">Ajoute d'abord une période aux devoirs de ce cours pour préparer un bulletin.</p>
+    {% endif %}
+  </section>
+
+  <section class="classe-section-card">
+    <div class="classe-form-head">
+      <div>
+        <h2>Bulletins de ce cours</h2>
+        <p>{{ bulletins|length }} bulletin(s) enregistré(s), brouillons et publications compris.</p>
+      </div>
+    </div>
+    {% for entree in bulletins %}
+      {% set bulletin = entree.bulletin %}
+      <article class="classe-section-card">
+        <div class="classe-form-head">
+          <div>
+            <h3>{{ entree.eleve.nom if entree.eleve else "Élève indisponible" }}</h3>
+            <p>{{ bulletin.periode }} · {{ cours.matiere }}</p>
+          </div>
+          {% if bulletin.statut == "publie" %}
+            <span class="classe-course-badge">Publié</span>
+          {% else %}
+            <span class="classe-course-badge">Brouillon</span>
+          {% endif %}
+        </div>
+
+        {% if entree.snapshot %}
+          <p><strong>Moyenne figée à la publication : {{ "%.2f"|format(entree.snapshot.moyenne) }} / 20</strong> · {{ entree.snapshot.nb_notes }} évaluation(s) comptée(s)</p>
+        {% endif %}
+
+        {% if bulletin.statut == "brouillon" %}
+          <form method="post" action="/classe/bulletins/{{ bulletin.id }}/modifier">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <label>
+              Appréciation générale
+              <textarea name="appreciation" maxlength="2000" rows="3">{{ bulletin.appreciation or "" }}</textarea>
+            </label>
+            <div class="classe-form-actions">
+              <button class="bouton bouton-secondaire" type="submit">Enregistrer l'appréciation</button>
+            </div>
+          </form>
+          <form method="post" action="/classe/bulletins/{{ bulletin.id }}/publier" data-confirm-message="Publier ce bulletin ? La famille autorisée pourra le consulter et télécharger le PDF.">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <button class="bouton bouton-primaire" type="submit">Valider et publier le bulletin</button>
+          </form>
+        {% else %}
+          <p class="classe-section-card-intro">Publié le {{ bulletin.date_publication.strftime("%d/%m/%Y à %H:%M") if bulletin.date_publication else "—" }}. Le PDF remis à la famille correspond à cette version figée.</p>
+          <form method="post" action="/classe/bulletins/{{ bulletin.id }}/reouvrir" data-confirm-message="Rouvrir ce bulletin ? Il sera temporairement retiré de l'espace famille jusqu'à sa nouvelle publication.">
+            <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+            <label>
+              Motif de réouverture
+              <input type="text" name="motif" maxlength="500" required value="Correction après publication">
+            </label>
+            <button class="bouton bouton-secondaire" type="submit">Rouvrir pour correction</button>
+          </form>
+        {% endif %}
+
+        {% if entree.historique %}
+          <details>
+            <summary>Historique des actions ({{ entree.historique|length }})</summary>
+            <ul>
+              {% for evenement in entree.historique %}
+                <li>{{ evenement.action|replace("_", " ")|capitalize }} · {{ evenement.date_evenement.strftime("%d/%m/%Y %H:%M") }}</li>
+              {% endfor %}
+            </ul>
+          </details>
+        {% endif %}
+      </article>
+    {% else %}
+      <p class="classe-empty-stage">Aucun bulletin n'a encore été préparé pour ce cours.</p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}
