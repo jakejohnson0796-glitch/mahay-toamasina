@@ -127,6 +127,7 @@ def _valider_cible_cours_scolaire(
     option_id: Optional[int],
     matiere_id: Optional[int],
     etablissement_id: Optional[int],
+    cycle_declare: Optional[str] = None,
 ) -> tuple[NiveauScolaire, Optional[OptionScolaire], MatiereScolaire, Optional[EtablissementScolaire]]:
     """Vérifie chaque référence scolaire dans le référentiel courant avant création."""
     referentiel = _referentiel_scolaire_courant(session)
@@ -146,6 +147,9 @@ def _valider_cible_cours_scolaire(
         raise ValueError("niveau_scolaire_invalide")
 
     cycles_autorises = set(_cycles_enseignes_utilisateur(session, utilisateur))
+    cycle_formulaire = (cycle_declare or "").strip().lower()
+    if cycle_formulaire and cycle_formulaire != niveau.cycle:
+        raise ValueError("niveau_scolaire_invalide")
     if utilisateur.role != RoleUtilisateur.ADMIN and niveau.cycle not in cycles_autorises:
         raise ValueError("cycle_non_autorise")
 
@@ -458,6 +462,7 @@ def creer_cours(
     matiere: Optional[str] = Form(None),
     niveau: Optional[str] = Form(None),
     portee_academique: str = Form("universitaire"),
+    cycle_scolaire: Optional[str] = Form(None),
     niveau_scolaire_id: Optional[int] = Form(None),
     option_scolaire_id: Optional[int] = Form(None),
     matiere_scolaire_id: Optional[int] = Form(None),
@@ -500,6 +505,7 @@ def creer_cours(
                 option_id=option_scolaire_id,
                 matiere_id=matiere_scolaire_id,
                 etablissement_id=etablissement_scolaire_id,
+                cycle_declare=cycle_scolaire,
             )
         except ValueError as erreur:
             code_erreur = str(erreur)
