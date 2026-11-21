@@ -87,6 +87,16 @@
 
   {% if request.query_params.get("erreur") == "champs_cours_invalides" %}
   <div class="erreur" role="alert">Vérifie le nom, la matière et le niveau du cours.</div>
+  {% elif request.query_params.get("erreur") == "referentiel_scolaire_indisponible" %}
+  <div class="erreur" role="alert">Le référentiel scolaire n'est pas disponible pour le moment. Réessaie plus tard ou choisis un cours universitaire.</div>
+  {% elif request.query_params.get("erreur") in ["cible_scolaire_incomplete", "niveau_scolaire_invalide", "option_scolaire_invalide", "matiere_scolaire_invalide", "matiere_hors_programme", "cible_scolaire_invalide"] %}
+  <div class="erreur" role="alert">La classe, la série ou la matière choisie ne correspond pas à une entrée vérifiée du programme scolaire.</div>
+  {% elif request.query_params.get("erreur") == "cycle_non_autorise" %}
+  <div class="erreur" role="alert">Ton profil enseignant n'est pas déclaré pour ce cycle. Vérifie les cycles associés à ton profil.</div>
+  {% elif request.query_params.get("erreur") == "etablissement_scolaire_invalide" %}
+  <div class="erreur" role="alert">Choisis un établissement actif et vérifié, ou laisse ce champ vide.</div>
+  {% elif request.query_params.get("erreur") == "portee_invalide" %}
+  <div class="erreur" role="alert">Choisis un type d'enseignement valide.</div>
   {% elif request.query_params.get("erreur") == "code_invalide" %}
   <div class="erreur" role="alert">Ce code de cours n'est pas reconnu. Vérifie-le auprès du professeur.</div>
   {% elif request.query_params.get("erreur") == "trop_de_tentatives" %}
@@ -124,34 +134,108 @@
       <span class="classe-course-badge">Professeur</span>
     </div>
 
-    <form method="post" action="/classe/creer">
+    <form method="post" action="/classe/creer" data-cours-create-form>
       <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
       <div class="classe-form-grid">
         <div class="classe-field">
           <label for="nom">Nom du cours</label>
-          <input type="text" id="nom" name="nom" required placeholder="Ex. Comptabilité générale">
+          <input type="text" id="nom" name="nom" required maxlength="120" placeholder="Ex. Mathématiques — préparation au BEPC">
         </div>
+
         <div class="classe-field">
-          <label for="matiere">Matière</label>
-          <input type="text" id="matiere" name="matiere" required placeholder="Ex. Comptabilité">
+          <label for="portee_academique">Type d'enseignement</label>
+          <select id="portee_academique" name="portee_academique" required data-cours-scope>
+            {% if "universite" in cycles_enseignes %}
+            <option value="universitaire" {% if portee_cours_defaut == "universitaire" %}selected{% endif %}>Université / enseignement supérieur</option>
+            {% endif %}
+            {% if "primaire" in cycles_enseignes or "college" in cycles_enseignes or "lycee" in cycles_enseignes %}
+            <option value="scolaire" {% if portee_cours_defaut == "scolaire" %}selected{% endif %}>École / primaire / collège / lycée</option>
+            {% endif %}
+          </select>
+          <small class="classe-field-help">Les cycles proposés dépendent de ceux déclarés sur ton profil enseignant.</small>
         </div>
-        <div class="classe-field">
-          <label for="niveau">Niveau</label>
-          <input type="text" id="niveau" name="niveau" required placeholder="Ex. L2, L3…">
+
+        {% if "universite" in cycles_enseignes %}
+        <div class="classe-field classe-field-full" data-cours-panel="universitaire" {% if portee_cours_defaut != "universitaire" %}hidden{% endif %}>
+          <div class="classe-form-grid">
+            <div class="classe-field">
+              <label for="matiere">Matière / discipline</label>
+              <input type="text" id="matiere" name="matiere" maxlength="100" placeholder="Ex. Comptabilité, droit, physique" {% if portee_cours_defaut != "universitaire" %}disabled{% else %}required{% endif %}>
+            </div>
+            <div class="classe-field">
+              <label for="niveau">Niveau universitaire</label>
+              <input type="text" id="niveau" name="niveau" maxlength="80" placeholder="Ex. L1, L2, L3, Master" {% if portee_cours_defaut != "universitaire" %}disabled{% else %}required{% endif %}>
+            </div>
+          </div>
         </div>
+        {% endif %}
+
+        {% if "primaire" in cycles_enseignes or "college" in cycles_enseignes or "lycee" in cycles_enseignes %}
+        <div class="classe-field classe-field-full" data-cours-panel="scolaire" {% if portee_cours_defaut != "scolaire" %}hidden{% endif %}>
+          <p class="classe-section-card-intro">Choisis le niveau, la série si elle existe, puis une matière du programme vérifié.</p>
+          <div class="classe-form-grid">
+            <div class="classe-field">
+              <label for="cycle_scolaire">Cycle scolaire</label>
+              <select id="cycle_scolaire" name="cycle_scolaire" data-cours-cycle {% if portee_cours_defaut != "scolaire" %}disabled{% else %}required{% endif %}>
+                <option value="">Choisir un cycle</option>
+                {% if "primaire" in cycles_enseignes %}<option value="primaire">Primaire</option>{% endif %}
+                {% if "college" in cycles_enseignes %}<option value="college">Collège</option>{% endif %}
+                {% if "lycee" in cycles_enseignes %}<option value="lycee">Lycée</option>{% endif %}
+              </select>
+            </div>
+            <div class="classe-field">
+              <label for="niveau_scolaire_id">Classe</label>
+              <select id="niveau_scolaire_id" name="niveau_scolaire_id" data-cours-level disabled required>
+                <option value="">Choisir d'abord un cycle</option>
+              </select>
+            </div>
+            <div class="classe-field">
+              <label for="option_scolaire_id">Série / option (facultative)</label>
+              <select id="option_scolaire_id" name="option_scolaire_id" data-cours-option disabled>
+                <option value="">Aucune série / option</option>
+              </select>
+            </div>
+            <div class="classe-field">
+              <label for="matiere_scolaire_id">Matière</label>
+              <select id="matiere_scolaire_id" name="matiere_scolaire_id" data-cours-subject disabled required>
+                <option value="">Choisir une classe d'abord</option>
+              </select>
+              <small class="classe-field-help">Les matières sont filtrées selon la classe et la série sélectionnées.</small>
+            </div>
+            <div class="classe-field classe-field-full">
+              <label for="etablissement_scolaire_id">Établissement de rattachement (facultatif)</label>
+              <select id="etablissement_scolaire_id" name="etablissement_scolaire_id" {% if portee_cours_defaut != "scolaire" %}disabled{% endif %}>
+                <option value="">Aucun établissement associé</option>
+                {% for etab in etablissements_scolaires %}
+                <option value="{{ etab.id }}">{{ etab.nom }}{% if etab.commune %} · {{ etab.commune }}{% endif %}{% if etab.region %} · {{ etab.region }}{% endif %}</option>
+                {% endfor %}
+              </select>
+              <small class="classe-field-help">Seuls les établissements actifs et vérifiés sont proposés. Ce rattachement n'affirme pas qu'une offre précise y est déjà ouverte.</small>
+            </div>
+          </div>
+          <p class="classe-field-help" data-cours-catalogue-status role="status" aria-live="polite">Chargement du référentiel scolaire…</p>
+          {% if referentiel_scolaire and referentiel_scolaire.statut != "complet" %}
+          <p class="classe-field-help">Le catalogue national est encore partiel. MITARIDALA ne propose ici que les classes, options et matières déjà vérifiées.</p>
+          {% elif not referentiel_scolaire %}
+          <p class="classe-field-help">Le catalogue scolaire n'est pas encore initialisé.</p>
+          {% endif %}
+        </div>
+        {% endif %}
+
         <div class="classe-field classe-field-full">
           <label for="description">Description</label>
           <textarea id="description" name="description" rows="2" maxlength="3000" placeholder="Contenu, organisation et consignes générales…"></textarea>
         </div>
         <div class="classe-field classe-field-full">
           <label for="objectifs">Objectifs pédagogiques</label>
-          <textarea id="objectifs" name="objectifs" rows="3" maxlength="3000" placeholder="À la fin du cours, les étudiants sauront…"></textarea>
+          <textarea id="objectifs" name="objectifs" rows="3" maxlength="3000" placeholder="À la fin du cours, les apprenants sauront…"></textarea>
         </div>
       </div>
       <div class="classe-form-actions">
         <button class="bouton bouton-primaire" type="submit">Créer le cours</button>
       </div>
     </form>
+    <script src="/static/classe-cours-create.js?v=20261121" defer></script>
   </section>
   {% endif %}
 
