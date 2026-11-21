@@ -409,6 +409,21 @@ def test_portail_famille_ne_montre_que_les_bulletins_publies_des_enfants_lies(db
         {"periode": "T1", "moyenne": 15.0, "nb_matieres": 1}
     ]
 
+    # Les bulletins publiés restent consultables après le retrait de l'élève
+    # du cours ; l'historique scolaire ne dépend pas de l'inscription courante.
+    inscriptions = db.exec(
+        select(InscriptionCours).where(
+            InscriptionCours.cours_id == cours.id,
+            InscriptionCours.utilisateur_id == enfant.id,
+        )
+    ).all()
+    for inscription in inscriptions:
+        db.delete(inscription)
+    db.commit()
+    resultats_historiques = construire_portail_famille(db, parent.id)
+    assert resultats_historiques[0]["cours"] == []
+    assert [item["bulletin"].periode for item in resultats_historiques[0]["bulletins"]] == ["T1"]
+
 
 
 def test_modele_interdit_un_rattachement_de_soi_a_soi(db):
