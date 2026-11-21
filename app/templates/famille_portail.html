@@ -26,6 +26,33 @@
         <span class="classe-course-badge">Lien actif</span>
       </div>
 
+      {% if enfant.bulletins %}
+        <article class="classe-section-card">
+          <div class="classe-form-head">
+            <div>
+              <h3>Bulletins officiels publiés</h3>
+              <p>Documents validés par les enseignants responsables de chaque cours.</p>
+            </div>
+            <span class="classe-course-badge">{{ enfant.bulletins|length }} bulletin(s)</span>
+          </div>
+          <div class="classe-list">
+            {% for entree in enfant.bulletins %}
+              <div class="classe-row">
+                <span>
+                  <strong>{{ entree.snapshot.matiere }} · {{ entree.snapshot.periode }}</strong>
+                  <small>{{ entree.snapshot.cours }} · {{ entree.snapshot.nb_notes }} évaluation(s) corrigée(s)</small>
+                  {% if entree.snapshot.appreciation_generale %}<small>{{ entree.snapshot.appreciation_generale }}</small>{% endif %}
+                </span>
+                <span>
+                  <strong>{{ "%.2f"|format(entree.snapshot.moyenne) }} / 20</strong>
+                  <a href="/famille/bulletins/{{ entree.bulletin.id }}/telecharger">Télécharger le PDF</a>
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        </article>
+      {% endif %}
+
       {% if enfant.cours %}
         {% for info in enfant.cours %}
           <article class="classe-section-card">
