@@ -217,7 +217,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             )
             stats["total_pondere"] += moyenne * poids
             stats["poids_total"] += poids
-            stats["matieres"].add(str(snapshot.get("matiere") or entree["bulletin"].cours_id))
+            stats["matieres"].add(str(snapshot.get("cours_id") or entree["bulletin"].cours_id))
             date_publication = str(snapshot.get("date_publication") or "")
             if date_publication > stats["date_recente"]:
                 stats["date_recente"] = date_publication
