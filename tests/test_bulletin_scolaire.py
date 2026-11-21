@@ -25,7 +25,7 @@ from app.admin_security import action_admin_protegee
 from app.routers.bulletin_router import responsable_autorise_bulletin
 from app.routers.admin_router import (
     _nettoyer_bulletins_pour_suppression_compte,
-    _supprimer_bulletins_du_cours,
+    _cascade_supprimer_cours,
 )
 
 
@@ -223,6 +223,8 @@ def test_suppression_compte_efface_ses_bulletins_et_anonymise_les_acteurs(db):
     ).all()
     assert len(evenements) == 1
     assert evenements[0].acteur_id is None
+    db.delete(compte_supprime)
+    db.commit()
 
 
 def test_suppression_cours_efface_les_bulletins_et_le_journal_associe(db):
@@ -249,8 +251,9 @@ def test_suppression_cours_efface_les_bulletins_et_le_journal_associe(db):
     db.commit()
     bulletin_id = bulletin.id
 
-    _supprimer_bulletins_du_cours(db, cours.id)
+    _cascade_supprimer_cours(db, cours.id)
     db.commit()
+    assert db.get(Cours, cours.id) is None
     assert db.get(BulletinScolaire, bulletin_id) is None
     assert db.exec(
         select(BulletinScolaireEvenement).where(
