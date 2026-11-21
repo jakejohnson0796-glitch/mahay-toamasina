@@ -40,6 +40,21 @@
             </div>
             <p class="classe-section-card-intro">Moyenne pondérée calculée uniquement à partir des corrections publiées par l’enseignant.</p>
 
+            {% if info.moyennes_periode %}
+              <h4>Résultats par période</h4>
+              <div class="classe-list">
+                {% for periode in info.moyennes_periode %}
+                  <div class="classe-row">
+                    <span>
+                      <strong>{{ periode.periode }}</strong>
+                      <small>{{ periode.nb_notes }} note(s) publiée(s)</small>
+                    </span>
+                    <strong>{{ "%.2f"|format(periode.moyenne) }} / 20</strong>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
             <div class="classe-list">
               <div class="classe-row">
                 <span>Présences enregistrées</span>

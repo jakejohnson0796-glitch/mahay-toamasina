@@ -286,6 +286,79 @@ def test_portail_partage_uniquement_les_notes_publiees_et_pointages_connus(db):
     assert cours_info["presences"]["absent"] == 0
 
 
+def test_portail_famille_calcule_les_moyennes_ponderees_par_periode_et_exclut_les_brouillons(db):
+    admin = _utilisateur("Admin périodes", "03400000901", RoleUtilisateur.ADMIN)
+    parent = _utilisateur("Parent périodes", "03400000902", profil="responsable")
+    eleve = _utilisateur("Élève périodes", "03400000903")
+    prof = _utilisateur("Prof périodes", "03400000904", RoleUtilisateur.PROFESSEUR)
+    db.add_all([admin, parent, eleve, prof])
+    db.commit()
+    for user in (admin, parent, eleve, prof):
+        db.refresh(user)
+
+    cours = Cours(
+        nom="Mathématiques", matiere="Mathématiques",
+        niveau="Terminale", professeur_id=prof.id,
+    )
+    db.add(cours)
+    db.commit()
+    db.refresh(cours)
+    db.add_all([
+        LienResponsableEleve(
+            responsable_id=parent.id, eleve_id=eleve.id, type_lien="parent",
+            statut="actif", verifie_par_id=admin.id,
+        ),
+        InscriptionCours(cours_id=cours.id, utilisateur_id=eleve.id),
+    ])
+    devoirs = [
+        Devoir(cours_id=cours.id, titre="T1 - devoir 1", bareme=20, coefficient=1, periode="T1"),
+        Devoir(cours_id=cours.id, titre="T1 - devoir 2", bareme=20, coefficient=2, periode="T1"),
+        Devoir(cours_id=cours.id, titre="T2 - devoir", bareme=20, coefficient=1, periode="T2"),
+        Devoir(cours_id=cours.id, titre="T3 - brouillon", bareme=20, coefficient=1, periode="T3"),
+    ]
+    db.add_all(devoirs)
+    db.commit()
+    for devoir in devoirs:
+        db.refresh(devoir)
+
+    from datetime import datetime
+
+    rendus = [
+        RenduDevoir(
+            devoir_id=devoirs[0].id, utilisateur_id=eleve.id,
+            chemin_fichier="rendus/t1-1.pdf", nom_fichier_original="t1-1.pdf",
+            note=16, date_correction=datetime(2026, 10, 2),
+        ),
+        RenduDevoir(
+            devoir_id=devoirs[1].id, utilisateur_id=eleve.id,
+            chemin_fichier="rendus/t1-2.pdf", nom_fichier_original="t1-2.pdf",
+            note=10, date_correction=datetime(2026, 10, 10),
+        ),
+        RenduDevoir(
+            devoir_id=devoirs[2].id, utilisateur_id=eleve.id,
+            chemin_fichier="rendus/t2.pdf", nom_fichier_original="t2.pdf",
+            note=18, date_correction=datetime(2026, 11, 1),
+        ),
+        RenduDevoir(
+            devoir_id=devoirs[3].id, utilisateur_id=eleve.id,
+            chemin_fichier="rendus/t3-brouillon.pdf", nom_fichier_original="t3-brouillon.pdf",
+            note=20, date_correction=None,
+        ),
+    ]
+    db.add_all(rendus)
+    db.commit()
+
+    resultat = construire_portail_famille(db, parent.id)
+    info = resultat[0]["cours"][0]
+
+    assert info["moyennes_periode"] == [
+        {"periode": "T2", "moyenne": 18.0, "nb_notes": 1},
+        {"periode": "T1", "moyenne": 12.0, "nb_notes": 2},
+    ]
+    assert info["moyenne"] == 13.5
+    assert all(item["periode"] != "T3" for item in info["moyennes_periode"])
+
+
 def test_modele_interdit_un_rattachement_de_soi_a_soi(db):
     utilisateur = _utilisateur("Compte", "03400000031", profil="responsable")
     db.add(utilisateur)
@@ -341,6 +414,9 @@ def test_templates_portail_famille_compilent():
     env = Environment(loader=FileSystemLoader(ROOT / "app" / "templates"))
     assert env.get_template("famille_portail.html") is not None
     assert env.get_template("admin_responsables_eleves.html") is not None
+    source = (ROOT / "app" / "templates" / "famille_portail.html").read_text(encoding="utf-8")
+    assert "Résultats par période" in source
+    assert "info.moyennes_periode" in source
 
 
 def test_journal_famille_conserve_validation_revocation_et_reactivation(db):
