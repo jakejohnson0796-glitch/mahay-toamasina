@@ -186,7 +186,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             .order_by(BulletinScolaire.date_publication.desc())
             .limit(500)
         ).all()
-        if ids_cours and ids_eleves else []
+        if ids_eleves else []
     )
     bulletins_par_eleve: dict[int, list[dict]] = {}
     for bulletin in bulletins_modeles:
