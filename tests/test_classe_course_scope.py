@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.routers.classe_router import (
     _cycles_enseignes_utilisateur,
+    _id_optionnel_formulaire,
     _valider_cible_cours_scolaire,
 )
 
@@ -287,6 +288,24 @@ def test_cycles_enseignes_conservent_les_declarations_et_le_repli_universitaire(
     finally:
         session.close()
         engine.dispose()
+
+
+
+@pytest.mark.parametrize(("valeur", "attendu"), [
+    (None, None),
+    ("", None),
+    ("   ", None),
+    ("17", 17),
+    ("0008", 8),
+])
+def test_identifiant_optionnel_de_formulaire(valeur, attendu):
+    assert _id_optionnel_formulaire(valeur) == attendu
+
+
+@pytest.mark.parametrize("valeur", ["-1", "0", "abc", "12.5", "1 2"])
+def test_identifiant_optionnel_refuse_les_valeurs_ambigues(valeur):
+    with pytest.raises(ValueError, match="cible_scolaire_incomplete"):
+        _id_optionnel_formulaire(valeur)
 
 
 def test_formulaire_cours_scolaire_et_universitaire_se_compile():
