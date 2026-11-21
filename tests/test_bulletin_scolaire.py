@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, Session, create_engine
 
-from app.bulletins import construire_snapshot_bulletin, generer_pdf_bulletin, lire_snapshot_bulletin
+from app.bulletins import construire_snapshot_bulletin, generer_pdf_bulletin, generer_pdf_bulletin_general, lire_snapshot_bulletin
 from app.models import (
     BulletinScolaire,
     Cours,
@@ -164,6 +164,34 @@ def test_pdf_est_genere_depuis_le_snapshot_et_les_snapshots_invalides_sont_refus
     assert lire_snapshot_bulletin("{") is None
 
 
+def test_pdf_bulletin_general_regroupe_plusieurs_matieres_et_calcule_la_moyenne_par_matiere():
+    snapshots = [
+        {
+            "version": 1, "cours_id": 1, "eleve": "Élève Exemple",
+            "cours": "Mathématiques - Terminale", "matiere": "Mathématiques",
+            "niveau": "Terminale", "periode": "T1", "professeur": "Mme A",
+            "moyenne": 12.0, "nb_notes": 3, "poids_total": 4,
+            "evaluations": [{"evaluation": "Algèbre", "note": 12, "bareme": 20, "note_sur_20": 12}],
+            "appreciation_generale": "Bonne progression.",
+            "presences": {"present": 3, "absent": 0, "retard": 0, "excuse": 0},
+            "nb_pointages": 3, "nb_seances": 3,
+        },
+        {
+            "version": 1, "cours_id": 2, "eleve": "Élève Exemple",
+            "cours": "Français - Terminale", "matiere": "Français",
+            "niveau": "Terminale", "periode": "t1", "professeur": "M. B",
+            "moyenne": 16.0, "nb_notes": 2, "poids_total": 2,
+            "evaluations": [{"evaluation": "Rédaction", "note": 16, "bareme": 20, "note_sur_20": 16}],
+            "appreciation_generale": "Très bon travail.",
+            "presences": {"present": 2, "absent": 1, "retard": 0, "excuse": 0},
+            "nb_pointages": 3, "nb_seances": 3,
+        },
+    ]
+    pdf = generer_pdf_bulletin_general(snapshots, "T1")
+    assert pdf.startswith(b"%PDF-")
+    assert len(pdf) > 1500
+
+
 def test_telechargement_refuse_si_le_lien_familial_est_revoque_ou_pour_un_autre_enfant(db):
     admin = _utilisateur("Admin", "03400001201", RoleUtilisateur.ADMIN)
     parent = _utilisateur("Parent", "03400001202", RoleUtilisateur.RESPONSABLE, "responsable")
@@ -249,6 +277,12 @@ def test_une_reouverture_peut_conserver_l_ancienne_version_dans_le_journal(db):
     evenement = db.query(BulletinScolaireEvenement).filter_by(bulletin_id=bulletin.id).one()
     assert "14.5" in evenement.details_json
 
+
+
+def test_liste_blanche_responsable_autorise_uniquement_le_pdf_general_de_periode():
+    assert chemin_autorise_responsable("GET", "/famille/bulletins/periode/telecharger", 7) is True
+    assert chemin_autorise_responsable("HEAD", "/famille/bulletins/periode/telecharger", 7) is True
+    assert chemin_autorise_responsable("POST", "/famille/bulletins/periode/telecharger", 7) is False
 
 
 def test_actions_admin_bulletin_exigent_la_confirmation_admin():
