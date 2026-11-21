@@ -102,7 +102,7 @@ def _catalogue(session):
 def _professeur(session, *, cycle="lycee", cycles=()):
     professeur = Utilisateur(
         nom="Professeur de test",
-        telephone="+261340000777",
+        telephone=telephone,
         mot_de_passe_hash="hash-test",
         role=RoleUtilisateur.PROFESSEUR,
         profil_souhaite="professeur",
@@ -280,6 +280,7 @@ def test_cycles_enseignes_conservent_les_declarations_et_le_repli_universitaire(
             session,
             cycle=None,
             cycles=(),
+            telephone="+261340000778",
         )
         ancien_professeur.cycle_education = None
         assert _cycles_enseignes_utilisateur(session, ancien_professeur) == ["universite"]
