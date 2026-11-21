@@ -586,9 +586,23 @@ def modifier_cours(
         return RedirectResponse("/classe", status_code=303)
 
     nom = " ".join((nom or "").split())
-    matiere = " ".join((matiere or "").split())
-    niveau = " ".join((niveau or "").split())
-    if not nom or len(nom) > 120 or not matiere or len(matiere) > 100 or not niveau or len(niveau) > 80:
+    if cours.portee_academique == "scolaire":
+        # Matière et niveau sont des instantanés du référentiel vérifié :
+        # les champs reçus du navigateur ne peuvent pas les désynchroniser.
+        matiere = cours.matiere
+        niveau = cours.niveau
+    else:
+        matiere = " ".join((matiere or "").split())
+        niveau = " ".join((niveau or "").split())
+
+    champs_universitaires_invalides = (
+        cours.portee_academique != "scolaire"
+        and (
+            not matiere or len(matiere) > 100
+            or not niveau or len(niveau) > 80
+        )
+    )
+    if not nom or len(nom) > 120 or champs_universitaires_invalides:
         return RedirectResponse(f"/classe/{cours_id}?erreur=champs_cours_invalides#parametres-cours", status_code=303)
 
     cours.nom = nom
