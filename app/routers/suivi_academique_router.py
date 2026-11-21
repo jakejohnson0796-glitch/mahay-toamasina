@@ -2,6 +2,7 @@
 from __future__ import annotations
 import csv
 import io
+import json
 import math
 from collections import defaultdict
 from datetime import datetime
@@ -22,8 +23,14 @@ from ..templating import templates
 router = APIRouter()
 
 def _peut_gerer(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
+    """Admin ou professeur approuvé propriétaire du cours."""
     return bool(utilisateur and (
-        utilisateur.role == RoleUtilisateur.ADMIN or utilisateur.id == cours.professeur_id
+        utilisateur.role == RoleUtilisateur.ADMIN
+        or (
+            utilisateur.role == RoleUtilisateur.PROFESSEUR
+            and utilisateur.statut_verification_enseignant == "approuve"
+            and utilisateur.id == cours.professeur_id
+        )
     ))
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
@@ -37,6 +44,48 @@ def normaliser_statut_pointage(valeur: str) -> StatutPointage:
         return StatutPointage((valeur or "").strip())
     except ValueError as erreur:
         raise ValueError("Statut de présence invalide.") from erreur
+
+MAX_POINTAGES_LOT = 500
+
+
+def normaliser_pointages_lot(contenu_json: str) -> list[dict]:
+    """Valide un registre groupé, borné et sans identifiants en double."""
+    if not isinstance(contenu_json, str) or len(contenu_json) > 250_000:
+        raise ValueError("Le registre envoyé est trop volumineux.")
+    try:
+        donnees = json.loads(contenu_json)
+    except (TypeError, ValueError) as erreur:
+        raise ValueError("Le registre envoyé n'est pas un JSON valide.") from erreur
+    if not isinstance(donnees, list) or not donnees or len(donnees) > MAX_POINTAGES_LOT:
+        raise ValueError("Le registre doit contenir entre 1 et 500 pointages.")
+    resultat = []
+    identifiants = set()
+    for ligne in donnees:
+        if not isinstance(ligne, dict):
+            raise ValueError("Une ligne du registre est invalide.")
+        valeur_id = ligne.get("utilisateur_id")
+        if isinstance(valeur_id, bool):
+            raise ValueError("Un identifiant d'étudiant est invalide.")
+        try:
+            utilisateur_id = int(valeur_id)
+        except (TypeError, ValueError) as erreur:
+            raise ValueError("Un identifiant d'étudiant est invalide.") from erreur
+        if utilisateur_id <= 0 or utilisateur_id in identifiants:
+            raise ValueError("Les identifiants doivent être positifs et uniques.")
+        identifiants.add(utilisateur_id)
+        statut = normaliser_statut_pointage(str(ligne.get("statut") or ""))
+        justificatif = ligne.get("justificatif", "")
+        if justificatif is None:
+            justificatif = ""
+        if not isinstance(justificatif, str):
+            raise ValueError("Un justificatif doit être du texte.")
+        resultat.append({
+            "utilisateur_id": utilisateur_id,
+            "statut": statut.value,
+            "justificatif": justificatif.strip()[:1200] or None,
+        })
+    return resultat
+
 
 def calculer_moyenne_ponderee(rendus: list, devoirs: dict[int, Devoir], periode: Optional[str] = None) -> Optional[float]:
     """Moyenne sur 20 ; seules les notes officielles sont prises en compte."""
@@ -351,6 +400,88 @@ def enregistrer_pointage(
         ))
     session.commit()
     return RedirectResponse(f"/classe/seances/{seance_id}/registre-presences?enregistre=1", status_code=303)
+
+
+@router.post("/classe/seances/{seance_id}/registre-presences/lot")
+def enregistrer_pointages_lot(
+    seance_id: int,
+    request: Request,
+    pointages_json: str = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    """Enregistre toute la fiche d'appel dans une transaction unique."""
+    auteur = utilisateur_courant(request, session)
+    seance = session.get(Seance, seance_id)
+    cours = session.get(Cours, seance.cours_id) if seance else None
+    if not seance or not cours or not _peut_gerer(cours, auteur):
+        return RedirectResponse("/classe", status_code=303)
+    try:
+        lignes = normaliser_pointages_lot(pointages_json)
+    except ValueError:
+        return RedirectResponse(
+            f"/classe/seances/{seance_id}/registre-presences?erreur=pointages_invalides",
+            status_code=303,
+        )
+
+    identifiants = [ligne["utilisateur_id"] for ligne in lignes]
+    inscrits = set(session.exec(
+        select(InscriptionCours.utilisateur_id).where(
+            InscriptionCours.cours_id == cours.id,
+            InscriptionCours.utilisateur_id.in_(identifiants),
+        )
+    ).all())
+    if len(inscrits) != len(identifiants):
+        return RedirectResponse(
+            f"/classe/seances/{seance_id}/registre-presences?erreur=etudiants_invalides",
+            status_code=303,
+        )
+
+    existants = session.exec(
+        select(PointagePresence).where(
+            PointagePresence.seance_id == seance_id,
+            PointagePresence.utilisateur_id.in_(identifiants),
+        )
+    ).all()
+    par_utilisateur = {p.utilisateur_id: p for p in existants}
+    notifications = []
+    for ligne in lignes:
+        utilisateur_id = ligne["utilisateur_id"]
+        statut = StatutPointage(ligne["statut"])
+        pointage = par_utilisateur.get(utilisateur_id)
+        ancien = pointage.statut if pointage else None
+        if pointage is None:
+            pointage = PointagePresence(
+                seance_id=seance_id, utilisateur_id=utilisateur_id
+            )
+        pointage.statut = statut
+        pointage.justificatif = ligne["justificatif"]
+        pointage.saisi_par_id = auteur.id
+        pointage.date_maj = datetime.utcnow()
+        session.add(pointage)
+        if statut in {
+            StatutPointage.ABSENT,
+            StatutPointage.RETARD,
+            StatutPointage.EXCUSE,
+        } and ancien != statut:
+            notifications.append(Notification(
+                destinataire_id=utilisateur_id,
+                type_notification=TypeNotification.STATUT_PRESENCE,
+                contenu=(
+                    f"Ton statut de présence à la séance « {seance.titre} » "
+                    f"({cours.nom}) a été mis à jour : {statut.value}."
+                ),
+                acteur_id=auteur.id,
+                url_destination="/mes-presences",
+            ))
+    if notifications:
+        session.add_all(notifications)
+    session.commit()
+    return RedirectResponse(
+        f"/classe/seances/{seance_id}/registre-presences?enregistre_lot={len(lignes)}",
+        status_code=303,
+    )
+
 
 def construire_statistiques_globales(
     cours: list,
