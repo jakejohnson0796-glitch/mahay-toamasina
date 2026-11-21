@@ -181,7 +181,6 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             select(BulletinScolaire)
             .where(
                 BulletinScolaire.utilisateur_id.in_(ids_eleves),
-                BulletinScolaire.cours_id.in_(ids_cours),
                 BulletinScolaire.statut == "publie",
             )
             .order_by(BulletinScolaire.date_publication.desc())
@@ -204,7 +203,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             snapshot = entree["snapshot"]
             periode = str(snapshot.get("periode") or entree["bulletin"].periode).strip()
             cle_periode = periode.casefold()
-            poids = max(float(snapshot.get("poids_total") or 1), 0.1)
+            poids = 1.0  # Aucun coefficient officiel de matière n’est encore référencé.
             moyenne = float(snapshot.get("moyenne") or 0)
             stats = stats_par_periode.setdefault(
                 cle_periode,
