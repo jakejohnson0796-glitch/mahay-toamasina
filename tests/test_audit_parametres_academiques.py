@@ -103,6 +103,7 @@ def test_journal_refuse_une_action_non_autorisee(db):
             etablissement_id=etablissement.id,
             annee_scolaire="2026-2027",
             acteur_id=admin.id,
+            acteur_nom=admin.nom,
             action="effacement_total",
             entite_type="configuration",
             entite_id=42,
