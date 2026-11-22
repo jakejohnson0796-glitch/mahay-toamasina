@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block titre %}Paramètres académiques — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair interface-referentiel-scolaire">
+  <p class="eyebrow referentiel-retour"><a href="/admin/referentiel/scolaire">← Référentiel scolaire national</a></p>
+  <header class="referentiel-scolaire-hero">
+    <div>
+      <span class="referentiel-scolaire-kicker">MITARIDALA · Administration</span>
+      <h1>Paramètres académiques des établissements</h1>
+      <p>Configure le calendrier de l'année scolaire, les périodes, le barème de notation et les coefficients propres à chaque établissement. Ces paramètres s'appliquent aux prochains bulletins ; les bulletins déjà publiés restent figés.</p>
+    </div>
+  </header>
+
+  {% if erreur %}
+  <div class="erreur" role="alert">
+    {% if erreur == "etablissement_non_verifie" %}L'établissement doit être actif et vérifié avant de configurer son année scolaire.
+    {% elif erreur == "annee_invalide" %}L'année doit être au format AAAA-AAAA, avec deux années consécutives.
+    {% elif erreur == "calendrier_invalide" %}Choisis un calendrier trimestriel, semestriel ou personnalisé.
+    {% elif erreur == "periodes_invalides" %}Saisis de 1 à 8 périodes distinctes, une par ligne au format CODE|Libellé.
+    {% elif erreur == "bareme_invalide" %}Le barème doit être compris entre 1 et 1000 et le seuil ne peut pas dépasser le barème.
+    {% elif erreur == "configuration_invalide" %}La configuration d'année scolaire est introuvable ou n'est plus active.
+    {% elif erreur == "programme_scolaire_invalide" %}La classe, la série ou la matière n'appartient pas à un programme scolaire validé.
+    {% elif erreur == "option_invalide" %}La série ou l'option ne correspond pas à la classe sélectionnée.
+    {% elif erreur == "coefficient_invalide" %}Le coefficient doit être compris entre 0,01 et 100.
+    {% elif erreur == "coefficient_introuvable" %}Le coefficient demandé est introuvable.
+    {% else %}La modification n'a pas été enregistrée. Vérifie les champs et réessaie.{% endif %}
+  </div>
+  {% endif %}
+  {% if succes %}
+  <p role="status"><strong>
+    {% if succes == "parametres_enregistres" %}Les paramètres de l'année scolaire ont été enregistrés. Cette année est maintenant active pour cet établissement.
+    {% elif succes == "coefficient_enregistre" %}Le coefficient de matière a été enregistré.
+    {% elif succes == "coefficient_supprime" %}Le coefficient a été supprimé.
+    {% else %}Modification enregistrée.{% endif %}
+  </strong></p>
+  {% endif %}
+
+  <section class="carte-formulaire" aria-labelledby="config-annee">
+    <h2 id="config-annee">1. Configurer une année scolaire</h2>
+    {% if etablissements %}
+    <form method="post" action="/admin/parametres-academiques/annee/enregistrer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="param-etablissement">Établissement vérifié</label>
+      <select id="param-etablissement" name="etablissement_id" required>
+        <option value="">Choisir un établissement</option>
+        {% for etablissement in etablissements %}
+        <option value="{{ etablissement.id }}">{{ etablissement.nom }}{% if etablissement.commune %} · {{ etablissement.commune }}{% endif %}</option>
+        {% endfor %}
+      </select>
+
+      <label for="param-annee">Année scolaire</label>
+      <input id="param-annee" name="annee_scolaire" required pattern="[0-9]{4}-[0-9]{4}" placeholder="2026-2027">
+
+      <label for="param-calendrier">Organisation des périodes</label>
+      <select id="param-calendrier" name="calendrier" required>
+        <option value="trimestre">Trimestre</option>
+        <option value="semestre">Semestre</option>
+        <option value="personnalise">Calendrier personnalisé</option>
+      </select>
+
+      <label for="param-periodes">Périodes (une par ligne : CODE|Libellé)</label>
+      <textarea id="param-periodes" name="periodes" rows="4" maxlength="600" required>T1|Trimestre 1
+T2|Trimestre 2
+T3|Trimestre 3</textarea>
+      <p class="stat-label">Les codes doivent être uniques. Ils servent à associer les devoirs et les bulletins à la bonne période.</p>
+
+      <div class="grille-formulaire">
+        <div>
+          <label for="param-note-max">Note maximale</label>
+          <input id="param-note-max" name="note_maximale" type="number" min="1" max="1000" step="0.01" value="20" required>
+        </div>
+        <div>
+          <label for="param-seuil">Seuil de réussite</label>
+          <input id="param-seuil" name="seuil_reussite" type="number" min="0" max="1000" step="0.01" value="10" required>
+        </div>
+      </div>
+      <button class="bouton" type="submit">Enregistrer et activer cette année</button>
+    </form>
+    {% else %}
+    <p>Aucun établissement vérifié et actif n'est disponible. Vérifie d'abord un établissement dans le référentiel scolaire.</p>
+    {% endif %}
+  </section>
+
+  <section class="carte-formulaire" aria-labelledby="config-coefficients">
+    <h2 id="config-coefficients">2. Définir les coefficients des matières</h2>
+    <p>Les matières proposées ici doivent appartenir à un programme scolaire déjà validé. Un coefficient précis pour une série est prioritaire sur le coefficient général de la classe.</p>
+    {% if configurations and niveaux and matieres %}
+    <form method="post" action="/admin/parametres-academiques/coefficient/enregistrer" class="carte-formulaire">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="coeff-configuration">Établissement et année active</label>
+      <select id="coeff-configuration" name="parametres_id" required>
+        <option value="">Choisir la configuration</option>
+        {% for configuration in configurations %}
+          {% if configuration.est_actif %}
+          {% for etablissement in etablissements %}
+            {% if etablissement.id == configuration.etablissement_id %}
+            <option value="{{ configuration.id }}">{{ etablissement.nom }} · {{ configuration.annee_scolaire }}</option>
+            {% endif %}
+          {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </select>
+
+      <label for="coeff-niveau">Classe / niveau</label>
+      <select id="coeff-niveau" name="niveau_id" required>
+        <option value="">Choisir une classe</option>
+        {% for niveau in niveaux %}
+        <option value="{{ niveau.id }}">{{ niveau.libelle }} · {{ niveau.cycle }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="coeff-option">Série ou option (facultatif)</label>
+      <select id="coeff-option" name="option_id">
+        <option value="">Toutes les séries / classe entière</option>
+        {% for option in options %}
+        <option value="{{ option.id }}">{{ option.libelle }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="coeff-matiere">Matière</label>
+      <select id="coeff-matiere" name="matiere_id" required>
+        <option value="">Choisir une matière validée</option>
+        {% for matiere in matieres %}
+        <option value="{{ matiere.id }}">{{ matiere.libelle }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="coeff-valeur">Coefficient</label>
+      <input id="coeff-valeur" name="coefficient" type="number" min="0.01" max="100" step="0.01" value="1" required>
+
+      <label for="coeff-obligatoire">Statut dans le bulletin</label>
+      <select id="coeff-obligatoire" name="obligatoire">
+        <option value="oui">Matière obligatoire</option>
+        <option value="non">Matière facultative</option>
+      </select>
+      <button class="bouton" type="submit">Enregistrer le coefficient</button>
+    </form>
+    {% else %}
+    <p>Pour définir des coefficients, il faut au moins une année active, une classe validée et une matière validée.</p>
+    {% endif %}
+  </section>
+
+  <section class="carte-formulaire" aria-labelledby="config-historique">
+    <h2 id="config-historique">3. Configurations enregistrées</h2>
+    {% for configuration in configurations %}
+    <article class="carte-formulaire">
+      <h3>{{ configuration.annee_scolaire }} {% if configuration.est_actif %}<span class="etat-catalogue is-complet">Active</span>{% else %}<span class="etat-catalogue">Archivée</span>{% endif %}</h3>
+      {% for etablissement in etablissements %}
+        {% if etablissement.id == configuration.etablissement_id %}
+        <p><strong>{{ etablissement.nom }}</strong></p>
+        {% endif %}
+      {% endfor %}
+      <p>Calendrier : {{ configuration.calendrier }} · Barème : {{ configuration.note_maximale }} · Seuil : {{ configuration.seuil_reussite }}</p>
+      <ul>
+        {% for periode in periodes_par_configuration.get(configuration.id, []) %}
+        <li><strong>{{ periode.code }}</strong> — {{ periode.libelle }}</li>
+        {% else %}
+        <li>Aucune période valide enregistrée.</li>
+        {% endfor %}
+      </ul>
+    </article>
+    {% else %}
+    <p>Aucune année scolaire n'est encore configurée.</p>
+    {% endfor %}
+  </section>
+
+  <section class="carte-formulaire" aria-labelledby="coefficients-enregistres">
+    <h2 id="coefficients-enregistres">4. Coefficients enregistrés</h2>
+    <div class="table-responsive">
+      <table>
+        <thead><tr><th>Établissement / année</th><th>Classe / série</th><th>Matière</th><th>Coefficient</th><th>Statut</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for ligne in coefficients_affiches %}
+        <tr>
+          <td>{% if ligne.etablissement %}{{ ligne.etablissement.nom }}{% endif %}<br>{{ ligne.configuration.annee_scolaire if ligne.configuration else "Configuration archivée" }}</td>
+          <td>{{ ligne.niveau.libelle if ligne.niveau else "Niveau indisponible" }}{% if ligne.option %}<br>{{ ligne.option.libelle }}{% endif %}</td>
+          <td>{{ ligne.matiere.libelle if ligne.matiere else "Matière indisponible" }}</td>
+          <td>{{ ligne.coefficient.coefficient }}</td>
+          <td>{{ "Obligatoire" if ligne.coefficient.obligatoire else "Facultative" }}</td>
+          <td>
+            <form method="post" action="/admin/parametres-academiques/coefficient/{{ ligne.coefficient.id }}/supprimer">
+              <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+              <button class="bouton bouton-secondaire" type="submit">Supprimer</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">Aucun coefficient spécifique n'est configuré. Le calcul utilise alors le coefficient neutre 1.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}
