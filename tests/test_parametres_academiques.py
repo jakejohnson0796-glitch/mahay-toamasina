@@ -213,6 +213,7 @@ def test_bulletin_applique_le_bareme_et_le_coefficient_de_la_serie(db):
     assert snapshot["moyenne"] == 75.0
     assert snapshot["moyenne_sur"] == 100.0
     assert snapshot["seuil_reussite"] == 50.0
+    assert snapshot["seuil_reussi"] is True
     assert snapshot["coefficient_matiere"] == 2.5
     assert snapshot["annee_scolaire"] == "2026-2027"
     assert snapshot["evaluations"][0]["note_sur_20"] == 15.0
