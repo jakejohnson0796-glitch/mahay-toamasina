@@ -103,10 +103,26 @@ def _textes_depuis_resultat_paddle(resultat) -> list[str]:
     if isinstance(donnees, dict):
         donnees = donnees.get("res", donnees)
         if isinstance(donnees, dict):
-            rec_textes = donnees.get("rec_texts") or []
-            rec_scores = donnees.get("rec_scores") or []
-            if isinstance(rec_textes, str):
+            rec_textes = donnees.get("rec_texts")
+            rec_scores = donnees.get("rec_scores")
+            if rec_textes is None:
+                rec_textes = []
+            elif isinstance(rec_textes, str):
                 rec_textes = [rec_textes]
+            else:
+                try:
+                    rec_textes = list(rec_textes)
+                except TypeError:
+                    rec_textes = []
+            if rec_scores is None:
+                rec_scores = []
+            elif isinstance(rec_scores, (str, bytes)):
+                rec_scores = [rec_scores]
+            else:
+                try:
+                    rec_scores = list(rec_scores)
+                except TypeError:
+                    rec_scores = []
             for index, texte in enumerate(rec_textes):
                 if not isinstance(texte, str) or not texte.strip():
                     continue
