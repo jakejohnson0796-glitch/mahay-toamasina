@@ -108,7 +108,13 @@ const legalHeading = window.document.createElement('h2');
 legalHeading.textContent = 'Éthique, conditions d’utilisation et confidentialité';
 const namedGreeting = window.document.createElement('p');
 namedGreeting.textContent = 'Bonjour Rakoto.';
-window.document.body.append(teacherIntro, helpHeading, legalHeading, namedGreeting);
+const loginHeading = window.document.createElement('h2');
+loginHeading.textContent = 'Bienvenue à nouveau.';
+const registerHeading = window.document.createElement('h2');
+registerHeading.textContent = 'Création de compte';
+const revisionHeading = window.document.createElement('h2');
+revisionHeading.textContent = 'Priorité du jour';
+window.document.body.append(teacherIntro, helpHeading, legalHeading, namedGreeting, loginHeading, registerHeading, revisionHeading);
 await new Promise((resolve) => setTimeout(resolve, 0));
 if (teacherIntro.textContent !== 'Prepare lessons, support your learners, and organise sessions in a workspace designed for teaching.') {
   throw new Error('Teacher workspace introduction was not translated to English');
@@ -121,6 +127,9 @@ if (legalHeading.textContent !== 'Ethics, terms of use, and privacy') {
 }
 if (namedGreeting.textContent !== 'Hello, Rakoto.') {
   throw new Error('Personalised greeting was not translated to English');
+}
+if (loginHeading.textContent !== 'Welcome back.' || registerHeading.textContent !== 'Create an account' || revisionHeading.textContent !== "Today's priority") {
+  throw new Error('Login, registration, or revision copy was not translated to English');
 }
 
 select.value = 'mg';
@@ -140,6 +149,9 @@ if (legalHeading.textContent !== 'Fitsipi-pitondrantena, fepetra fampiasana ary 
 }
 if (namedGreeting.textContent !== 'Manao ahoana, Rakoto.') {
   throw new Error('Personalised greeting was not translated to Malagasy');
+}
+if (loginHeading.textContent !== 'Tongasoa indray.' || registerHeading.textContent !== 'Famoronana kaonty' || revisionHeading.textContent !== 'Laharam-pahamehana androany') {
+  throw new Error('Login, registration, or revision copy was not translated to Malagasy');
 }
 
 select.value = 'en';
