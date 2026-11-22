@@ -2239,6 +2239,11 @@ class TacheIA(SQLModel, table=True):
         foreign_key="ficherevisiondocument.id",
         index=True,
     )
+    analyse_comparative_lecon_id: Optional[int] = Field(
+        default=None,
+        foreign_key="analysecomparativelecon.id",
+        index=True,
+    )
     statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
     strategie_verification: str = Field(default="standard", index=True)
     score_risque: int = Field(default=0)
@@ -2276,6 +2281,12 @@ class TacheIA(SQLModel, table=True):
             "uq_tache_ia_type_fiche_revision_document",
             "type_tache",
             "fiche_revision_document_id",
+            unique=True,
+        ),
+        Index(
+            "uq_tache_ia_type_analyse_comparative_lecon",
+            "type_tache",
+            "analyse_comparative_lecon_id",
             unique=True,
         ),
         Index(
@@ -2662,13 +2673,13 @@ class AnalyseComparativeLecon(SQLModel, table=True):
     contributions_ids_json: str = Field(default="[]", max_length=2000)
     resultat_json: str = Field(max_length=60000)
     modele: str = Field(max_length=120)
-    statut: str = Field(default="terminee", max_length=20, index=True)
+    statut: str = Field(default="en_attente", max_length=20, index=True)
     cree_par_id: int = Field(foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     __table_args__ = (
         CheckConstraint(
-            "statut IN ('terminee', 'a_revoir')",
+            "statut IN ('en_attente', 'en_cours', 'terminee', 'a_revoir', 'echouee')",
             name="ck_analysecomparativelecon_statut",
         ),
         Index(
