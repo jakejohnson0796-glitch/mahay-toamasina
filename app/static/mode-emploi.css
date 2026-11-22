@@ -555,7 +555,7 @@
 
 .mode-emploi-role-tabs {
   display: grid;
-  grid-template-columns: repeat(3,minmax(0,1fr));
+  grid-template-columns: repeat(4,minmax(0,1fr));
   gap: .6rem;
   margin-bottom: .8rem;
 }
@@ -725,3 +725,11 @@
 
 .mode-emploi-mt-8 { margin-top: .8rem; }
 .mode-emploi-mt-12 { margin-top: 1.2rem; }
+
+.mode-emploi-section[id="aide-regles"]{scroll-margin-top:1.25rem}
+.mode-emploi-section[id="aide-regles"] .mode-emploi-card{height:100%}
+.mode-emploi-section[id="aide-regles"] .mode-emploi-inline-link{display:inline-flex;margin-top:.35rem}
+.mode-emploi-section[id="aide-regles"] .mode-emploi-callout a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:900px){.mode-emploi-role-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.mode-emploi-role-tabs{grid-template-columns:1fr}}
+
