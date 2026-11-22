@@ -1107,10 +1107,16 @@ def _journaliser_parametres_academiques(
     contexte: dict | None = None,
 ) -> None:
     """Ajoute l'événement dans la même transaction que la modification métier."""
+    contexte_complet = dict(contexte or {})
+    etablissement = session.get(EtablissementScolaire, etablissement_id)
+    contexte_complet.setdefault(
+        "etablissement",
+        etablissement.nom if etablissement else f"Établissement #{etablissement_id}",
+    )
     details = {
         "avant": avant,
         "apres": apres,
-        "contexte": contexte or {},
+        "contexte": contexte_complet,
     }
     session.add(
         ParametresAcademiquesEvenement(
@@ -1679,7 +1685,11 @@ def historique_parametres_academiques(
                 acteurs_map[evenement.acteur_id].nom
                 if evenement.acteur_id in acteurs_map else "Compte administrateur archivé"
             ),
-            "etablissement": etablissements_map.get(evenement.etablissement_id),
+            "etablissement_nom": contexte.get("etablissement") or (
+                etablissements_map[evenement.etablissement_id].nom
+                if evenement.etablissement_id in etablissements_map
+                else f"Établissement #{evenement.etablissement_id}"
+            ),
             "cible": cible,
             "precision_cible": precision_cible,
             "changements": changements,
