@@ -1563,3 +1563,153 @@ def supprimer_coefficient_matiere(
     return _rediriger_parametres(ok="coefficient_supprime")
 
 
+
+
+@router.get("/admin/parametres-academiques/historique")
+def historique_parametres_academiques(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    actions = (
+        "creation", "modification", "activation", "desactivation", "suppression",
+    )
+    filtres = []
+    etablissement_id = None
+    valeur_etablissement = request.query_params.get("etablissement_id", "")
+    if valeur_etablissement.isdecimal() and int(valeur_etablissement) > 0:
+        etablissement_id = int(valeur_etablissement)
+        filtres.append(
+            ParametresAcademiquesEvenement.etablissement_id == etablissement_id
+        )
+    annee_scolaire = request.query_params.get("annee_scolaire", "").strip()
+    if annee_scolaire and re.fullmatch(r"\d{4}-\d{4}", annee_scolaire):
+        filtres.append(
+            ParametresAcademiquesEvenement.annee_scolaire == annee_scolaire
+        )
+    action = request.query_params.get("action", "").strip()
+    if action in actions:
+        filtres.append(ParametresAcademiquesEvenement.action == action)
+    else:
+        action = ""
+
+    try:
+        page = max(1, min(int(request.query_params.get("page", "1")), 100000))
+    except (TypeError, ValueError):
+        page = 1
+    limite = 50
+    evenements = session.exec(
+        select(ParametresAcademiquesEvenement)
+        .where(*filtres)
+        .order_by(
+            ParametresAcademiquesEvenement.date_evenement.desc(),
+            ParametresAcademiquesEvenement.id.desc(),
+        )
+        .offset((page - 1) * limite)
+        .limit(limite + 1)
+    ).all()
+    page_suivante = len(evenements) > limite
+    evenements = evenements[:limite]
+
+    ids_etablissements = {item.etablissement_id for item in evenements}
+    ids_acteurs = {item.acteur_id for item in evenements}
+    etablissements_page = (
+        session.exec(
+            select(EtablissementScolaire).where(
+                EtablissementScolaire.id.in_(sorted(ids_etablissements))
+            )
+        ).all()
+        if ids_etablissements else []
+    )
+    acteurs_page = (
+        session.exec(
+            select(Utilisateur).where(Utilisateur.id.in_(sorted(ids_acteurs)))
+        ).all()
+        if ids_acteurs else []
+    )
+    etablissements_map = {item.id: item for item in etablissements_page}
+    acteurs_map = {item.id: item for item in acteurs_page}
+
+    libelles_champs = {
+        "calendrier": "Calendrier",
+        "periodes": "Périodes",
+        "note_maximale": "Barème maximal",
+        "seuil_reussite": "Seuil de réussite",
+        "est_actif": "Année active",
+        "coefficient": "Coefficient",
+        "obligatoire": "Matière obligatoire",
+    }
+    lignes = []
+    for evenement in evenements:
+        try:
+            details = json.loads(evenement.details_json or "{}")
+        except (TypeError, ValueError, json.JSONDecodeError):
+            details = {}
+        if not isinstance(details, dict):
+            details = {}
+        avant = details.get("avant") if isinstance(details.get("avant"), dict) else {}
+        apres = details.get("apres") if isinstance(details.get("apres"), dict) else {}
+        changements = []
+        for cle in sorted(set(avant) | set(apres)):
+            changements.append({
+                "champ": libelles_champs.get(cle, cle.replace("_", " ").capitalize()),
+                "avant": _valeur_audit_affichable(avant.get(cle)),
+                "apres": _valeur_audit_affichable(apres.get(cle)),
+            })
+        contexte = details.get("contexte")
+        if not isinstance(contexte, dict):
+            contexte = {}
+        if evenement.entite_type == "coefficient_matiere":
+            cible = "Coefficient de matière"
+            precision_cible = " · ".join(
+                str(contexte.get(cle))
+                for cle in ("niveau", "option", "matiere")
+                if contexte.get(cle)
+            )
+        else:
+            cible = "Configuration annuelle"
+            precision_cible = "Paramètres généraux de l'année scolaire"
+        lignes.append({
+            "evenement": evenement,
+            "acteur": acteurs_map.get(evenement.acteur_id),
+            "etablissement": etablissements_map.get(evenement.etablissement_id),
+            "cible": cible,
+            "precision_cible": precision_cible,
+            "changements": changements,
+            "raison": contexte.get("raison"),
+        })
+
+    etablissements = session.exec(
+        select(EtablissementScolaire).order_by(EtablissementScolaire.nom).limit(500)
+    ).all()
+    url_precedente = (
+        str(request.url.include_query_params(page=page - 1)) if page > 1 else None
+    )
+    url_suivante = (
+        str(request.url.include_query_params(page=page + 1))
+        if page_suivante else None
+    )
+    return templates.TemplateResponse(
+        request,
+        "admin_historique_parametres_academiques.html",
+        {
+            "utilisateur": admin,
+            "lignes": lignes,
+            "etablissements": etablissements,
+            "filtre_etablissement_id": etablissement_id,
+            "filtre_annee_scolaire": annee_scolaire,
+            "filtre_action": action,
+            "actions": actions,
+            "page": page,
+            "url_precedente": url_precedente,
+            "url_suivante": url_suivante,
+        },
+        headers={
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
