@@ -52,18 +52,14 @@ def _periode_canonique(session: Session, cours_id: int, saisie: str) -> str | No
 
     periodes_acceptees = {valeur.casefold()}
     cours = session.get(Cours, cours_id)
-    if cours and cours.etablissement_scolaire_id:
+    # Les anciens cours sans année liée conservent leur contrat de périodes historique.
+    if cours and cours.etablissement_scolaire_id and cours.annee_scolaire:
         configuration = session.exec(
             select(ParametresAcademiquesEtablissement)
             .where(
                 ParametresAcademiquesEtablissement.etablissement_id == cours.etablissement_scolaire_id,
-                *(
-                    [ParametresAcademiquesEtablissement.annee_scolaire == cours.annee_scolaire]
-                    if cours.annee_scolaire
-                    else [ParametresAcademiquesEtablissement.est_actif == True]  # noqa: E712
-                ),
+                ParametresAcademiquesEtablissement.annee_scolaire == cours.annee_scolaire,
             )
-            .order_by(ParametresAcademiquesEtablissement.date_modification.desc())
             .limit(1)
         ).first()
         if configuration:
