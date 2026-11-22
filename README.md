@@ -11,7 +11,7 @@ MITARIDALA est une plateforme éducative destinée aux élèves, aux étudiants 
 - Déposer des ressources soumises à modération avant leur publication.
 - Retrouver les documents selon le parcours et les matières disponibles.
 - Déposer jusqu’à 15 documents en un envoi, avec 20 Mo maximum par fichier et 120 Mo par lot.
-- Faire analyser chaque fichier séparément : extraction de texte des PDF, Word et PowerPoint, OCR français/anglais pour les scans, puis récapitulatif des métadonnées et de la confiance détectée. Les documents restent soumis à modération avant publication.
+- Faire analyser chaque fichier séparément : extraction directe des PDF textuels, Word et PowerPoint ; PaddleOCR PP-OCRv5 en français est prioritaire pour les scans et Tesseract français/anglais sert de repli si nécessaire. Un récapitulatif des métadonnées et de la confiance détectée est ensuite produit. Les documents restent soumis à modération avant publication.
 - Consulter un avertissement lorsqu’aucun texte n’a pu être extrait ; les valeurs saisies manuellement ne gonflent pas le score de confiance automatique.
 
 ### Apprentissage et révision
