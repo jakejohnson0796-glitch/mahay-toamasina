@@ -24,10 +24,11 @@ def test_cadre_legal_public_regroupe_conditions_ethique_confidentialite_et_menti
         'id="intelligence-artificielle"',
         'id="moderation"',
         'id="mentions-legales"',
+        'id="mineurs"',
     ):
         assert section in template
     assert "2014-038" in template
-    assert "digital.gov.mg" in template
+    assert "cnlegis.gov.mg" in template
 
 
 def test_inscription_exige_une_acceptation_expresse_cote_navigateur_et_serveur():
@@ -59,7 +60,7 @@ def test_acceptation_enregistre_une_version_et_un_horodatage_sans_modifier_les_a
     assert 'sa.Column("version_conditions_acceptees", sa.String(length=32), nullable=True)' in migration
     assert "conditions_acceptees_le=datetime.utcnow()" in route
     assert "version_conditions_acceptees=VERSION_CONDITIONS" in route
-    assert 'VERSION_CONDITIONS = "1.0"' in constants
+    assert 'VERSION_CONDITIONS = "1.1"' in constants
 
 
 def test_page_legale_est_accessible_depuis_le_pied_de_page_et_le_menu():
