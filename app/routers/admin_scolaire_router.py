@@ -1117,6 +1117,7 @@ def _journaliser_parametres_academiques(
             etablissement_id=etablissement_id,
             annee_scolaire=annee_scolaire,
             acteur_id=admin.id,
+            acteur_nom=(admin.nom or "Administrateur")[:200],
             action=action,
             entite_type=entite_type,
             entite_id=entite_id,
@@ -1674,7 +1675,10 @@ def historique_parametres_academiques(
             precision_cible = "Paramètres généraux de l'année scolaire"
         lignes.append({
             "evenement": evenement,
-            "acteur": acteurs_map.get(evenement.acteur_id),
+            "acteur_nom": evenement.acteur_nom or (
+                acteurs_map[evenement.acteur_id].nom
+                if evenement.acteur_id in acteurs_map else "Compte administrateur archivé"
+            ),
             "etablissement": etablissements_map.get(evenement.etablissement_id),
             "cible": cible,
             "precision_cible": precision_cible,
