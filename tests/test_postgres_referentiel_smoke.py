@@ -1619,3 +1619,91 @@ def test_postgres_journal_parametres_academiques_rls_et_append_only():
 
     assert resultat.rls_active is True
     assert resultat.triggers_actifs == 3
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(
+        ("postgresql://", "postgresql+psycopg2://")
+    ),
+    reason="Isolation et immutabilité des leçons nationales réservées à PostgreSQL",
+)
+def test_postgres_harmonisation_lecons_rls_et_snapshots_immutables():
+    """Les contributions et les leçons ne sont accessibles que par le backend."""
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    tables = (
+        "leconreferentielle",
+        "contributionlecon",
+        "analysecomparativelecon",
+        "versioncoursharmoniselecon",
+    )
+    with engine.connect() as connection:
+        for table in tables:
+            resultat = connection.execute(
+                text(
+                    """
+                    SELECT
+                        c.relrowsecurity AS rls_active,
+                        COUNT(t.oid) FILTER (
+                            WHERE t.tgenabled <> 'D'
+                        ) AS triggers_actifs,
+                        has_table_privilege('anon', 'public.' || c.relname, 'SELECT')
+                            AS anon_select,
+                        has_table_privilege('authenticated', 'public.' || c.relname, 'SELECT')
+                            AS authenticated_select,
+                        has_table_privilege('service_role', 'public.' || c.relname, 'SELECT')
+                            AS service_role_select
+                    FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    LEFT JOIN pg_trigger t ON t.tgrelid = c.oid AND NOT t.tgisinternal
+                    WHERE n.nspname = 'public' AND c.relname = :table
+                    GROUP BY c.oid, c.relrowsecurity
+                    """
+                ),
+                {"table": table},
+            ).one()
+            assert resultat.rls_active is True, table
+            assert resultat.anon_select is False, table
+            assert resultat.authenticated_select is False, table
+            assert resultat.service_role_select is True, table
+
+        contribution_triggers = connection.execute(
+            text(
+                """
+                SELECT COUNT(*)
+                FROM pg_trigger t
+                JOIN pg_class c ON c.oid = t.tgrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public'
+                  AND c.relname = 'contributionlecon'
+                  AND t.tgname IN (
+                      'trg_contributionlecon_immutable',
+                      'trg_contributionlecon_no_truncate'
+                  )
+                  AND t.tgenabled <> 'D'
+                """
+            )
+        ).scalar_one()
+        version_triggers = connection.execute(
+            text(
+                """
+                SELECT COUNT(*)
+                FROM pg_trigger t
+                JOIN pg_class c ON c.oid = t.tgrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public'
+                  AND c.relname = 'versioncoursharmoniselecon'
+                  AND t.tgname IN (
+                      'trg_versioncours_no_update',
+                      'trg_versioncours_no_delete',
+                      'trg_versioncours_no_truncate'
+                  )
+                  AND t.tgenabled <> 'D'
+                """
+            )
+        ).scalar_one()
+
+    assert contribution_triggers == 2
+    assert version_triggers == 3
