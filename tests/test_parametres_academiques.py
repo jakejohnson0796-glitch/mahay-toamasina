@@ -237,7 +237,7 @@ def test_coefficient_generique_est_utilise_si_aucun_coefficient_de_serie(db):
 
 
 def test_un_bulletin_scolaire_n_accepte_que_les_periodes_configurees(db):
-    cours, _eleve, _configuration = _construire_cas_scolaire(db)
+    cours, _eleve, configuration = _construire_cas_scolaire(db)
 
     configuration.est_actif = False
     db.add(configuration)
@@ -323,9 +323,9 @@ def test_moyenne_generale_separe_les_annees_scolaires():
 
 
 def test_periodes_admin_accepte_codes_uniques_et_refuse_les_doublons():
-    assert _periodes_configuration("T1|Trimestre 1\\nT2|Trimestre 2") == [
+    assert _periodes_configuration("T1|Trimestre 1\nT2|Trimestre 2") == [
         {"code": "T1", "libelle": "Trimestre 1"},
         {"code": "T2", "libelle": "Trimestre 2"},
     ]
-    assert _periodes_configuration("T1|Trimestre 1\\nT1|Deuxième période") is None
+    assert _periodes_configuration("T1|Trimestre 1\nT1|Deuxième période") is None
     assert _periodes_configuration("T1|x") is None
