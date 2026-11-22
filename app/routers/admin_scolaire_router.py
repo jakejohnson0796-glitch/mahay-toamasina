@@ -1616,7 +1616,7 @@ def historique_parametres_academiques(
     evenements = evenements[:limite]
 
     ids_etablissements = {item.etablissement_id for item in evenements}
-    ids_acteurs = {item.acteur_id for item in evenements}
+    ids_acteurs = {item.acteur_id for item in evenements if item.acteur_id is not None}
     etablissements_page = (
         session.exec(
             select(EtablissementScolaire).where(
