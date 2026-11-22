@@ -3204,7 +3204,23 @@
     "Explorer les ressources": "Hijery ireo loharano",
     "Un échange utile": "Fifanakalozana mahasoa",
     "Pose une question au Tuteur IA ou envoie un message dans un cercle.": "Mametraha fanontaniana amin'ny Tuteur IA na mandefasa hafatra ao amin'ny vondrona.",
-    "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Vita ny fanaontsika androany. Arahabaina noho ny faharetanao!"
+    "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Vita ny fanaontsika androany. Arahabaina noho ny faharetanao!",
+    "Découvrir MITARIDALA": "Hahafantatra an'i MITARIDALA",
+    "Je veux connaître les règles": "Te hahafantatra ny fitsipika aho",
+    "Confidentialité de ton avis": "Tsiambaratelon'ny hevitrao",
+    "Publication de mon avis": "Famoahana ny hevitro",
+    "Privé — ne pas afficher publiquement": "Tsiambaratelo — aza aseho ampahibemaso",
+    "Public — afficher après modération": "Ampahibemaso — aseho rehefa voamarina",
+    "Avis et retours d'expérience": "Hevitra sy traikefa",
+    "Aide, avis et règles de la communauté": "Fanampiana, hevitra ary fitsipiky ny vondrom-piarahamonina",
+    "Consulter la FAQ": "Hijery ny FAQ",
+    "Envoyer un avis": "Handefa hevitra",
+    "Signaler un problème": "Hitatitra olana",
+    "Protection des élèves et des utilisateurs mineurs": "Fiarovana ny mpianatra sy ny mpampiasa tsy ampy taona",
+    "Transparence sur le projet et les ressources": "Mangarahara momba ny tetikasa sy ny loharano",
+    "Référencement ne signifie pas approbation": "Tsy midika ho fankatoavana ny fisoratana ao amin'ny lisitra",
+    "Les informations peuvent évoluer": "Mety hiova ny vaovao",
+    "IA encadrée": "IA ampiasaina amim-pitandremana"
 
   });
 
@@ -5339,7 +5355,23 @@
     "Explorer les ressources": "Explore resources",
     "Un échange utile": "A meaningful interaction",
     "Pose une question au Tuteur IA ou envoie un message dans un cercle.": "Ask the AI Tutor a question or send a message in a study circle.",
-    "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Daily routine complete. Great work staying consistent!"
+    "Routine terminée aujourd’hui. Bravo pour ta régularité !": "Daily routine complete. Great work staying consistent!",
+    "Découvrir MITARIDALA": "Discover MITARIDALA",
+    "Je veux connaître les règles": "I want to understand the rules",
+    "Confidentialité de ton avis": "Privacy of your feedback",
+    "Publication de mon avis": "Publish my feedback",
+    "Privé — ne pas afficher publiquement": "Private — do not display publicly",
+    "Public — afficher après modération": "Public — display after moderation",
+    "Avis et retours d'expérience": "Reviews and feedback",
+    "Aide, avis et règles de la communauté": "Help, feedback and community rules",
+    "Consulter la FAQ": "Browse the FAQ",
+    "Envoyer un avis": "Send feedback",
+    "Signaler un problème": "Report a problem",
+    "Protection des élèves et des utilisateurs mineurs": "Protection of students and minors",
+    "Transparence sur le projet et les ressources": "Transparency about the project and its resources",
+    "Référencement ne signifie pas approbation": "Listing does not imply endorsement",
+    "Les informations peuvent évoluer": "Information may change",
+    "IA encadrée": "Responsible AI use"
 
   });
 
