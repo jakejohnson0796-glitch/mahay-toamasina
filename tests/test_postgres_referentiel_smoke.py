@@ -974,12 +974,12 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "y8f4c2a6d1b9", (
-        "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
+    assert revision == "z3a9c7d1e5f2", (
+        "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic, incluant le module national."
     )
 
     # Reconstitue exactement la base Render actuelle depuis l'ancêtre commun :
-    # d'abord le schéma commun m1, puis uniquement l'ancienne tête c3e8.
+    # d'abord le schéma commun m1, puis uniquement l'ancienne tête Render puis migrations récentes.
     retour_ancetre = subprocess.run(
         [*alembic, "downgrade", "m1e7b3c5d9a2"],
         env=env,
@@ -1027,7 +1027,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision_apres_render = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision_apres_render == "y8f4c2a6d1b9"
+    assert revision_apres_render == "z3a9c7d1e5f2"
 
     # Retourne ensuite à un parent commun afin de tester la réapplication
     # concurrente des migrations sur deux connexions indépendantes.
@@ -1086,7 +1086,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "y8f4c2a6d1b9"
+    assert revision == "z3a9c7d1e5f2"
     assert index_count == 48
     assert institution_index_count == 1
 
