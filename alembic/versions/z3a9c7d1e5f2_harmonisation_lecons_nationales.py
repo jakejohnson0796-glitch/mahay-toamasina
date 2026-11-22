@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.Column("date_validation", sa.DateTime(), nullable=True),
         sa.Column("motif_validation", sa.String(length=2000), nullable=False, server_default=""),
         sa.Column("statut_publication", sa.String(length=20), nullable=False, server_default="non_publie"),
-        sa.Column("contenu_publie", sa.String(), nullable=False, server_default=""),
+        sa.Column("contenu_publie", sa.String(length=100000), nullable=False, server_default=""),
         sa.Column("version_publiee", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("date_publication", sa.DateTime(), nullable=True),
         sa.Column("publie_par_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=True),
