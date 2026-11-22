@@ -275,7 +275,7 @@ async def importer_programme_officiel(
     try:
         try:
             texte = await asyncio.to_thread(_extraire_depuis_stockage, chemin)
-        except (ExtractionSaturee, Exception):
+        except Exception:
             texte = ""
         texte = (texte or "")[:300_000]
         nombre_caracteres = len(texte.strip())
@@ -539,7 +539,32 @@ def valider_element_programme(
         if not association:
             return _redirect("association_non_verifiee", programme_id)
         parent = session.get(ElementProgrammeOfficiel, element.parent_id) if element.parent_id else None
-        chapitre = parent.titre if parent and parent.type_element == "chapitre" else ""
+        if element.parent_id and (
+            not parent
+            or parent.programme_id != programme.id
+            or parent.statut_validation != "verifie"
+        ):
+            return _redirect("parent_non_verifie", programme_id)
+
+        # Retrouve le chapitre supérieur même si le document comporte des
+        # rubriques intermédiaires ; la chaîne reste bornée et liée au même EP/FRP.
+        chapitre = ""
+        ancetre = parent
+        profondeur = 0
+        while ancetre and profondeur < 20:
+            if ancetre.programme_id != programme.id or ancetre.statut_validation != "verifie":
+                return _redirect("hierarchie_non_verifiee", programme_id)
+            if ancetre.type_element == "chapitre":
+                chapitre = ancetre.titre
+                break
+            ancetre = (
+                session.get(ElementProgrammeOfficiel, ancetre.parent_id)
+                if ancetre.parent_id else None
+            )
+            profondeur += 1
+        if ancetre and profondeur >= 20:
+            return _redirect("hierarchie_trop_profonde", programme_id)
+
         code_lecon = f"PO{programme.id}-E{element.id}"
         lecon = LeconReferentielle(
             programme_matiere_id=programme.programme_matiere_id,

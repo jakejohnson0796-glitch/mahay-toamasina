@@ -172,11 +172,15 @@ def upgrade() -> None:
                     RAISE EXCEPTION 'Les éléments du programme sont conservés dans l’historique';
                 END IF;
                 IF OLD.statut_validation = 'verifie' AND ROW(
-                    NEW.programme_id, NEW.parent_id, NEW.code, NEW.type_element,
-                    NEW.titre, NEW.contenu, NEW.ordre, NEW.page_debut
+                    NEW.programme_id, NEW.parent_id, NEW.lecon_referentielle_id,
+                    NEW.code, NEW.type_element, NEW.titre, NEW.contenu, NEW.ordre,
+                    NEW.page_debut, NEW.motif_validation, NEW.valide_par_id,
+                    NEW.date_validation
                 ) IS DISTINCT FROM ROW(
-                    OLD.programme_id, OLD.parent_id, OLD.code, OLD.type_element,
-                    OLD.titre, OLD.contenu, OLD.ordre, OLD.page_debut
+                    OLD.programme_id, OLD.parent_id, OLD.lecon_referentielle_id,
+                    OLD.code, OLD.type_element, OLD.titre, OLD.contenu, OLD.ordre,
+                    OLD.page_debut, OLD.motif_validation, OLD.valide_par_id,
+                    OLD.date_validation
                 ) THEN
                     RAISE EXCEPTION 'Un élément vérifié est immuable ; créer une nouvelle version du programme';
                 END IF;
@@ -219,8 +223,9 @@ def upgrade() -> None:
         bind.exec_driver_sql(
             """
             CREATE TRIGGER trg_elementprogramme_immutable
-            BEFORE UPDATE OF programme_id, parent_id, code, type_element,
-                titre, contenu, ordre, page_debut
+            BEFORE UPDATE OF programme_id, parent_id, lecon_referentielle_id,
+                code, type_element, titre, contenu, ordre, page_debut,
+                motif_validation, valide_par_id, date_validation
             ON elementprogrammeofficiel
             WHEN OLD.statut_validation = 'verifie'
             BEGIN
