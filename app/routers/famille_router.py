@@ -222,7 +222,10 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         moyennes_bulletins_par_eleve[eleve_id] = [
             {
                 "periode": stats["periode"],
-                "annee_scolaire": stats["annee_scolaire"],
+                **(
+                    {"annee_scolaire": stats["annee_scolaire"]}
+                    if stats["annee_scolaire"] else {}
+                ),
                 "moyenne": calculer_moyenne_generale(
                     stats["snapshots"], stats["periode"], stats["annee_scolaire"]
                 ),
