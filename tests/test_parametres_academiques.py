@@ -202,6 +202,35 @@ def test_cours_conserve_les_parametres_de_son_annee_apres_activation_de_la_suiva
     assert snapshot["coefficient_matiere"] == 2.5
 
 
+def test_cours_historique_sans_annee_ne_recupere_pas_les_regles_actives(db):
+    cours, eleve, ancienne_configuration = _construire_cas_scolaire(db)
+    cours.annee_scolaire = None
+    ancienne_configuration.est_actif = False
+    nouvelle_configuration = ParametresAcademiquesEtablissement(
+        etablissement_id=ancienne_configuration.etablissement_id,
+        annee_scolaire="2027-2028",
+        calendrier="semestre",
+        periodes_json='[{"code":"S1","libelle":"Semestre 1"},{"code":"S2","libelle":"Semestre 2"}]',
+        note_maximale=200,
+        seuil_reussite=100,
+        est_actif=True,
+    )
+    db.add_all([cours, ancienne_configuration, nouvelle_configuration])
+    db.commit()
+
+    snapshot = construire_snapshot_bulletin(db, cours, eleve, "T1", None)
+
+    assert snapshot["annee_scolaire"] is None
+    assert snapshot["moyenne"] == 15.0
+    assert snapshot["moyenne_sur"] == 20.0
+    assert snapshot["seuil_reussite"] == 10.0
+    assert snapshot["coefficient_matiere"] == 1.0
+    # Le T1 du cours historique reste accepté, même si la nouvelle année
+    # utilise désormais un calendrier semestriel.
+    assert _periode_canonique(db, cours.id, "T1") == "T1"
+    assert _periode_canonique(db, cours.id, "S1") is None
+
+
 def test_bulletin_applique_le_bareme_et_le_coefficient_de_la_serie(db):
     cours, eleve, configuration = _construire_cas_scolaire(db)
     snapshot = construire_snapshot_bulletin(
