@@ -1602,7 +1602,8 @@ def test_postgres_journal_parametres_academiques_rls_et_append_only():
                     COUNT(t.oid) FILTER (
                         WHERE t.tgname IN (
                             'trg_parametresacademiquesevenement_no_update',
-                            'trg_parametresacademiquesevenement_no_delete'
+                            'trg_parametresacademiquesevenement_no_delete',
+                            'trg_parametresacademiquesevenement_no_truncate'
                         )
                         AND t.tgenabled <> 'D'
                     ) AS triggers_actifs
@@ -1617,4 +1618,4 @@ def test_postgres_journal_parametres_academiques_rls_et_append_only():
         ).one()
 
     assert resultat.rls_active is True
-    assert resultat.triggers_actifs == 2
+    assert resultat.triggers_actifs == 3
