@@ -1,0 +1,3 @@
+# Moteur neuronal OCR utilisé sur les PDF scannés et les images.
+# PaddlePaddle CPU est installé séparément par le Dockerfile avec l'index officiel.
+paddleocr==3.3.2
