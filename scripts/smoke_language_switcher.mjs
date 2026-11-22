@@ -167,6 +167,13 @@ if (namedGreeting.textContent !== 'Hello, Rakoto.') {
   throw new Error('Switching back to English did not restore the personalised greeting');
 }
 
+select.value = 'mg';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.documentElement.getAttribute('lang') !== 'mg') {
+  throw new Error('Switching back to Malagasy did not update the document language');
+}
+
 if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord \\frac{1}{2}') {
   throw new Error('AI output must remain untouched by interface translation');
 }
