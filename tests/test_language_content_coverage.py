@@ -14,6 +14,7 @@ def _dictionary(source: str, start_marker: str, end_marker: str) -> dict[str, st
     start = source.index(start_marker) + len(start_marker)
     end = source.index(end_marker, start)
     section = source[start:end]
+    assert section.rstrip().endswith("});"), "translation entries must remain inside Object.freeze"
     pairs = re.findall(
         r'^\s*("(?:\\.|[^"\\])*")\s*:\s*("(?:\\.|[^"\\])*")\s*,?\s*$',
         section,
