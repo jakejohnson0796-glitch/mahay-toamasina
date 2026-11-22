@@ -18,7 +18,7 @@
       <h2>{{ item.lecon.titre }}</h2>
       <p>{{ item.lecon.chapitre }}{% if item.lecon.chapitre %} · {% endif %}{{ item.scope.niveau.libelle if item.scope else "Niveau inconnu" }}{% if item.scope and item.scope.option %} · {{ item.scope.option.libelle }}{% endif %} · {{ item.scope.matiere.libelle if item.scope else "Matière inconnue" }}</p>
       {% if item.lecon.objectifs_pedagogiques %}<p>{{ item.lecon.objectifs_pedagogiques }}</p>{% endif %}
-      <small>Source de référence : <a href="{{ item.lecon.source_officielle }}" target="_blank" rel="noopener noreferrer">consulter la source</a> · {{ item.lecon.reference_source }}</small>
+      <small>Source de référence : {% if item.lecon.source_officielle.startswith("https://") %}<a href="{{ item.lecon.source_officielle }}" target="_blank" rel="noopener noreferrer">consulter la source ministérielle</a>{% elif item.lecon.source_officielle.startswith("/") %}<a href="{{ item.lecon.source_officielle }}">consulter le document importé (accès enseignant vérifié)</a>{% else %}document de référence vérifié{% endif %} · {{ item.lecon.reference_source }}</small>
     </div>
     <a class="bouton bouton-primaire" href="/enseignant/harmonisation/lecons/{{ item.lecon.id }}">Voir la leçon et contribuer</a>
   </article>

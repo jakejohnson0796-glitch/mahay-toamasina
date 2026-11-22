@@ -166,6 +166,13 @@ def proposer_structure_programme(texte: str) -> list[dict[str, object]]:
     return items[:MAX_ELEMENTS_PROPOSES]
 
 
+def lien_source_programme(source_url: str | None, programme_id: int) -> str:
+    """Expose une URL ministérielle vérifiée ou un accès applicatif privé."""
+    if est_source_officielle(source_url):
+        return source_url.strip()
+    return f"/enseignant/harmonisation/programmes-officiels/{programme_id}/fichier"
+
+
 def normaliser_code_element(titre: str, suffixe: int) -> str:
     """Crée un code court et ASCII, non dépendant des accents."""
     brut = unicodedata.normalize("NFKD", titre or "")

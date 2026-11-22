@@ -1,5 +1,6 @@
 from app.programmes_officiels import (
     est_source_officielle,
+    lien_source_programme,
     normaliser_code_element,
     proposer_structure_programme,
     extraction_validable_apres_controle_manuel,
@@ -82,3 +83,13 @@ def test_empreinte_sha256_est_unique_en_base():
         if isinstance(contrainte, UniqueConstraint)
     }
     assert "uq_programmeofficiel_empreinte_sha256" in contraintes
+
+
+
+def test_source_manuellement_verifiee_pointe_vers_le_document_prive():
+    assert lien_source_programme("", 27) == (
+        "/enseignant/harmonisation/programmes-officiels/27/fichier"
+    )
+    assert lien_source_programme(
+        "https://education.gov.mg/programmes/ep.pdf", 27
+    ) == "https://education.gov.mg/programmes/ep.pdf"

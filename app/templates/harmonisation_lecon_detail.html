@@ -24,7 +24,7 @@
       <p class="stat-label">{{ lecon.code }} · {{ scope.niveau.libelle if scope else "Niveau inconnu" }}{% if scope and scope.option %} · {{ scope.option.libelle }}{% endif %} · {{ scope.matiere.libelle if scope else "Matière inconnue" }}</p>
       <p>{{ lecon.chapitre }}{% if lecon.chapitre %} · {% endif %}Référentiel : {{ scope.referentiel.libelle if scope else "indisponible" }} ({{ scope.referentiel.statut if scope else "inconnu" }})</p>
       {% if lecon.objectifs_pedagogiques %}<p>{{ lecon.objectifs_pedagogiques }}</p>{% endif %}
-      <p><strong>Source officielle déclarée :</strong> <a href="{{ lecon.source_officielle }}" target="_blank" rel="noopener noreferrer">ouvrir la référence</a> · {{ lecon.reference_source }}</p>
+      <p><strong>Source de référence :</strong> {% if lecon.source_officielle.startswith("https://") %}<a href="{{ lecon.source_officielle }}" target="_blank" rel="noopener noreferrer">ouvrir la source ministérielle</a>{% elif lecon.source_officielle.startswith("/") %}<a href="{{ lecon.source_officielle }}">ouvrir le document importé (accès vérifié)</a>{% else %}document de référence vérifié{% endif %} · {{ lecon.reference_source }}</p>
     </div>
     <span class="hn-etat">{{ lecon.statut_validation.replace("_", " ") }} · v{{ lecon.version_publiee }}</span>
   </header>

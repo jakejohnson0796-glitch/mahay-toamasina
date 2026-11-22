@@ -44,6 +44,7 @@ from ..programmes_officiels import (
     normaliser_code_element,
     proposer_structure_programme,
     extraction_validable_apres_controle_manuel,
+    lien_source_programme,
 )
 from ..rate_limit import limite_depassee
 from ..templating import templates
@@ -485,6 +486,65 @@ def detail_programme_officiel(
     )
 
 
+@router.get("/enseignant/harmonisation/programmes-officiels/{programme_id}/fichier")
+def telecharger_source_programme_verifie(
+    request: Request,
+    programme_id: int,
+    session: Session = Depends(get_session),
+):
+    """Fournit l’original privé uniquement aux administrateurs ou professeurs vérifiés.
+
+    L’accès n’est ouvert que si le document est validé et qu’il contient au
+    moins une leçon elle-même vérifiée et reliée au référentiel des enseignants.
+    """
+    utilisateur = utilisateur_courant(request, session)
+    if not (administrateur_autorise(utilisateur) or professeur_verifie(utilisateur)):
+        return RedirectResponse("/", status_code=303)
+    programme = session.get(ProgrammeOfficielScolaire, programme_id)
+    if (
+        not programme
+        or programme.statut_validation != "verifie"
+        or not _association_valide(session, programme.programme_matiere_id)
+    ):
+        return RedirectResponse("/enseignant/harmonisation", status_code=303)
+    lecon_validee = session.exec(
+        select(LeconReferentielle)
+        .join(
+            ElementProgrammeOfficiel,
+            ElementProgrammeOfficiel.lecon_referentielle_id == LeconReferentielle.id,
+        )
+        .where(
+            ElementProgrammeOfficiel.programme_id == programme.id,
+            ElementProgrammeOfficiel.statut_validation == "verifie",
+            LeconReferentielle.programme_matiere_id == programme.programme_matiere_id,
+            LeconReferentielle.statut_validation == StatutLeconReferentielle.VERIFIEE.value,
+        )
+        .limit(1)
+    ).first()
+    if not lecon_validee:
+        return RedirectResponse("/enseignant/harmonisation", status_code=303)
+    limite = 50 if administrateur_autorise(utilisateur) else 20
+    if limite_depassee(f"programme-source:user:{utilisateur.id}", limite, 3600):
+        return RedirectResponse("/enseignant/harmonisation?erreur=limite_sources", status_code=303)
+    url = url_telechargement_programme(programme.chemin_fichier)
+    headers = {
+        "Cache-Control": "private, no-store",
+        "Pragma": "no-cache",
+        "X-Content-Type-Options": "nosniff",
+    }
+    if url:
+        return RedirectResponse(url, status_code=302, headers=headers)
+    chemin = Path(programme.chemin_fichier)
+    if not chemin.is_file():
+        return RedirectResponse("/enseignant/harmonisation?erreur=fichier_indisponible", status_code=303)
+    return FileResponse(
+        str(chemin),
+        filename=programme.nom_fichier_original,
+        media_type=programme.type_mime,
+        headers=headers,
+    )
+
+
 @router.get("/admin/programmes-officiels/{programme_id}/fichier")
 def telecharger_programme_officiel(
     request: Request,
@@ -690,9 +750,8 @@ def valider_element_programme(
             chapitre=chapitre[:200],
             titre=element.titre[:240],
             objectifs_pedagogiques="",
-            source_officielle=(
-                programme.source_url
-                or f"Document officiel : {programme.reference_source}"
+            source_officielle=lien_source_programme(
+                programme.source_url, programme.id
             )[:1200],
             reference_source=(
                 f"{programme.type_document} · {programme.organisme_emetteur} · "
