@@ -5528,9 +5528,8 @@
     "Transparence sur le projet et les ressources": "Transparency about the project and its resources",
     "Référencement ne signifie pas approbation": "Listing does not imply endorsement",
     "Les informations peuvent évoluer": "Information may change",
-    "IA encadrée": "Responsible AI use"
-,
-"MITARIDALA · Espace professionnel": "MITARIDALA · Professional workspace",
+    "IA encadrée": "Responsible AI use",
+    "MITARIDALA · Espace professionnel": "MITARIDALA · Professional workspace",
     "Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.": "Prepare lessons, support your learners, and organise sessions in a workspace designed for teaching.",
     "Compte enseignant vérifié": "Verified teacher account",
     "Vérification du compte": "Account verification",
