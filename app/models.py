@@ -220,6 +220,31 @@ class CoefficientMatiereEtablissement(SQLModel, table=True):
     )
 
 
+class ParametresAcademiquesEvenement(SQLModel, table=True):
+    """Journal append-only des changements de paramètres pédagogiques."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    etablissement_id: int = Field(foreign_key="etablissementscolaire.id", index=True)
+    annee_scolaire: str = Field(max_length=9, index=True)
+    acteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    action: str = Field(max_length=24, index=True)
+    entite_type: str = Field(max_length=32)
+    entite_id: Optional[int] = Field(default=None)
+    details_json: str = Field(default="{}")
+    date_evenement: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('creation', 'modification', 'activation', 'desactivation', 'suppression')",
+            name="ck_parametresacademiquesevenement_action",
+        ),
+        Index(
+            "ix_parametresacademiquesevenement_etab_annee_date",
+            "etablissement_id", "annee_scolaire", "date_evenement",
+        ),
+    )
+
+
 class ParcoursTechniqueProfessionnel(SQLModel, table=True):
     """Intitulé national normalisé d'une filière ou d'un métier ETFP.
 
