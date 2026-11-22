@@ -10,6 +10,8 @@ down_revision: Union[str, Sequence[str], None] = "y8f4c2a6d1b9"
 branch_labels = None
 depends_on = None
 
+FK_TACHE_ANALYSE_COMPARATIVE_LECON = "fk_tacheia_analyse_comparative_lecon"
+
 
 def upgrade() -> None:
     op.create_table(
@@ -106,16 +108,31 @@ def upgrade() -> None:
     op.create_index("ix_versioncoursharmonise_lecon_publication", "versioncoursharmoniselecon", ["lecon_id", "date_publication"])
 
     # L'analyse comparative est une tâche durable ; Redis reste un accélérateur.
-    # SQLite cannot ALTER TABLE ADD CONSTRAINT. Batch mode recreates
-    # the table there while using a regular ALTER TABLE on PostgreSQL.
-    with op.batch_alter_table("tacheia") as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "analyse_comparative_lecon_id",
-                sa.Integer(),
-                sa.ForeignKey("analysecomparativelecon.id"),
-                nullable=True,
+    # SQLite cannot ALTER TABLE ADD CONSTRAINT. Add the plain column and
+    # the explicitly named FK separately, following the established tacheia
+    # migration pattern. Batch mode preserves the existing SQLite schema.
+    if bind.dialect.name == "sqlite":
+        with op.batch_alter_table("tacheia", recreate="always") as batch_op:
+            batch_op.add_column(
+                sa.Column("analyse_comparative_lecon_id", sa.Integer(), nullable=True)
             )
+            batch_op.create_foreign_key(
+                FK_TACHE_ANALYSE_COMPARATIVE_LECON,
+                "analysecomparativelecon",
+                ["analyse_comparative_lecon_id"],
+                ["id"],
+            )
+    else:
+        op.add_column(
+            "tacheia",
+            sa.Column("analyse_comparative_lecon_id", sa.Integer(), nullable=True),
+        )
+        op.create_foreign_key(
+            FK_TACHE_ANALYSE_COMPARATIVE_LECON,
+            "tacheia",
+            "analysecomparativelecon",
+            ["analyse_comparative_lecon_id"],
+            ["id"],
         )
     op.create_index("ix_tacheia_analyse_comparative_lecon_id", "tacheia", ["analyse_comparative_lecon_id"])
     op.create_index(
@@ -284,8 +301,20 @@ def downgrade() -> None:
 
     op.drop_index("uq_tache_ia_type_analyse_comparative_lecon", table_name="tacheia")
     op.drop_index("ix_tacheia_analyse_comparative_lecon_id", table_name="tacheia")
-    with op.batch_alter_table("tacheia") as batch_op:
-        batch_op.drop_column("analyse_comparative_lecon_id")
+    if bind.dialect.name == "sqlite":
+        with op.batch_alter_table("tacheia", recreate="always") as batch_op:
+            batch_op.drop_constraint(
+                FK_TACHE_ANALYSE_COMPARATIVE_LECON,
+                type_="foreignkey",
+            )
+            batch_op.drop_column("analyse_comparative_lecon_id")
+    else:
+        op.drop_constraint(
+            FK_TACHE_ANALYSE_COMPARATIVE_LECON,
+            "tacheia",
+            type_="foreignkey",
+        )
+        op.drop_column("tacheia", "analyse_comparative_lecon_id")
 
     for name in (
         "ix_versioncoursharmonise_lecon_publication",
