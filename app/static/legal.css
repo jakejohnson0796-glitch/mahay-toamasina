@@ -222,3 +222,12 @@
 @media(prefers-reduced-motion:reduce){
   .cadre-legal *{scroll-behavior:auto!important;transition:none!important}
 }
+
+.cadre-legal-resume{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin:1rem 0}
+.cadre-legal-resume article{display:grid;align-content:start;gap:.3rem;padding:.9rem;border:1px solid var(--content-border);border-radius:15px;background:var(--content-surface)}
+.cadre-legal-resume strong{font-size:.86rem;color:var(--content-text)}
+.cadre-legal-resume span{font-size:.75rem;line-height:1.55;color:var(--content-text-muted)}
+.cadre-legal-section[id="mineurs"]{border-color:color-mix(in srgb,var(--content-link) 30%,var(--content-border))}
+.cadre-legal-section[id="mineurs"] .cadre-legal-section-entete{align-items:center}
+@media(max-width:700px){.cadre-legal-resume{grid-template-columns:1fr}}
+

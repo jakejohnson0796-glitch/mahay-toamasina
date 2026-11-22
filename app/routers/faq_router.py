@@ -17,7 +17,7 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
-from ..models import FAQ, CategorieFAQ, CategorieFeedback, Utilisateur, RoleUtilisateur
+from ..models import FAQ, Feedback, CategorieFAQ, CategorieFeedback, Utilisateur, RoleUtilisateur
 from ..aide_avis_data import donnees_faq, donnees_avis
 
 router = APIRouter()
@@ -54,6 +54,12 @@ def page_faq(
     avis_affiches, note_moyenne, total_avis = donnees_avis(session, None)
     utilisateur = utilisateur_courant(request, session)
     mon_feedback_recent = None
+    if utilisateur:
+        mon_feedback_recent = session.exec(
+            select(Feedback)
+            .where(Feedback.utilisateur_id == utilisateur.id)
+            .order_by(Feedback.date_creation.desc())
+        ).first()
 
     return templates.TemplateResponse(
         request,

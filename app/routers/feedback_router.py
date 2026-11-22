@@ -108,7 +108,7 @@ def envoyer_feedback(
     note: int = Form(...),
     commentaire: str = Form(...),
     categorie: CategorieFeedback = Form(CategorieFeedback.GENERAL),
-    est_public: Optional[str] = Form(None),  # case a cocher HTML : present ou absent
+    est_public: Optional[str] = Form(None),  # valeur "1" uniquement si l'utilisateur demande la publication
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
@@ -150,7 +150,7 @@ def envoyer_feedback(
         note=note,
         commentaire=commentaire,
         categorie=categorie,
-        est_public=bool(est_public),
+        est_public=(est_public == "1"),
     )
     session.add(feedback)
     session.commit()

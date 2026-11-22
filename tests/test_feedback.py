@@ -135,6 +135,38 @@ class TestFeedback(unittest.TestCase):
             self.assertTrue(feedback.est_public)
             self.assertEqual(feedback.statut, StatutFeedback.NOUVEAU)
 
+    def test_choix_prive_est_enregistre_comme_prive(self):
+        jeton = _jeton_csrf(self.marie, "/feedback")
+        reponse = self.marie.post(
+            "/feedback",
+            data={"note": 4, "commentaire": "Retour strictement prive", "categorie": "general",
+                  "est_public": "0", "_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertIn(reponse.status_code, (302, 303))
+        with Session(engine) as session:
+            feedback = session.exec(
+                select(Feedback).where(Feedback.commentaire == "Retour strictement prive")
+            ).first()
+            self.assertIsNotNone(feedback)
+            self.assertFalse(feedback.est_public)
+
+    def test_absence_du_champ_publication_reste_prive_par_defaut(self):
+        jeton = _jeton_csrf(self.jean, "/feedback")
+        reponse = self.jean.post(
+            "/feedback",
+            data={"note": 5, "commentaire": "Retour prive par defaut", "categorie": "general",
+                  "_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertIn(reponse.status_code, (302, 303))
+        with Session(engine) as session:
+            feedback = session.exec(
+                select(Feedback).where(Feedback.commentaire == "Retour prive par defaut")
+            ).first()
+            self.assertIsNotNone(feedback)
+            self.assertFalse(feedback.est_public)
+
     def test_anonyme_ne_peut_pas_envoyer_de_feedback(self):
         jeton = _jeton_csrf(self.anonyme, "/connexion")
         reponse = self.anonyme.post(
@@ -204,13 +236,40 @@ class TestFeedback(unittest.TestCase):
 
     # --- Affichage public ---
 
-    def test_avis_public_visible_sur_page_feedback(self):
+    def test_avis_public_visible_seulement_apres_traitement(self):
         with Session(engine) as session:
-            session.add(Feedback(utilisateur_id=self.marie.utilisateur_id, note=5,
-                                  commentaire="Avis visible", categorie=CategorieFeedback.GENERAL, est_public=True))
+            session.add(Feedback(
+                utilisateur_id=self.marie.utilisateur_id, note=5,
+                commentaire="Avis visible", categorie=CategorieFeedback.GENERAL,
+                est_public=True, statut=StatutFeedback.REPONDU,
+            ))
             session.commit()
         page = self.anonyme.get("/feedback")
         self.assertIn("Avis visible", page.text)
+
+    def test_avis_public_en_attente_de_moderation_reste_cache(self):
+        with Session(engine) as session:
+            session.add(Feedback(
+                utilisateur_id=self.marie.utilisateur_id, note=4,
+                commentaire="Avis en attente confidentiel", categorie=CategorieFeedback.GENERAL,
+                est_public=True, statut=StatutFeedback.NOUVEAU,
+            ))
+            session.commit()
+        page = self.anonyme.get("/feedback")
+        self.assertNotIn("Avis en attente confidentiel", page.text)
+
+    def test_avis_prive_reste_visible_a_son_auteur_depuis_la_faq(self):
+        with Session(engine) as session:
+            session.add(Feedback(
+                utilisateur_id=self.marie.utilisateur_id, note=3,
+                commentaire="Mon retour personnel confidentiel",
+                categorie=CategorieFeedback.GENERAL, est_public=False,
+            ))
+            session.commit()
+        page = self.marie.get("/faq")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Mon retour personnel confidentiel", page.text)
+        self.assertIn("En attente de réponse de l'équipe.", page.text)
 
     def test_avis_prive_absent_de_la_page_publique(self):
         with Session(engine) as session:

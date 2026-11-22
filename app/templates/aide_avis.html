@@ -38,14 +38,15 @@
       <span class="public-kicker">Centre d'aide · MITARIDALA</span>
       <h1 id="faq-title">Trouver une réponse sans parcourir tout le site.</h1>
       <p>
-        Recherche une question, filtre par sujet, consulte les réponses détaillées
-        et découvre les retours de la communauté. Pour un problème personnel,
-        le contact direct reste disponible.
+        Recherche une question, filtre par sujet et consulte les réponses détaillées.
+        Tu peux aussi partager un avis, signaler une difficulté ou contacter l'équipe.
+        Les retours publics sont facultatifs et soumis à modération.
       </p>
       <div class="public-actions">
         <a class="bouton bouton-primaire" href="#faq-recherche">Chercher une réponse</a>
         <a class="bouton bouton-secondaire" href="/mode-emploi">Voir le mode d'emploi</a>
         <a class="bouton bouton-secondaire" href="/contact">Contacter l'équipe</a>
+        <a class="bouton bouton-secondaire" href="/a-propos">Découvrir MITARIDALA</a>
       </div>
     </div>
 
@@ -78,7 +79,9 @@
       <a href="/mot-de-passe-oublie"><strong>Je n'arrive plus à me connecter</strong><span>Récupération du mot de passe et compte.</span><b>Ouvrir →</b></a>
       <a href="/mode-emploi#apprendre"><strong>Je ne sais pas utiliser l'IA</strong><span>Différence entre Quiz IA et Tuteur IA.</span><b>Apprendre →</b></a>
       <a href="/mode-emploi#documents"><strong>Je cherche une ressource</strong><span>Documents, filtres et dépôt.</span><b>Voir le guide →</b></a>
-      <a href="/contact"><strong>Je pense avoir trouvé un bug</strong><span>Donne le contexte avant de contacter l'équipe.</span><b>Contacter →</b></a>
+      <a href="/contact"><strong>Je pense avoir trouvé un bug</strong><span>Indique la page, les étapes et le message d'erreur, sans donnée secrète.</span><b>Contacter →</b></a>
+      <a href="/cadre-legal#ethique"><strong>Je veux connaître les règles</strong><span>Respect, sécurité, modération et bonnes pratiques.</span><b>Lire la charte →</b></a>
+      <a href="/a-propos"><strong>Je veux découvrir le projet</strong><span>Mission, fonctionnement et limites de la plateforme.</span><b>À propos →</b></a>
     </div>
   </section>
 
@@ -189,8 +192,8 @@
       <div class="faq-panel-head">
         <div>
           <p class="public-kicker">Retour de la communauté</p>
-          <h2 id="avis-title">Avis des étudiants</h2>
-          <p>Les avis visibles publiquement passent par la modération.</p>
+          <h2 id="avis-title">Avis et retours d'expérience</h2>
+          <p>Seuls les avis explicitement déclarés publics et autorisés après modération sont affichés. Un avis privé reste privé.</p>
         </div>
         <span class="faq-count">{{ total_avis }} avis</span>
       </div>
@@ -212,7 +215,7 @@
       {% endif %}
 
       {% if request.query_params.get("envoye") %}
-      <div class="info">Merci pour ton feedback. Ton avis sera traité selon les règles de modération.</div>
+      <div class="info" role="status" aria-live="polite">Merci pour ton retour. Il sera traité selon les règles de modération et son choix de visibilité.</div>
       {% endif %}
       {% if request.query_params.get("erreur") == "note_invalide" %}<div class="erreur">La note doit être comprise entre 1 et 5.</div>{% endif %}
       {% if request.query_params.get("erreur") == "commentaire_requis" %}<div class="erreur">Merci de laisser un commentaire.</div>{% endif %}
@@ -225,6 +228,11 @@
         <div class="faq-feedback-guidance">
           <strong>Pour un retour utile</strong>
           <span>Décris ce que tu faisais, ce que tu attendais et ce qui s'est réellement passé. Pour un bug, indique la page concernée et, si possible, les étapes pour reproduire le problème.</span>
+        </div>
+        <div class="faq-feedback-privacy" role="note">
+          <strong>Confidentialité de ton avis</strong>
+          <p>La publication est désactivée par défaut. Si tu choisis explicitement l'affichage public, ton prénom, ta note et ton commentaire pourront être visibles après modération. N'inscris jamais de mot de passe, code de sécurité, numéro de téléphone, adresse ou information privée dans ton commentaire.</p>
+          <a href="/cadre-legal#confidentialite">Lire la notice de confidentialité</a>
         </div>
         <form id="formulaire-feedback" method="post" action="/feedback">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
@@ -241,10 +249,10 @@
               </select>
             </div>
             <div>
-              <label for="est_public">Visibilité</label>
+              <label for="est_public">Publication de mon avis</label>
               <select id="est_public" name="est_public">
-                <option value="0">Ne pas afficher publiquement</option>
-                <option value="1">Afficher mon avis</option>
+                <option value="0">Privé — ne pas afficher publiquement</option>
+                <option value="1">Public — afficher après modération</option>
               </select>
             </div>
           </div>
@@ -303,7 +311,7 @@
           <p>{{ item.feedback.commentaire }}</p>
           {% if item.reponse %}
           <div class="faq-review-reply">
-            <span><strong>Réponse de l'équipe Mahay</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</span>
+            <span><strong>Réponse de l'équipe MITARIDALA</strong> · {{ item.reponse.date_creation.strftime("%d/%m/%Y") }}</span>
             <span>{{ item.reponse.reponse }}</span>
           </div>
           {% endif %}
@@ -327,6 +335,7 @@
     </div>
     <div class="faq-footer-actions">
       <a class="bouton bouton-secondaire" href="/mode-emploi">Mode d'emploi</a>
+      <a class="bouton bouton-secondaire" href="/cadre-legal">Conditions et charte</a>
       <a class="bouton bouton-primaire" href="/contact">Contacter l'équipe</a>
     </div>
   </section>
