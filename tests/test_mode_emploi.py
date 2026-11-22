@@ -22,9 +22,13 @@ def test_mode_emploi_contient_les_parcours_principaux():
         'id="classe"',
         'id="compte"',
         'id="depannage"',
+        'id="aide-regles"',
     ):
         assert identifiant in template
     assert 'class="mode-emploi-quickstart"' in template
+    assert '09 · Aide, avis et règles' in template
+    assert 'href="/cadre-legal#ethique"' in template
+    assert 'href="/faq#avis"' in template
     assert 'class="mode-emploi-ai-access' in template
     assert "14 jours" in template
     assert "60 jours" in template
