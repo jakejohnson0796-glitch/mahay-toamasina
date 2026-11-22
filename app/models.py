@@ -765,9 +765,6 @@ class Document(SQLModel, table=True):
     option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
     matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
-    # Année pédagogique figée à la création pour éviter qu'un ancien cours
-    # bascule sur les coefficients du nouvel exercice scolaire.
-    annee_scolaire: Optional[str] = Field(default=None, max_length=9, index=True)
     uploader_id: int = Field(foreign_key="utilisateur.id")
     chemin_fichier: str
     statut: StatutDocument = Field(default=StatutDocument.EN_ATTENTE, index=True)
@@ -1813,6 +1810,9 @@ class Cours(SQLModel, table=True):
     option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
     matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
+    # Année pédagogique figée à la création pour éviter qu'un ancien cours
+    # bascule sur les coefficients du nouvel exercice scolaire.
+    annee_scolaire: Optional[str] = Field(default=None, max_length=9, index=True)
     description: Optional[str] = None
     objectifs: Optional[str] = None
     code_invitation: Optional[str] = Field(default=None, unique=True, index=True, max_length=12)
