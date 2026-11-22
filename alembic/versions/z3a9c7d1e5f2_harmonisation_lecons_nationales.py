@@ -163,7 +163,9 @@ def upgrade() -> None:
             CREATE OR REPLACE FUNCTION public.proteger_contribution_lecon()
             RETURNS trigger LANGUAGE plpgsql AS $
             BEGIN
-                IF TG_OP = 'DELETE' THEN
+                IF TG_OP = 'TRUNCATE' THEN
+                    RAISE EXCEPTION 'Les contributions pédagogiques ne peuvent pas être purgées';
+                ELSIF TG_OP = 'DELETE' THEN
                     RAISE EXCEPTION 'Les contributions pédagogiques ne peuvent pas être supprimées';
                 END IF;
                 IF ROW(
@@ -190,7 +192,7 @@ def upgrade() -> None:
         bind.exec_driver_sql(
             "CREATE TRIGGER trg_contributionlecon_no_truncate BEFORE TRUNCATE "
             "ON public.contributionlecon FOR EACH STATEMENT "
-            "EXECUTE FUNCTION public.proteger_version_cours_harmonise()"
+            "EXECUTE FUNCTION public.proteger_contribution_lecon()"
         )
     elif bind.dialect.name == "sqlite":
         bind.exec_driver_sql(
