@@ -23,7 +23,7 @@
     <section class="tb-hero">
       <div class="tb-hero-texte">
         <p class="eyebrow">Bonjour, {{ utilisateur.nom.split(" ")[0] }} <span aria-hidden="true">👋</span></p>
-        <h1 class="tb-titre">{% if alertes_harmonisation is not none %}Espace enseignant · Harmonisation des cours{% else %}Pret a continuer ton apprentissage ?{% endif %}</h1>
+        <h1 class="tb-titre">{% if alertes_harmonisation is not none %}Espace enseignant · Harmonisation des cours{% else %}Prêt à continuer ton apprentissage ?{% endif %}</h1>
         <p class="tb-sous-titre">{% if alertes_harmonisation is not none %}Participe à l'amélioration collaborative des cours de référence.{% else %}Chaque session te rapproche de ton objectif.{% endif %}</p>
       </div>
     </section>
@@ -176,7 +176,7 @@
 
     {% if not acces_premium %}
     <div class="erreur">
-      Votre acces Premium n'est plus actif. <a href="/abonnement">Souscrivez ou renouvelez</a> pour retrouver le quiz IA et les cercles d'etude.
+      Votre accès Premium n'est plus actif. <a href="/abonnement">Souscrivez ou renouvelez</a> pour retrouver le Quiz IA et les cercles d’étude.
     </div>
     {% endif %}
 
@@ -202,7 +202,7 @@
           <div class="tb-reprendre-infos">
             <h2 class="tb-reprendre-titre">{{ dernier_document.document.titre }}</h2>
             <p class="tb-reprendre-meta">{{ dernier_document.document.matiere }} · {{ dernier_document.document.type_document.value }}</p>
-            <p class="tb-reprendre-delai"><span class="icone-inline">{{ icone("jours_restants", 14) }}</span> Derniere consultation : {{ dernier_document_delai }}</p>
+            <p class="tb-reprendre-delai"><span class="icone-inline">{{ icone("jours_restants", 14) }}</span> Dernière consultation : {{ dernier_document_delai }}</p>
           </div>
         </div>
         <a class="bouton bouton-primaire" href="/documents/{{ dernier_document.document.id }}/telecharger">Retelecharger →</a>
@@ -211,7 +211,7 @@
       <div class="tb-carte-reprendre tb-carte-reprendre-vide">
         <p class="tb-etiquette-carte">Commencer</p>
         <h2 class="tb-reprendre-titre">Commence ton premier apprentissage</h2>
-        <p class="tb-reprendre-meta">Explore les annales, fiches et cours disponibles pour ta filiere.</p>
+        <p class="tb-reprendre-meta">Explore les annales, fiches et cours disponibles pour ta filière.</p>
         <a class="bouton bouton-primaire" href="/documents">Explorer les documents →</a>
       </div>
       {% endif %}
@@ -314,7 +314,7 @@
         <span class="tb-stat-icone">{{ icone("quiz", 20) }}</span>
         <span class="tb-stat-corps">
           <span class="tb-stat-nombre">{{ nb_quiz_completes }}</span>
-          <span class="tb-stat-label">Quiz complete{{ "s" if nb_quiz_completes != 1 else "" }}</span>
+          <span class="tb-stat-label">Quiz complété{{ "s" if nb_quiz_completes != 1 else "" }}</span>
         </span>
       </div>
       <div class="tb-carte-stat tb-stat-bleu">
@@ -371,7 +371,7 @@
 
       <div class="tb-panneau">
         <div class="tb-panneau-entete">
-          <h2 class="tb-titre-section">Activite recente</h2>
+          <h2 class="tb-titre-section">Activité récente</h2>
         </div>
         {% if activite_recente %}
         <div class="tb-liste-activite">
@@ -396,7 +396,7 @@
 
       <div class="tb-panneau">
         <div class="tb-panneau-entete">
-          <h2 class="tb-titre-section">Mes cercles d'etude</h2>
+          <h2 class="tb-titre-section">Mes cercles d’étude</h2>
           <a href="/cercles" class="tb-voir-tout">Voir tout →</a>
         </div>
 
@@ -484,7 +484,7 @@
 
       <div class="tb-panneau">
         <div class="tb-panneau-entete">
-          <h2 class="tb-titre-section">Echeances a venir</h2>
+          <h2 class="tb-titre-section">Échéances à venir</h2>
         </div>
         {% if echeances_a_venir %}
         <div class="tb-liste-activite">
