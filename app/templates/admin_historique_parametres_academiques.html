@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block titre %}Historique des paramètres académiques — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair interface-referentiel-scolaire">
+  <p class="eyebrow referentiel-retour"><a href="/admin/parametres-academiques">← Paramètres académiques</a></p>
+  <header class="referentiel-scolaire-hero">
+    <div>
+      <span class="referentiel-scolaire-kicker">MITARIDALA · Administration · Traçabilité</span>
+      <h1>Historique des modifications pédagogiques</h1>
+      <p>Journal des créations, modifications, activations, désactivations et suppressions. Chaque événement indique l'administrateur, l'établissement, l'année scolaire et les valeurs avant/après.</p>
+    </div>
+  </header>
+
+  <section class="carte-formulaire" aria-labelledby="filtrer-historique">
+    <h2 id="filtrer-historique">Filtrer le journal</h2>
+    <form method="get" action="/admin/parametres-academiques/historique" class="carte-formulaire">
+      <div class="grille-formulaire">
+        <div>
+          <label for="historique-etablissement">Établissement</label>
+          <select id="historique-etablissement" name="etablissement_id">
+            <option value="">Tous les établissements</option>
+            {% for etablissement in etablissements %}
+            <option value="{{ etablissement.id }}" {% if filtre_etablissement_id == etablissement.id %}selected{% endif %}>{{ etablissement.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="historique-annee">Année scolaire</label>
+          <input id="historique-annee" name="annee_scolaire" value="{{ filtre_annee_scolaire }}" pattern="[0-9]{4}-[0-9]{4}" placeholder="2026-2027">
+        </div>
+        <div>
+          <label for="historique-action">Action</label>
+          <select id="historique-action" name="action">
+            <option value="">Toutes les actions</option>
+            {% for action in actions %}
+            <option value="{{ action }}" {% if filtre_action == action %}selected{% endif %}>
+              {% if action == "creation" %}Création
+              {% elif action == "modification" %}Modification
+              {% elif action == "activation" %}Activation
+              {% elif action == "desactivation" %}Désactivation
+              {% elif action == "suppression" %}Suppression
+              {% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grille-formulaire">
+        <button class="bouton" type="submit">Appliquer les filtres</button>
+        <a class="bouton bouton-secondaire" href="/admin/parametres-academiques/historique">Réinitialiser</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="carte-formulaire" aria-labelledby="evenements-audit">
+    <h2 id="evenements-audit">Événements enregistrés</h2>
+    <p class="stat-label">Les événements sont conservés en lecture seule. Affichage de 50 entrées maximum par page, de la plus récente à la plus ancienne.</p>
+    {% for ligne in lignes %}
+    <article class="carte-formulaire">
+      <div class="grille-formulaire">
+        <div>
+          <strong>
+            {% if ligne.evenement.action == "creation" %}Création
+            {% elif ligne.evenement.action == "modification" %}Modification
+            {% elif ligne.evenement.action == "activation" %}Activation
+            {% elif ligne.evenement.action == "desactivation" %}Désactivation
+            {% elif ligne.evenement.action == "suppression" %}Suppression
+            {% else %}Événement{% endif %}
+            · {{ ligne.cible }}
+          </strong>
+          <p>{{ ligne.etablissement_nom }} · Année {{ ligne.evenement.annee_scolaire }}</p>
+          {% if ligne.precision_cible %}<p>{{ ligne.precision_cible }}</p>{% endif %}
+        </div>
+        <div>
+          <p><strong>Administrateur :</strong> {{ ligne.acteur_nom }}</p>
+          <p><strong>Date (UTC) :</strong> {{ ligne.evenement.date_evenement.strftime("%d/%m/%Y %H:%M:%S") }}</p>
+          <p><strong>Référence :</strong> {{ ligne.evenement.entite_type }} #{{ ligne.evenement.entite_id or "—" }}</p>
+        </div>
+      </div>
+      {% if ligne.raison %}<p class="stat-label">Motif : {{ ligne.raison }}</p>{% endif %}
+      {% if ligne.changements %}
+      <div class="table-responsive">
+        <table>
+          <thead><tr><th>Paramètre</th><th>Avant</th><th>Après</th></tr></thead>
+          <tbody>
+            {% for changement in ligne.changements %}
+            <tr>
+              <th scope="row">{{ changement.champ }}</th>
+              <td>{{ changement.avant }}</td>
+              <td>{{ changement.apres }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="stat-label">Aucune valeur détaillée n'est associée à cet événement.</p>
+      {% endif %}
+    </article>
+    {% else %}
+    <p>Aucun événement ne correspond aux filtres. Les changements seront affichés ici après leur enregistrement.</p>
+    {% endfor %}
+    <nav aria-label="Pagination de l'historique" class="grille-formulaire">
+      {% if url_precedente %}<a class="bouton bouton-secondaire" href="{{ url_precedente }}">← Page précédente</a>{% endif %}
+      <span class="stat-label">Page {{ page }}</span>
+      {% if url_suivante %}<a class="bouton" href="{{ url_suivante }}">Page suivante →</a>{% endif %}
+    </nav>
+  </section>
+</div>
+{% endblock %}

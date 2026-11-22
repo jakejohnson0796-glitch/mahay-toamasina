@@ -974,7 +974,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "v5c8e2a1d9f3", (
+    assert revision == "y8f4c2a6d1b9", (
         "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic."
     )
 
@@ -1027,7 +1027,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision_apres_render = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision_apres_render == "v5c8e2a1d9f3"
+    assert revision_apres_render == "y8f4c2a6d1b9"
 
     # Retourne ensuite à un parent commun afin de tester la réapplication
     # concurrente des migrations sur deux connexions indépendantes.
@@ -1086,7 +1086,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "v5c8e2a1d9f3"
+    assert revision == "y8f4c2a6d1b9"
     assert index_count == 48
     assert institution_index_count == 1
 
@@ -1578,3 +1578,44 @@ def test_postgres_enum_role_contient_responsable():
         ).scalars().all()
 
     assert "RESPONSABLE" in valeurs
+
+
+@pytest.mark.skipif(
+    not os.environ.get("DATABASE_URL", "").startswith(
+        ("postgresql://", "postgresql+psycopg2://")
+    ),
+    reason="Journal d'audit append-only réservé à PostgreSQL",
+)
+def test_postgres_journal_parametres_academiques_rls_et_append_only():
+    """Le journal ne doit être accessible directement par la Data API ni réécrit."""
+    from sqlalchemy import text
+
+    from app.database import engine
+
+    with engine.connect() as connection:
+        resultat = connection.execute(
+            text(
+                """
+                SELECT
+                    c.relrowsecurity AS rls_active,
+                    c.relforcerowsecurity AS rls_force,
+                    COUNT(t.oid) FILTER (
+                        WHERE t.tgname IN (
+                            'trg_parametresacademiquesevenement_no_update',
+                            'trg_parametresacademiquesevenement_no_delete',
+                            'trg_parametresacademiquesevenement_no_truncate'
+                        )
+                        AND t.tgenabled <> 'D'
+                    ) AS triggers_actifs
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                LEFT JOIN pg_trigger t ON t.tgrelid = c.oid AND NOT t.tgisinternal
+                WHERE n.nspname = 'public'
+                  AND c.relname = 'parametresacademiquesevenement'
+                GROUP BY c.oid, c.relrowsecurity, c.relforcerowsecurity
+                """
+            )
+        ).one()
+
+    assert resultat.rls_active is True
+    assert resultat.triggers_actifs == 3

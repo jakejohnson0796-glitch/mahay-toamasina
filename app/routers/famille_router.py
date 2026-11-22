@@ -27,7 +27,7 @@ from ..models import (
 )
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
-from ..bulletins import lire_snapshot_bulletin
+from ..bulletins import calculer_moyenne_generale, lire_snapshot_bulletin
 
 router = APIRouter()
 
@@ -202,21 +202,19 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         for entree in entrees:
             snapshot = entree["snapshot"]
             periode = str(snapshot.get("periode") or entree["bulletin"].periode).strip()
-            cle_periode = periode.casefold()
-            poids = 1.0  # Aucun coefficient officiel de matière n’est encore référencé.
-            moyenne = float(snapshot.get("moyenne") or 0)
+            annee_scolaire = str(snapshot.get("annee_scolaire") or "").strip()
+            cle_periode = f"{annee_scolaire.casefold()}|{periode.casefold()}"
             stats = stats_par_periode.setdefault(
                 cle_periode,
                 {
                     "periode": periode,
-                    "total_pondere": 0.0,
-                    "poids_total": 0.0,
+                    "annee_scolaire": annee_scolaire or None,
+                    "snapshots": [],
                     "matieres": set(),
                     "date_recente": "",
                 },
             )
-            stats["total_pondere"] += moyenne * poids
-            stats["poids_total"] += poids
+            stats["snapshots"].append(snapshot)
             stats["matieres"].add(str(snapshot.get("cours_id") or entree["bulletin"].cours_id))
             date_publication = str(snapshot.get("date_publication") or "")
             if date_publication > stats["date_recente"]:
@@ -224,7 +222,13 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         moyennes_bulletins_par_eleve[eleve_id] = [
             {
                 "periode": stats["periode"],
-                "moyenne": round(stats["total_pondere"] / stats["poids_total"], 2),
+                **(
+                    {"annee_scolaire": stats["annee_scolaire"]}
+                    if stats["annee_scolaire"] else {}
+                ),
+                "moyenne": calculer_moyenne_generale(
+                    stats["snapshots"], stats["periode"], stats["annee_scolaire"]
+                ),
                 "nb_matieres": len(stats["matieres"]),
             }
             for stats in sorted(
@@ -232,7 +236,7 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
                 key=lambda item: (item["date_recente"], item["periode"].casefold()),
                 reverse=True,
             )
-            if stats["poids_total"] > 0
+            if stats["snapshots"]
         ]
 
     enfants = []

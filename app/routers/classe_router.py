@@ -24,7 +24,7 @@ from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance, CycleEnseigne, ReferentielScolaire, NiveauScolaire, OptionScolaire, MatiereScolaire, ProgrammeMatiereScolaire, EtablissementScolaire)
+from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance, CycleEnseigne, ReferentielScolaire, NiveauScolaire, OptionScolaire, MatiereScolaire, ProgrammeMatiereScolaire, EtablissementScolaire, ParametresAcademiquesEtablissement)
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..profile_approval import profil_validation_requise
 from ..websocket_security import origine_websocket_autorisee
@@ -509,6 +509,7 @@ def creer_cours(
             "option_scolaire_id": None,
             "matiere_scolaire_id": None,
             "etablissement_scolaire_id": None,
+            "annee_scolaire": None,
         }
     elif portee == "scolaire":
         try:
@@ -543,12 +544,28 @@ def creer_cours(
         niveau = niveau_ref.libelle.strip()
         if option_ref:
             niveau = f"{niveau} · {option_ref.libelle.strip()}"
+        configuration_annee = (
+            session.exec(
+                select(ParametresAcademiquesEtablissement)
+                .where(
+                    ParametresAcademiquesEtablissement.etablissement_id == etablissement_ref.id,
+                    ParametresAcademiquesEtablissement.est_actif == True,  # noqa: E712
+                )
+                .order_by(
+                    ParametresAcademiquesEtablissement.date_modification.desc(),
+                    ParametresAcademiquesEtablissement.id.desc(),
+                )
+                .limit(1)
+            ).first()
+            if etablissement_ref else None
+        )
         donnees_academiques = {
             "portee_academique": "scolaire",
             "niveau_scolaire_id": niveau_ref.id,
             "option_scolaire_id": option_ref.id if option_ref else None,
             "matiere_scolaire_id": matiere_ref.id,
             "etablissement_scolaire_id": etablissement_ref.id if etablissement_ref else None,
+            "annee_scolaire": configuration_annee.annee_scolaire if configuration_annee else None,
         }
     else:
         return RedirectResponse("/classe?erreur=portee_invalide#nouveau-cours", status_code=303)

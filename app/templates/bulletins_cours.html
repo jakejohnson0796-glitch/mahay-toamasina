@@ -110,7 +110,10 @@
         </div>
 
         {% if entree.snapshot %}
-          <p><strong>Moyenne figée à la publication : {{ "%.2f"|format(entree.snapshot.moyenne) }} / 20</strong> · {{ entree.snapshot.nb_notes }} évaluation(s) comptée(s)</p>
+          <p><strong>Moyenne figée à la publication : {{ "%.2f"|format(entree.snapshot.moyenne) }} / {{ "%.2f"|format(entree.snapshot.moyenne_sur or 20) }}</strong> · {{ entree.snapshot.nb_notes }} évaluation(s) comptée(s)</p>
+            {% if entree.snapshot.seuil_reussite is defined and entree.snapshot.seuil_reussi is defined %}
+            <p class="classe-field-help">Seuil de réussite : {{ "%.2f"|format(entree.snapshot.seuil_reussite) }} / {{ "%.2f"|format(entree.snapshot.moyenne_sur or 20) }} — {% if entree.snapshot.seuil_reussi %}seuil atteint{% else %}seuil non atteint{% endif %}</p>
+            {% endif %}
         {% endif %}
 
         {% if bulletin.statut == "brouillon" %}

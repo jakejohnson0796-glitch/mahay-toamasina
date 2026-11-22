@@ -142,6 +142,118 @@ class EtablissementScolaire(SQLModel, table=True):
     date_maj: datetime = Field(default_factory=datetime.utcnow)
 
 
+class ParametresAcademiquesEtablissement(SQLModel, table=True):
+    """Paramètres pédagogiques configurables par établissement et année.
+
+    Ils ne remplacent pas le catalogue national : ils fixent le calendrier,
+    le barème et les règles locales appliquées aux prochains bulletins.
+    Les snapshots publiés restent immuables.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    etablissement_id: int = Field(foreign_key="etablissementscolaire.id", index=True)
+    annee_scolaire: str = Field(max_length=9, index=True)
+    calendrier: str = Field(default="trimestre", max_length=20)
+    periodes_json: str = Field(
+        default='[{"code":"T1","libelle":"Trimestre 1"},{"code":"T2","libelle":"Trimestre 2"},{"code":"T3","libelle":"Trimestre 3"}]'
+    )
+    note_maximale: float = Field(default=20.0, ge=1.0, le=1000.0)
+    seuil_reussite: float = Field(default=10.0, ge=0.0, le=1000.0)
+    est_actif: bool = Field(default=True, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "etablissement_id", "annee_scolaire",
+            name="uq_parametresacademiques_etablissement_annee",
+        ),
+        CheckConstraint(
+            "calendrier IN ('trimestre', 'semestre', 'personnalise')",
+            name="ck_parametresacademiques_calendrier",
+        ),
+        CheckConstraint(
+            "note_maximale >= 1 AND note_maximale <= 1000",
+            name="ck_parametresacademiques_note_maximale",
+        ),
+        CheckConstraint(
+            "seuil_reussite >= 0 AND seuil_reussite <= note_maximale",
+            name="ck_parametresacademiques_seuil_reussite",
+        ),
+        Index(
+            "ix_parametresacademiques_etablissement_actif",
+            "etablissement_id", "est_actif",
+        ),
+    )
+
+
+class CoefficientMatiereEtablissement(SQLModel, table=True):
+    """Coefficient d'une matière pour un établissement, une année et une classe."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    parametres_id: int = Field(foreign_key="parametresacademiquesetablissement.id", index=True)
+    niveau_id: int = Field(foreign_key="niveauscolaire.id", index=True)
+    option_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
+    matiere_id: int = Field(foreign_key="matierescolaire.id", index=True)
+    coefficient: float = Field(default=1.0, ge=0.01, le=100.0)
+    obligatoire: bool = Field(default=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "coefficient > 0 AND coefficient <= 100",
+            name="ck_coefficientmatiere_valeur",
+        ),
+        Index(
+            "uq_coefficientmatiere_avec_option",
+            "parametres_id", "niveau_id", "option_id", "matiere_id",
+            unique=True,
+            sqlite_where=text("option_id IS NOT NULL"),
+            postgresql_where=text("option_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_coefficientmatiere_sans_option",
+            "parametres_id", "niveau_id", "matiere_id",
+            unique=True,
+            sqlite_where=text("option_id IS NULL"),
+            postgresql_where=text("option_id IS NULL"),
+        ),
+    )
+
+
+class ParametresAcademiquesEvenement(SQLModel, table=True):
+    """Journal append-only des changements de paramètres pédagogiques."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    etablissement_id: int = Field(foreign_key="etablissementscolaire.id", index=True)
+    annee_scolaire: str = Field(max_length=9, index=True)
+    acteur_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            Integer,
+            ForeignKey("utilisateur.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
+    acteur_nom: str = Field(max_length=200)
+    action: str = Field(max_length=24, index=True)
+    entite_type: str = Field(max_length=32)
+    entite_id: Optional[int] = Field(default=None)
+    details_json: str = Field(default="{}")
+    date_evenement: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('creation', 'modification', 'activation', 'desactivation', 'suppression')",
+            name="ck_parametresacademiquesevenement_action",
+        ),
+        Index(
+            "ix_parametresacademiquesevenement_etab_annee_date",
+            "etablissement_id", "annee_scolaire", "date_evenement",
+        ),
+    )
+
+
 class ParcoursTechniqueProfessionnel(SQLModel, table=True):
     """Intitulé national normalisé d'une filière ou d'un métier ETFP.
 
@@ -1732,6 +1844,9 @@ class Cours(SQLModel, table=True):
     option_scolaire_id: Optional[int] = Field(default=None, foreign_key="optionscolaire.id", index=True)
     etablissement_scolaire_id: Optional[int] = Field(default=None, foreign_key="etablissementscolaire.id", index=True)
     matiere_scolaire_id: Optional[int] = Field(default=None, foreign_key="matierescolaire.id", index=True)
+    # Année pédagogique figée à la création pour éviter qu'un ancien cours
+    # bascule sur les coefficients du nouvel exercice scolaire.
+    annee_scolaire: Optional[str] = Field(default=None, max_length=9, index=True)
     description: Optional[str] = None
     objectifs: Optional[str] = None
     code_invitation: Optional[str] = Field(default=None, unique=True, index=True, max_length=12)
