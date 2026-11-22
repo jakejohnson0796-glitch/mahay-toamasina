@@ -114,3 +114,37 @@ def test_docling_timeout_declenche_le_repli(monkeypatch):
     monkeypatch.setattr(docling_extraction, "docling_actif", lambda: True)
     monkeypatch.setattr(docling_extraction, "_convertisseur_docling", lambda: FauxConvertisseur())
     assert docling_extraction.extraire_pdf_docling("scan.pdf", 1000) == ""
+
+
+
+def test_pdf_scannes_priorise_paddleocr_sur_docling(monkeypatch, tmp_path):
+    chemin = tmp_path / "programme-scan.pdf"
+    chemin.write_bytes(b"%PDF-test")
+
+    class FauxPDF:
+        pages = [SimpleNamespace(extract_text=lambda: "En-tête court")]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(text_extraction.pdfplumber, "open", lambda _path: FauxPDF())
+    monkeypatch.setattr("app.docling_extraction.docling_actif", lambda: True)
+    monkeypatch.setattr(
+        "app.docling_extraction.extraire_pdf_docling",
+        lambda *_a, **_k: (_ for _ in ()).throw(
+            AssertionError("Docling ne doit pas remplacer le pipeline PaddleOCR du scan")
+        ),
+    )
+    monkeypatch.setattr(
+        text_extraction,
+        "_extraire_texte_pdf_legacy",
+        lambda _path: "Contenu extrait par PaddleOCR",
+    )
+
+    resultat = text_extraction._extraire_texte_detaille_sans_limite(str(chemin))
+
+    assert resultat.moteur == "pdfplumber + PaddleOCR/Tesseract"
+    assert resultat.texte == "Contenu extrait par PaddleOCR"
