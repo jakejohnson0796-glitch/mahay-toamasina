@@ -49,8 +49,9 @@ def construire_snapshot_bulletin(
     """Construit les données figées d'un bulletin à partir des notes corrigées.
 
     Une correction est comptée uniquement si note et date_correction sont
-    présentes. Les notes sont converties sur 20 puis pondérées par le
-    coefficient du devoir. La présence est affichée en cumul du cours :
+    présentes. Les notes sont normalisées selon le barème de l'établissement,
+    pondérées par coefficient d'évaluation et converties sur 20 pour la moyenne
+    générale. La présence est affichée en cumul du cours :
     les séances ne portent pas encore de période pédagogique normalisée.
     """
     periode_normalisee = normaliser_periode(periode)
@@ -285,6 +286,7 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
         [Paragraph("<b>Matière</b>", styles["BodyText"]), Paragraph(_texte_paragraphe(snapshot.get("matiere")), styles["BodyText"])],
         [Paragraph("<b>Cours</b>", styles["BodyText"]), Paragraph(_texte_paragraphe(snapshot.get("cours")), styles["BodyText"])],
         [Paragraph("<b>Période</b>", styles["BodyText"]), Paragraph(_texte_paragraphe(snapshot.get("periode")), styles["BodyText"])],
+        [Paragraph("<b>Année scolaire</b>", styles["BodyText"]), Paragraph(_texte_paragraphe(snapshot.get("annee_scolaire")), styles["BodyText"])],
         [Paragraph("<b>Enseignant</b>", styles["BodyText"]), Paragraph(_texte_paragraphe(snapshot.get("professeur")), styles["BodyText"])],
     ]
     table_identite = Table(identite, colWidths=[38 * mm, 130 * mm], hAlign="LEFT")
