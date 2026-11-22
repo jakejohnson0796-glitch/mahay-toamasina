@@ -18,7 +18,9 @@ from sqlmodel import Session, select
 
 from .models import (
     Cours,
+    CoefficientMatiereEtablissement,
     Devoir,
+    ParametresAcademiquesEtablissement,
     PointagePresence,
     RenduDevoir,
     Seance,
@@ -69,6 +71,61 @@ def construire_snapshot_bulletin(
     if not devoirs_periode:
         raise ValueError("Aucune évaluation n'est associée à cette période.")
 
+    configuration = None
+    coefficient_matiere = 1.0
+    if cours.etablissement_scolaire_id is not None:
+        configuration = session.exec(
+            select(ParametresAcademiquesEtablissement)
+            .where(
+                ParametresAcademiquesEtablissement.etablissement_id == cours.etablissement_scolaire_id,
+                ParametresAcademiquesEtablissement.est_actif == True,  # noqa: E712
+            )
+            .order_by(
+                ParametresAcademiquesEtablissement.date_modification.desc(),
+                ParametresAcademiquesEtablissement.id.desc(),
+            )
+            .limit(1)
+        ).first()
+        if configuration and cours.niveau_scolaire_id and cours.matiere_scolaire_id:
+            criteres_coefficient = [
+                CoefficientMatiereEtablissement.parametres_id == configuration.id,
+                CoefficientMatiereEtablissement.niveau_id == cours.niveau_scolaire_id,
+                CoefficientMatiereEtablissement.matiere_id == cours.matiere_scolaire_id,
+            ]
+            if cours.option_scolaire_id is not None:
+                coefficient_exact = session.exec(
+                    select(CoefficientMatiereEtablissement)
+                    .where(
+                        *criteres_coefficient,
+                        CoefficientMatiereEtablissement.option_id == cours.option_scolaire_id,
+                    )
+                    .limit(1)
+                ).first()
+                coefficient_general = session.exec(
+                    select(CoefficientMatiereEtablissement)
+                    .where(
+                        *criteres_coefficient,
+                        CoefficientMatiereEtablissement.option_id.is_(None),
+                    )
+                    .limit(1)
+                ).first()
+                regle_coefficient = coefficient_exact or coefficient_general
+            else:
+                regle_coefficient = session.exec(
+                    select(CoefficientMatiereEtablissement)
+                    .where(
+                        *criteres_coefficient,
+                        CoefficientMatiereEtablissement.option_id.is_(None),
+                    )
+                    .limit(1)
+                ).first()
+            if regle_coefficient:
+                coefficient_matiere = float(regle_coefficient.coefficient or 1.0)
+
+    note_maximale = float(configuration.note_maximale) if configuration else 20.0
+    seuil_reussite = float(configuration.seuil_reussite) if configuration else 10.0
+    bareme_bulletin = note_maximale if note_maximale > 0 else 20.0
+
     devoirs_par_id = {devoir.id: devoir for devoir in devoirs_periode}
     rendus = session.exec(
         select(RenduDevoir).where(
@@ -92,7 +149,8 @@ def construire_snapshot_bulletin(
         if note < 0 or note > bareme:
             continue
         note_sur_20 = round(note / bareme * 20, 2)
-        total_pondere += note_sur_20 * coefficient
+        note_sur_echelle = round(note / bareme * bareme_bulletin, 2)
+        total_pondere += note_sur_echelle * coefficient
         poids_total += coefficient
         evaluations.append({
             "evaluation": devoir.titre,
@@ -100,6 +158,7 @@ def construire_snapshot_bulletin(
             "bareme": round(bareme, 2),
             "coefficient": round(coefficient, 2),
             "note_sur_20": note_sur_20,
+            "note_sur_echelle": note_sur_echelle,
             "appreciation": (rendu.appreciation_prof or "").strip(),
         })
 
@@ -141,6 +200,10 @@ def construire_snapshot_bulletin(
         "periode": periode_normalisee,
         "professeur": professeur.nom if professeur else "Équipe pédagogique",
         "moyenne": round(total_pondere / poids_total, 2),
+        "moyenne_sur": round(bareme_bulletin, 2),
+        "seuil_reussite": round(seuil_reussite, 2),
+        "coefficient_matiere": round(coefficient_matiere, 4),
+        "annee_scolaire": configuration.annee_scolaire if configuration else None,
         "poids_total": round(poids_total, 2),
         "nb_notes": len(evaluations),
         "evaluations": evaluations,
@@ -239,7 +302,7 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
 
     moyenne = float(snapshot.get("moyenne") or 0)
     story.append(Paragraph(
-        f"<b>Moyenne de la période : {moyenne:.2f} / 20</b> "
+        f"<b>Moyenne de la période : {moyenne:.2f} / {float(snapshot.get('moyenne_sur') or 20):g}</b> "
         f"({int(snapshot.get('nb_notes') or 0)} évaluation(s) corrigée(s))",
         styles["Heading2"],
     ))
@@ -250,7 +313,7 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
         Paragraph("<b>Note</b>", styles["BulletinSmall"]),
         Paragraph("<b>Barème</b>", styles["BulletinSmall"]),
         Paragraph("<b>Coeff.</b>", styles["BulletinSmall"]),
-        Paragraph("<b>/20</b>", styles["BulletinSmall"]),
+        Paragraph(f"<b>/{float(snapshot.get('moyenne_sur') or 20):g}</b>", styles["BulletinSmall"]),
     ]]
     for evaluation in snapshot["evaluations"]:
         lignes.append([
@@ -258,7 +321,7 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
             f"{float(evaluation.get('note') or 0):.2f}",
             f"{float(evaluation.get('bareme') or 0):.2f}",
             f"{float(evaluation.get('coefficient') or 1):.2f}",
-            f"{float(evaluation.get('note_sur_20') or 0):.2f}",
+            f"{float(evaluation.get('note_sur_echelle', evaluation.get('note_sur_20')) or 0):.2f}",
         ])
     table_notes = Table(
         lignes,
@@ -320,6 +383,35 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
 
 
 
+def calculer_moyenne_generale(snapshots: list[dict[str, Any]], periode: str) -> float:
+    """Calcule la moyenne générale sur 20 avec coefficients matière.
+
+    Les anciens snapshots sans coefficient ou barème utilisent les valeurs
+    historiques (coefficient 1, moyenne sur 20).
+    """
+    periode_normalisee = normaliser_periode(periode)
+    uniques: dict[str, dict[str, Any]] = {}
+    for snapshot in snapshots:
+        if not isinstance(snapshot, dict) or snapshot.get("version") != 1:
+            continue
+        if not isinstance(snapshot.get("evaluations"), list):
+            continue
+        if normaliser_periode(str(snapshot.get("periode") or "")).casefold() != periode_normalisee.casefold():
+            continue
+        cle = str(snapshot.get("cours_id") or snapshot.get("cours") or snapshot.get("matiere") or "").casefold()
+        uniques.setdefault(cle, snapshot)
+
+    total_pondere = 0.0
+    poids_total = 0.0
+    for snapshot in uniques.values():
+        moyenne = float(snapshot.get("moyenne") or 0)
+        bareme = max(float(snapshot.get("moyenne_sur") or 20), 0.01)
+        coefficient = max(float(snapshot.get("coefficient_matiere") or 1), 0.01)
+        total_pondere += (moyenne / bareme * 20) * coefficient
+        poids_total += coefficient
+    return round(total_pondere / poids_total, 2) if poids_total else 0.0
+
+
 def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) -> bytes:
     """Génère le bulletin récapitulatif multi-matières d'une période.
 
@@ -354,10 +446,7 @@ def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) 
     if not matieres:
         raise ValueError("Aucun bulletin exploitable.")
 
-    moyenne_generale = round(
-        sum(float(item.get("moyenne") or 0) for item in matieres) / len(matieres),
-        2,
-    )
+    moyenne_generale = calculer_moyenne_generale(matieres, periode_normalisee)
     eleve = next(iter(eleves)) or "Élève"
     sortie = BytesIO()
     document = SimpleDocTemplate(
@@ -405,8 +494,8 @@ def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) 
             styles["Heading2"],
         ),
         Paragraph(
-            "Chaque matière publiée compte une fois dans cette moyenne générale. "
-            "À l'intérieur de chaque matière, les évaluations sont pondérées par leur coefficient.",
+            "La moyenne générale est ramenée sur 20 et pondérée par les coefficients de matière "
+            "configurés par l'établissement. Les évaluations sont pondérées dans chaque matière.",
             styles["BulletinGeneralSmall"],
         ),
         Spacer(1, 4 * mm),
@@ -434,7 +523,7 @@ def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) 
                 styles["BulletinGeneralSmall"],
             ),
             Paragraph(_texte_paragraphe(snapshot.get("professeur")), styles["BulletinGeneralSmall"]),
-            f"{float(snapshot.get('moyenne') or 0):.2f}/20",
+            f"{(float(snapshot.get('moyenne') or 0) / max(float(snapshot.get('moyenne_sur') or 20), 0.01) * 20):.2f}/20",
             str(int(snapshot.get("nb_notes") or 0)),
         ])
     table = Table(
