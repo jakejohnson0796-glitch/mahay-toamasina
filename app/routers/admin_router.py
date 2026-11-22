@@ -671,6 +671,12 @@ def page_admin_apercu_espace(
                 "copies_a_corriger": 0,
             },
             "cours_enseignes": [],
+            # L'aperçu est strictement fictif : ne charge aucune copie ni présence réelle.
+            "actions_a_traiter": {
+                "corrections": [],
+                "pointages": [],
+                "nb_copies": 0,
+            },
         })
     elif espace == "repetiteur":
         contexte.update({"statut_repetiteur": "approuve"})
