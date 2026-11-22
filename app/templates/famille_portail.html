@@ -59,6 +59,7 @@
                 </span>
                 <span>
                   <strong>{{ "%.2f"|format(entree.snapshot.moyenne) }} / {{ "%.2f"|format(entree.snapshot.moyenne_sur or 20) }}</strong>
+                  <small>Seuil {{ "%.2f"|format(entree.snapshot.seuil_reussite or 10) }} · {% if entree.snapshot.seuil_reussi %}atteint{% else %}non atteint{% endif %}</small>
                   <a href="/famille/bulletins/{{ entree.bulletin.id }}/telecharger">Télécharger le PDF</a>
                 </span>
               </div>
