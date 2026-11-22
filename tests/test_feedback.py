@@ -204,13 +204,27 @@ class TestFeedback(unittest.TestCase):
 
     # --- Affichage public ---
 
-    def test_avis_public_visible_sur_page_feedback(self):
+    def test_avis_public_visible_seulement_apres_traitement(self):
         with Session(engine) as session:
-            session.add(Feedback(utilisateur_id=self.marie.utilisateur_id, note=5,
-                                  commentaire="Avis visible", categorie=CategorieFeedback.GENERAL, est_public=True))
+            session.add(Feedback(
+                utilisateur_id=self.marie.utilisateur_id, note=5,
+                commentaire="Avis visible", categorie=CategorieFeedback.GENERAL,
+                est_public=True, statut=StatutFeedback.REPONDU,
+            ))
             session.commit()
         page = self.anonyme.get("/feedback")
         self.assertIn("Avis visible", page.text)
+
+    def test_avis_public_en_attente_de_moderation_reste_cache(self):
+        with Session(engine) as session:
+            session.add(Feedback(
+                utilisateur_id=self.marie.utilisateur_id, note=4,
+                commentaire="Avis en attente confidentiel", categorie=CategorieFeedback.GENERAL,
+                est_public=True, statut=StatutFeedback.NOUVEAU,
+            ))
+            session.commit()
+        page = self.anonyme.get("/feedback")
+        self.assertNotIn("Avis en attente confidentiel", page.text)
 
     def test_avis_prive_absent_de_la_page_publique(self):
         with Session(engine) as session:
