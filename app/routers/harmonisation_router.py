@@ -697,6 +697,12 @@ def _detail_lecon(session: Session, lecon: LeconReferentielle, administrateur: b
         except (TypeError, ValueError):
             resultat = {"avertissement": "Résultat d'analyse illisible."}
         resultats_analyses.append({"analyse": analyse, "resultat": resultat})
+    versions = session.exec(
+        select(VersionCoursHarmoniseLecon)
+        .where(VersionCoursHarmoniseLecon.lecon_id == lecon.id)
+        .order_by(VersionCoursHarmoniseLecon.numero_version.desc())
+        .limit(30)
+    ).all() if administrateur else []
     return {
         "lecon": lecon,
         "scope": scope,
@@ -705,6 +711,7 @@ def _detail_lecon(session: Session, lecon: LeconReferentielle, administrateur: b
             for item in contributions
         ],
         "analyses": resultats_analyses,
+        "versions": versions,
     }
 
 
@@ -834,6 +841,7 @@ def verifier_lecon_referentielle(
     lecon.statut_validation = StatutLeconReferentielle.VERIFIEE.value
     lecon.valide_par_id = utilisateur.id
     lecon.date_validation = datetime.utcnow()
+    lecon.motif_validation = motif
     session.add(lecon)
     session.commit()
     return RedirectResponse(
