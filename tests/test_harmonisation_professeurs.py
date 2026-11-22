@@ -155,7 +155,7 @@ def test_dashboard_conditionne_les_alertes_aux_professeurs_valides():
 def test_dashboard_eleve_ne_tente_pas_diterer_les_alertes_absentes():
     rendu = _rendre_bloc_harmonisation_du_dashboard(None)
 
-    assert "Pret a continuer ton apprentissage ?" in rendu
+    assert "Prêt à continuer ton apprentissage ?" in rendu
     assert "Espace enseignant" not in rendu
     assert "tb-harmonisation" not in rendu
 
