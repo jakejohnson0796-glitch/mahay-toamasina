@@ -456,3 +456,15 @@
 @media (prefers-reduced-motion:reduce){
   .faq-chevron{transition:none;}
 }
+
+.faq-feedback-privacy{
+  margin:.55rem 0;padding:.7rem .8rem;
+  border:1px solid color-mix(in srgb,var(--content-link) 24%,var(--content-border));
+  border-radius:12px;background:color-mix(in srgb,var(--content-link) 5%,var(--content-surface));
+}
+.faq-feedback-privacy strong{display:block;font-size:.66rem;color:var(--content-text)}
+.faq-feedback-privacy p{margin:.25rem 0;color:var(--content-text-muted);font-size:.58rem;line-height:1.55}
+.faq-feedback-privacy a{display:inline-flex;margin-top:.2rem;font-size:.58rem;font-weight:750}
+.faq-page .faq-panel[id="avis"]{scroll-margin-top:1.2rem}
+.faq-page .faq-form summary:focus-visible,.faq-page .faq-topic:focus-visible,.faq-page .faq-help-grid a:focus-visible{outline:3px solid color-mix(in srgb,var(--content-link) 60%,transparent);outline-offset:3px}
+
