@@ -257,7 +257,14 @@ def ouvrir_fichier_local(reference_fichier: str) -> Iterator[Path]:
         return
 
     client = _obtenir_client_supabase()
-    contenu = client.storage.from_(parametres.supabase_bucket).download(reference_fichier)
+    # Les programmes EP/FRP résident dans un bucket dédié privé ; les autres
+    # documents historiques conservent le bucket configuré par l’application.
+    bucket = (
+        "programmes-officiels-prives"
+        if Path(reference_fichier).parts and Path(reference_fichier).parts[0].startswith("epfrp-")
+        else parametres.supabase_bucket
+    )
+    contenu = client.storage.from_(bucket).download(reference_fichier)
     suffixe = Path(reference_fichier).suffix
     with tempfile.NamedTemporaryFile(suffix=suffixe) as tmp:
         tmp.write(contenu)
