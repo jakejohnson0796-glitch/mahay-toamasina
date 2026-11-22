@@ -2675,7 +2675,7 @@ class AnalyseComparativeLecon(SQLModel, table=True):
     resultat_json: str = Field(max_length=60000)
     modele: str = Field(max_length=120)
     statut: str = Field(default="en_attente", max_length=20, index=True)
-    cree_par_id: int = Field(foreign_key="utilisateur.id")
+    cree_par_id: int = Field(foreign_key="utilisateur.id", index=True)
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     __table_args__ = (
@@ -2698,10 +2698,10 @@ class VersionCoursHarmoniseLecon(SQLModel, table=True):
     numero_version: int
     contenu: str = Field(max_length=100000)
     analyse_id: Optional[int] = Field(
-        default=None, foreign_key="analysecomparativelecon.id"
+        default=None, foreign_key="analysecomparativelecon.id", index=True
     )
     contributions_ids_json: str = Field(default="[]", max_length=2000)
-    publie_par_id: int = Field(foreign_key="utilisateur.id")
+    publie_par_id: int = Field(foreign_key="utilisateur.id", index=True)
     motif_validation: str = Field(max_length=3000)
     date_publication: datetime = Field(default_factory=datetime.utcnow, index=True)
 
