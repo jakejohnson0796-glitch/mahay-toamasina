@@ -106,15 +106,17 @@ def upgrade() -> None:
     op.create_index("ix_versioncoursharmonise_lecon_publication", "versioncoursharmoniselecon", ["lecon_id", "date_publication"])
 
     # L'analyse comparative est une tâche durable ; Redis reste un accélérateur.
-    op.add_column(
-        "tacheia",
-        sa.Column(
-            "analyse_comparative_lecon_id",
-            sa.Integer(),
-            sa.ForeignKey("analysecomparativelecon.id"),
-            nullable=True,
-        ),
-    )
+    # SQLite cannot ALTER TABLE ADD CONSTRAINT. Batch mode recreates
+    # the table there while using a regular ALTER TABLE on PostgreSQL.
+    with op.batch_alter_table("tacheia") as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "analyse_comparative_lecon_id",
+                sa.Integer(),
+                sa.ForeignKey("analysecomparativelecon.id"),
+                nullable=True,
+            )
+        )
     op.create_index("ix_tacheia_analyse_comparative_lecon_id", "tacheia", ["analyse_comparative_lecon_id"])
     op.create_index(
         "uq_tache_ia_type_analyse_comparative_lecon",
@@ -282,7 +284,8 @@ def downgrade() -> None:
 
     op.drop_index("uq_tache_ia_type_analyse_comparative_lecon", table_name="tacheia")
     op.drop_index("ix_tacheia_analyse_comparative_lecon_id", table_name="tacheia")
-    op.drop_column("tacheia", "analyse_comparative_lecon_id")
+    with op.batch_alter_table("tacheia") as batch_op:
+        batch_op.drop_column("analyse_comparative_lecon_id")
 
     for name in (
         "ix_versioncoursharmonise_lecon_publication",
