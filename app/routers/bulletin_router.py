@@ -26,6 +26,7 @@ from ..models import (
     Devoir,
     InscriptionCours,
     LienResponsableEleve,
+    ParametresAcademiquesEtablissement,
     RoleUtilisateur,
     Utilisateur,
 )
@@ -48,6 +49,42 @@ def _periode_canonique(session: Session, cours_id: int, saisie: str) -> str | No
     valeur = normaliser_periode(saisie)
     if not valeur:
         return None
+
+    periodes_acceptees = {valeur.casefold()}
+    cours = session.get(Cours, cours_id)
+    if cours and cours.etablissement_scolaire_id:
+        configuration = session.exec(
+            select(ParametresAcademiquesEtablissement)
+            .where(
+                ParametresAcademiquesEtablissement.etablissement_id == cours.etablissement_scolaire_id,
+                ParametresAcademiquesEtablissement.est_actif == True,  # noqa: E712
+            )
+            .order_by(ParametresAcademiquesEtablissement.date_modification.desc())
+            .limit(1)
+        ).first()
+        if configuration:
+            try:
+                periodes = json.loads(configuration.periodes_json or "[]")
+            except (TypeError, ValueError, json.JSONDecodeError):
+                periodes = []
+            correspondance = next(
+                (
+                    item for item in periodes
+                    if isinstance(item, dict)
+                    and valeur.casefold() in {
+                        normaliser_periode(item.get("code")).casefold(),
+                        normaliser_periode(item.get("libelle")).casefold(),
+                    }
+                ),
+                None,
+            )
+            if not correspondance:
+                return None
+            periodes_acceptees = {
+                normaliser_periode(correspondance.get("code")).casefold(),
+                normaliser_periode(correspondance.get("libelle")).casefold(),
+            }
+
     devoirs = session.exec(
         select(Devoir).where(
             Devoir.cours_id == cours_id,
@@ -56,7 +93,7 @@ def _periode_canonique(session: Session, cours_id: int, saisie: str) -> str | No
     ).all()
     for devoir in devoirs:
         periode = normaliser_periode(devoir.periode)
-        if periode and periode.casefold() == valeur.casefold():
+        if periode and periode.casefold() in periodes_acceptees:
             return periode
     return None
 
