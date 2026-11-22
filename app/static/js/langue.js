@@ -5514,7 +5514,6 @@
 
   
     "MITARIDALA · Espace professionnel": "MITARIDALA · Professional workspace",
-    "Bonjour .": "Hello.",
     "Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.": "Prepare lessons, support your learners, and organise sessions in a workspace designed for teaching.",
     "Compte enseignant vérifié": "Verified teacher account",
     "Vérification du compte": "Account verification",
@@ -5875,6 +5874,8 @@
 
     var match = cle.match(/^Bienvenue[, ]+(.+?)\s*👋$/i);
     if (match) return "Welcome, " + match[1].trim() + " 👋";
+    match = cle.match(/^Bonjour\s+(.+?)\s*[.!]$/i);
+    if (match) return "Hello, " + match[1].trim() + ".";
     match = cle.match(/^Bonjour,\s*(.+?)\s*👋$/i);
     if (match) return "Hello, " + match[1].trim() + " 👋";
     match = cle.match(/^Ton démarrage est à (\d+)\/3\.$/i);
@@ -5948,7 +5949,10 @@
     if (match) return "Voaray ny fangatahanao. Mbola mavitrika mandritra ny fanamarinana (" + match[1] + " andro) ny fidiranao Premium. Mbola azo ampiasaina mandritra ny " + match[2] + " andro ny IA.";
     match = cle.match(/^Ton démarrage est à (\d+)\/3\.$/i);
     if (match) return "Efa vita ny dingana " + match[1] + " amin'ny 3.";
-    match = cle.match(/^Bonjour\s+(.+?)\s*[.!]$/i);\n    if (match) return "Hello, " + match[1].trim() + ".";\n    match = cle.match(/^Bonjour,\\s*(.+?)\\s*$/i);
+    match = cle.match(/^Bonjour\s+(.+?)\s*[.!]$/i);
+    if (match) return "Manao ahoana, " + match[1].trim() + ".";
+    match = cle.match(/^Bonjour,\s*(.+?)\s*$/i);
+    if (match) return "Manao ahoana, " + match[1].trim();
     if (match) return "Manao ahoana, " + match[1].trim();
     match = cle.match(/^Motif : (.+?)\. Tu peux envoyer une nouvelle demande\.$/i);
     if (match) return "Antony: " + match[1] + ". Afaka mandefa fangatahana vaovao ianao.";
