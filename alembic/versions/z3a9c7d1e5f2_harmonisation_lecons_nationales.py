@@ -111,7 +111,7 @@ def upgrade() -> None:
     # SQLite cannot ALTER TABLE ADD CONSTRAINT. Add the plain column and
     # the explicitly named FK separately, following the established tacheia
     # migration pattern. Batch mode preserves the existing SQLite schema.
-    if bind.dialect.name == "sqlite":
+    if op.get_bind().dialect.name == "sqlite":
         with op.batch_alter_table("tacheia", recreate="always") as batch_op:
             batch_op.add_column(
                 sa.Column("analyse_comparative_lecon_id", sa.Integer(), nullable=True)
