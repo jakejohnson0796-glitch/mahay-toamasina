@@ -1205,7 +1205,7 @@ def enregistrer_parametres_annee_scolaire(
     if not etablissement or not etablissement.est_actif or not etablissement.est_verifie:
         return _rediriger_parametres(erreur="etablissement_non_verifie")
     annee = annee_scolaire.strip()
-    match = re.fullmatch(r"(\\d{4})-(\\d{4})", annee)
+    match = re.fullmatch(r"(\d{4})-(\d{4})", annee)
     if not match or int(match.group(2)) != int(match.group(1)) + 1:
         return _rediriger_parametres(erreur="annee_invalide")
     if calendrier not in {"trimestre", "semestre", "personnalise"}:
