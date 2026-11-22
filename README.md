@@ -68,4 +68,4 @@ python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/pac
 python -m pip install -r requirements-ocr.txt
 ```
 
-Les modèles PP-OCRv5 français sont chargés à la première lecture d'un scan puis conservés dans le cache local. Si PaddleOCR n'est pas disponible, le traitement continue avec Tesseract lorsque celui-ci est installé.
+Les modèles PP-OCRv5 français sont chargés à la première lecture d'un scan puis conservés dans le cache local. Avant ce chargement, l'application vérifie la limite mémoire du conteneur : par défaut, elle exige au moins 2 560 MiB pour éviter un arrêt par manque de mémoire ; ce seuil peut être réglé avec PADDLE_OCR_MIN_MEMORY_MB. En dessous du seuil, ou si PaddleOCR n'est pas installé, le traitement continue avec Tesseract lorsque celui-ci est installé.
