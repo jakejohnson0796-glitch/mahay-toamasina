@@ -221,7 +221,7 @@ def upgrade() -> None:
                              justification, impact_pedagogique, date_creation
             ON contributionlecon
             BEGIN
-                SELECT RAISE(ABORT, 'Le contenu original d'une contribution est immuable');
+                SELECT RAISE(ABORT, 'Le contenu original de la contribution est immuable');
             END
             """
         )
