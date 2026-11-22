@@ -41,10 +41,10 @@ def test_teacher_help_legal_and_library_pages_have_english_and_malagasy_copy():
     assert english["Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement."] == (
         "Prepare lessons, support your learners, and organise sessions in a workspace designed for teaching."
     )
-    assert malagasy["Centre d'aide · MITARIDALA"] == "Foibe fanampiana · MITARIDALA"
+    assert malagasy["Centre d'aide · MITARIDALA"] == "Ivon-toerana fanampiana · MITARIDALA"
     assert english["Centre d'aide · MITARIDALA"] == "MITARIDALA Help Centre"
     assert malagasy["Éthique, conditions d’utilisation et confidentialité"] == (
-        "Etika, fepetra fampiasana ary tsiambaratelo"
+        "Fitsipi-pitondrantena, fepetra fampiasana ary tsiambaratelo"
     )
     assert english["Éthique, conditions d’utilisation et confidentialité"] == (
         "Ethics, terms of use, and privacy"
