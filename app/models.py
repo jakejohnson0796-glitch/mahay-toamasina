@@ -2600,6 +2600,7 @@ class LeconReferentielle(SQLModel, table=True):
     valide_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
     date_validation: Optional[datetime] = None
+    motif_validation: str = Field(default="", max_length=2000)
     statut_publication: str = Field(default="non_publie", max_length=20, index=True)
     contenu_publie: str = Field(default="", max_length=100000)
     version_publiee: int = Field(default=0)
