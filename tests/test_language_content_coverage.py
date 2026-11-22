@@ -80,7 +80,7 @@ def test_language_smoke_covers_both_locales_and_protects_existing_content():
     assert "Help centre heading was not translated to English" in smoke
     assert "Legal page heading was not translated to Malagasy" in smoke
     assert "Personalised greeting was not translated to English" in smoke
-    assert "ai scientific content was modified" in smoke.lower()
+    assert "AI output must remain untouched by interface translation" in smoke
 
 
 def test_student_dashboard_copy_uses_consistent_accents():
