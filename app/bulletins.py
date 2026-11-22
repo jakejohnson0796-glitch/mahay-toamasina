@@ -207,6 +207,7 @@ def construire_snapshot_bulletin(
         "moyenne": round(total_pondere / poids_total, 2),
         "moyenne_sur": round(bareme_bulletin, 2),
         "seuil_reussite": round(seuil_reussite, 2),
+        "seuil_reussi": round(total_pondere / poids_total, 2) >= seuil_reussite,
         "coefficient_matiere": round(coefficient_matiere, 4),
         "annee_scolaire": configuration.annee_scolaire if configuration else None,
         "poids_total": round(poids_total, 2),
@@ -311,6 +312,12 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
         f"<b>Moyenne de la période : {moyenne:.2f} / {float(snapshot.get('moyenne_sur') or 20):g}</b> "
         f"({int(snapshot.get('nb_notes') or 0)} évaluation(s) corrigée(s))",
         styles["Heading2"],
+    ))
+    story.append(Paragraph(
+        f"Seuil de réussite : {float(snapshot.get('seuil_reussite') or 10):g} / "
+        f"{float(snapshot.get('moyenne_sur') or 20):g} — "
+        f"{'Seuil atteint' if snapshot.get('seuil_reussi') else 'Seuil non atteint'}",
+        styles["BulletinSmall"],
     ))
     story.append(Spacer(1, 2 * mm))
 
