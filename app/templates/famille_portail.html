@@ -58,7 +58,7 @@
                   {% if entree.snapshot.appreciation_generale %}<small>{{ entree.snapshot.appreciation_generale }}</small>{% endif %}
                 </span>
                 <span>
-                  <strong>{{ "%.2f"|format(entree.snapshot.moyenne) }} / 20</strong>
+                  <strong>{{ "%.2f"|format(entree.snapshot.moyenne) }} / {{ "%.2f"|format(entree.snapshot.moyenne_sur or 20) }}</strong>
                   <a href="/famille/bulletins/{{ entree.bulletin.id }}/telecharger">Télécharger le PDF</a>
                 </span>
               </div>
