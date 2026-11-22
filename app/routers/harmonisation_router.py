@@ -42,6 +42,7 @@ from ..models import (
     Utilisateur,
 )
 from ..templating import templates
+from ..rate_limit import limite_depassee
 
 router = APIRouter()
 
@@ -596,7 +597,10 @@ def _programme_lecon(session: Session, programme_id: int) -> Optional[dict]:
     niveau = session.get(NiveauScolaire, programme.niveau_id)
     matiere = session.get(MatiereScolaire, programme.matiere_id)
     option = session.get(OptionScolaire, programme.option_id) if programme.option_id else None
-    if not referentiel or not niveau or not matiere:
+    if (
+        not referentiel or not niveau or not matiere
+        or referentiel.statut in {"historique", "archive"}
+    ):
         return None
     if not niveau.est_actif or niveau.statut_validation != "verifie":
         return None
@@ -907,6 +911,11 @@ def detail_lecon_nationale_enseignant(
     utilisateur = utilisateur_courant(request, session)
     if not professeur_verifie(utilisateur):
         return RedirectResponse("/", status_code=303)
+    if limite_depassee(f"harmonisation-contribution:{utilisateur.id}", 8, 3600):
+        return RedirectResponse(
+            f"/enseignant/harmonisation/lecons/{lecon_id}?erreur=limite_soumissions",
+            status_code=303,
+        )
     lecon = session.get(LeconReferentielle, lecon_id)
     if (
         not lecon
@@ -992,6 +1001,11 @@ def lancer_analyse_comparative_lecon(
     utilisateur = utilisateur_courant(request, session)
     if not administrateur_autorise(utilisateur):
         return RedirectResponse("/", status_code=303)
+    if limite_depassee(f"harmonisation-analyse:{utilisateur.id}", 6, 3600):
+        return RedirectResponse(
+            f"/admin/harmonisation-nationale/lecons/{lecon_id}?erreur=limite_analyses",
+            status_code=303,
+        )
     if not parametres.groq_api_key or not parametres.groq_model:
         return RedirectResponse(
             f"/admin/harmonisation-nationale/lecons/{lecon_id}?erreur=ia_non_configuree",
@@ -1092,12 +1106,14 @@ def traiter_contribution_lecon(
     contribution.motif_decision = motif
     session.add(contribution)
     auteur = session.get(Utilisateur, contribution.auteur_id)
+    lecon = session.get(LeconReferentielle, lecon_id)
     if auteur:
+        titre_lecon = lecon.titre if lecon else f"leçon #{lecon_id}"
         _notifier(
             session,
             auteur,
             utilisateur.id,
-            f"Ta contribution pour « {lecon_id} » a été {decision}. Motif : {motif}",
+            f"Ta contribution pour « {titre_lecon} » a été {decision}. Motif : {motif}",
             f"/enseignant/harmonisation/lecons/{lecon_id}",
         )
     session.commit()
