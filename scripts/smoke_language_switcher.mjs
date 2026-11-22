@@ -99,6 +99,12 @@ if (window.document.querySelector('#referentiel-value').textContent !== 'Science
     window.document.querySelector('#academic-values').options[0].text !== 'Sciences de Gestion') {
   throw new Error('Official academic reference values must remain in French');
 }
+select.value = 'en';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.documentElement.getAttribute('lang') !== 'en') {
+  throw new Error('English choice did not update the document language');
+}
 // Vérifie les parcours réels ajoutés dans l'espace enseignant, l'aide et la charte.
 const teacherIntro = window.document.createElement('p');
 teacherIntro.textContent = 'Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.';
