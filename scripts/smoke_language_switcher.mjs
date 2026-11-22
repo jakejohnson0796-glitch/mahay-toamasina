@@ -132,10 +132,10 @@ if (window.document.documentElement.getAttribute('lang') !== 'mg') {
 if (teacherIntro.textContent !== "Omano ny lesonao, araho ny mpianatrao ary alamino ny fotoam-pianarana ao amin'ny sehatra natao ho an'ny fampianarana.") {
   throw new Error('Teacher workspace introduction was not translated to Malagasy');
 }
-if (helpHeading.textContent !== 'Foibe fanampiana · MITARIDALA') {
+if (helpHeading.textContent !== 'Ivon-toerana fanampiana · MITARIDALA') {
   throw new Error('Help centre heading was not translated to Malagasy');
 }
-if (legalHeading.textContent !== 'Etika, fepetra fampiasana ary tsiambaratelo') {
+if (legalHeading.textContent !== 'Fitsipi-pitondrantena, fepetra fampiasana ary tsiambaratelo') {
   throw new Error('Legal page heading was not translated to Malagasy');
 }
 if (namedGreeting.textContent !== 'Manao ahoana, Rakoto.') {
