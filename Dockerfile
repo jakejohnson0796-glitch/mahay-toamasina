@@ -8,8 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra poppler-utils antiword catdoc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-ocr.txt ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -m pip install --no-cache-dir paddlepaddle==3.2.0 \
+       --index-url https://www.paddlepaddle.org.cn/packages/stable/cpu/ \
+    && python -m pip install --no-cache-dir -r requirements-ocr.txt
 
 COPY . .
 
@@ -25,7 +28,9 @@ RUN groupadd --system mahay \
     && chown -R mahay:mahay /app/uploads \
     && chmod 750 /app/uploads
 
-ENV HOME=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV HOME=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    PADDLE_PDX_MODEL_SOURCE=BOS \
+    OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 USER mahay:mahay
 
 # Render transmet le trafic au port interne expose par le service (8080 par défaut).
