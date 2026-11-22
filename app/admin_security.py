@@ -53,6 +53,11 @@ def action_admin_protegee(path: str) -> bool:
         return path != "/admin/securite/mot-de-passe-confirmation"
     if path.startswith("/moderation"):
         return True
+    if re.fullmatch(
+        r"/classe/(?:[0-9]+/bulletins/creer|bulletins/[0-9]+/(?:modifier|publier|reouvrir))",
+        path,
+    ):
+        return True
     if path.startswith("/cercles/"):
         # Ne proteger que les capacites speciales accessibles au createur OU
         # a l'admin, pas les actions ordinaires du salon (message, reaction,

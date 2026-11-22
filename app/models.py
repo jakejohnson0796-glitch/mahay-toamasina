@@ -2459,3 +2459,64 @@ class JournalActionAdmin(SQLModel, table=True):
         Index("ix_journalactionadmin_admin_date", "admin_id", "date_creation"),
         Index("ix_journalactionadmin_cible_date", "utilisateur_cible_id", "date_creation"),
     )
+
+
+class BulletinScolaire(SQLModel, table=True):
+    """Bulletin officiel d'un élève pour une période et un cours (matière).
+
+    Les notes détaillées restent dans Devoir/RenduDevoir. Le snapshot JSON
+    est figé à la publication afin qu'un changement ultérieur de note ne
+    réécrive jamais silencieusement un bulletin déjà remis à la famille.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cours_id: int = Field(foreign_key="cours.id", index=True)
+    utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    periode: str = Field(max_length=40)
+    appreciation: Optional[str] = Field(default=None, max_length=2000)
+    statut: str = Field(default="brouillon", index=True, max_length=16)
+    cree_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    publie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow)
+    date_modification: datetime = Field(default_factory=datetime.utcnow)
+    date_publication: Optional[datetime] = None
+    snapshot_json: str = "{}"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "cours_id", "utilisateur_id", "periode",
+            name="uq_bulletinscolaire_cours_eleve_periode",
+        ),
+        CheckConstraint(
+            "statut IN ('brouillon', 'publie')",
+            name="ck_bulletinscolaire_statut",
+        ),
+        Index(
+            "ix_bulletinscolaire_cours_periode_statut",
+            "cours_id", "periode", "statut",
+        ),
+        Index(
+            "ix_bulletinscolaire_eleve_statut_publication",
+            "utilisateur_id", "statut", "date_publication",
+        ),
+    )
+
+
+class BulletinScolaireEvenement(SQLModel, table=True):
+    """Journal d'audit des créations, modifications et publications de bulletins.
+
+    Les événements de réouverture conservent le snapshot qui était publié
+    avant toute correction ; le document original reste donc retraçable.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    bulletin_id: int = Field(foreign_key="bulletinscolaire.id", index=True)
+    acteur_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id", index=True)
+    action: str = Field(max_length=20, index=True)
+    details_json: str = "{}"
+    date_evenement: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('creation', 'modification', 'publication', 'reouverture')",
+            name="ck_bulletinscolaireevenement_action",
+        ),
+    )

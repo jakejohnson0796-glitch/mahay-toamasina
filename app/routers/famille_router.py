@@ -12,6 +12,7 @@ from ..auth import utilisateur_courant
 from ..csrf import verifier_csrf
 from ..database import get_session
 from ..models import (
+    BulletinScolaire,
     Cours,
     Devoir,
     EvenementLienResponsableEleve,
@@ -26,6 +27,7 @@ from ..models import (
 )
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
+from ..bulletins import lire_snapshot_bulletin
 
 router = APIRouter()
 
@@ -174,6 +176,65 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             (pointage.utilisateur_id, pointage.seance_id), []
         ).append(pointage)
 
+    bulletins_modeles = (
+        session.exec(
+            select(BulletinScolaire)
+            .where(
+                BulletinScolaire.utilisateur_id.in_(ids_eleves),
+                BulletinScolaire.statut == "publie",
+            )
+            .order_by(BulletinScolaire.date_publication.desc())
+            .limit(500)
+        ).all()
+        if ids_eleves else []
+    )
+    bulletins_par_eleve: dict[int, list[dict]] = {}
+    for bulletin in bulletins_modeles:
+        snapshot = lire_snapshot_bulletin(bulletin.snapshot_json)
+        if snapshot:
+            bulletins_par_eleve.setdefault(bulletin.utilisateur_id, []).append({
+                "bulletin": bulletin,
+                "snapshot": snapshot,
+            })
+    moyennes_bulletins_par_eleve: dict[int, list[dict]] = {}
+    for eleve_id, entrees in bulletins_par_eleve.items():
+        stats_par_periode: dict[str, dict] = {}
+        for entree in entrees:
+            snapshot = entree["snapshot"]
+            periode = str(snapshot.get("periode") or entree["bulletin"].periode).strip()
+            cle_periode = periode.casefold()
+            poids = 1.0  # Aucun coefficient officiel de matière n’est encore référencé.
+            moyenne = float(snapshot.get("moyenne") or 0)
+            stats = stats_par_periode.setdefault(
+                cle_periode,
+                {
+                    "periode": periode,
+                    "total_pondere": 0.0,
+                    "poids_total": 0.0,
+                    "matieres": set(),
+                    "date_recente": "",
+                },
+            )
+            stats["total_pondere"] += moyenne * poids
+            stats["poids_total"] += poids
+            stats["matieres"].add(str(snapshot.get("cours_id") or entree["bulletin"].cours_id))
+            date_publication = str(snapshot.get("date_publication") or "")
+            if date_publication > stats["date_recente"]:
+                stats["date_recente"] = date_publication
+        moyennes_bulletins_par_eleve[eleve_id] = [
+            {
+                "periode": stats["periode"],
+                "moyenne": round(stats["total_pondere"] / stats["poids_total"], 2),
+                "nb_matieres": len(stats["matieres"]),
+            }
+            for stats in sorted(
+                stats_par_periode.values(),
+                key=lambda item: (item["date_recente"], item["periode"].casefold()),
+                reverse=True,
+            )
+            if stats["poids_total"] > 0
+        ]
+
     enfants = []
     for lien in liens_valides:
         eleve = eleves_par_id[lien.eleve_id]
@@ -271,6 +332,8 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
             "eleve": eleve,
             "type_lien": _TYPES_LIEN.get(lien.type_lien, "Responsable"),
             "cours": cours_infos,
+            "bulletins": bulletins_par_eleve.get(eleve.id, []),
+            "moyennes_bulletins_periode": moyennes_bulletins_par_eleve.get(eleve.id, []),
         })
     return enfants
 

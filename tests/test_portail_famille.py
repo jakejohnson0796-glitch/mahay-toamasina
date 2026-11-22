@@ -8,6 +8,7 @@ from sqlalchemy.pool import StaticPool
 from jinja2 import Environment, FileSystemLoader
 
 from app.models import (
+    BulletinScolaire,
     Cours,
     Devoir,
     EvenementLienResponsableEleve,
@@ -169,9 +170,9 @@ def test_portail_famille_regroupe_les_lectures_sql_pour_plusieurs_enfants_et_cou
     assert len(resultats) == 2
     assert all(len(enfant["cours"]) == 2 for enfant in resultats)
     assert sum(enfant["cours"][0]["nb_seances"] for enfant in resultats) == 2
-    # 9 lectures fixes pour tout le jeu de données; ce nombre ne croît pas
+    # 10 lectures fixes pour tout le jeu de données; ce nombre ne croît pas
     # avec le nombre d'enfants ou de cours.
-    assert len(requetes_select) <= 9
+    assert len(requetes_select) <= 10
 
 
 def test_portail_exclut_les_liens_revoques(db):
@@ -357,6 +358,72 @@ def test_portail_famille_calcule_les_moyennes_ponderees_par_periode_et_exclut_le
     ]
     assert info["moyenne"] == 13.5
     assert all(item["periode"] != "T3" for item in info["moyennes_periode"])
+
+
+
+def test_portail_famille_ne_montre_que_les_bulletins_publies_des_enfants_lies(db):
+    admin = _utilisateur("Admin bulletin", "03400000911", RoleUtilisateur.ADMIN)
+    parent = _utilisateur("Parent bulletin", "03400000912", profil="responsable")
+    enfant = _utilisateur("Élève bulletin", "03400000913")
+    autre_eleve = _utilisateur("Autre élève bulletin", "03400000914")
+    prof = _utilisateur("Prof bulletin", "03400000915", RoleUtilisateur.PROFESSEUR)
+    db.add_all([admin, parent, enfant, autre_eleve, prof])
+    db.commit()
+    for user in (admin, parent, enfant, autre_eleve, prof):
+        db.refresh(user)
+
+    cours = Cours(
+        nom="Physique", matiere="Physique", niveau="Première",
+        professeur_id=prof.id,
+    )
+    db.add(cours)
+    db.commit()
+    db.refresh(cours)
+    db.add_all([
+        LienResponsableEleve(
+            responsable_id=parent.id, eleve_id=enfant.id,
+            type_lien="parent", statut="actif", verifie_par_id=admin.id,
+        ),
+        InscriptionCours(cours_id=cours.id, utilisateur_id=enfant.id),
+        InscriptionCours(cours_id=cours.id, utilisateur_id=autre_eleve.id),
+        BulletinScolaire(
+            cours_id=cours.id, utilisateur_id=enfant.id, periode="T1",
+            statut="publie", snapshot_json='{"version":1,"evaluations":[],"periode":"T1","matiere":"Physique","cours":"Physique","moyenne":15,"nb_notes":1}',
+        ),
+        BulletinScolaire(
+            cours_id=cours.id, utilisateur_id=enfant.id, periode="T2",
+            statut="brouillon", snapshot_json="{}",
+        ),
+        BulletinScolaire(
+            cours_id=cours.id, utilisateur_id=autre_eleve.id, periode="T1",
+            statut="publie", snapshot_json='{"version":1,"evaluations":[],"periode":"T1","matiere":"Physique","cours":"Physique","moyenne":18,"nb_notes":1}',
+        ),
+    ])
+    db.commit()
+
+    resultats = construire_portail_famille(db, parent.id)
+    assert len(resultats) == 1
+    assert [item["bulletin"].periode for item in resultats[0]["bulletins"]] == ["T1"]
+    assert resultats[0]["bulletins"][0]["snapshot"]["moyenne"] == 15
+    assert resultats[0]["moyennes_bulletins_periode"] == [
+        {"periode": "T1", "moyenne": 15.0, "nb_matieres": 1}
+    ]
+
+    # Les bulletins publiés restent consultables après le retrait de l'élève
+    # du cours ; l'historique scolaire ne dépend pas de l'inscription courante.
+    inscriptions = db.exec(
+        select(InscriptionCours).where(
+            InscriptionCours.cours_id == cours.id,
+            InscriptionCours.utilisateur_id == enfant.id,
+        )
+    ).all()
+    for inscription in inscriptions:
+        db.delete(inscription)
+    db.commit()
+    resultats_historiques = construire_portail_famille(db, parent.id)
+    assert resultats_historiques[0]["cours"] == []
+    assert [item["bulletin"].periode for item in resultats_historiques[0]["bulletins"]] == ["T1"]
+
 
 
 def test_modele_interdit_un_rattachement_de_soi_a_soi(db):
