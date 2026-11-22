@@ -5953,7 +5953,6 @@
     if (match) return "Manao ahoana, " + match[1].trim() + ".";
     match = cle.match(/^Bonjour,\s*(.+?)\s*$/i);
     if (match) return "Manao ahoana, " + match[1].trim();
-    if (match) return "Manao ahoana, " + match[1].trim();
     match = cle.match(/^Motif : (.+?)\. Tu peux envoyer une nouvelle demande\.$/i);
     if (match) return "Antony: " + match[1] + ". Afaka mandefa fangatahana vaovao ianao.";
     match = cle.match(/^Quiz — (.+) — MITARIDALA$/i);
