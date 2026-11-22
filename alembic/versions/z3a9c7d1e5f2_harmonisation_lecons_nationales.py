@@ -161,7 +161,7 @@ def upgrade() -> None:
         bind.exec_driver_sql(
             """
             CREATE OR REPLACE FUNCTION public.proteger_contribution_lecon()
-            RETURNS trigger LANGUAGE plpgsql AS $
+            RETURNS trigger LANGUAGE plpgsql AS $contribution$
             BEGIN
                 IF TG_OP = 'TRUNCATE' THEN
                     RAISE EXCEPTION 'Les contributions pédagogiques ne peuvent pas être purgées';
@@ -181,7 +181,7 @@ def upgrade() -> None:
                 END IF;
                 RETURN NEW;
             END;
-            $
+            $contribution$
             """
         )
         bind.exec_driver_sql(
