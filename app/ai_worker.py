@@ -51,6 +51,16 @@ def traiter_tache(tache) -> None:
         )
         return
 
+    if tache.type_tache == ai_queue.TYPE_ANALYSE_COMPARATIVE_LECON:
+        if not tache.analyse_comparative_lecon_id:
+            raise RuntimeError("Tâche d'analyse comparative sans analyse_comparative_lecon_id.")
+        from . import harmonisation_ia
+
+        harmonisation_ia.analyser_lecon_comparativement(
+            tache.analyse_comparative_lecon_id
+        )
+        return
+
     if tache.type_tache == ai_queue.TYPE_VERIFICATION_QUIZ:
         if not tache.tentative_quiz_id:
             raise RuntimeError("Tache de verification quiz sans tentative_quiz_id.")

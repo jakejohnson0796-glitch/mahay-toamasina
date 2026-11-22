@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titre %}Référentiel des leçons — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair espace-harmonisation-nationale">
+  <header class="tb-panneau-entete">
+    <div>
+      <p class="eyebrow">Administration · Gouvernance pédagogique</p>
+      <h1>Référentiel des leçons</h1>
+      <p class="stat-label">Crée les leçons à partir d'associations de programmes déjà vérifiées. Vérifie la source documentaire avant d'ouvrir les contributions des enseignants.</p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/admin">Administration</a>
+  </header>
+  {% if request.query_params.get("erreur") %}
+  <div class="erreur" role="alert">
+    {% if request.query_params.get("erreur") == "lecon_invalide" %}Vérifie le programme, le titre, le code et l'adresse HTTPS de la source officielle.
+    {% elif request.query_params.get("erreur") == "lecon_deja_presente" %}Ce code de leçon existe déjà pour ce programme.
+    {% else %}Une opération n'a pas abouti. Vérifie les informations puis réessaie.{% endif %}
+  </div>
+  {% endif %}
+  <section class="hn-panneau">
+    <h2>Enregistrer une leçon de référence</h2>
+    <p>Les nouveaux enregistrements restent « à vérifier » et ne sont pas visibles des enseignants avant validation administrative.</p>
+    <form method="post" action="/admin/harmonisation-nationale/lecons" class="hn-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label>Programme vérifié
+        <select name="programme_matiere_id" required>
+          <option value="">Choisir niveau, série et matière</option>
+          {% for item in programmes %}
+          <option value="{{ item.programme.id }}">
+            {{ item.scope.niveau.libelle }}{% if item.scope.option %} · {{ item.scope.option.libelle }}{% endif %} · {{ item.scope.matiere.libelle }} — {{ item.scope.referentiel.libelle }} ({{ item.scope.referentiel.statut }})
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="hn-grille">
+        <label>Code de la leçon<input name="code" maxlength="40" required placeholder="Ex. CH01-L02"></label>
+        <label>Chapitre<input name="chapitre" maxlength="200" placeholder="Chapitre 1"></label>
+      </div>
+      <label>Titre de la leçon<input name="titre" maxlength="240" required></label>
+      <label>Objectifs pédagogiques<textarea name="objectifs_pedagogiques" maxlength="5000" rows="3"></textarea></label>
+      <label>Source officielle HTTPS<input type="url" name="source_officielle" maxlength="1200" required placeholder="https://..."></label>
+      <label>Référence précise (page, section, année, version)<input name="reference_source" maxlength="1000"></label>
+      <button class="bouton bouton-primaire" type="submit">Enregistrer comme « à vérifier »</button>
+    </form>
+  </section>
+  <section class="hn-panneau">
+    <h2>Leçons enregistrées</h2>
+    {% for item in lecons %}
+    <article class="hn-ligne">
+      <div>
+        <strong>{{ item.lecon.titre }}</strong>
+        <p>{{ item.scope.niveau.libelle if item.scope else "Programme indisponible" }}{% if item.scope and item.scope.option %} · {{ item.scope.option.libelle }}{% endif %}{% if item.scope %} · {{ item.scope.matiere.libelle }}{% endif %}</p>
+        <small>Code {{ item.lecon.code }} · Référentiel {{ item.scope.referentiel.statut if item.scope else "inconnu" }} · {{ item.lecon.statut_validation.replace("_", " ") }} · Publication : {{ item.lecon.statut_publication }}</small>
+      </div>
+      <a class="bouton bouton-secondaire" href="/admin/harmonisation-nationale/lecons/{{ item.lecon.id }}">Examiner</a>
+    </article>
+    {% else %}
+    <p>Aucune leçon enregistrée. Ne considère pas le référentiel scolaire partiel comme une couverture nationale exhaustive.</p>
+    {% endfor %}
+  </section>
+</div>
+<style nonce="{{ csp_nonce(request) }}">
+.espace-harmonisation-nationale{max-width:1160px;margin:0 auto}.hn-panneau{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}.hn-panneau h2{font-size:1.05rem}.hn-panneau p{font-size:.82rem;line-height:1.55;color:var(--content-text-muted)}.hn-form{display:grid;gap:.75rem}.hn-form label{display:grid;gap:.35rem;font-size:.82rem;font-weight:700}.hn-form input,.hn-form textarea,.hn-form select{width:100%;box-sizing:border-box;padding:.7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}.hn-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.hn-ligne{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.85rem 0;border-top:1px solid var(--content-border)}.hn-ligne p,.hn-ligne small{display:block;margin:.2rem 0;color:var(--content-text-muted);font-size:.75rem}.hn-ligne .bouton{flex:0 0 auto}@media(max-width:620px){.hn-grille{grid-template-columns:1fr}.hn-ligne{align-items:flex-start;flex-direction:column}.hn-ligne .bouton{width:100%;text-align:center}}
+</style>
+{% endblock %}

@@ -2239,6 +2239,11 @@ class TacheIA(SQLModel, table=True):
         foreign_key="ficherevisiondocument.id",
         index=True,
     )
+    analyse_comparative_lecon_id: Optional[int] = Field(
+        default=None,
+        foreign_key="analysecomparativelecon.id",
+        index=True,
+    )
     statut: StatutTacheIA = Field(default=StatutTacheIA.EN_ATTENTE, index=True)
     strategie_verification: str = Field(default="standard", index=True)
     score_risque: int = Field(default=0)
@@ -2276,6 +2281,12 @@ class TacheIA(SQLModel, table=True):
             "uq_tache_ia_type_fiche_revision_document",
             "type_tache",
             "fiche_revision_document_id",
+            unique=True,
+        ),
+        Index(
+            "uq_tache_ia_type_analyse_comparative_lecon",
+            "type_tache",
+            "analyse_comparative_lecon_id",
             unique=True,
         ),
         Index(
@@ -2556,6 +2567,160 @@ class EchangeDemandeMiseAJourCours(SQLModel, table=True):
     auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
     message: str = Field(max_length=5000)
     date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+
+class StatutLeconReferentielle(str, Enum):
+    A_VERIFIER = "a_verifier"
+    VERIFIEE = "verifiee"
+    ARCHIVEE = "archivee"
+
+
+class LeconReferentielle(SQLModel, table=True):
+    """Leçon rattachée à une association officielle niveau / option / matière.
+
+    Une leçon n'est accessible aux enseignants contributeurs qu'après
+    vérification explicite de sa source par un administrateur.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    programme_matiere_id: int = Field(
+        foreign_key="programmematierescolaire.id", index=True
+    )
+    code: str = Field(max_length=40)
+    chapitre: str = Field(default="", max_length=200)
+    titre: str = Field(max_length=240)
+    objectifs_pedagogiques: str = Field(default="", max_length=5000)
+    source_officielle: str = Field(max_length=1200)
+    reference_source: str = Field(default="", max_length=1000)
+    statut_validation: str = Field(
+        default=StatutLeconReferentielle.A_VERIFIER.value,
+        max_length=20,
+        index=True,
+    )
+    cree_par_id: int = Field(foreign_key="utilisateur.id")
+    valide_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    date_validation: Optional[datetime] = None
+    motif_validation: str = Field(default="", max_length=2000)
+    statut_publication: str = Field(default="non_publie", max_length=20, index=True)
+    contenu_publie: str = Field(default="", max_length=100000)
+    version_publiee: int = Field(default=0)
+    date_publication: Optional[datetime] = None
+    publie_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "programme_matiere_id",
+            "code",
+            name="uq_leconreferentielle_programme_code",
+        ),
+        CheckConstraint(
+            "statut_validation IN ('a_verifier', 'verifiee', 'archivee')",
+            name="ck_leconreferentielle_statut_validation",
+        ),
+        CheckConstraint(
+            "statut_publication IN ('non_publie', 'publie')",
+            name="ck_leconreferentielle_statut_publication",
+        ),
+        CheckConstraint(
+            "version_publiee >= 0",
+            name="ck_leconreferentielle_version_publiee",
+        ),
+        Index(
+            "ix_leconreferentielle_programme_statut",
+            "programme_matiere_id",
+            "statut_validation",
+        ),
+    )
+
+
+class ContributionLecon(SQLModel, table=True):
+    """Contribution pédagogique immuable soumise par un enseignant vérifié."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    lecon_id: int = Field(foreign_key="leconreferentielle.id", index=True)
+    auteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    titre: str = Field(max_length=180)
+    contenu: str = Field(max_length=12000)
+    source_reference: str = Field(max_length=2000)
+    justification: str = Field(max_length=5000)
+    impact_pedagogique: str = Field(max_length=3000)
+    statut: str = Field(default="soumise", max_length=20, index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+    traite_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
+    date_traitement: Optional[datetime] = None
+    motif_decision: str = Field(default="", max_length=3000)
+
+    __table_args__ = (
+        CheckConstraint(
+            "statut IN ('soumise', 'retenue', 'refusee')",
+            name="ck_contributionlecon_statut",
+        ),
+        Index(
+            "ix_contributionlecon_lecon_statut_date",
+            "lecon_id",
+            "statut",
+            "date_creation",
+        ),
+    )
+
+
+class AnalyseComparativeLecon(SQLModel, table=True):
+    """Instantané d'une comparaison IA de plusieurs contributions sourcées.
+
+    L'analyse reste une aide à la relecture : elle n'autorise jamais à elle
+    seule la publication d'un cours de référence.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    lecon_id: int = Field(foreign_key="leconreferentielle.id", index=True)
+    contributions_ids_json: str = Field(default="[]", max_length=2000)
+    resultat_json: str = Field(max_length=60000)
+    modele: str = Field(max_length=120)
+    statut: str = Field(default="en_attente", max_length=20, index=True)
+    cree_par_id: int = Field(foreign_key="utilisateur.id", index=True)
+    date_creation: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "statut IN ('en_attente', 'en_cours', 'terminee', 'a_revoir', 'echouee')",
+            name="ck_analysecomparativelecon_statut",
+        ),
+        Index(
+            "ix_analysecomparativelecon_lecon_date",
+            "lecon_id",
+            "date_creation",
+        ),
+    )
+
+
+class VersionCoursHarmoniseLecon(SQLModel, table=True):
+    """Snapshot public append-only d'une version validée d'une leçon."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    lecon_id: int = Field(foreign_key="leconreferentielle.id", index=True)
+    numero_version: int
+    contenu: str = Field(max_length=100000)
+    analyse_id: Optional[int] = Field(
+        default=None, foreign_key="analysecomparativelecon.id", index=True
+    )
+    contributions_ids_json: str = Field(default="[]", max_length=2000)
+    publie_par_id: int = Field(foreign_key="utilisateur.id", index=True)
+    motif_validation: str = Field(max_length=3000)
+    date_publication: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "lecon_id",
+            "numero_version",
+            name="uq_versioncoursharmonise_lecon_numero",
+        ),
+        CheckConstraint(
+            "numero_version >= 1",
+            name="ck_versioncoursharmonise_numero",
+        ),
+        Index(
+            "ix_versioncoursharmonise_lecon_publication",
+            "lecon_id",
+            "date_publication",
+        ),
+    )
 
 class JournalActionAdmin(SQLModel, table=True):
     """Trace les actions exécutées par un admin dans l'espace réel d'un compte."""

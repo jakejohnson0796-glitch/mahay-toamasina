@@ -275,6 +275,41 @@ l'icone inline par une reference <use href="#icone-..."/> vers un sprite
 de ~320-470, sans changer le rendu visuel) — a traiter dans une prochaine
 session dediee, avec sa propre verification desktop+mobile.
 #}
+{% if lecons_harmonisees %}
+<section class="hn-docs" aria-labelledby="hn-docs-titre">
+  <div class="hn-docs-entete">
+    <div>
+      <p class="eyebrow">Références pédagogiques validées</p>
+      <h3 id="hn-docs-titre">Cours de référence harmonisés</h3>
+      <p>Des leçons consolidées à partir de contributions attribuées, comparées et publiées après validation administrative.</p>
+    </div>
+  </div>
+  <div class="hn-docs-grille">
+    {% for item in lecons_harmonisees %}
+    <article class="hn-doc-carte">
+      <span class="hn-doc-version">Version validée · v{{ item.lecon.version_publiee }}</span>
+      <h4>{{ item.lecon.titre }}</h4>
+      <p>{{ item.niveau.libelle }}{% if item.option %} · {{ item.option.libelle }}{% endif %} · {{ item.matiere.libelle }}</p>
+      {% if item.lecon.chapitre %}<p>{{ item.lecon.chapitre }}</p>{% endif %}
+      <small>Référentiel : {{ item.referentiel.libelle }} · Document mis à jour le {{ item.lecon.date_publication.strftime("%d/%m/%Y") if item.lecon.date_publication else "date indisponible" }}</small>
+      <a class="bouton bouton-primaire" href="/documents/cours-harmonises/{{ item.lecon.id }}">Consulter le cours</a>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+<style nonce="{{ csp_nonce(request) }}">
+.hn-docs{margin:1rem 0 1.35rem;padding:1rem;border:1px solid var(--content-border);border-radius:18px;background:var(--content-surface)}
+.hn-docs h3{margin:.1rem 0 .25rem;font-size:1.15rem;color:var(--content-text)}
+.hn-docs-entete p:not(.eyebrow){margin:.2rem 0 .8rem;font-size:.76rem;line-height:1.5;color:var(--content-text-muted)}
+.hn-docs-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:.7rem}
+.hn-doc-carte{display:flex;flex-direction:column;align-items:flex-start;gap:.35rem;padding:.85rem;border:1px solid var(--content-border);border-radius:13px;background:var(--content-bg);min-width:0}
+.hn-doc-carte h4{margin:.1rem 0;font-size:.9rem;color:var(--content-text)}
+.hn-doc-carte p,.hn-doc-carte small{margin:0;font-size:.72rem;line-height:1.5;color:var(--content-text-muted);overflow-wrap:anywhere}
+.hn-doc-version{font-size:.64rem;font-weight:750;color:var(--content-link)}
+.hn-doc-carte .bouton{margin-top:auto;width:100%;text-align:center;white-space:normal}
+</style>
+{% endif %}
+
 {% if documents %}
 <div class="doc-grille" id="doc-grille">
   {% for doc in documents %}
@@ -427,6 +462,7 @@ session dediee, avec sa propre verification desktop+mobile.
 </div>
 <p id="doc-recherche-vide" class="doc-recherche-vide" role="status" hidden>Aucun document ne correspond à cette recherche. Essaie un autre titre, une autre matière ou un mot-clé.</p>
 {% else %}
+{% if not lecons_harmonisees %}
 <div class="doc-empty-activation">
   {{ etat_vide_constellation(
     titre="Aucune ressource ici pour le moment",
@@ -439,6 +475,7 @@ session dediee, avec sa propre verification desktop+mobile.
   </div>
   {% endif %}
 </div>
+{% endif %}
 {% endif %}
 </div>
 

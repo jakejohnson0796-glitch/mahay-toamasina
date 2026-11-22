@@ -22,7 +22,7 @@ from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
+from ..models import (LeconReferentielle, Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte, ExtractionSaturee
@@ -476,12 +476,92 @@ def liste_documents(
                 ).all()
             }
 
+    # Les leçons de référence nationales sont visibles dans la bibliothèque
+    # uniquement après vérification et publication administrative. Elles sont
+    # distinctes des fichiers sources et des documents ordinaires.
+    lecons_harmonisees = []
+    if (
+        cercle_id is None
+        and portee_academique != "universitaire"
+        and (type_document is None or type_document == TypeDocument.COURS)
+    ):
+        requete_lecons = (
+            select(
+                LeconReferentielle,
+                NiveauScolaire,
+                OptionScolaire,
+                MatiereScolaire,
+                ReferentielScolaire,
+            )
+            .join(
+                ProgrammeMatiereScolaire,
+                ProgrammeMatiereScolaire.id == LeconReferentielle.programme_matiere_id,
+            )
+            .join(
+                NiveauScolaire,
+                NiveauScolaire.id == ProgrammeMatiereScolaire.niveau_id,
+            )
+            .join(
+                MatiereScolaire,
+                MatiereScolaire.id == ProgrammeMatiereScolaire.matiere_id,
+            )
+            .join(
+                ReferentielScolaire,
+                ReferentielScolaire.id == ProgrammeMatiereScolaire.referentiel_id,
+            )
+            .outerjoin(
+                OptionScolaire,
+                OptionScolaire.id == ProgrammeMatiereScolaire.option_id,
+            )
+            .where(
+                LeconReferentielle.statut_validation == "verifiee",
+                LeconReferentielle.statut_publication == "publie",
+                ProgrammeMatiereScolaire.statut_validation == "verifie",
+                NiveauScolaire.est_actif == True,  # noqa: E712
+                NiveauScolaire.statut_validation == "verifie",
+                MatiereScolaire.est_active == True,  # noqa: E712
+                MatiereScolaire.statut_validation == "verifie",
+                ReferentielScolaire.statut.notin_(("historique", "archive")),
+            )
+        )
+        if niveau_scolaire_id is not None:
+            requete_lecons = requete_lecons.where(
+                NiveauScolaire.id == niveau_scolaire_id
+            )
+        if option_scolaire_id is not None:
+            requete_lecons = requete_lecons.where(
+                OptionScolaire.id == option_scolaire_id
+            )
+        if matiere:
+            requete_lecons = requete_lecons.where(
+                MatiereScolaire.libelle.contains(matiere)
+            )
+        lecons_harmonisees = [
+            {
+                "lecon": lecon,
+                "niveau": niveau,
+                "option": option,
+                "matiere": matiere_obj,
+                "referentiel": referentiel,
+            }
+            for lecon, niveau, option, matiere_obj, referentiel in session.exec(
+                requete_lecons.order_by(
+                    LeconReferentielle.date_publication.desc(),
+                    LeconReferentielle.id.desc(),
+                ).limit(100)
+            ).all()
+            if option is None or (
+                option.est_active and option.statut_validation == "verifie"
+            )
+        ]
+
     return templates.TemplateResponse(
         request,
         "documents_list.html",
         {
             "request": request,
             "documents": documents,
+            "lecons_harmonisees": lecons_harmonisees,
             "mes_depots": mes_depots,
             "fiches_documents": fiches_documents,
             "fiches_documents_mg": fiches_documents_mg,
