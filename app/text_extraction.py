@@ -13,6 +13,7 @@ Deux strategies, appliquees dans l'ordre :
 """
 from dataclasses import dataclass
 import logging
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -50,12 +51,56 @@ def _paddleocr_installe() -> bool:
         return False
 
 
+def _lire_limite_memoire_cgroup() -> int | None:
+    """Lit la limite mémoire du conteneur (cgroup v2 ou v1), si disponible."""
+    chemins = (
+        Path("/sys/fs/cgroup/memory.max"),
+        Path("/sys/fs/cgroup/memory/memory.limit_in_bytes"),
+    )
+    for chemin in chemins:
+        try:
+            valeur = chemin.read_text(encoding="ascii").strip()
+        except OSError:
+            continue
+        if not valeur or valeur.lower() == "max":
+            continue
+        try:
+            octets = int(valeur)
+        except ValueError:
+            continue
+        # cgroup v1 expose parfois une valeur gigantesque pour « illimité ».
+        if 0 < octets < (1 << 60):
+            return octets
+    return None
+
+
+def _paddleocr_memoire_suffisante() -> bool:
+    """Réserve 2,5 Gio à PaddleOCR pour éviter un OOM sur un petit service web."""
+    try:
+        minimum_mb = max(512, int(os.getenv("PADDLE_OCR_MIN_MEMORY_MB", "2560")))
+    except (TypeError, ValueError):
+        minimum_mb = 2560
+    limite = _lire_limite_memoire_cgroup()
+    if limite is not None and limite < minimum_mb * 1024 * 1024:
+        logger.info(
+            "PaddleOCR non chargé: limite mémoire du conteneur trop basse "
+            "(%s MiB requis; %s MiB disponibles). Repli Tesseract.",
+            minimum_mb,
+            limite // (1024 * 1024),
+        )
+        return False
+    return True
+
+
 def _obtenir_moteur_paddleocr():
-    """Charge une seule instance PaddleOCR à la première vraie page scannée."""
+    """Charge une seule instance PaddleOCR si le quota mémoire est suffisant."""
     global _PADDLE_OCR_INSTANCE, _PADDLE_OCR_ECHEC
     if _PADDLE_OCR_INSTANCE is not None:
         return _PADDLE_OCR_INSTANCE
     if _PADDLE_OCR_ECHEC:
+        return None
+    if not _paddleocr_memoire_suffisante():
+        _PADDLE_OCR_ECHEC = True
         return None
 
     with _PADDLE_OCR_INIT_LOCK:
