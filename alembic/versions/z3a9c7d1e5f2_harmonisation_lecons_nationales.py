@@ -154,6 +154,66 @@ def upgrade() -> None:
                         + quote(role)
                     )
 
+    # Le contenu et l'attribution des contributions deviennent immuables
+    # après soumission. L'administration ne peut modifier que le statut et
+    # les champs de décision, jamais réécrire la contribution d'origine.
+    if bind.dialect.name == "postgresql":
+        bind.exec_driver_sql(
+            """
+            CREATE OR REPLACE FUNCTION public.proteger_contribution_lecon()
+            RETURNS trigger LANGUAGE plpgsql AS $
+            BEGIN
+                IF TG_OP = 'DELETE' THEN
+                    RAISE EXCEPTION 'Les contributions pédagogiques ne peuvent pas être supprimées';
+                END IF;
+                IF ROW(
+                    NEW.lecon_id, NEW.auteur_id, NEW.titre, NEW.contenu,
+                    NEW.source_reference, NEW.justification,
+                    NEW.impact_pedagogique, NEW.date_creation
+                ) IS DISTINCT FROM ROW(
+                    OLD.lecon_id, OLD.auteur_id, OLD.titre, OLD.contenu,
+                    OLD.source_reference, OLD.justification,
+                    OLD.impact_pedagogique, OLD.date_creation
+                ) THEN
+                    RAISE EXCEPTION 'Le contenu original d'une contribution est immuable';
+                END IF;
+                RETURN NEW;
+            END;
+            $
+            """
+        )
+        bind.exec_driver_sql(
+            "CREATE TRIGGER trg_contributionlecon_immutable "
+            "BEFORE UPDATE OR DELETE ON public.contributionlecon "
+            "FOR EACH ROW EXECUTE FUNCTION public.proteger_contribution_lecon()"
+        )
+        bind.exec_driver_sql(
+            "CREATE TRIGGER trg_contributionlecon_no_truncate BEFORE TRUNCATE "
+            "ON public.contributionlecon FOR EACH STATEMENT "
+            "EXECUTE FUNCTION public.proteger_version_cours_harmonise()"
+        )
+    elif bind.dialect.name == "sqlite":
+        bind.exec_driver_sql(
+            """
+            CREATE TRIGGER trg_contributionlecon_immutable
+            BEFORE UPDATE OF lecon_id, auteur_id, titre, contenu, source_reference,
+                             justification, impact_pedagogique, date_creation
+            ON contributionlecon
+            BEGIN
+                SELECT RAISE(ABORT, 'Le contenu original d'une contribution est immuable');
+            END
+            """
+        )
+        bind.exec_driver_sql(
+            """
+            CREATE TRIGGER trg_contributionlecon_no_delete
+            BEFORE DELETE ON contributionlecon
+            BEGIN
+                SELECT RAISE(ABORT, 'Les contributions pédagogiques ne peuvent pas être supprimées');
+            END
+            """
+        )
+
     # Les versions publiées sont append-only : elles ne peuvent pas être
     # réécrites ou purgées silencieusement, même par une requête SQL.
     bind = op.get_bind()
@@ -205,11 +265,16 @@ def upgrade() -> None:
 def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
+        bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_contributionlecon_immutable ON public.contributionlecon")
+        bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_contributionlecon_no_truncate ON public.contributionlecon")
+        bind.exec_driver_sql("DROP FUNCTION IF EXISTS public.proteger_contribution_lecon()")
         bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_versioncours_no_update ON public.versioncoursharmoniselecon")
         bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_versioncours_no_delete ON public.versioncoursharmoniselecon")
         bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_versioncours_no_truncate ON public.versioncoursharmoniselecon")
         bind.exec_driver_sql("DROP FUNCTION IF EXISTS public.proteger_version_cours_harmonise()")
     elif bind.dialect.name == "sqlite":
+        bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_contributionlecon_immutable")
+        bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_contributionlecon_no_delete")
         bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_versioncours_no_update")
         bind.exec_driver_sql("DROP TRIGGER IF EXISTS trg_versioncours_no_delete")
 
