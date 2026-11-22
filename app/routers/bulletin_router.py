@@ -454,6 +454,7 @@ def telecharger_bulletin_general_famille(
     request: Request,
     eleve_id: int,
     periode: str,
+    annee_scolaire: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
     utilisateur = utilisateur_courant(request, session)
@@ -488,15 +489,22 @@ def telecharger_bulletin_general_famille(
     snapshots = []
     for bulletin in bulletins:
         snapshot = lire_snapshot_bulletin(bulletin.snapshot_json)
-        if snapshot and normaliser_periode(
-            str(snapshot.get("periode") or bulletin.periode)
-        ).casefold() == normaliser_periode(periode).casefold():
+        if (
+            snapshot
+            and normaliser_periode(
+                str(snapshot.get("periode") or bulletin.periode)
+            ).casefold() == normaliser_periode(periode).casefold()
+            and (
+                annee_scolaire is None
+                or str(snapshot.get("annee_scolaire") or "") == annee_scolaire
+            )
+        ):
             snapshots.append(snapshot)
     if not snapshots:
         return RedirectResponse("/famille", status_code=303)
 
     try:
-        pdf = generer_pdf_bulletin_general(snapshots, periode)
+        pdf = generer_pdf_bulletin_general(snapshots, periode, annee_scolaire)
     except ValueError:
         return RedirectResponse("/famille", status_code=303)
     return Response(
