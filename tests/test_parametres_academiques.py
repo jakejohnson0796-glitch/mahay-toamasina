@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 from sqlalchemy.pool import StaticPool
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import SQLModel, Session, create_engine, select
 
 from app.bulletins import calculer_moyenne_generale, construire_snapshot_bulletin
 from app.models import (
