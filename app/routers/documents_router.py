@@ -22,7 +22,7 @@ from ..database import get_session, engine
 from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
-from ..models import (LeconReferentielle, ProgrammeMatiereScolaire, Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
+from ..models import (LeconReferentielle, Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte, ExtractionSaturee
