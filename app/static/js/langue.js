@@ -3221,11 +3221,8 @@
     "Référencement ne signifie pas approbation": "Tsy midika ho fankatoavana ny fisoratana ao amin'ny lisitra",
     "Les informations peuvent évoluer": "Mety hiova ny vaovao",
     "IA encadrée": "IA ampiasaina amim-pitandremana"
-
-  });
-
-  
-    "MITARIDALA · Espace professionnel": "MITARIDALA · Sehatra ho an'ny matihanina",
+,
+"MITARIDALA · Espace professionnel": "MITARIDALA · Sehatra ho an'ny matihanina",
     "Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.": "Omano ny lesonao, araho ny mpianatrao ary alamino ny fotoam-pianarana ao amin'ny sehatra natao ho an'ny fampianarana.",
     "Compte enseignant vérifié": "Kaontin'ny mpampianatra voamarina",
     "Vérification du compte": "Fanamarinana ny kaonty",
@@ -3381,7 +3378,10 @@
     "Huit à 72 caractères. Le contrôle visuel est indicatif ; la validation définitive reste côté serveur.": "Teny miafina misy tarehintsoratra 8 ka hatramin'ny 72. Fanoroana fotsiny ny fanombanana hita maso; ny mpizara no manao ny fanamarinana farany.",
     "Votre profil a bien été créé.": "Voaforona soa aman-tsara ny mombamomba anao.",
     "Rechercher et filtrer les notifications": "Hitady sy hanivana fampandrenesana",
-    "Filtrer les notifications": "Hanivana fampandrenesana",var TRADUCTIONS_EN = Object.freeze({
+    "Filtrer les notifications": "Hanivana fampandrenesana",
+  });
+
+  var TRADUCTIONS_EN = Object.freeze({
     "Langue": "Language",
     "Préférences de langue": "Language preferences",
     "Choisir la langue": "Choose a language",
@@ -5529,11 +5529,8 @@
     "Référencement ne signifie pas approbation": "Listing does not imply endorsement",
     "Les informations peuvent évoluer": "Information may change",
     "IA encadrée": "Responsible AI use"
-
-  });
-
-  
-    "MITARIDALA · Espace professionnel": "MITARIDALA · Professional workspace",
+,
+"MITARIDALA · Espace professionnel": "MITARIDALA · Professional workspace",
     "Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.": "Prepare lessons, support your learners, and organise sessions in a workspace designed for teaching.",
     "Compte enseignant vérifié": "Verified teacher account",
     "Vérification du compte": "Account verification",
@@ -5868,7 +5865,10 @@
     "Références pédagogiques validées": "Approved teaching references",
     "Cours de référence harmonisés": "Harmonised reference lessons",
     "Des leçons consolidées à partir de contributions attribuées, comparées et publiées après validation administrative.": "Lessons consolidated from attributed and compared contributions, then published after administrative approval.",
-    "Consulter le cours": "View the lesson",var noeudsOriginaux = new WeakMap();
+    "Consulter le cours": "View the lesson",
+  });
+
+  var noeudsOriginaux = new WeakMap();
   var derniersRendus = new WeakMap();
   var attributsOriginaux = new WeakMap();
   var attributsRendus = new WeakMap();
