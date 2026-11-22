@@ -85,6 +85,7 @@ def test_journal_conserve_acteur_et_valeurs_avant_apres_dans_la_meme_transaction
     details = json.loads(evenement.details_json)
 
     assert evenement.acteur_id == admin.id
+    assert evenement.acteur_nom == admin.nom
     assert evenement.annee_scolaire == "2026-2027"
     assert evenement.action == "modification"
     assert evenement.entite_type == "configuration"
