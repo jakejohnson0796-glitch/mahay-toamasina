@@ -24,6 +24,7 @@ from ..models import (
     NiveauScolaire,
     OptionScolaire,
     ProgrammeMatiereScolaire,
+    ReferentielScolaire,
     RoleUtilisateur,
     StatutLeconReferentielle,
     Utilisateur,
@@ -36,11 +37,13 @@ from ..programme_storage import (
     sauvegarder_programme_officiel,
     supprimer_programme_officiel,
     url_telechargement_programme,
+    ouvrir_programme_officiel,
 )
 from ..programmes_officiels import (
     est_source_officielle,
     normaliser_code_element,
     proposer_structure_programme,
+    extraction_validable_apres_controle_manuel,
 )
 from ..rate_limit import limite_depassee
 from ..templating import templates
@@ -77,12 +80,22 @@ def _association_valide(session: Session, programme_matiere_id: int):
         session.get(OptionScolaire, association.option_id)
         if association.option_id else None
     )
+    referentiel = session.get(ReferentielScolaire, association.referentiel_id)
     if (
-        not niveau or not matiere
+        not referentiel
+        or referentiel.statut in {"historique", "archive"}
+        or not niveau or not matiere
+        or niveau.referentiel_id != association.referentiel_id
         or niveau.statut_validation != "verifie"
         or not niveau.est_actif
+        or matiere.statut_validation != "verifie"
+        or not matiere.est_active
         or (association.option_id and (
-            not option or option.statut_validation != "verifie" or not option.est_active
+            not option
+            or option.referentiel_id != association.referentiel_id
+            or option.niveau_id != niveau.id
+            or option.statut_validation != "verifie"
+            or not option.est_active
         ))
     ):
         return None
@@ -105,7 +118,7 @@ def _extraire_depuis_stockage(chemin_fichier: str) -> str:
     """L'extraction passe par le stockage privé existant, avec OCR borné."""
     from ..storage import ouvrir_fichier_local
 
-    with ouvrir_fichier_local(chemin_fichier) as chemin_local:
+    with ouvrir_programme_officiel(chemin_fichier) as chemin_local:
         return extraire_texte(str(chemin_local))
 
 
@@ -161,17 +174,29 @@ def page_programmes_officiels(
             if options_ids else []
         )
     }
+    referentiels_ids = {a.referentiel_id for a in associations_completes}
+    referentiels_map = {
+        r.id: r for r in (
+            session.exec(select(ReferentielScolaire).where(ReferentielScolaire.id.in_(referentiels_ids))).all()
+            if referentiels_ids else []
+        )
+    }
 
     def association_valide_pour_page(association):
         niveau = niveaux_map.get(association.niveau_id)
         matiere = matieres_map.get(association.matiere_id)
         option = options_map.get(association.option_id) if association.option_id else None
+        referentiel = referentiels_map.get(association.referentiel_id)
         return bool(
-            niveau and niveau.est_actif and niveau.statut_validation == "verifie"
-            and matiere
+            referentiel and referentiel.statut not in {"historique", "archive"}
+            and niveau and niveau.referentiel_id == association.referentiel_id
+            and niveau.est_actif and niveau.statut_validation == "verifie"
+            and matiere and matiere.est_active and matiere.statut_validation == "verifie"
             and (
                 association.option_id is None
-                or (option and option.est_active and option.statut_validation == "verifie")
+                or (option and option.referentiel_id == association.referentiel_id
+                    and option.niveau_id == niveau.id
+                    and option.est_active and option.statut_validation == "verifie")
             )
         )
 
@@ -320,6 +345,7 @@ async def importer_programme_officiel(
         if (
             not precedent
             or precedent.programme_matiere_id != programme_matiere_id
+            or precedent.type_document != type_document
             or precedent.statut_validation != "verifie"
         ):
             return _redirect("version_precedente_invalide")
@@ -489,16 +515,24 @@ def valider_programme_officiel(
     request: Request,
     programme_id: int,
     motif_validation: str = Form(...),
+    lecture_originale_confirmee: str = Form(default=""),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verifier_csrf),
 ):
     admin = _admin_requis(request, session)
     if not admin:
         return RedirectResponse("/", status_code=303)
-    programme = session.get(ProgrammeOfficielScolaire, programme_id)
+    programme = session.exec(
+        select(ProgrammeOfficielScolaire)
+        .where(ProgrammeOfficielScolaire.id == programme_id)
+        .with_for_update()
+    ).first()
     if not programme or programme.statut_validation != "a_verifier":
         return _redirect("programme_non_validable", programme_id)
-    if programme.nombre_caracteres_extraits < MIN_TEXTE_VALIDABLE:
+    confirmation_original = lecture_originale_confirmee.strip().lower() in {"oui", "on", "true", "1"}
+    if not extraction_validable_apres_controle_manuel(
+        programme.nombre_caracteres_extraits, confirmation_original
+    ):
         return _redirect("extraction_insuffisante", programme_id)
     if not (
         est_source_officielle(programme.source_url)
@@ -512,7 +546,9 @@ def valider_programme_officiel(
         return _redirect("association_non_verifiee", programme_id)
 
     programme.statut_validation = "verifie"
-    programme.motif_validation = motif
+    programme.motif_validation = (
+        motif + (" · Original consulté manuellement par l’administrateur." if confirmation_original and programme.nombre_caracteres_extraits < MIN_TEXTE_VALIDABLE else "")
+    )[:4000]
     programme.verifie_par_id = admin.id
     programme.date_verification = datetime.utcnow()
     session.add(programme)

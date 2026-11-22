@@ -14,7 +14,7 @@ class ProgrammeOfficielScolaire(SQLModel, table=True):
     """Copie versionnée d'un document de programme importé par un admin."""
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    code: str = Field(unique=True, max_length=80, index=True)
+    code: str = Field(unique=True, max_length=80)
     intitule: str = Field(max_length=250)
     organisme_emetteur: str = Field(max_length=180)
     type_document: str = Field(max_length=12, index=True)  # EP / FRP / AUTRE
@@ -29,7 +29,7 @@ class ProgrammeOfficielScolaire(SQLModel, table=True):
     nom_fichier_original: str = Field(max_length=255)
     chemin_fichier: str = Field(max_length=1200)
     type_mime: str = Field(max_length=120)
-    empreinte_sha256: str = Field(max_length=64, index=True)
+    empreinte_sha256: str = Field(max_length=64)
     taille_octets: int
     texte_extrait: str = Field(default="", sa_column=Column(Text, nullable=False))
     statut_extraction: str = Field(default="en_attente", max_length=20, index=True)
@@ -49,6 +49,7 @@ class ProgrammeOfficielScolaire(SQLModel, table=True):
     date_verification: Optional[datetime] = None
 
     __table_args__ = (
+        UniqueConstraint("empreinte_sha256", name="uq_programmeofficiel_empreinte_sha256"),
         CheckConstraint(
             "type_document IN ('EP', 'FRP', 'AUTRE')",
             name="ck_programmeofficiel_type_document",

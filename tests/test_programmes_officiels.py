@@ -2,6 +2,7 @@ from app.programmes_officiels import (
     est_source_officielle,
     normaliser_code_element,
     proposer_structure_programme,
+    extraction_validable_apres_controle_manuel,
 )
 from app.request_limits import SINGLE_DOCUMENT_BODY_LIMIT, limite_corps_requete
 from app.admin_security import TAILLE_MAX_FORMULAIRE_ADMIN, limite_formulaire_admin
@@ -61,3 +62,23 @@ def test_import_programme_respecte_la_limite_http_de_document():
         "/admin/programmes-officiels/importer"
     ) == SINGLE_DOCUMENT_BODY_LIMIT
     assert TAILLE_MAX_FORMULAIRE_ADMIN < SINGLE_DOCUMENT_BODY_LIMIT
+
+
+
+def test_extraction_faible_exige_une_confirmation_de_lecture_originale():
+    assert not extraction_validable_apres_controle_manuel(0, False)
+    assert not extraction_validable_apres_controle_manuel(79, False)
+    assert extraction_validable_apres_controle_manuel(80, False)
+    assert extraction_validable_apres_controle_manuel(0, True)
+
+
+def test_empreinte_sha256_est_unique_en_base():
+    from sqlalchemy import UniqueConstraint
+    from app.models_programmes_officiels import ProgrammeOfficielScolaire
+
+    contraintes = {
+        contrainte.name
+        for contrainte in ProgrammeOfficielScolaire.__table__.constraints
+        if isinstance(contrainte, UniqueConstraint)
+    }
+    assert "uq_programmeofficiel_empreinte_sha256" in contraintes

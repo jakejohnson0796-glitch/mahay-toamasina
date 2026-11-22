@@ -7,6 +7,12 @@ from urllib.parse import urlsplit
 
 MAX_ELEMENTS_PROPOSES = 250
 MAX_TEXTE_ELEMENT = 100_000
+MIN_TEXTE_VALIDABLE = 80
+
+
+def extraction_validable_apres_controle_manuel(nombre_caracteres: int, original_verifie: bool) -> bool:
+    """Autorise une extraction insuffisante seulement après lecture explicite de l’original."""
+    return nombre_caracteres >= MIN_TEXTE_VALIDABLE or bool(original_verifie)
 DOMAINES_OFFICIELS = (
     "education.gov.mg",
     "plateforme.education.gov.mg",

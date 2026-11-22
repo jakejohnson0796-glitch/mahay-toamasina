@@ -4,7 +4,9 @@ from __future__ import annotations
 import re
 import unicodedata
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional
+import contextlib
+import tempfile
 
 from .config import parametres
 from .storage import _obtenir_client_supabase, stockage_distant_actif
@@ -101,3 +103,19 @@ def supprimer_programme_officiel(reference_fichier: str) -> None:
                 chemin.parent.rmdir()
     except OSError:
         pass
+
+
+@contextlib.contextmanager
+def ouvrir_programme_officiel(reference_fichier: str) -> Iterator[Path]:
+    """Ouvre la source EP/FRP dans son bucket privé, sans modifier le stockage partagé."""
+    if not stockage_distant_actif():
+        yield Path(reference_fichier)
+        return
+    contenu = _obtenir_client_supabase().storage.from_(
+        BUCKET_PROGRAMMES_OFFICIELS
+    ).download(reference_fichier)
+    suffixe = Path(reference_fichier).suffix
+    with tempfile.NamedTemporaryFile(suffix=suffixe) as temporaire:
+        temporaire.write(contenu)
+        temporaire.flush()
+        yield Path(temporaire.name)

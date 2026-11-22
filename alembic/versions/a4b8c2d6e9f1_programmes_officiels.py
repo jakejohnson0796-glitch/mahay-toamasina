@@ -41,6 +41,7 @@ def upgrade() -> None:
         sa.Column("date_import", sa.DateTime(), nullable=False),
         sa.Column("date_verification", sa.DateTime(), nullable=True),
         sa.UniqueConstraint("code", name="uq_programmeofficiel_code"),
+        sa.UniqueConstraint("empreinte_sha256", name="uq_programmeofficiel_empreinte_sha256"),
         sa.CheckConstraint(
             "type_document IN ('EP', 'FRP', 'AUTRE')",
             name="ck_programmeofficiel_type_document",
@@ -56,11 +57,9 @@ def upgrade() -> None:
         sa.CheckConstraint("taille_octets > 0", name="ck_programmeofficiel_taille"),
     )
     for name, columns in (
-        ("ix_programmeofficielscolaire_code", ["code"]),
         ("ix_programmeofficielscolaire_type_document", ["type_document"]),
         ("ix_programmeofficielscolaire_annee_publication", ["annee_publication"]),
         ("ix_programmeofficielscolaire_annee_scolaire", ["annee_scolaire"]),
-        ("ix_programmeofficielscolaire_empreinte_sha256", ["empreinte_sha256"]),
         ("ix_programmeofficielscolaire_statut_extraction", ["statut_extraction"]),
         ("ix_programmeofficielscolaire_statut_validation", ["statut_validation"]),
         ("ix_programmeofficielscolaire_version_precedente_id", ["version_precedente_id"]),
@@ -174,13 +173,13 @@ def upgrade() -> None:
                 IF OLD.statut_validation = 'verifie' AND ROW(
                     NEW.programme_id, NEW.parent_id, NEW.lecon_referentielle_id,
                     NEW.code, NEW.type_element, NEW.titre, NEW.contenu, NEW.ordre,
-                    NEW.page_debut, NEW.motif_validation, NEW.valide_par_id,
-                    NEW.date_validation
+                    NEW.page_debut, NEW.statut_validation, NEW.motif_validation,
+                    NEW.valide_par_id, NEW.date_validation
                 ) IS DISTINCT FROM ROW(
                     OLD.programme_id, OLD.parent_id, OLD.lecon_referentielle_id,
                     OLD.code, OLD.type_element, OLD.titre, OLD.contenu, OLD.ordre,
-                    OLD.page_debut, OLD.motif_validation, OLD.valide_par_id,
-                    OLD.date_validation
+                    OLD.page_debut, OLD.statut_validation, OLD.motif_validation,
+                    OLD.valide_par_id, OLD.date_validation
                 ) THEN
                     RAISE EXCEPTION 'Un élément vérifié est immuable ; créer une nouvelle version du programme';
                 END IF;
@@ -225,7 +224,7 @@ def upgrade() -> None:
             CREATE TRIGGER trg_elementprogramme_immutable
             BEFORE UPDATE OF programme_id, parent_id, lecon_referentielle_id,
                 code, type_element, titre, contenu, ordre, page_debut,
-                motif_validation, valide_par_id, date_validation
+                statut_validation, motif_validation, valide_par_id, date_validation
             ON elementprogrammeofficiel
             WHEN OLD.statut_validation = 'verifie'
             BEGIN
@@ -281,11 +280,9 @@ def downgrade() -> None:
         "ix_programmeofficielscolaire_version_precedente_id",
         "ix_programmeofficielscolaire_statut_validation",
         "ix_programmeofficielscolaire_statut_extraction",
-        "ix_programmeofficielscolaire_empreinte_sha256",
         "ix_programmeofficielscolaire_annee_scolaire",
         "ix_programmeofficielscolaire_annee_publication",
         "ix_programmeofficielscolaire_type_document",
-        "ix_programmeofficielscolaire_code",
     ):
         op.drop_index(name, table_name="programmeofficielscolaire")
     op.drop_table("programmeofficielscolaire")

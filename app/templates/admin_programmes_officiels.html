@@ -49,6 +49,9 @@
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <label for="motif-validation-programme">Motif et éléments contrôlés (50 caractères minimum)</label>
         <textarea id="motif-validation-programme" name="motif_validation" rows="4" minlength="50" maxlength="4000" required></textarea>
+        {% if programme.nombre_caracteres_extraits < 80 %}
+        <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0"><input type="checkbox" name="lecture_originale_confirmee" value="oui" required> J’ai ouvert et contrôlé le fichier original ; l’OCR est insuffisant, mais la source, le contenu et la référence ont été vérifiés manuellement.</label>
+        {% endif %}
         <button class="bouton bouton-primaire" type="submit">Confirmer la source officielle</button>
       </form>
       <form method="post" action="/admin/programmes-officiels/{{ programme.id }}/rejeter" style="margin-top:18px">
