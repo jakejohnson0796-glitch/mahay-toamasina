@@ -237,9 +237,10 @@ def test_modeles_et_file_ia_contiennent_les_nouvelles_tables():
 def test_templates_exposent_la_separation_enseignant_admin_et_publication():
     racine = Path(__file__).resolve().parents[1] / "app" / "templates"
     contenu_enseignant = (racine / "harmonisation_referentiel_enseignant.html").read_text(encoding="utf-8")
-    contenu_admin = (racine / "harmonisation_lecon_detail.html").read_text(encoding="utf-8")
+    contenu_detail = (racine / "harmonisation_lecon_detail.html").read_text(encoding="utf-8")
     contenu_public = (racine / "cours_harmonise_national.html").read_text(encoding="utf-8")
-    assert "Soumettre ma contribution" in contenu_enseignant
-    assert "Comparer les contributions actives" in contenu_admin
-    assert "Publier la version finale vérifiée" in contenu_admin
+    assert "Voir la leçon et contribuer" in contenu_enseignant
+    assert "Soumettre ma contribution" in contenu_detail
+    assert "Comparer les contributions actives" in contenu_detail
+    assert "Publier la version finale vérifiée" in contenu_detail
     assert "Les contributions d'origine et les analyses de travail ne sont pas publiées" in contenu_public
