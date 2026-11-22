@@ -207,6 +207,7 @@ def test_paddleocr_est_configure_en_francais_sur_cpu(monkeypatch):
     faux_module = ModuleType("paddleocr")
     faux_module.PaddleOCR = faux_constructeur
     monkeypatch.setitem(sys.modules, "paddleocr", faux_module)
+    monkeypatch.setattr(text_extraction, "_lire_limite_memoire_cgroup", lambda: None)
     monkeypatch.setattr(text_extraction, "_PADDLE_OCR_INSTANCE", None)
     monkeypatch.setattr(text_extraction, "_PADDLE_OCR_ECHEC", False)
 
@@ -215,3 +216,17 @@ def test_paddleocr_est_configure_en_francais_sur_cpu(monkeypatch):
     assert appels["ocr_version"] == "PP-OCRv5"
     assert appels["device"] == "cpu"
     assert appels["use_doc_unwarping"] is False
+
+
+
+def test_paddleocr_reste_decharge_si_la_limite_memoire_est_trop_faible(monkeypatch):
+    monkeypatch.setattr(
+        text_extraction,
+        "_lire_limite_memoire_cgroup",
+        lambda: 512 * 1024 * 1024,
+    )
+    monkeypatch.setattr(text_extraction, "_PADDLE_OCR_INSTANCE", None)
+    monkeypatch.setattr(text_extraction, "_PADDLE_OCR_ECHEC", False)
+
+    assert text_extraction._obtenir_moteur_paddleocr() is None
+    assert text_extraction._PADDLE_OCR_ECHEC is True
