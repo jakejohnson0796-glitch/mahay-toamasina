@@ -69,7 +69,7 @@
             {% else %}Événement{% endif %}
             · {{ ligne.cible }}
           </strong>
-          <p>{{ ligne.etablissement.nom if ligne.etablissement else "Établissement #" ~ ligne.evenement.etablissement_id }} · Année {{ ligne.evenement.annee_scolaire }}</p>
+          <p>{{ ligne.etablissement_nom }} · Année {{ ligne.evenement.annee_scolaire }}</p>
           {% if ligne.precision_cible %}<p>{{ ligne.precision_cible }}</p>{% endif %}
         </div>
         <div>
