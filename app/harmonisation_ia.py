@@ -19,6 +19,11 @@ from .models import (
     AnalyseComparativeLecon,
     ContributionLecon,
     LeconReferentielle,
+    MatiereScolaire,
+    NiveauScolaire,
+    OptionScolaire,
+    ProgrammeMatiereScolaire,
+    ReferentielScolaire,
     StatutLeconReferentielle,
 )
 
@@ -88,6 +93,25 @@ def analyser_lecon_comparativement(analyse_id: int) -> None:
             session.add(analyse)
             session.commit()
             raise RuntimeError("La leçon n'est plus dans un état vérifié.")
+        programme = session.get(
+            ProgrammeMatiereScolaire, lecon.programme_matiere_id
+        )
+        referentiel = (
+            session.get(ReferentielScolaire, programme.referentiel_id)
+            if programme else None
+        )
+        niveau = (
+            session.get(NiveauScolaire, programme.niveau_id)
+            if programme else None
+        )
+        matiere = (
+            session.get(MatiereScolaire, programme.matiere_id)
+            if programme else None
+        )
+        option = (
+            session.get(OptionScolaire, programme.option_id)
+            if programme and programme.option_id else None
+        )
         try:
             ids = [int(value) for value in json.loads(analyse.contributions_ids_json or "[]")]
         except (TypeError, ValueError):
@@ -120,6 +144,12 @@ def analyser_lecon_comparativement(analyse_id: int) -> None:
                 "titre": lecon.titre,
                 "chapitre": lecon.chapitre,
                 "objectifs": lecon.objectifs_pedagogiques,
+                "niveau": niveau.libelle if niveau else "",
+                "option": option.libelle if option else "",
+                "matiere": matiere.libelle if matiere else "",
+                "referentiel": referentiel.libelle if referentiel else "",
+                "annee_referentiel": referentiel.annee_scolaire if referentiel else "",
+                "programme_source": programme.source_officielle if programme else "",
                 "source_officielle": lecon.source_officielle,
                 "reference_source": lecon.reference_source,
             },
