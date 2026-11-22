@@ -8,6 +8,8 @@
   {% if request.query_params.get("erreur") %}
   <div class="erreur" role="alert">
     {% if request.query_params.get("erreur") == "contribution_invalide" %}La contribution doit contenir un texte substantiel, une source, une justification et un impact pédagogique précis.
+    {% elif request.query_params.get("erreur") == "limite_soumissions" %}La limite de huit contributions par heure est atteinte. Réessaie plus tard.
+    {% elif request.query_params.get("erreur") == "limite_analyses" %}La limite de six analyses par heure est atteinte. Réessaie plus tard.
     {% elif request.query_params.get("erreur") == "ia_non_configuree" %}Le service IA n'est pas configuré sur le serveur.
     {% elif request.query_params.get("erreur") == "deux_enseignants_requis" %}Il faut au moins deux contributions actives déposées par deux enseignants différents.
     {% elif request.query_params.get("erreur") == "publication_refusee" %}Publication bloquée : une analyse terminée et deux contributions retenues de deux enseignants différents sont nécessaires.
