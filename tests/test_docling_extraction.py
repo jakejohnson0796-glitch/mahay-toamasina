@@ -97,7 +97,7 @@ def test_pdf_revient_a_ocr_classique_si_docling_ne_renvoie_pas_un_texte_suffisan
 
     resultat = text_extraction._extraire_texte_detaille_sans_limite(str(chemin))
 
-    assert resultat.moteur == "pdfplumber + Tesseract"
+    assert resultat.moteur == "pdfplumber + PaddleOCR/Tesseract"
     assert "Fallback OCR" in resultat.texte
 
 
