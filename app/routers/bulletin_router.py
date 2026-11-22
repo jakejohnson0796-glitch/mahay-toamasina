@@ -57,7 +57,11 @@ def _periode_canonique(session: Session, cours_id: int, saisie: str) -> str | No
             select(ParametresAcademiquesEtablissement)
             .where(
                 ParametresAcademiquesEtablissement.etablissement_id == cours.etablissement_scolaire_id,
-                ParametresAcademiquesEtablissement.est_actif == True,  # noqa: E712
+                *(
+                    [ParametresAcademiquesEtablissement.annee_scolaire == cours.annee_scolaire]
+                    if cours.annee_scolaire
+                    else [ParametresAcademiquesEtablissement.est_actif == True]  # noqa: E712
+                ),
             )
             .order_by(ParametresAcademiquesEtablissement.date_modification.desc())
             .limit(1)
