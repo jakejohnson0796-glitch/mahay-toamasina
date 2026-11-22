@@ -110,7 +110,7 @@
         </div>
 
         {% if entree.snapshot %}
-          <p><strong>Moyenne figée à la publication : {{ "%.2f"|format(entree.snapshot.moyenne) }} / 20</strong> · {{ entree.snapshot.nb_notes }} évaluation(s) comptée(s)</p>
+          <p><strong>Moyenne figée à la publication : {{ "%.2f"|format(entree.snapshot.moyenne) }} / {{ "%.2f"|format(entree.snapshot.moyenne_sur or 20) }}</strong> · {{ entree.snapshot.nb_notes }} évaluation(s) comptée(s)</p>
         {% endif %}
 
         {% if bulletin.statut == "brouillon" %}
