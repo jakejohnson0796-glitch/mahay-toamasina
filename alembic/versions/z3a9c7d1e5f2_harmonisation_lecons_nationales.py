@@ -27,6 +27,7 @@ def upgrade() -> None:
         sa.Column("valide_par_id", sa.Integer(), sa.ForeignKey("utilisateur.id"), nullable=True),
         sa.Column("date_creation", sa.DateTime(), nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column("date_validation", sa.DateTime(), nullable=True),
+        sa.Column("motif_validation", sa.String(length=2000), nullable=False, server_default=""),
         sa.Column("statut_publication", sa.String(length=20), nullable=False, server_default="non_publie"),
         sa.Column("contenu_publie", sa.String(), nullable=False, server_default=""),
         sa.Column("version_publiee", sa.Integer(), nullable=False, server_default="0"),
@@ -121,6 +122,37 @@ def upgrade() -> None:
         ["type_tache", "analyse_comparative_lecon_id"],
         unique=True,
     )
+
+    # Les objets de travail ne doivent pas être consultables directement
+    # via le Data API Supabase : seul le backend applicatif les utilise.
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        tables = (
+            "leconreferentielle",
+            "contributionlecon",
+            "analysecomparativelecon",
+            "versioncoursharmoniselecon",
+        )
+        roles = bind.execute(
+            sa.text(
+                "SELECT rolname FROM pg_roles "
+                "WHERE rolname IN ('anon', 'authenticated')"
+            )
+        ).scalars().all()
+        quote = bind.dialect.identifier_preparer.quote
+        for table in tables:
+            bind.exec_driver_sql(
+                f"ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY"
+            )
+            bind.exec_driver_sql(
+                f"REVOKE ALL PRIVILEGES ON TABLE public.{table} FROM PUBLIC"
+            )
+            for role in roles:
+                if role in {"anon", "authenticated"}:
+                    bind.exec_driver_sql(
+                        f"REVOKE ALL PRIVILEGES ON TABLE public.{table} FROM "
+                        + quote(role)
+                    )
 
     # Les versions publiées sont append-only : elles ne peuvent pas être
     # réécrites ou purgées silencieusement, même par une requête SQL.
