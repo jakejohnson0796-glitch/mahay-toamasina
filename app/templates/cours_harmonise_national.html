@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}{{ lecon.titre }} — Cours de référence MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<article class="contenu-clair cours-national">
+  <p class="eyebrow">MITARIDALA · Cours de référence harmonisé</p>
+  <a href="/documents">← Retour à la bibliothèque Documents</a>
+  <header class="tb-panneau-entete">
+    <div>
+      <h1>{{ lecon.titre }}</h1>
+      <p class="stat-label">{{ scope.niveau.libelle if scope else "Niveau non disponible" }}{% if scope and scope.option %} · {{ scope.option.libelle }}{% endif %} · {{ scope.matiere.libelle if scope else "Matière non disponible" }}</p>
+      <p>{{ lecon.chapitre }}</p>
+    </div>
+    <span class="cours-national-version">Référence validée · v{{ lecon.version_publiee }}</span>
+  </header>
+  <section class="cours-national-meta">
+    <p><strong>Document mis à jour le :</strong> {{ lecon.date_publication.strftime("%d/%m/%Y à %H:%M") if lecon.date_publication else "date indisponible" }}</p>
+    <p><strong>Référence du programme :</strong> {{ scope.referentiel.libelle if scope else "non disponible" }}</p>
+    <p><strong>Source officielle déclarée :</strong> <a href="{{ lecon.source_officielle }}" target="_blank" rel="noopener noreferrer">consulter la source</a> · {{ lecon.reference_source }}</p>
+    {% if lecon.objectifs_pedagogiques %}<p><strong>Objectifs :</strong> {{ lecon.objectifs_pedagogiques }}</p>{% endif %}
+  </section>
+  <section class="cours-national-contenu" data-no-translate>
+    <div class="hn-texte" data-rendu>{{ lecon.contenu_publie }}</div>
+  </section>
+  <p class="cours-national-note">Cette version a été validée par l'administration de MITARIDALA. Les contributions d'origine et les analyses de travail ne sont pas publiées avec ce cours.</p>
+</article>
+<style nonce="{{ csp_nonce(request) }}">
+.cours-national{max-width:1020px;margin:0 auto}.cours-national-version{border:1px solid var(--content-border);border-radius:999px;padding:.35rem .7rem;font-size:.72rem}.cours-national-meta,.cours-national-contenu{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}.cours-national-meta p{font-size:.82rem;line-height:1.6}.cours-national-contenu .hn-texte{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.95rem;line-height:1.8}.cours-national-note{font-size:.75rem;color:var(--content-text-muted);line-height:1.55}
+</style>
+{% endblock %}
