@@ -22,6 +22,7 @@ from app.models import (
     Utilisateur,
 )
 from app.routers.bulletin_router import _periode_canonique
+from app.routers.admin_scolaire_router import _periodes_configuration
 
 
 @pytest.fixture()
@@ -164,6 +165,14 @@ def _construire_cas_scolaire(db: Session):
         coefficient=2.5,
         obligatoire=True,
     ))
+    db.add(CoefficientMatiereEtablissement(
+        parametres_id=configuration.id,
+        niveau_id=niveau.id,
+        option_id=None,
+        matiere_id=matiere.id,
+        coefficient=3.5,
+        obligatoire=True,
+    ))
     db.commit()
     return cours, eleve, configuration
 
@@ -183,6 +192,22 @@ def test_bulletin_applique_le_bareme_et_le_coefficient_de_la_serie(db):
     assert snapshot["annee_scolaire"] == "2026-2027"
     assert snapshot["evaluations"][0]["note_sur_20"] == 15.0
     assert snapshot["evaluations"][0]["note_sur_echelle"] == 75.0
+
+
+def test_coefficient_generique_est_utilise_si_aucun_coefficient_de_serie(db):
+    cours, eleve, configuration = _construire_cas_scolaire(db)
+    coefficient_serie = db.exec(
+        select(CoefficientMatiereEtablissement).where(
+            CoefficientMatiereEtablissement.parametres_id == configuration.id,
+            CoefficientMatiereEtablissement.option_id.is_not(None),
+        )
+    ).first()
+    db.delete(coefficient_serie)
+    db.commit()
+
+    snapshot = construire_snapshot_bulletin(db, cours, eleve, "T1", None)
+
+    assert snapshot["coefficient_matiere"] == 3.5
 
 
 def test_un_bulletin_scolaire_n_accepte_que_les_periodes_configurees(db):
@@ -227,3 +252,40 @@ def test_anciens_snapshots_conservent_la_moyenne_a_coefficients_neutres(db):
     ]
 
     assert calculer_moyenne_generale(anciens, "T1") == 14.0
+
+
+def test_moyenne_generale_separe_les_annees_scolaires():
+    snapshots = [
+        {
+            "version": 1,
+            "cours_id": 1,
+            "periode": "T1",
+            "annee_scolaire": "2025-2026",
+            "moyenne": 8,
+            "moyenne_sur": 20,
+            "coefficient_matiere": 1,
+            "evaluations": [],
+        },
+        {
+            "version": 1,
+            "cours_id": 1,
+            "periode": "T1",
+            "annee_scolaire": "2026-2027",
+            "moyenne": 18,
+            "moyenne_sur": 20,
+            "coefficient_matiere": 1,
+            "evaluations": [],
+        },
+    ]
+
+    assert calculer_moyenne_generale(snapshots, "T1", "2025-2026") == 8
+    assert calculer_moyenne_generale(snapshots, "T1", "2026-2027") == 18
+
+
+def test_periodes_admin_accepte_codes_uniques_et_refuse_les_doublons():
+    assert _periodes_configuration("T1|Trimestre 1\\nT2|Trimestre 2") == [
+        {"code": "T1", "libelle": "Trimestre 1"},
+        {"code": "T2", "libelle": "Trimestre 2"},
+    ]
+    assert _periodes_configuration("T1|Trimestre 1\\nT1|Deuxième période") is None
+    assert _periodes_configuration("T1|x") is None
