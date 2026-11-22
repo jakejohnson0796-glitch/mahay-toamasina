@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titre %}Contributions aux cours de référence — MITARIDALA{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair espace-harmonisation-nationale">
+  <header class="tb-panneau-entete">
+    <div>
+      <p class="eyebrow">Espace des enseignants vérifiés</p>
+      <h1>Contribuer aux leçons de référence</h1>
+      <p class="stat-label">Choisis une leçon rattachée à un programme scolaire vérifié. Tes contributions restent attribuées et ne sont jamais publiées automatiquement.</p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/enseignant/harmonisation">Espace harmonisation</a>
+  </header>
+  {% for item in lecons %}
+  <article class="hn-carte">
+    <div>
+      <span class="hn-code">{{ item.lecon.code }} · {{ item.scope.referentiel.statut if item.scope else "référentiel à vérifier" }}</span>
+      <h2>{{ item.lecon.titre }}</h2>
+      <p>{{ item.lecon.chapitre }}{% if item.lecon.chapitre %} · {% endif %}{{ item.scope.niveau.libelle if item.scope else "Niveau inconnu" }}{% if item.scope and item.scope.option %} · {{ item.scope.option.libelle }}{% endif %} · {{ item.scope.matiere.libelle if item.scope else "Matière inconnue" }}</p>
+      {% if item.lecon.objectifs_pedagogiques %}<p>{{ item.lecon.objectifs_pedagogiques }}</p>{% endif %}
+      <small>Source de référence : <a href="{{ item.lecon.source_officielle }}" target="_blank" rel="noopener noreferrer">consulter la source</a> · {{ item.lecon.reference_source }}</small>
+    </div>
+    <a class="bouton bouton-primaire" href="/enseignant/harmonisation/lecons/{{ item.lecon.id }}">Voir la leçon et contribuer</a>
+  </article>
+  {% else %}
+  <section class="hn-panneau">
+    <h2>Aucune leçon vérifiée disponible</h2>
+    <p>L'équipe administrative doit d'abord enregistrer et vérifier des leçons à partir de sources officielles. Aucun programme manquant n'est inventé ou complété automatiquement.</p>
+  </section>
+  {% endfor %}
+</div>
+<style nonce="{{ csp_nonce(request) }}">
+.espace-harmonisation-nationale{max-width:1120px;margin:0 auto}.hn-carte,.hn-panneau{margin:.85rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}.hn-carte h2{margin:.3rem 0;font-size:1.05rem}.hn-carte p{font-size:.82rem;line-height:1.55;color:var(--content-text-muted)}.hn-carte small,.hn-code{font-size:.72rem;color:var(--content-text-muted)}.hn-carte .bouton{margin-top:.8rem}@media(max-width:600px){.hn-carte{padding:.8rem}.hn-carte .bouton{display:block;width:100%;text-align:center;white-space:normal}}
+</style>
+{% endblock %}
