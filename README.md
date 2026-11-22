@@ -57,3 +57,15 @@ Les utilisateurs doivent respecter les droits des auteurs et ne partager que des
 ## Vision
 
 L’objectif de MITARIDALA est de rendre les ressources éducatives plus faciles à trouver, de soutenir un apprentissage régulier et de renforcer l’entraide entre apprenants et enseignants.
+
+
+### Installer les moteurs OCR en développement local
+
+Le Dockerfile de production installe automatiquement PaddlePaddle CPU et PaddleOCR. Pour reproduire ce moteur sur un poste local Python 3.12 :
+
+```bash
+python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+python -m pip install -r requirements-ocr.txt
+```
+
+Les modèles PP-OCRv5 français sont chargés à la première lecture d'un scan puis conservés dans le cache local. Si PaddleOCR n'est pas disponible, le traitement continue avec Tesseract lorsque celui-ci est installé.
