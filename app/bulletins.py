@@ -383,7 +383,11 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
 
 
 
-def calculer_moyenne_generale(snapshots: list[dict[str, Any]], periode: str) -> float:
+def calculer_moyenne_generale(
+    snapshots: list[dict[str, Any]],
+    periode: str,
+    annee_scolaire: str | None = None,
+) -> float:
     """Calcule la moyenne générale sur 20 avec coefficients matière.
 
     Les anciens snapshots sans coefficient ou barème utilisent les valeurs
@@ -397,6 +401,8 @@ def calculer_moyenne_generale(snapshots: list[dict[str, Any]], periode: str) -> 
         if not isinstance(snapshot.get("evaluations"), list):
             continue
         if normaliser_periode(str(snapshot.get("periode") or "")).casefold() != periode_normalisee.casefold():
+            continue
+        if annee_scolaire is not None and str(snapshot.get("annee_scolaire") or "") != annee_scolaire:
             continue
         cle = str(snapshot.get("cours_id") or snapshot.get("cours") or snapshot.get("matiere") or "").casefold()
         uniques.setdefault(cle, snapshot)
@@ -412,7 +418,11 @@ def calculer_moyenne_generale(snapshots: list[dict[str, Any]], periode: str) -> 
     return round(total_pondere / poids_total, 2) if poids_total else 0.0
 
 
-def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) -> bytes:
+def generer_pdf_bulletin_general(
+    snapshots: list[dict[str, Any]],
+    periode: str,
+    annee_scolaire: str | None = None,
+) -> bytes:
     """Génère le bulletin récapitulatif multi-matières d'une période.
 
     Les moyennes par matière sont ramenées sur 20 puis pondérées par
@@ -427,6 +437,10 @@ def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) 
         and isinstance(snapshot.get("evaluations"), list)
         and normaliser_periode(str(snapshot.get("periode") or "")).casefold()
             == periode_normalisee.casefold()
+        and (
+            annee_scolaire is None
+            or str(snapshot.get("annee_scolaire") or "") == annee_scolaire
+        )
     ]
     if not valides or not periode_normalisee:
         raise ValueError("Aucun bulletin publié pour cette période.")
@@ -445,7 +459,9 @@ def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) 
     if not matieres:
         raise ValueError("Aucun bulletin exploitable.")
 
-    moyenne_generale = calculer_moyenne_generale(matieres, periode_normalisee)
+    moyenne_generale = calculer_moyenne_generale(
+        matieres, periode_normalisee, annee_scolaire
+    )
     eleve = next(iter(eleves)) or "Élève"
     sortie = BytesIO()
     document = SimpleDocTemplate(
@@ -486,6 +502,7 @@ def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) 
         Spacer(1, 3 * mm),
         Paragraph(f"<b>Élève :</b> {_texte_paragraphe(eleve)}", styles["BodyText"]),
         Paragraph(f"<b>Période :</b> {_texte_paragraphe(periode_normalisee)}", styles["BodyText"]),
+        *([Paragraph(f"<b>Année scolaire :</b> {_texte_paragraphe(annee_scolaire)}", styles["BodyText"])] if annee_scolaire else []),
         Spacer(1, 4 * mm),
         Paragraph(
             f"<b>Moyenne générale : {moyenne_generale:.2f} / 20</b> "
