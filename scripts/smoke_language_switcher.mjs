@@ -99,6 +99,56 @@ if (window.document.querySelector('#referentiel-value').textContent !== 'Science
     window.document.querySelector('#academic-values').options[0].text !== 'Sciences de Gestion') {
   throw new Error('Official academic reference values must remain in French');
 }
+// Vérifie les parcours réels ajoutés dans l'espace enseignant, l'aide et la charte.
+const teacherIntro = window.document.createElement('p');
+teacherIntro.textContent = 'Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.';
+const helpHeading = window.document.createElement('h2');
+helpHeading.textContent = 'Centre d\'aide · MITARIDALA';
+const legalHeading = window.document.createElement('h2');
+legalHeading.textContent = 'Éthique, conditions d’utilisation et confidentialité';
+const namedGreeting = window.document.createElement('p');
+namedGreeting.textContent = 'Bonjour Rakoto.';
+window.document.body.append(teacherIntro, helpHeading, legalHeading, namedGreeting);
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (teacherIntro.textContent !== 'Prepare lessons, support your learners, and organise sessions in a workspace designed for teaching.') {
+  throw new Error('Teacher workspace introduction was not translated to English');
+}
+if (helpHeading.textContent !== 'MITARIDALA Help Centre') {
+  throw new Error('Help centre heading was not translated to English');
+}
+if (legalHeading.textContent !== 'Ethics, terms of use, and privacy') {
+  throw new Error('Legal page heading was not translated to English');
+}
+if (namedGreeting.textContent !== 'Hello, Rakoto.') {
+  throw new Error('Personalised greeting was not translated to English');
+}
+
+select.value = 'mg';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.documentElement.getAttribute('lang') !== 'mg') {
+  throw new Error('Malagasy choice did not update the document language');
+}
+if (teacherIntro.textContent !== "Omano ny lesonao, araho ny mpianatrao ary alamino ny fotoam-pianarana ao amin'ny sehatra natao ho an'ny fampianarana.") {
+  throw new Error('Teacher workspace introduction was not translated to Malagasy');
+}
+if (helpHeading.textContent !== 'Foibe fanampiana · MITARIDALA') {
+  throw new Error('Help centre heading was not translated to Malagasy');
+}
+if (legalHeading.textContent !== 'Etika, fepetra fampiasana ary tsiambaratelo') {
+  throw new Error('Legal page heading was not translated to Malagasy');
+}
+if (namedGreeting.textContent !== 'Manao ahoana, Rakoto.') {
+  throw new Error('Personalised greeting was not translated to Malagasy');
+}
+
+select.value = 'en';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (namedGreeting.textContent !== 'Hello, Rakoto.') {
+  throw new Error('Switching back to English did not restore the personalised greeting');
+}
+
 if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord \\frac{1}{2}') {
   throw new Error('AI output must remain untouched by interface translation');
 }
