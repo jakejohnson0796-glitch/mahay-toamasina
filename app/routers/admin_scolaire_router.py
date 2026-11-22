@@ -5,6 +5,7 @@ administrateur ne les a pas validées avec une source HTTPS exploitable.
 Les API publiques ne publient que les lignes actives et vérifiées.
 """
 from datetime import datetime
+import json
 from typing import Optional
 from urllib.parse import urlparse
 import re
@@ -19,10 +20,12 @@ from ..csrf import verifier_csrf
 from ..database import get_session
 from ..models import (
     CercleEtude,
+    CoefficientMatiereEtablissement,
     EtablissementScolaire,
     MatiereScolaire,
     NiveauScolaire,
     OptionScolaire,
+    ParametresAcademiquesEtablissement,
     OffreEtablissementScolaire,
     ParcoursTechniqueProfessionnel,
     ProgrammeMatiereScolaire,
@@ -1039,3 +1042,356 @@ def valider_association_programme_scolaire(
     session.commit()
     assurer_cercles_scolaires(session)
     return _rediriger("programme_scolaire_valide", entree.id)
+
+
+# ---------------------------------------------------------------------------
+# Paramètres pédagogiques par établissement et année scolaire
+# ---------------------------------------------------------------------------
+
+def _periodes_configuration(texte: str) -> list[dict[str, str]] | None:
+    """Lit une période par ligne au format CODE|Libellé, sans doublons."""
+    periodes: list[dict[str, str]] = []
+    codes_vus: set[str] = set()
+    for ligne in (texte or "").splitlines():
+        ligne = ligne.strip()
+        if not ligne:
+            continue
+        morceaux = ligne.split("|", 1)
+        if len(morceaux) != 2:
+            return None
+        code, libelle = (part.strip() for part in morceaux)
+        if (
+            not re.fullmatch(r"[A-Za-z0-9_-]{1,10}", code)
+            or not 2 <= len(libelle) <= 50
+            or code.casefold() in codes_vus
+        ):
+            return None
+        codes_vus.add(code.casefold())
+        periodes.append({"code": code, "libelle": libelle})
+    return periodes if 1 <= len(periodes) <= 8 else None
+
+
+def _rediriger_parametres(ok: str | None = None, erreur: str | None = None) -> RedirectResponse:
+    suffixe = f"?erreur={erreur}" if erreur else (f"?ok={ok}" if ok else "")
+    return RedirectResponse(f"/admin/parametres-academiques{suffixe}", status_code=303)
+
+
+@router.get("/admin/parametres-academiques")
+def page_parametres_academiques(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    etablissements = session.exec(
+        select(EtablissementScolaire)
+        .where(
+            EtablissementScolaire.est_actif == True,  # noqa: E712
+            EtablissementScolaire.est_verifie == True,  # noqa: E712
+        )
+        .order_by(EtablissementScolaire.nom)
+    ).all()
+    niveaux = session.exec(
+        select(NiveauScolaire)
+        .where(
+            NiveauScolaire.est_actif == True,  # noqa: E712
+            NiveauScolaire.statut_validation == "verifie",
+        )
+        .order_by(NiveauScolaire.ordre, NiveauScolaire.libelle)
+    ).all()
+    options = session.exec(
+        select(OptionScolaire)
+        .where(
+            OptionScolaire.est_active == True,  # noqa: E712
+            OptionScolaire.statut_validation == "verifie",
+        )
+        .order_by(OptionScolaire.libelle)
+    ).all()
+    matieres = session.exec(
+        select(MatiereScolaire)
+        .where(
+            MatiereScolaire.est_active == True,  # noqa: E712
+            MatiereScolaire.statut_validation == "verifie",
+        )
+        .order_by(MatiereScolaire.libelle)
+    ).all()
+    configurations = session.exec(
+        select(ParametresAcademiquesEtablissement)
+        .order_by(
+            ParametresAcademiquesEtablissement.est_actif.desc(),
+            ParametresAcademiquesEtablissement.annee_scolaire.desc(),
+            ParametresAcademiquesEtablissement.id.desc(),
+        )
+        .limit(300)
+    ).all()
+    configurations_map = {item.id: item for item in configurations}
+    etablissements_map = {item.id: item for item in etablissements}
+    niveaux_map = {item.id: item for item in niveaux}
+    options_map = {item.id: item for item in options}
+    matieres_map = {item.id: item for item in matieres}
+    coefficients = session.exec(
+        select(CoefficientMatiereEtablissement)
+        .order_by(CoefficientMatiereEtablissement.parametres_id.desc(),
+                  CoefficientMatiereEtablissement.niveau_id,
+                  CoefficientMatiereEtablissement.matiere_id)
+        .limit(600)
+    ).all()
+    coefficients_affiches = [
+        {
+            "coefficient": item,
+            "configuration": configurations_map.get(item.parametres_id),
+            "etablissement": etablissements_map.get(
+                configurations_map[item.parametres_id].etablissement_id
+            ) if item.parametres_id in configurations_map else None,
+            "niveau": niveaux_map.get(item.niveau_id),
+            "option": options_map.get(item.option_id) if item.option_id else None,
+            "matiere": matieres_map.get(item.matiere_id),
+        }
+        for item in coefficients
+    ]
+    periodes_par_configuration = {}
+    for configuration in configurations:
+        try:
+            data = json.loads(configuration.periodes_json or "[]")
+            periodes_par_configuration[configuration.id] = (
+                data if isinstance(data, list) else []
+            )
+        except (TypeError, ValueError, json.JSONDecodeError):
+            periodes_par_configuration[configuration.id] = []
+
+    return templates.TemplateResponse(
+        request,
+        "admin_parametres_academiques.html",
+        {
+            "utilisateur": admin,
+            "etablissements": etablissements,
+            "niveaux": niveaux,
+            "options": options,
+            "matieres": matieres,
+            "configurations": configurations,
+            "configurations_map": configurations_map,
+            "coefficients_affiches": coefficients_affiches,
+            "periodes_par_configuration": periodes_par_configuration,
+            "erreur": request.query_params.get("erreur", ""),
+            "succes": request.query_params.get("ok", ""),
+        },
+        headers={
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
+
+
+@router.post("/admin/parametres-academiques/annee/enregistrer")
+def enregistrer_parametres_annee_scolaire(
+    request: Request,
+    etablissement_id: int = Form(...),
+    annee_scolaire: str = Form(...),
+    calendrier: str = Form(...),
+    periodes: str = Form(...),
+    note_maximale: float = Form(...),
+    seuil_reussite: float = Form(...),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    etablissement = session.get(EtablissementScolaire, etablissement_id)
+    if not etablissement or not etablissement.est_actif or not etablissement.est_verifie:
+        return _rediriger_parametres(erreur="etablissement_non_verifie")
+    annee = annee_scolaire.strip()
+    match = re.fullmatch(r"(\\d{4})-(\\d{4})", annee)
+    if not match or int(match.group(2)) != int(match.group(1)) + 1:
+        return _rediriger_parametres(erreur="annee_invalide")
+    if calendrier not in {"trimestre", "semestre", "personnalise"}:
+        return _rediriger_parametres(erreur="calendrier_invalide")
+    periodes_validees = _periodes_configuration(periodes)
+    if not periodes_validees:
+        return _rediriger_parametres(erreur="periodes_invalides")
+    if (
+        not 1 <= note_maximale <= 1000
+        or not 0 <= seuil_reussite <= note_maximale
+    ):
+        return _rediriger_parametres(erreur="bareme_invalide")
+
+    configuration = session.exec(
+        select(ParametresAcademiquesEtablissement).where(
+            ParametresAcademiquesEtablissement.etablissement_id == etablissement.id,
+            ParametresAcademiquesEtablissement.annee_scolaire == annee,
+        )
+    ).first()
+    maintenant = datetime.utcnow()
+    if configuration:
+        configuration.calendrier = calendrier
+        configuration.periodes_json = json.dumps(
+            periodes_validees, ensure_ascii=False, separators=(",", ":")
+        )
+        configuration.note_maximale = float(note_maximale)
+        configuration.seuil_reussite = float(seuil_reussite)
+        configuration.est_actif = True
+        configuration.date_modification = maintenant
+    else:
+        configuration = ParametresAcademiquesEtablissement(
+            etablissement_id=etablissement.id,
+            annee_scolaire=annee,
+            calendrier=calendrier,
+            periodes_json=json.dumps(
+                periodes_validees, ensure_ascii=False, separators=(",", ":")
+            ),
+            note_maximale=float(note_maximale),
+            seuil_reussite=float(seuil_reussite),
+            est_actif=True,
+            date_creation=maintenant,
+            date_modification=maintenant,
+        )
+        session.add(configuration)
+        session.flush()
+
+    autres = session.exec(
+        select(ParametresAcademiquesEtablissement).where(
+            ParametresAcademiquesEtablissement.etablissement_id == etablissement.id,
+            ParametresAcademiquesEtablissement.id != configuration.id,
+        )
+    ).all()
+    for ancienne in autres:
+        ancienne.est_actif = False
+        session.add(ancienne)
+    session.add(configuration)
+    session.commit()
+    return _rediriger_parametres(ok="parametres_enregistres")
+
+
+@router.post("/admin/parametres-academiques/coefficient/enregistrer")
+def enregistrer_coefficient_matiere(
+    request: Request,
+    parametres_id: int = Form(...),
+    niveau_id: int = Form(...),
+    option_id: str = Form(default=""),
+    matiere_id: int = Form(...),
+    coefficient: float = Form(...),
+    obligatoire: str = Form(default="oui"),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+
+    configuration = session.get(ParametresAcademiquesEtablissement, parametres_id)
+    niveau = session.get(NiveauScolaire, niveau_id)
+    matiere = session.get(MatiereScolaire, matiere_id)
+    if not configuration or not configuration.est_actif:
+        return _rediriger_parametres(erreur="configuration_invalide")
+    etablissement = session.get(EtablissementScolaire, configuration.etablissement_id)
+    if not etablissement or not etablissement.est_verifie or not etablissement.est_actif:
+        return _rediriger_parametres(erreur="etablissement_non_verifie")
+    if (
+        not niveau or not niveau.est_actif or niveau.statut_validation != "verifie"
+        or not matiere or not matiere.est_active or matiere.statut_validation != "verifie"
+    ):
+        return _rediriger_parametres(erreur="programme_scolaire_invalide")
+
+    option = None
+    option_pk = None
+    if option_id.strip():
+        try:
+            option_pk = int(option_id)
+        except ValueError:
+            return _rediriger_parametres(erreur="option_invalide")
+        option = session.get(OptionScolaire, option_pk)
+        if (
+            not option or not option.est_active
+            or option.statut_validation != "verifie"
+            or option.niveau_id != niveau.id
+        ):
+            return _rediriger_parametres(erreur="option_invalide")
+
+    # Le coefficient ne peut être créé que pour une matière du programme
+    # effectivement validé pour cette classe/série.
+    conditions_programme = [
+        ProgrammeMatiereScolaire.referentiel_id == niveau.referentiel_id,
+        ProgrammeMatiereScolaire.niveau_id == niveau.id,
+        ProgrammeMatiereScolaire.matiere_id == matiere.id,
+        ProgrammeMatiereScolaire.statut_validation == "verifie",
+    ]
+    if option_pk is not None:
+        programme = session.exec(
+            select(ProgrammeMatiereScolaire).where(
+                *conditions_programme,
+                ProgrammeMatiereScolaire.option_id == option_pk,
+            ).limit(1)
+        ).first()
+        if not programme:
+            programme = session.exec(
+                select(ProgrammeMatiereScolaire).where(
+                    *conditions_programme,
+                    ProgrammeMatiereScolaire.option_id.is_(None),
+                ).limit(1)
+            ).first()
+    else:
+        programme = session.exec(
+            select(ProgrammeMatiereScolaire).where(
+                *conditions_programme,
+                ProgrammeMatiereScolaire.option_id.is_(None),
+            ).limit(1)
+        ).first()
+    if not programme:
+        return _rediriger_parametres(erreur="programme_scolaire_invalide")
+
+    if not 0.01 <= coefficient <= 100:
+        return _rediriger_parametres(erreur="coefficient_invalide")
+
+    filtres_coefficient = [
+        CoefficientMatiereEtablissement.parametres_id == configuration.id,
+        CoefficientMatiereEtablissement.niveau_id == niveau.id,
+        CoefficientMatiereEtablissement.matiere_id == matiere.id,
+    ]
+    if option_pk is None:
+        filtres_coefficient.append(CoefficientMatiereEtablissement.option_id.is_(None))
+    else:
+        filtres_coefficient.append(CoefficientMatiereEtablissement.option_id == option_pk)
+    entree = session.exec(
+        select(CoefficientMatiereEtablissement).where(*filtres_coefficient)
+    ).first()
+    maintenant = datetime.utcnow()
+    if entree:
+        entree.coefficient = float(coefficient)
+        entree.obligatoire = obligatoire == "oui"
+        entree.date_modification = maintenant
+    else:
+        entree = CoefficientMatiereEtablissement(
+            parametres_id=configuration.id,
+            niveau_id=niveau.id,
+            option_id=option_pk,
+            matiere_id=matiere.id,
+            coefficient=float(coefficient),
+            obligatoire=obligatoire == "oui",
+            date_creation=maintenant,
+            date_modification=maintenant,
+        )
+    session.add(entree)
+    session.commit()
+    return _rediriger_parametres(ok="coefficient_enregistre")
+
+
+@router.post("/admin/parametres-academiques/coefficient/{coefficient_id}/supprimer")
+def supprimer_coefficient_matiere(
+    request: Request,
+    coefficient_id: int,
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verifier_csrf),
+):
+    admin = _admin_requis(request, session)
+    if not admin:
+        return RedirectResponse("/", status_code=303)
+    entree = session.get(CoefficientMatiereEtablissement, coefficient_id)
+    if not entree:
+        return _rediriger_parametres(erreur="coefficient_introuvable")
+    session.delete(entree)
+    session.commit()
+    return _rediriger_parametres(ok="coefficient_supprime")
