@@ -258,6 +258,19 @@ class TestFeedback(unittest.TestCase):
         page = self.anonyme.get("/feedback")
         self.assertNotIn("Avis en attente confidentiel", page.text)
 
+    def test_avis_prive_reste_visible_a_son_auteur_depuis_la_faq(self):
+        with Session(engine) as session:
+            session.add(Feedback(
+                utilisateur_id=self.marie.utilisateur_id, note=3,
+                commentaire="Mon retour personnel confidentiel",
+                categorie=CategorieFeedback.GENERAL, est_public=False,
+            ))
+            session.commit()
+        page = self.marie.get("/faq")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("Mon retour personnel confidentiel", page.text)
+        self.assertIn("En attente de réponse de l'équipe.", page.text)
+
     def test_avis_prive_absent_de_la_page_publique(self):
         with Session(engine) as session:
             session.add(Feedback(utilisateur_id=self.marie.utilisateur_id, note=2,
