@@ -177,7 +177,7 @@ def upgrade() -> None:
                     OLD.source_reference, OLD.justification,
                     OLD.impact_pedagogique, OLD.date_creation
                 ) THEN
-                    RAISE EXCEPTION 'Le contenu original d'une contribution est immuable';
+                    RAISE EXCEPTION 'Le contenu original de la contribution est immuable';
                 END IF;
                 RETURN NEW;
             END;
