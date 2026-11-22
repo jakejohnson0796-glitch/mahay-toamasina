@@ -73,7 +73,7 @@
           {% if ligne.precision_cible %}<p>{{ ligne.precision_cible }}</p>{% endif %}
         </div>
         <div>
-          <p><strong>Administrateur :</strong> {{ ligne.acteur.nom if ligne.acteur else "Compte #" ~ ligne.evenement.acteur_id }}</p>
+          <p><strong>Administrateur :</strong> {{ ligne.acteur_nom }}</p>
           <p><strong>Date (UTC) :</strong> {{ ligne.evenement.date_evenement.strftime("%d/%m/%Y %H:%M:%S") }}</p>
           <p><strong>Référence :</strong> {{ ligne.evenement.entite_type }} #{{ ligne.evenement.entite_id or "—" }}</p>
         </div>
