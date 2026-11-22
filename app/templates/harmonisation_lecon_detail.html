@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block titre %}{{ lecon.titre }} — Harmonisation nationale{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair hn-detail">
+  <p class="eyebrow">{% if is_admin %}Administration{% else %}Espace enseignant{% endif %} · Référentiel national des leçons</p>
+  <a href="{{ '/admin/harmonisation-nationale' if is_admin else '/enseignant/harmonisation/lecons' }}">← Retour au référentiel</a>
+  {% if request.query_params.get("erreur") %}
+  <div class="erreur" role="alert">
+    {% if request.query_params.get("erreur") == "contribution_invalide" %}La contribution doit contenir un texte substantiel, une source, une justification et un impact pédagogique précis.
+    {% elif request.query_params.get("erreur") == "ia_non_configuree" %}Le service IA n'est pas configuré sur le serveur.
+    {% elif request.query_params.get("erreur") == "deux_enseignants_requis" %}Il faut au moins deux contributions actives déposées par deux enseignants différents.
+    {% elif request.query_params.get("erreur") == "publication_refusee" %}Publication bloquée : une analyse terminée et deux contributions retenues de deux enseignants différents sont nécessaires.
+    {% else %}L'opération demandée n'a pas abouti. Vérifie son état et réessaie.{% endif %}
+  </div>
+  {% endif %}
+  {% if request.query_params.get("etat") == "contribution_envoyee" %}<div class="info" role="status">Ta contribution a été enregistrée. Elle reste en attente de relecture et n'est pas publique.</div>{% endif %}
+  {% if request.query_params.get("etat") == "analyse_planifiee" %}<div class="info" role="status">L'analyse a été ajoutée à la file IA. Son résultat apparaîtra ici une fois le traitement terminé.</div>{% endif %}
+  <header class="tb-panneau-entete">
+    <div>
+      <h1>{{ lecon.titre }}</h1>
+      <p class="stat-label">{{ lecon.code }} · {{ scope.niveau.libelle if scope else "Niveau inconnu" }}{% if scope and scope.option %} · {{ scope.option.libelle }}{% endif %} · {{ scope.matiere.libelle if scope else "Matière inconnue" }}</p>
+      <p>{{ lecon.chapitre }}{% if lecon.chapitre %} · {% endif %}Référentiel : {{ scope.referentiel.libelle if scope else "indisponible" }} ({{ scope.referentiel.statut if scope else "inconnu" }})</p>
+      {% if lecon.objectifs_pedagogiques %}<p>{{ lecon.objectifs_pedagogiques }}</p>{% endif %}
+      <p><strong>Source officielle déclarée :</strong> <a href="{{ lecon.source_officielle }}" target="_blank" rel="noopener noreferrer">ouvrir la référence</a> · {{ lecon.reference_source }}</p>
+    </div>
+    <span class="hn-etat">{{ lecon.statut_validation.replace("_", " ") }} · v{{ lecon.version_publiee }}</span>
+  </header>
+
+  {% if not is_admin and lecon.statut_publication == "publie" %}
+  <section class="hn-panneau">
+    <h2>Version publique actuelle</h2>
+    <p>Document mis à jour le {{ lecon.date_publication.strftime("%d/%m/%Y à %H:%M") if lecon.date_publication else "date indisponible" }} · version {{ lecon.version_publiee }}</p>
+    <a class="bouton bouton-secondaire" href="/documents/cours-harmonises/{{ lecon.id }}">Consulter le cours publié</a>
+  </section>
+  {% endif %}
+
+  {% if not is_admin %}
+  <section class="hn-panneau">
+    <h2>Soumettre une contribution</h2>
+    <p>Chaque contribution doit être attribuée et accompagnée d'une justification et d'une source. Ne dépose pas de données personnelles d'élèves. La soumission ne modifie pas le cours public.</p>
+    <form method="post" action="/enseignant/harmonisation/lecons/{{ lecon.id }}/contributions" class="hn-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label>Titre de ta contribution<input name="titre" maxlength="180" required></label>
+      <label>Contenu pédagogique proposé<textarea name="contenu" rows="8" minlength="100" maxlength="12000" required></textarea></label>
+      <label>Source ou référence consultable<input name="source_reference" maxlength="2000" minlength="8" required placeholder="Référence bibliographique, page, lien ou document"></label>
+      <label>Justification pédagogique/scientifique détaillée<textarea name="justification" rows="4" minlength="50" maxlength="5000" required></textarea></label>
+      <label>Impact attendu sur les objectifs, exercices ou évaluations<textarea name="impact_pedagogique" rows="3" minlength="20" maxlength="3000" required></textarea></label>
+      <button class="bouton bouton-primaire" type="submit">Soumettre ma contribution</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if is_admin %}
+  <section class="hn-panneau">
+    <h2>Vérification de la leçon de référence</h2>
+    {% if lecon.statut_validation == "a_verifier" %}
+    <form method="post" action="/admin/harmonisation-nationale/lecons/{{ lecon.id }}/verifier" class="hn-form">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label>Motif de vérification (source, version et adéquation au programme)<textarea name="motif_verification" rows="3" minlength="20" maxlength="2000" required></textarea></label>
+      <button class="bouton bouton-primaire" type="submit">Valider la référence et ouvrir aux enseignants</button>
+    </form>
+    {% else %}
+    <p>Référence vérifiée par l'administration. Toute correction du référentiel doit être contrôlée séparément.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="hn-panneau">
+    <h2>Contributions des enseignants ({{ contributions|length }})</h2>
+    {% for item in contributions %}
+    <article class="hn-contribution">
+      <div class="hn-entete"><strong>{{ item.contribution.titre }}</strong><span class="hn-etat">{{ item.contribution.statut }}</span></div>
+      <p class="stat-label">Par {{ item.auteur.nom if item.auteur else "Compte indisponible" }} · {{ item.contribution.date_creation.strftime("%d/%m/%Y à %H:%M") }}</p>
+      <div class="hn-texte">{{ item.contribution.contenu }}</div>
+      <p><strong>Source :</strong> {{ item.contribution.source_reference }}</p>
+      <p><strong>Justification :</strong> {{ item.contribution.justification }}</p>
+      <p><strong>Impact :</strong> {{ item.contribution.impact_pedagogique }}</p>
+      {% if is_admin and item.contribution.statut in ["soumise", "retenue"] %}
+      <form method="post" action="/admin/harmonisation-nationale/lecons/{{ lecon.id }}/contributions/{{ item.contribution.id }}/decision" class="hn-form hn-decision">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label>Décision<select name="decision" required><option value="retenue">Retenir pour la synthèse</option><option value="refusee">Écarter cette contribution</option></select></label>
+        <label>Motif (minimum 20 caractères)<textarea name="motif_decision" minlength="20" maxlength="3000" rows="2" required></textarea></label>
+        <button class="bouton bouton-secondaire" type="submit">Enregistrer la décision</button>
+      </form>
+      {% elif is_admin and item.contribution.motif_decision %}<p><strong>Décision :</strong> {{ item.contribution.motif_decision }}</p>{% endif %}
+    </article>
+    {% else %}
+    <p>Aucune contribution n'a été soumise.</p>
+    {% endfor %}
+  </section>
+
+  {% if is_admin %}
+  <section class="hn-panneau">
+    <h2>Analyse comparative assistée par IA</h2>
+    <p>L'analyse compare au plus cinq contributions issues d'enseignants distincts. Elle cite les identifiants des contributions, signale les incertitudes et ne publie jamais par elle-même.</p>
+    <form method="post" action="/admin/harmonisation-nationale/lecons/{{ lecon.id }}/analyser">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <button class="bouton bouton-primaire" type="submit">Comparer les contributions actives</button>
+    </form>
+    {% for item in analyses %}
+    <article class="hn-analyse">
+      <div class="hn-entete"><strong>Analyse #{{ item.analyse.id }}</strong><span class="hn-etat">{{ item.analyse.statut }}</span></div>
+      <p class="stat-label">{{ item.analyse.date_creation.strftime("%d/%m/%Y à %H:%M") }} · modèle {{ item.analyse.modele }}</p>
+      {% if item.resultat.erreur %}<div class="erreur">{{ item.resultat.erreur }}</div>{% endif %}
+      {% if item.resultat.avertissement %}<p>{{ item.resultat.avertissement }}</p>{% endif %}
+      {% for champ, libelle in [("constats_convergents","Convergences"),("formulations_equivalentes","Formulations équivalentes"),("divergences_reelles","Divergences à examiner"),("notions_manquantes","Notions manquantes possibles"),("hors_programme_potentiels","Éléments potentiellement hors programme"),("points_non_verifiables","Points non vérifiables"),("limites","Limites de l'analyse")] %}
+        {% if item.resultat.get(champ) %}
+        <h3>{{ libelle }}</h3>
+        {% for point in item.resultat.get(champ) %}
+        <p class="hn-point">{{ point.constat }} <small>Sources : {{ point.contribution_ids|join(", ") }}</small></p>
+        {% endfor %}
+        {% endif %}
+      {% endfor %}
+      {% if item.resultat.synthese_proposee %}
+      <h3>Synthèse proposée — brouillon IA</h3>
+      <div class="hn-texte">{{ item.resultat.synthese_proposee }}</div>
+      {% if item.analyse.statut == "terminee" %}
+      <form method="post" action="/admin/harmonisation-nationale/lecons/{{ lecon.id }}/publier" class="hn-form hn-publication">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <input type="hidden" name="analyse_id" value="{{ item.analyse.id }}">
+        <label>Contenu final relu et corrigé par l'administrateur<textarea name="contenu_final" rows="12" minlength="100" maxlength="100000" required>{{ item.resultat.synthese_proposee }}</textarea></label>
+        <label>Motif de validation et justification de publication<textarea name="motif_validation" rows="3" minlength="20" maxlength="3000" required></textarea></label>
+        <button class="bouton bouton-primaire" type="submit">Publier la version finale vérifiée</button>
+      </form>
+      {% endif %}
+      {% endif %}
+    </article>
+    {% else %}
+    <p>Aucune analyse comparative n'a encore été lancée.</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+<style nonce="{{ csp_nonce(request) }}">
+.hn-detail{max-width:1160px;margin:0 auto}.hn-panneau{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}.hn-panneau h2{font-size:1.05rem}.hn-panneau p{font-size:.82rem;line-height:1.55;overflow-wrap:anywhere}.hn-form{display:grid;gap:.7rem;margin-top:.8rem}.hn-form label{display:grid;gap:.35rem;font-size:.82rem;font-weight:700}.hn-form input,.hn-form textarea,.hn-form select{width:100%;box-sizing:border-box;padding:.7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}.hn-texte{white-space:pre-wrap;overflow-wrap:anywhere;padding:.85rem;background:var(--content-bg);border:1px solid var(--content-border);border-radius:10px;font-size:.82rem;line-height:1.65}.hn-contribution,.hn-analyse{padding:.9rem 0;border-top:1px solid var(--content-border)}.hn-entete{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap}.hn-etat{display:inline-flex;border:1px solid var(--content-border);border-radius:999px;padding:.2rem .55rem;font-size:.68rem}.hn-decision,.hn-publication{padding:.8rem;margin-top:.7rem;border:1px solid var(--content-border);border-radius:12px}.hn-point{padding:.5rem;border-left:3px solid var(--content-link);background:var(--content-bg)}.hn-point small{display:block;color:var(--content-text-muted);margin-top:.25rem}@media(max-width:620px){.hn-panneau{padding:.8rem}.hn-panneau .bouton{white-space:normal;width:100%}}
+</style>
+{% endblock %}
