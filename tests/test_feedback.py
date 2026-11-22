@@ -135,6 +135,38 @@ class TestFeedback(unittest.TestCase):
             self.assertTrue(feedback.est_public)
             self.assertEqual(feedback.statut, StatutFeedback.NOUVEAU)
 
+    def test_choix_prive_est_enregistre_comme_prive(self):
+        jeton = _jeton_csrf(self.marie, "/feedback")
+        reponse = self.marie.post(
+            "/feedback",
+            data={"note": 4, "commentaire": "Retour strictement prive", "categorie": "general",
+                  "est_public": "0", "_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertIn(reponse.status_code, (302, 303))
+        with Session(engine) as session:
+            feedback = session.exec(
+                select(Feedback).where(Feedback.commentaire == "Retour strictement prive")
+            ).first()
+            self.assertIsNotNone(feedback)
+            self.assertFalse(feedback.est_public)
+
+    def test_absence_du_champ_publication_reste_prive_par_defaut(self):
+        jeton = _jeton_csrf(self.jean, "/feedback")
+        reponse = self.jean.post(
+            "/feedback",
+            data={"note": 5, "commentaire": "Retour prive par defaut", "categorie": "general",
+                  "_csrf": jeton},
+            follow_redirects=False,
+        )
+        self.assertIn(reponse.status_code, (302, 303))
+        with Session(engine) as session:
+            feedback = session.exec(
+                select(Feedback).where(Feedback.commentaire == "Retour prive par defaut")
+            ).first()
+            self.assertIsNotNone(feedback)
+            self.assertFalse(feedback.est_public)
+
     def test_anonyme_ne_peut_pas_envoyer_de_feedback(self):
         jeton = _jeton_csrf(self.anonyme, "/connexion")
         reponse = self.anonyme.post(
