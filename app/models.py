@@ -226,7 +226,16 @@ class ParametresAcademiquesEvenement(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     etablissement_id: int = Field(foreign_key="etablissementscolaire.id", index=True)
     annee_scolaire: str = Field(max_length=9, index=True)
-    acteur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    acteur_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            Integer,
+            ForeignKey("utilisateur.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
+    acteur_nom: str = Field(max_length=200)
     action: str = Field(max_length=24, index=True)
     entite_type: str = Field(max_length=32)
     entite_id: Optional[int] = Field(default=None)
