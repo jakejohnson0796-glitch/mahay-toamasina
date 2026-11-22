@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
@@ -123,51 +124,132 @@ def page_programmes_officiels(
         .order_by(ProgrammeMatiereScolaire.id.desc())
         .limit(300)
     ).all()
-    associations_vues = [
-        {"association": a, "libelle": _libelle_association(session, a)}
-        for a in associations if _association_valide(session, a.id)
-    ]
-
     programmes = session.exec(
         select(ProgrammeOfficielScolaire)
         .order_by(ProgrammeOfficielScolaire.date_import.desc())
         .limit(100)
     ).all()
-    associations_map = {
-        a.id: _libelle_association(session, a)
-        for a in session.exec(select(ProgrammeMatiereScolaire)).all()
+
+    # Charge les dépendances en lots pour éviter des centaines de requêtes
+    # lorsqu'un référentiel contient de nombreuses classes et matières.
+    ids_associations = {a.id for a in associations}
+    ids_associations.update(p.programme_matiere_id for p in programmes)
+    associations_completes = session.exec(
+        select(ProgrammeMatiereScolaire).where(
+            ProgrammeMatiereScolaire.id.in_(ids_associations)
+        )
+    ).all() if ids_associations else []
+    associations_map_obj = {a.id: a for a in associations_completes}
+    niveaux_ids = {a.niveau_id for a in associations_completes}
+    matieres_ids = {a.matiere_id for a in associations_completes}
+    options_ids = {a.option_id for a in associations_completes if a.option_id}
+    niveaux_map = {
+        n.id: n for n in (
+            session.exec(select(NiveauScolaire).where(NiveauScolaire.id.in_(niveaux_ids))).all()
+            if niveaux_ids else []
+        )
     }
-    stats = {
-        "total": len(programmes),
-        "a_verifier": sum(p.statut_validation == "a_verifier" for p in programmes),
-        "verifies": sum(p.statut_validation == "verifie" for p in programmes),
-        "rejetes": sum(p.statut_validation == "rejete" for p in programmes),
+    matieres_map = {
+        m.id: m for m in (
+            session.exec(select(MatiereScolaire).where(MatiereScolaire.id.in_(matieres_ids))).all()
+            if matieres_ids else []
+        )
+    }
+    options_map = {
+        o.id: o for o in (
+            session.exec(select(OptionScolaire).where(OptionScolaire.id.in_(options_ids))).all()
+            if options_ids else []
+        )
     }
 
-    couverture = []
-    for association in associations:
-        if not _association_valide(session, association.id):
-            continue
-        documents = session.exec(
-            select(ProgrammeOfficielScolaire).where(
-                ProgrammeOfficielScolaire.programme_matiere_id == association.id
+    def association_valide_pour_page(association):
+        niveau = niveaux_map.get(association.niveau_id)
+        matiere = matieres_map.get(association.matiere_id)
+        option = options_map.get(association.option_id) if association.option_id else None
+        return bool(
+            niveau and niveau.est_actif and niveau.statut_validation == "verifie"
+            and matiere
+            and (
+                association.option_id is None
+                or (option and option.est_active and option.statut_validation == "verifie")
             )
+        )
+
+    def libelle_pour_page(association):
+        niveau = niveaux_map.get(association.niveau_id)
+        matiere = matieres_map.get(association.matiere_id)
+        option = options_map.get(association.option_id) if association.option_id else None
+        return " · ".join(
+            part for part in (
+                niveau.libelle if niveau else "Niveau inconnu",
+                option.libelle if option else "",
+                matiere.libelle if matiere else "Matière inconnue",
+            ) if part
+        )
+
+    associations_valides = [
+        a for a in associations
+        if a.id in associations_map_obj and association_valide_pour_page(a)
+    ]
+    associations_vues = [
+        {"association": a, "libelle": libelle_pour_page(a)}
+        for a in associations_valides
+    ]
+    associations_map = {
+        identifiant: libelle_pour_page(association)
+        for identifiant, association in associations_map_obj.items()
+    }
+
+    repartition = session.exec(
+        select(
+            ProgrammeOfficielScolaire.statut_validation,
+            func.count(ProgrammeOfficielScolaire.id),
+        ).group_by(ProgrammeOfficielScolaire.statut_validation)
+    ).all()
+    comptes_statuts = {statut: int(nombre) for statut, nombre in repartition}
+    stats = {
+        "total": sum(comptes_statuts.values()),
+        "a_verifier": comptes_statuts.get("a_verifier", 0),
+        "verifies": comptes_statuts.get("verifie", 0),
+        "rejetes": comptes_statuts.get("rejete", 0),
+    }
+
+    # Une seule agrégation pour toute la couverture, au lieu de requêtes
+    # répétées document/élément pour chacune des associations.
+    couverture_ids = [a.id for a in associations_valides]
+    couverture_stats = {}
+    if couverture_ids:
+        lignes_couverture = session.exec(
+            select(
+                ProgrammeOfficielScolaire.programme_matiere_id,
+                func.count(func.distinct(ProgrammeOfficielScolaire.id)),
+                func.count(ElementProgrammeOfficiel.id),
+            )
+            .select_from(ProgrammeOfficielScolaire)
+            .outerjoin(
+                ElementProgrammeOfficiel,
+                (ElementProgrammeOfficiel.programme_id == ProgrammeOfficielScolaire.id)
+                & (ElementProgrammeOfficiel.statut_validation == "verifie"),
+            )
+            .where(
+                ProgrammeOfficielScolaire.programme_matiere_id.in_(couverture_ids),
+                ProgrammeOfficielScolaire.statut_validation == "verifie",
+            )
+            .group_by(ProgrammeOfficielScolaire.programme_matiere_id)
         ).all()
-        documents_verifies = [p for p in documents if p.statut_validation == "verifie"]
-        elements_verifies = 0
-        if documents_verifies:
-            ids = [p.id for p in documents_verifies]
-            elements_verifies = len(session.exec(
-                select(ElementProgrammeOfficiel).where(
-                    ElementProgrammeOfficiel.programme_id.in_(ids),
-                    ElementProgrammeOfficiel.statut_validation == "verifie",
-                )
-            ).all())
-        couverture.append({
-            "libelle": _libelle_association(session, association),
-            "documents": len(documents_verifies),
-            "elements": elements_verifies,
-        })
+        couverture_stats = {
+            identifiant: (int(nb_documents), int(nb_elements))
+            for identifiant, nb_documents, nb_elements in lignes_couverture
+        }
+
+    couverture = [
+        {
+            "libelle": libelle_pour_page(association),
+            "documents": couverture_stats.get(association.id, (0, 0))[0],
+            "elements": couverture_stats.get(association.id, (0, 0))[1],
+        }
+        for association in associations_valides
+    ]
 
     return templates.TemplateResponse(
         request,
