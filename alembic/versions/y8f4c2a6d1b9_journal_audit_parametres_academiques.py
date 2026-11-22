@@ -32,9 +32,10 @@ def upgrade() -> None:
         sa.Column(
             "acteur_id",
             sa.Integer(),
-            sa.ForeignKey("utilisateur.id"),
-            nullable=False,
+            sa.ForeignKey("utilisateur.id", ondelete="SET NULL"),
+            nullable=True,
         ),
+        sa.Column("acteur_nom", sa.String(length=200), nullable=False),
         sa.Column("action", sa.String(length=24), nullable=False),
         sa.Column("entite_type", sa.String(length=32), nullable=False),
         sa.Column("entite_id", sa.Integer(), nullable=True),
