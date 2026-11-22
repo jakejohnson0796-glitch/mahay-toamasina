@@ -313,13 +313,6 @@ def generer_pdf_bulletin(snapshot: dict[str, Any]) -> bytes:
         f"({int(snapshot.get('nb_notes') or 0)} évaluation(s) corrigée(s))",
         styles["Heading2"],
     ))
-    story.append(Paragraph(
-        f"Seuil de réussite : {float(snapshot.get('seuil_reussite') or 10):g} / "
-        f"{float(snapshot.get('moyenne_sur') or 20):g} — "
-        f"{'Seuil atteint' if snapshot.get('seuil_reussi') else 'Seuil non atteint'}",
-        styles["BulletinSmall"],
-    ))
-    story.append(Spacer(1, 2 * mm))
     if "seuil_reussite" in snapshot and "seuil_reussi" in snapshot:
         etat_seuil = "seuil atteint" if snapshot.get("seuil_reussi") else "seuil non atteint"
         story.append(Paragraph(
