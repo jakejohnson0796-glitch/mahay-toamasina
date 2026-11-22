@@ -56,6 +56,12 @@ def test_teacher_help_legal_and_library_pages_have_english_and_malagasy_copy():
     assert english["Alertes d'harmonisation des cours"] == "Course harmonisation alerts"
     assert malagasy["Rechercher dans la bibliothèque"] == "Hitady ao amin'ny tahiry"
     assert english["Rechercher dans la bibliothèque"] == "Search the library"
+    assert malagasy["Bienvenue à nouveau."] == "Tongasoa indray."
+    assert english["Bienvenue à nouveau."] == "Welcome back."
+    assert malagasy["Création de compte"] == "Famoronana kaonty"
+    assert english["Création de compte"] == "Create an account"
+    assert malagasy["Priorité du jour"] == "Laharam-pahamehana androany"
+    assert english["Priorité du jour"] == "Today's priority"
 
 
 def test_personalised_teacher_greetings_are_translated_without_losing_the_name():
