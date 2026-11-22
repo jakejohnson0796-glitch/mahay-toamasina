@@ -62,8 +62,22 @@
     </form>
     {% else %}
     <p>Référence vérifiée par l'administration. Toute correction du référentiel doit être contrôlée séparément.</p>
+    {% if lecon.motif_validation %}<p><strong>Motif de vérification conservé :</strong> {{ lecon.motif_validation }}</p>{% endif %}
     {% endif %}
   </section>
+  {% if versions %}
+  <section class="hn-panneau">
+    <h2>Historique des versions publiées</h2>
+    {% for version in versions %}
+    <details class="hn-version">
+      <summary>Version {{ version.numero_version }} · {{ version.date_publication.strftime("%d/%m/%Y à %H:%M") }} · analyse #{{ version.analyse_id or "—" }}</summary>
+      <p><strong>Motif de validation :</strong> {{ version.motif_validation }}</p>
+      <p><strong>Contributions retenues :</strong> {{ version.contributions_ids_json }}</p>
+      <div class="hn-texte">{{ version.contenu }}</div>
+    </details>
+    {% endfor %}
+  </section>
+  {% endif %}
   {% endif %}
 
   <section class="hn-panneau">
@@ -133,6 +147,6 @@
   {% endif %}
 </div>
 <style nonce="{{ csp_nonce(request) }}">
-.hn-detail{max-width:1160px;margin:0 auto}.hn-panneau{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}.hn-panneau h2{font-size:1.05rem}.hn-panneau p{font-size:.82rem;line-height:1.55;overflow-wrap:anywhere}.hn-form{display:grid;gap:.7rem;margin-top:.8rem}.hn-form label{display:grid;gap:.35rem;font-size:.82rem;font-weight:700}.hn-form input,.hn-form textarea,.hn-form select{width:100%;box-sizing:border-box;padding:.7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}.hn-texte{white-space:pre-wrap;overflow-wrap:anywhere;padding:.85rem;background:var(--content-bg);border:1px solid var(--content-border);border-radius:10px;font-size:.82rem;line-height:1.65}.hn-contribution,.hn-analyse{padding:.9rem 0;border-top:1px solid var(--content-border)}.hn-entete{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap}.hn-etat{display:inline-flex;border:1px solid var(--content-border);border-radius:999px;padding:.2rem .55rem;font-size:.68rem}.hn-decision,.hn-publication{padding:.8rem;margin-top:.7rem;border:1px solid var(--content-border);border-radius:12px}.hn-point{padding:.5rem;border-left:3px solid var(--content-link);background:var(--content-bg)}.hn-point small{display:block;color:var(--content-text-muted);margin-top:.25rem}@media(max-width:620px){.hn-panneau{padding:.8rem}.hn-panneau .bouton{white-space:normal;width:100%}}
+.hn-detail{max-width:1160px;margin:0 auto}.hn-panneau{margin:1rem 0;padding:1rem;border:1px solid var(--content-border);border-radius:16px;background:var(--content-surface)}.hn-panneau h2{font-size:1.05rem}.hn-panneau p{font-size:.82rem;line-height:1.55;overflow-wrap:anywhere}.hn-form{display:grid;gap:.7rem;margin-top:.8rem}.hn-form label{display:grid;gap:.35rem;font-size:.82rem;font-weight:700}.hn-form input,.hn-form textarea,.hn-form select{width:100%;box-sizing:border-box;padding:.7rem;border:1px solid var(--content-border);border-radius:10px;background:var(--content-bg);color:var(--content-text);font:inherit}.hn-texte{white-space:pre-wrap;overflow-wrap:anywhere;padding:.85rem;background:var(--content-bg);border:1px solid var(--content-border);border-radius:10px;font-size:.82rem;line-height:1.65}.hn-contribution,.hn-analyse{padding:.9rem 0;border-top:1px solid var(--content-border)}.hn-entete{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap}.hn-etat{display:inline-flex;border:1px solid var(--content-border);border-radius:999px;padding:.2rem .55rem;font-size:.68rem}.hn-decision,.hn-publication{padding:.8rem;margin-top:.7rem;border:1px solid var(--content-border);border-radius:12px}.hn-point{padding:.5rem;border-left:3px solid var(--content-link);background:var(--content-bg)}.hn-point small{display:block;color:var(--content-text-muted);margin-top:.25rem}.hn-version{padding:.65rem 0;border-top:1px solid var(--content-border)}.hn-version summary{cursor:pointer;font-weight:700;font-size:.8rem}@media(max-width:620px){.hn-panneau{padding:.8rem}.hn-panneau .bouton{white-space:normal;width:100%}}
 </style>
 {% endblock %}
