@@ -866,7 +866,6 @@ def espace_national_lecons_enseignant(
         select(LeconReferentielle)
         .where(
             LeconReferentielle.statut_validation == StatutLeconReferentielle.VERIFIEE.value,
-            LeconReferentielle.statut_publication == "non_publie",
         )
         .order_by(LeconReferentielle.titre)
         .limit(200)
