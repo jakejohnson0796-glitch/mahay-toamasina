@@ -36,6 +36,7 @@ def test_ocr_image_utilise_pretraitement_et_configuration_robuste(monkeypatch):
             appels["mode"] = image.mode
             return "Texte extrait"
 
+    monkeypatch.setattr(text_extraction, "_ocr_image_paddle", lambda _image: "")
     image = Image.new("RGB", (100, 60), "white")
     resultat = text_extraction._ocr_image(image, FauxTesseract)
 
@@ -147,9 +148,85 @@ def test_ocr_applique_un_delai_maximal(monkeypatch):
             appels.update(kwargs)
             return "Texte"
 
+    monkeypatch.setattr(text_extraction, "_ocr_image_paddle", lambda _image: "")
     image = Image.new("RGB", (100, 60), "white")
     try:
         assert text_extraction._ocr_image(image, FauxTesseract) == "Texte"
         assert appels["timeout"] == 25
     finally:
         image.close()
+
+
+
+def test_resultat_paddleocr_3x_ne_garde_que_les_lignes_de_confiance_suffisante():
+    resultat = SimpleNamespace(json={
+        "res": {
+            "rec_texts": ["Programme officiel EP", "texte illisible"],
+            "rec_scores": [0.97, 0.12],
+        }
+    })
+
+    assert text_extraction._textes_depuis_resultat_paddle(resultat) == [
+        "Programme officiel EP"
+    ]
+
+
+def test_paddleocr_est_prioritaire_quand_le_resultat_est_suffisant(monkeypatch):
+    class FauxTesseract:
+        @staticmethod
+        def image_to_string(*_args, **_kwargs):
+            raise AssertionError("Tesseract ne doit pas remplacer un PaddleOCR exploitable")
+
+    monkeypatch.setattr(text_extraction, "_preparer_image_ocr", lambda image: image)
+    monkeypatch.setattr(
+        text_extraction,
+        "_ocr_image_paddle",
+        lambda _image: "Programme officiel de l'enseignement primaire",
+    )
+
+    image = Image.new("RGB", (100, 60), "white")
+    try:
+        assert text_extraction._ocr_image(image, FauxTesseract) == (
+            "Programme officiel de l'enseignement primaire"
+        )
+    finally:
+        image.close()
+
+
+def test_paddleocr_est_configure_en_francais_sur_cpu(monkeypatch):
+    import sys
+    from types import ModuleType
+
+    appels = {}
+    moteur = object()
+
+    def faux_constructeur(**kwargs):
+        appels.update(kwargs)
+        return moteur
+
+    faux_module = ModuleType("paddleocr")
+    faux_module.PaddleOCR = faux_constructeur
+    monkeypatch.setitem(sys.modules, "paddleocr", faux_module)
+    monkeypatch.setattr(text_extraction, "_lire_limite_memoire_cgroup", lambda: None)
+    monkeypatch.setattr(text_extraction, "_PADDLE_OCR_INSTANCE", None)
+    monkeypatch.setattr(text_extraction, "_PADDLE_OCR_ECHEC", False)
+
+    assert text_extraction._obtenir_moteur_paddleocr() is moteur
+    assert appels["lang"] == "fr"
+    assert appels["ocr_version"] == "PP-OCRv5"
+    assert appels["device"] == "cpu"
+    assert appels["use_doc_unwarping"] is False
+
+
+
+def test_paddleocr_reste_decharge_si_la_limite_memoire_est_trop_faible(monkeypatch):
+    monkeypatch.setattr(
+        text_extraction,
+        "_lire_limite_memoire_cgroup",
+        lambda: 512 * 1024 * 1024,
+    )
+    monkeypatch.setattr(text_extraction, "_PADDLE_OCR_INSTANCE", None)
+    monkeypatch.setattr(text_extraction, "_PADDLE_OCR_ECHEC", False)
+
+    assert text_extraction._obtenir_moteur_paddleocr() is None
+    assert text_extraction._PADDLE_OCR_ECHEC is True

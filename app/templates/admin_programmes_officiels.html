@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block titre %}Programmes officiels EP/FRP — Administration{% endblock %}
+{% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
+{% block contenu %}
+<div class="contenu-clair" style="max-width:1240px;margin:0 auto;padding:28px 18px 56px">
+  <p class="eyebrow"><a href="/admin">← Centre d’administration</a> · <a href="/admin/referentiel/scolaire">Référentiel scolaire</a></p>
+  <header style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;margin:12px 0 26px">
+    <div style="max-width:780px">
+      <span class="eyebrow">MITARIDALA · Gouvernance pédagogique</span>
+      <h1>Programmes officiels EP / FRP</h1>
+      <p>Importer les documents sources, extraire une structure indicative et faire vérifier chaque élément par l’administration. Aucun import ni résultat OCR n’est considéré comme officiel automatiquement.</p>
+    </div>
+    <a class="bouton bouton-secondaire" href="/admin/harmonisation-cours">Ouvrir l’harmonisation des cours</a>
+  </header>
+
+  {% if etat %}
+  <p class="ops-alert ops-alert-info" role="status">{{ etat|replace('_', ' ')|capitalize }}</p>
+  {% endif %}
+  {% if erreur %}
+  <p class="ops-alert ops-alert-warn" role="alert">Action non terminée : {{ erreur|replace('_', ' ') }}. Vérifie les champs, les droits administrateur et la source fournie.</p>
+  {% endif %}
+
+  {% if programme %}
+  <section class="carte-formulaire" style="margin-bottom:24px">
+    <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <span class="stat-label">{{ programme.type_document }} · {{ programme.statut_validation|replace('_',' ')|capitalize }}</span>
+        <h2>{{ programme.intitule }}</h2>
+        <p>{{ programme.organisme_emetteur }} · {{ association_libelle }}</p>
+        <p>Année {{ programme.annee_publication or "non précisée" }} · Version {{ programme.version_officielle or "non précisée" }} · Année scolaire {{ programme.annee_scolaire or "non précisée" }}</p>
+      </div>
+      <a class="bouton bouton-secondaire" href="/admin/programmes-officiels/{{ programme.id }}/fichier">Télécharger le fichier original</a>
+    </div>
+    <dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">
+      <div><dt>Extraction</dt><dd>{{ programme.statut_extraction }} · {{ programme.nombre_caracteres_extraits }} caractères</dd></div>
+      <div><dt>SHA-256</dt><dd><code style="overflow-wrap:anywhere">{{ programme.empreinte_sha256 }}</code></dd></div>
+      <div><dt>Importé le</dt><dd>{{ programme.date_import.strftime("%d/%m/%Y %H:%M") }}</dd></div>
+      <div><dt>Source</dt><dd>{% if programme.source_url %}<a href="{{ programme.source_url }}" target="_blank" rel="noopener noreferrer">Page officielle</a>{% else %}Référence documentaire à contrôler{% endif %}</dd></div>
+    </dl>
+    <p><strong>Référence source :</strong> {{ programme.reference_source }}</p>
+    {% if programme.version_precedente_id %}
+    <p>Version précédente : <a href="/admin/programmes-officiels/{{ programme.version_precedente_id }}">#{{ programme.version_precedente_id }}</a></p>
+    {% endif %}
+    {% if programme.statut_validation == "a_verifier" %}
+    <div class="carte-formulaire" style="margin-top:18px">
+      <h3>Vérifier le document source</h3>
+      <p>Contrôle le fichier original, l’organisme émetteur, l’année, la version et la référence. Une URL n’est acceptée comme officielle que si elle utilise HTTPS sur un domaine ministériel reconnu. Sans URL, une référence documentaire précise doit être confirmée manuellement.</p>
+      <form method="post" action="/admin/programmes-officiels/{{ programme.id }}/valider">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="motif-validation-programme">Motif et éléments contrôlés (50 caractères minimum)</label>
+        <textarea id="motif-validation-programme" name="motif_validation" rows="4" minlength="50" maxlength="4000" required></textarea>
+        {% if programme.nombre_caracteres_extraits < 80 %}
+        <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0"><input type="checkbox" name="lecture_originale_confirmee" value="oui" required> J’ai ouvert et contrôlé le fichier original ; l’OCR est insuffisant, mais la source, le contenu et la référence ont été vérifiés manuellement.</label>
+        {% endif %}
+        <button class="bouton bouton-primaire" type="submit">Confirmer la source officielle</button>
+      </form>
+      <form method="post" action="/admin/programmes-officiels/{{ programme.id }}/rejeter" style="margin-top:18px">
+        <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+        <label for="motif-rejet-programme">Motif de rejet (30 caractères minimum)</label>
+        <textarea id="motif-rejet-programme" name="motif_validation" rows="2" minlength="30" maxlength="4000" required></textarea>
+        <button class="bouton bouton-secondaire" type="submit">Rejeter cette source</button>
+      </form>
+    </div>
+    {% elif programme.statut_validation == "verifie" %}
+    <p class="ops-alert ops-alert-success">Source validée le {{ programme.date_verification.strftime("%d/%m/%Y %H:%M") if programme.date_verification else "—" }}. Les éléments ci-dessous restent à vérifier individuellement.</p>
+    <p><strong>Motif de validation :</strong> {{ programme.motif_validation }}</p>
+    {% else %}
+    <p><strong>Décision :</strong> {{ programme.motif_validation }}</p>
+    {% endif %}
+  </section>
+
+  {% if programme.statut_extraction == "echec" %}
+  <section class="carte-formulaire">
+    <h2>Extraction indisponible</h2>
+    <p>Le fichier original reste conservé. Vérifie qu’il est lisible et qu’il ne s’agit pas d’un format non pris en charge ou d’un scan trop difficile. N’approuve pas le document sur la seule base de ses métadonnées.</p>
+  </section>
+  {% elif programme.nombre_caracteres_extraits %}
+  <details class="carte-formulaire" style="margin-bottom:24px">
+    <summary><strong>Aperçu du texte extrait (premiers 8 000 caractères)</strong></summary>
+    <pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:520px;overflow:auto">{{ programme.texte_extrait[:8000] }}</pre>
+  </details>
+  {% endif %}
+
+  {% if programme.statut_validation == "verifie" %}
+  <section class="carte-formulaire" style="margin-bottom:24px">
+    <h2>Compléter la structure manuellement</h2>
+    <p>Utilise ce formulaire si l’extraction n’a pas repéré un titre ou si un chapitre / une leçon doit être corrigé avant son rattachement. Chaque élément reste soumis à validation.</p>
+    <form method="post" action="/admin/programmes-officiels/{{ programme.id }}/elements/creer" style="display:grid;gap:12px;max-width:760px">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <label for="element-type">Type d’élément</label>
+      <select id="element-type" name="type_element" required>
+        <option value="chapitre">Chapitre</option><option value="lecon">Leçon</option><option value="rubrique">Rubrique</option><option value="objectif">Objectif pédagogique</option>
+      </select>
+      <label for="element-parent">Rattaché à (facultatif)</label>
+      <select id="element-parent" name="parent_id"><option value="">Racine</option>{% for item in elements %}<option value="{{ item.element.id }}">{{ item.element.titre }}</option>{% endfor %}</select>
+      <label for="element-titre">Titre</label>
+      <input id="element-titre" name="titre" maxlength="240" minlength="3" required>
+      <label for="element-contenu">Texte ou notes extraites</label>
+      <textarea id="element-contenu" name="contenu" rows="4" maxlength="100000"></textarea>
+      <button class="bouton bouton-primaire" type="submit">Ajouter à la structure à vérifier</button>
+    </form>
+  </section>
+  {% endif %}
+
+  <section class="carte-formulaire">
+    <h2>Chapitres, leçons et objectifs proposés</h2>
+    <p>Les titres issus de PDF/OCR sont des suggestions. Une leçon n’entre dans l’espace de contribution des enseignants qu’après validation de son élément ici et création de son lien avec le référentiel de cours.</p>
+    <div style="display:grid;gap:14px">
+      {% for item in elements %}
+      <article style="border:1px solid var(--couleur-bordure,#ddd);border-radius:12px;padding:16px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between">
+          <div>
+            <span class="stat-label">{{ item.element.type_element|capitalize }} · {{ item.element.statut_validation|replace('_',' ') }}</span>
+            <h3>{{ item.element.titre }}</h3>
+            {% if item.parent %}<p>Dans : {{ item.parent.titre }}</p>{% endif %}
+          </div>
+          {% if item.element.lecon_referentielle_id %}
+          <span class="ops-badge is-success">Leçon #{{ item.element.lecon_referentielle_id }} reliée</span>
+          {% endif %}
+        </div>
+        {% if item.element.contenu %}<details><summary>Voir le texte extrait</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto">{{ item.element.contenu[:5000] }}</pre></details>{% endif %}
+        {% if item.element.statut_validation == "a_verifier" and programme.statut_validation == "verifie" %}
+        <form method="post" action="/admin/programmes-officiels/{{ programme.id }}/elements/{{ item.element.id }}/valider" style="display:grid;gap:8px;margin-top:12px">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label for="motif-element-{{ item.element.id }}">Justification de vérification (30 caractères minimum)</label>
+          <textarea id="motif-element-{{ item.element.id }}" name="motif_validation" rows="2" minlength="30" maxlength="2000" required></textarea>
+          <button class="bouton bouton-primaire" type="submit">Valider cet élément{% if item.element.type_element == "lecon" %} et le rendre disponible aux enseignants{% endif %}</button>
+        </form>
+        <form method="post" action="/admin/programmes-officiels/{{ programme.id }}/elements/{{ item.element.id }}/rejeter" style="display:grid;gap:8px;margin-top:8px">
+          <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+          <label for="motif-rejet-element-{{ item.element.id }}">Motif de rejet (30 caractères minimum)</label>
+          <input id="motif-rejet-element-{{ item.element.id }}" name="motif_validation" minlength="30" maxlength="2000" required>
+          <button class="bouton bouton-secondaire" type="submit">Rejeter</button>
+        </form>
+        {% endif %}
+        {% if item.element.motif_validation %}<p><strong>Décision :</strong> {{ item.element.motif_validation }}</p>{% endif %}
+      </article>
+      {% else %}
+      <p>Aucun élément structuré n’a été détecté. Tu peux organiser le document manuellement après validation de sa source.</p>
+      {% endfor %}
+    </div>
+  </section>
+  <p style="margin-top:20px"><a href="/admin/programmes-officiels">← Retour au tableau de couverture</a></p>
+
+  {% else %}
+  <section class="grille-statistiques" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0">
+    <div class="carte-statistique"><strong>{{ stats.total }}</strong><span>Sources importées</span></div>
+    <div class="carte-statistique"><strong>{{ stats.a_verifier }}</strong><span>À vérifier</span></div>
+    <div class="carte-statistique"><strong>{{ stats.verifies }}</strong><span>Sources vérifiées</span></div>
+    <div class="carte-statistique"><strong>{{ stats.rejetes }}</strong><span>Rejetées</span></div>
+  </section>
+
+  <section class="carte-formulaire" style="margin-bottom:24px">
+    <h2>Importer un EP ou FRP</h2>
+    <p>Fichiers acceptés : PDF, DOC, DOCX, PPT ou PPTX, 20 Mo maximum. Les PDF scannés sont soumis au moteur OCR existant. Le fichier est stocké dans un bucket privé distinct des documents publics.</p>
+    <form method="post" action="/admin/programmes-officiels/importer" enctype="multipart/form-data" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
+      <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
+      <div><label for="po-intitule">Intitulé du document</label><input id="po-intitule" name="intitule" maxlength="250" minlength="5" required></div>
+      <div><label for="po-organisme">Organisme émetteur</label><input id="po-organisme" name="organisme_emetteur" maxlength="180" value="Ministère de l’Éducation nationale" required></div>
+      <div><label for="po-type">Type</label><select id="po-type" name="type_document" required><option value="EP">EP — Enseignement général</option><option value="FRP">FRP — Formation professionnelle</option><option value="AUTRE">Autre document de référence</option></select></div>
+      <div><label for="po-programme">Classe · série · matière</label><select id="po-programme" name="programme_matiere_id" required><option value="">Choisir une association déjà vérifiée</option>{% for item in associations %}<option value="{{ item.association.id }}">{{ item.libelle }}</option>{% endfor %}</select></div>
+      <div><label for="po-annee">Année de publication</label><input id="po-annee" name="annee_publication" type="number" min="1900" max="2100"></div>
+      <div><label for="po-annee-scolaire">Année scolaire</label><input id="po-annee-scolaire" name="annee_scolaire" maxlength="20" placeholder="2026-2027"></div>
+      <div><label for="po-version">Version officielle</label><input id="po-version" name="version_officielle" maxlength="80" placeholder="Version, édition ou arrêté"></div>
+      <div><label for="po-source">URL ministérielle HTTPS (facultative)</label><input id="po-source" name="source_url" type="url" maxlength="1200" placeholder="https://education.gov.mg/..."></div>
+      <div style="grid-column:1/-1"><label for="po-reference">Référence précise du document</label><input id="po-reference" name="reference_source" minlength="8" maxlength="1200" placeholder="Titre officiel, numéro d’arrêté, édition, pages…" required></div>
+      <div style="grid-column:1/-1"><label for="po-precedent">Version précédente vérifiée (facultatif)</label><select id="po-precedent" name="version_precedente_id"><option value="">Aucune / première version</option>{% for ancien in programmes if ancien.statut_validation == "verifie" %}<option value="{{ ancien.id }}">#{{ ancien.id }} · {{ ancien.intitule }} · {{ ancien.version_officielle }}</option>{% endfor %}</select></div>
+      <div style="grid-column:1/-1"><label for="po-fichier">Document original</label><input id="po-fichier" name="fichier" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" required></div>
+      <div style="grid-column:1/-1"><button class="bouton bouton-primaire" type="submit">Importer et analyser le document</button></div>
+    </form>
+  </section>
+
+  <section class="carte-formulaire" style="margin-bottom:24px">
+    <h2>Sources et versions importées</h2>
+    <div style="overflow-x:auto">
+      <table class="table-manifeste">
+        <thead><tr><th>Document</th><th>Classe / matière</th><th>Version</th><th>Extraction</th><th>Validation</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for p in programmes %}
+        <tr>
+          <td><strong>{{ p.intitule }}</strong><br><small>{{ p.type_document }} · {{ p.organisme_emetteur }}</small><br><small>{{ p.date_import.strftime("%d/%m/%Y") }}</small></td>
+          <td>{{ associations_map.get(p.programme_matiere_id, "Association inconnue") }}</td>
+          <td>{{ p.annee_publication or "—" }} · {{ p.version_officielle or "non précisée" }}<br><small>{{ p.annee_scolaire or "Année scolaire non précisée" }}</small></td>
+          <td>{{ p.statut_extraction }}<br><small>{{ p.nombre_caracteres_extraits }} caractères</small></td>
+          <td>{{ p.statut_validation|replace("_"," ")|capitalize }}</td>
+          <td><a href="/admin/programmes-officiels/{{ p.id }}">Examiner →</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">Aucun programme importé pour le moment.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="carte-formulaire">
+    <h2>Couverture des programmes vérifiés</h2>
+    <p>Cette vue mesure les associations déjà présentes dans le référentiel scolaire. Elle ne constitue pas une statistique officielle de couverture nationale.</p>
+    <div style="overflow-x:auto">
+      <table class="table-manifeste">
+        <thead><tr><th>Classe · série · matière</th><th>Documents EP/FRP vérifiés</th><th>Éléments approuvés</th></tr></thead>
+        <tbody>
+        {% for ligne in couverture %}
+        <tr><td>{{ ligne.libelle }}</td><td>{{ ligne.documents }}</td><td>{{ ligne.elements }}</td></tr>
+        {% else %}
+        <tr><td colspan="3">Aucune association classe/matière vérifiée disponible. Complète d’abord le référentiel scolaire.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

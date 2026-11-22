@@ -11,7 +11,7 @@ MITARIDALA est une plateforme éducative destinée aux élèves, aux étudiants 
 - Déposer des ressources soumises à modération avant leur publication.
 - Retrouver les documents selon le parcours et les matières disponibles.
 - Déposer jusqu’à 15 documents en un envoi, avec 20 Mo maximum par fichier et 120 Mo par lot.
-- Faire analyser chaque fichier séparément : extraction de texte des PDF, Word et PowerPoint, OCR français/anglais pour les scans, puis récapitulatif des métadonnées et de la confiance détectée. Les documents restent soumis à modération avant publication.
+- Faire analyser chaque fichier séparément : extraction directe des PDF textuels, Word et PowerPoint ; PaddleOCR PP-OCRv5 en français est prioritaire pour les scans et Tesseract français/anglais sert de repli si nécessaire. Un récapitulatif des métadonnées et de la confiance détectée est ensuite produit. Les documents restent soumis à modération avant publication.
 - Consulter un avertissement lorsqu’aucun texte n’a pu être extrait ; les valeurs saisies manuellement ne gonflent pas le score de confiance automatique.
 
 ### Apprentissage et révision
@@ -57,3 +57,15 @@ Les utilisateurs doivent respecter les droits des auteurs et ne partager que des
 ## Vision
 
 L’objectif de MITARIDALA est de rendre les ressources éducatives plus faciles à trouver, de soutenir un apprentissage régulier et de renforcer l’entraide entre apprenants et enseignants.
+
+
+### Installer les moteurs OCR en développement local
+
+Le Dockerfile de production installe automatiquement PaddlePaddle CPU et PaddleOCR. Pour reproduire ce moteur sur un poste local Python 3.12 :
+
+```bash
+python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+python -m pip install -r requirements-ocr.txt
+```
+
+Les modèles PP-OCRv5 français sont chargés à la première lecture d'un scan puis conservés dans le cache local. Avant ce chargement, l'application vérifie la limite mémoire du conteneur : par défaut, elle exige au moins 2 560 MiB pour éviter un arrêt par manque de mémoire ; ce seuil peut être réglé avec PADDLE_OCR_MIN_MEMORY_MB. En dessous du seuil, ou si PaddleOCR n'est pas installé, le traitement continue avec Tesseract lorsque celui-ci est installé.

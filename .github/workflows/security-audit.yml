@@ -32,6 +32,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip-audit
           pip-audit --strict -r requirements.txt
+          pip-audit --strict -r requirements-ocr.txt
 
       - name: Analyse statique Bandit (sévérité et confiance élevées)
         run: |

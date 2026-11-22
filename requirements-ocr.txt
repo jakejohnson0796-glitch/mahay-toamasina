@@ -1,0 +1,5 @@
+# Runtime CPU PaddlePaddle, versionné pour audit des dépendances.
+# En production, le Dockerfile l'installe d'abord depuis l'index CPU officiel.
+paddlepaddle==3.2.0
+# Moteur neuronal OCR utilisé sur les PDF scannés et les images.
+paddleocr==3.3.2

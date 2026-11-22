@@ -19,6 +19,7 @@ from app.database import engine  # noqa: E402
 # indispensable : c'est ce qui enregistre toutes les tables sur
 # SQLModel.metadata avant qu'Alembic ne compare ce metadata a la base.
 from app import models  # noqa: F401,E402
+from app import models_programmes_officiels  # noqa: F401,E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

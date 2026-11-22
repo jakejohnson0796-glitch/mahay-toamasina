@@ -30,10 +30,13 @@ FENETRE_ECHECS_CONFIRMATION_ADMIN = timedelta(minutes=10)
 BLOCAGE_ECHECS_CONFIRMATION_ADMIN = timedelta(minutes=5)
 TAILLE_MAX_FORMULAIRE_ADMIN = 512 * 1024
 TAILLE_MAX_IMPORT_INSTITUTIONNEL = 6 * 1024 * 1024
+TAILLE_MAX_IMPORT_PROGRAMME = 21 * 1024 * 1024
 
 
 def limite_formulaire_admin(path: str) -> int:
     """Augmente la limite uniquement pour le formulaire d'import institutionnel."""
+    if path == "/admin/programmes-officiels/importer":
+        return TAILLE_MAX_IMPORT_PROGRAMME
     if path == "/admin/inscriptions-institutionnelles/importer":
         return TAILLE_MAX_IMPORT_INSTITUTIONNEL
     return TAILLE_MAX_FORMULAIRE_ADMIN
