@@ -179,6 +179,11 @@ def test_apercu_enseignant_est_valide_sans_charger_de_cours_reels(monkeypatch):
     assert contexte["statut_enseignant"] == "approuve"
     assert contexte["cours_enseignes"] == []
     assert contexte["statistiques_enseignant"]["cours"] == 0
+    assert contexte["actions_a_traiter"] == {
+        "corrections": [],
+        "pointages": [],
+        "nb_copies": 0,
+    }
 
 
 def test_apercu_etudiant_ne_declenche_pas_les_services_qui_ecrivent_en_base(monkeypatch):
