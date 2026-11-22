@@ -109,3 +109,11 @@ def test_feature_page_css_has_balanced_braces_and_accessibility_rules():
 def test_rappel_echeance_est_present_dans_le_centre_de_notifications():
     router = read("app/routers/notifications_router.py")
     assert '"rappel_echeance": "Rappel d’échéance"' in router
+
+
+def test_about_page_explique_les_limites_du_referencement_et_relie_les_regles():
+    page = read("app/templates/a_propos.html")
+    assert 'id="about-transparence"' in page
+    assert 'href="#about-transparence"' in page
+    assert "ne signifie pas, à elle seule" in page
+    assert 'href="/cadre-legal"' in page
