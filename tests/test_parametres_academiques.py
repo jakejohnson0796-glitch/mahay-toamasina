@@ -133,6 +133,7 @@ def _construire_cas_scolaire(db: Session):
         option_scolaire_id=option.id,
         etablissement_scolaire_id=etablissement.id,
         matiere_scolaire_id=matiere.id,
+        annee_scolaire="2026-2027",
         professeur_id=professeur.id,
     )
     db.add(cours)
@@ -177,6 +178,30 @@ def _construire_cas_scolaire(db: Session):
     return cours, eleve, configuration
 
 
+def test_cours_conserve_les_parametres_de_son_annee_apres_activation_de_la_suivante(db):
+    cours, eleve, configuration = _construire_cas_scolaire(db)
+    configuration.est_actif = False
+    nouvelle_configuration = ParametresAcademiquesEtablissement(
+        etablissement_id=configuration.etablissement_id,
+        annee_scolaire="2027-2028",
+        calendrier="semestre",
+        periodes_json='[{"code":"S1","libelle":"Semestre 1"},{"code":"S2","libelle":"Semestre 2"}]',
+        note_maximale=200,
+        seuil_reussite=100,
+        est_actif=True,
+    )
+    db.add(configuration)
+    db.add(nouvelle_configuration)
+    db.commit()
+
+    snapshot = construire_snapshot_bulletin(db, cours, eleve, "T1", None)
+
+    assert cours.annee_scolaire == "2026-2027"
+    assert snapshot["annee_scolaire"] == "2026-2027"
+    assert snapshot["moyenne_sur"] == 100.0
+    assert snapshot["coefficient_matiere"] == 2.5
+
+
 def test_bulletin_applique_le_bareme_et_le_coefficient_de_la_serie(db):
     cours, eleve, configuration = _construire_cas_scolaire(db)
     snapshot = construire_snapshot_bulletin(
@@ -213,7 +238,21 @@ def test_coefficient_generique_est_utilise_si_aucun_coefficient_de_serie(db):
 def test_un_bulletin_scolaire_n_accepte_que_les_periodes_configurees(db):
     cours, _eleve, _configuration = _construire_cas_scolaire(db)
 
+    configuration.est_actif = False
+    db.add(configuration)
+    db.add(ParametresAcademiquesEtablissement(
+        etablissement_id=configuration.etablissement_id,
+        annee_scolaire="2027-2028",
+        calendrier="semestre",
+        periodes_json='[{"code":"S1","libelle":"Semestre 1"},{"code":"S2","libelle":"Semestre 2"}]',
+        note_maximale=20,
+        seuil_reussite=10,
+        est_actif=True,
+    ))
+    db.commit()
+
     assert _periode_canonique(db, cours.id, "T1") == "T1"
+    assert _periode_canonique(db, cours.id, "S1") is None
     assert _periode_canonique(db, cours.id, "Trimestre 2") is None
     # Il n'y a pas encore de devoir en T2 : la période est connue mais
     # aucun bulletin ne peut être créé sans évaluation associée.
