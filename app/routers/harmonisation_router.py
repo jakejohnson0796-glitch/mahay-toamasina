@@ -872,6 +872,7 @@ def espace_national_lecons_enseignant(
         .limit(200)
     ).all()
     items = [_contexte_liste_lecon(session, item) for item in lecons]
+    items = [item for item in items if item["scope"] is not None]
     return templates.TemplateResponse(
         request,
         "harmonisation_referentiel_enseignant.html",
@@ -920,6 +921,7 @@ def detail_lecon_nationale_enseignant(
     if (
         not lecon
         or lecon.statut_validation != StatutLeconReferentielle.VERIFIEE.value
+        or not _programme_lecon(session, lecon.programme_matiere_id)
     ):
         return RedirectResponse("/enseignant/harmonisation/lecons", status_code=303)
     return templates.TemplateResponse(
@@ -1236,14 +1238,16 @@ def consulter_cours_harmonise_national(
 ):
     utilisateur = utilisateur_courant(request, session)
     lecon = session.get(LeconReferentielle, lecon_id)
+    if not lecon:
+        return RedirectResponse("/documents", status_code=303)
+    scope = _programme_lecon(session, lecon.programme_matiere_id)
     if (
-        not lecon
+        not scope
         or lecon.statut_validation != StatutLeconReferentielle.VERIFIEE.value
         or lecon.statut_publication != "publie"
         or not (lecon.contenu_publie or "").strip()
     ):
         return RedirectResponse("/documents", status_code=303)
-    scope = _programme_lecon(session, lecon.programme_matiere_id)
     versions = session.exec(
         select(VersionCoursHarmoniseLecon)
         .where(VersionCoursHarmoniseLecon.lecon_id == lecon_id)
