@@ -130,6 +130,13 @@ def upgrade() -> None:
             FOR EACH ROW EXECUTE FUNCTION {_FUNCTION}()
             """
         )
+        bind.exec_driver_sql(
+            f"""
+            CREATE TRIGGER trg_parametresacademiquesevenement_no_truncate
+            BEFORE TRUNCATE ON public.{_TABLE}
+            FOR EACH STATEMENT EXECUTE FUNCTION {_FUNCTION}()
+            """
+        )
     elif bind.dialect.name == "sqlite":
         bind.exec_driver_sql(
             f"""
@@ -159,6 +166,9 @@ def downgrade() -> None:
         )
         bind.exec_driver_sql(
             f"DROP TRIGGER IF EXISTS {_TRIGGER_DELETE} ON public.{_TABLE}"
+        )
+        bind.exec_driver_sql(
+            f"DROP TRIGGER IF EXISTS trg_parametresacademiquesevenement_no_truncate ON public.{_TABLE}"
         )
         bind.exec_driver_sql(f"DROP FUNCTION IF EXISTS {_FUNCTION}()")
     elif bind.dialect.name == "sqlite":
