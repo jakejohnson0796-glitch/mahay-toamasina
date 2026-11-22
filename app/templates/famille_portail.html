@@ -40,10 +40,10 @@
             <div class="classe-list">
               {% for resultat in enfant.moyennes_bulletins_periode %}
                 <div class="classe-row">
-                  <span><strong>{{ resultat.periode }}</strong><small>{{ resultat.nb_matieres }} matière(s) publiée(s)</small></span>
+                  <span><strong>{{ resultat.periode }}</strong><small>{% if resultat.annee_scolaire %}Année {{ resultat.annee_scolaire }} · {% endif %}{{ resultat.nb_matieres }} matière(s) publiée(s)</small></span>
                   <span>
                     <strong>{{ "%.2f"|format(resultat.moyenne) }} / 20</strong>
-                    <a href="/famille/bulletins/periode/telecharger?eleve_id={{ enfant.eleve.id }}&amp;periode={{ resultat.periode|urlencode }}">Télécharger le bulletin général PDF</a>
+                    <a href="/famille/bulletins/periode/telecharger?eleve_id={{ enfant.eleve.id }}&amp;periode={{ resultat.periode|urlencode }}{% if resultat.annee_scolaire %}&amp;annee_scolaire={{ resultat.annee_scolaire|urlencode }}{% endif %}">Télécharger le bulletin général PDF</a>
                   </span>
                 </div>
               {% endfor %}
