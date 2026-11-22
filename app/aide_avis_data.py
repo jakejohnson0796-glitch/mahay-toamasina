@@ -8,8 +8,9 @@ correspondait avant la fusion. Facteur commun ici plutot que duplique
 dans faq_router.py ET feedback_router.py, pour n'avoir qu'un seul
 endroit ou la regle de confidentialite absolue du brief est ecrite :
 
-    "Afficher uniquement est_public == True. Ne jamais afficher un
-    avis statut == MASQUE. Meme indirectement."
+    "Afficher uniquement les avis explicitement publics dont le statut
+    est REPONDU ou RESOLU. Les avis NOUVEAU ou EN_COURS ne sont pas
+    encore publiables. Ne jamais afficher un avis MASQUE."
 
 Les deux routers appellent ces fonctions ; aucun des deux ne
 reconstruit sa propre requete sur Feedback.
@@ -48,14 +49,16 @@ def _prenom_public(nom: str) -> str:
 def donnees_avis(session: Session, categorie: Optional[CategorieFeedback]):
     """Renvoie (avis_affiches, note_moyenne, total_avis).
 
-    Regle de confidentialite ABSOLUE (section 19 du brief), appliquee
-    ici une seule fois, dans les deux requetes ci-dessous (liste ET
-    resume des notes) : uniquement est_public == True ET statut !=
-    MASQUE -- jamais d'exception, jamais contournee par un parametre.
-    Trie par categorie puis date pour permettre le "regroupement
-    logique" demande par le brief (groupby cote template).
+    Règle de publication : un avis doit être explicitement public et
+    avoir été traité par l'équipe (statut REPONDU ou RESOLU). Les avis
+    NOUVEAU et EN_COURS restent privés tant que la modération n'est pas
+    terminée ; les avis MASQUE ne sont jamais affichés. Les mêmes
+    conditions filtrent la liste publique et ses statistiques.
     """
-    conditions = [Feedback.est_public == True, Feedback.statut != StatutFeedback.MASQUE]  # noqa: E712
+    conditions = [
+        Feedback.est_public == True,
+        Feedback.statut.in_([StatutFeedback.REPONDU, StatutFeedback.RESOLU]),
+    ]  # noqa: E712
     if categorie:
         conditions.append(Feedback.categorie == categorie)
 
