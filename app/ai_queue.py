@@ -32,6 +32,7 @@ TYPE_VERIFICATION_TUTEUR = "verification_tuteur"
 TYPE_RESUME_DOCUMENT = "resume_document"
 TYPE_FICHE_REVISION_COURS = "fiche_revision_cours"
 TYPE_FICHE_REVISION_DOCUMENT = "fiche_revision_document"
+TYPE_ANALYSE_COMPARATIVE_LECON = "analyse_comparative_lecon"
 DELAIS_REESSAI = (5, 15, 30, 60)
 MAX_ESSAIS = 5
 
@@ -268,6 +269,78 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
             "Impossible de planifier la fiche pédagogique du document #%s (%s).",
             document_id,
             type(erreur).__name__,
+        )
+        return None
+
+
+def planifier_analyse_comparative_lecon(analyse_id: int) -> Optional[int]:
+    """Enregistre une comparaison de leçon dans la file IA durable."""
+    maintenant = datetime.utcnow()
+    try:
+        with Session(engine) as session:
+            from .models import AnalyseComparativeLecon
+
+            analyse = session.get(AnalyseComparativeLecon, analyse_id)
+            if analyse is None:
+                return None
+            if analyse.statut == "terminee":
+                return None
+
+            tache = session.exec(
+                select(TacheIA).where(
+                    TacheIA.type_tache == TYPE_ANALYSE_COMPARATIVE_LECON,
+                    TacheIA.analyse_comparative_lecon_id == analyse_id,
+                ).limit(1)
+            ).first()
+            if tache and tache.statut == StatutTacheIA.EN_COURS:
+                analyse.statut = "en_cours"
+                session.add(analyse)
+                session.commit()
+                return tache.id
+            if tache and tache.statut == StatutTacheIA.EN_ATTENTE:
+                tache.disponible_le = min(tache.disponible_le or maintenant, maintenant)
+                tache.derniere_erreur = None
+            elif tache:
+                tache.statut = StatutTacheIA.EN_ATTENTE
+                tache.nombre_essais = 0
+                tache.disponible_le = maintenant
+                tache.prise_en_charge_le = None
+                tache.terminee_le = None
+                tache.derniere_erreur = None
+            else:
+                tache = TacheIA(
+                    type_tache=TYPE_ANALYSE_COMPARATIVE_LECON,
+                    analyse_comparative_lecon_id=analyse_id,
+                    statut=StatutTacheIA.EN_ATTENTE,
+                    strategie_verification="analyse_comparative_lecon",
+                    score_risque=0,
+                    nombre_essais=0,
+                    disponible_le=maintenant,
+                    date_creation=maintenant,
+                )
+            analyse.statut = "en_attente"
+            session.add(analyse)
+            session.add(tache)
+            session.commit()
+            session.refresh(tache)
+            tache_id = tache.id
+        if tache_id is not None:
+            notifier_tache(tache_id)
+        return tache_id
+    except IntegrityError:
+        # Un index unique évite deux tâches simultanées pour la même analyse.
+        with Session(engine) as session:
+            tache = session.exec(
+                select(TacheIA).where(
+                    TacheIA.type_tache == TYPE_ANALYSE_COMPARATIVE_LECON,
+                    TacheIA.analyse_comparative_lecon_id == analyse_id,
+                ).limit(1)
+            ).first()
+            return tache.id if tache else None
+    except Exception:
+        logger.exception(
+            "Impossible de planifier l'analyse comparative de la leçon #%s.",
+            analyse_id,
         )
         return None
 
