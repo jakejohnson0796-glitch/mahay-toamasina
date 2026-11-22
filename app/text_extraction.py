@@ -7,17 +7,16 @@ de quiz" — c'est fait ici.
 Deux strategies, appliquees dans l'ordre :
 1. PDF avec du texte selectionnable -> pdfplumber (rapide, 100% Python,
    pas de dependance systeme).
-2. Scan/image et PDF mêlant texte et images -> OCR via pytesseract.
-   En production Docker, Tesseract français et anglais ainsi que Poppler sont
-   installés. Si ces dépendances système manquent en développement local,
-   l'extraction retombe sur le texte disponible sans faire planter l'appli.
+2. Scan/image et PDF mêlant texte et images -> PaddleOCR PP-OCRv5 français.
+3. Si PaddleOCR est absent ou échoue, repli vers Tesseract français/anglais.
+   Les deux moteurs OCR sont bornés en pages, taille et concurrence.
 """
 from dataclasses import dataclass
 import logging
 from pathlib import Path
 import shutil
 import subprocess
-from threading import BoundedSemaphore
+from threading import BoundedSemaphore, RLock
 
 import pdfplumber
 
@@ -31,10 +30,142 @@ MAX_OCR_DPI = 160
 MAX_PIXELS_IMAGE_OCR = 40_000_000
 MAX_EXTRACTIONS_SIMULTANEES = 2
 _SEMAPHORE_EXTRACTION = BoundedSemaphore(MAX_EXTRACTIONS_SIMULTANEES)
+_PADDLE_OCR_INIT_LOCK = RLock()
+_PADDLE_OCR_INFERENCE_LOCK = RLock()
+_PADDLE_OCR_INSTANCE = None
+_PADDLE_OCR_ECHEC = False
 
 
 class ExtractionSaturee(RuntimeError):
     """Le moteur de lecture de documents atteint sa capacité sûre."""
+
+
+def _paddleocr_installe() -> bool:
+    """Vérifie la présence du paquet et du runtime CPU sans les initialiser."""
+    from importlib.util import find_spec
+
+    try:
+        return find_spec("paddleocr") is not None and find_spec("paddle") is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def _obtenir_moteur_paddleocr():
+    """Charge une seule instance PaddleOCR à la première vraie page scannée."""
+    global _PADDLE_OCR_INSTANCE, _PADDLE_OCR_ECHEC
+    if _PADDLE_OCR_INSTANCE is not None:
+        return _PADDLE_OCR_INSTANCE
+    if _PADDLE_OCR_ECHEC:
+        return None
+
+    with _PADDLE_OCR_INIT_LOCK:
+        if _PADDLE_OCR_INSTANCE is not None:
+            return _PADDLE_OCR_INSTANCE
+        if _PADDLE_OCR_ECHEC:
+            return None
+        try:
+            from paddleocr import PaddleOCR
+
+            _PADDLE_OCR_INSTANCE = PaddleOCR(
+                lang="fr",
+                ocr_version="PP-OCRv5",
+                device="cpu",
+                use_doc_orientation_classify=False,
+                use_doc_unwarping=False,
+                use_textline_orientation=False,
+            )
+        except Exception as erreur:
+            _PADDLE_OCR_ECHEC = True
+            logger.warning(
+                "PaddleOCR indisponible; repli Tesseract (%s).",
+                type(erreur).__name__,
+            )
+            return None
+    return _PADDLE_OCR_INSTANCE
+
+
+def _textes_depuis_resultat_paddle(resultat) -> list[str]:
+    """Normalise les sorties PaddleOCR 3.x et l'ancien format de lignes OCR."""
+    import json
+
+    donnees = getattr(resultat, "json", None)
+    if callable(donnees):
+        donnees = donnees()
+    if donnees is None and isinstance(resultat, dict):
+        donnees = resultat
+    if isinstance(donnees, str):
+        try:
+            donnees = json.loads(donnees)
+        except (TypeError, ValueError):
+            donnees = None
+
+    textes: list[str] = []
+    if isinstance(donnees, dict):
+        donnees = donnees.get("res", donnees)
+        if isinstance(donnees, dict):
+            rec_textes = donnees.get("rec_texts") or []
+            rec_scores = donnees.get("rec_scores") or []
+            if isinstance(rec_textes, str):
+                rec_textes = [rec_textes]
+            for index, texte in enumerate(rec_textes):
+                if not isinstance(texte, str) or not texte.strip():
+                    continue
+                score = rec_scores[index] if index < len(rec_scores) else 1.0
+                try:
+                    if float(score) < 0.25:
+                        continue
+                except (TypeError, ValueError):
+                    pass
+                textes.append(texte.strip())
+
+    # Compatibilité avec le format legacy: [polygone, (texte, confiance)].
+    if not textes and isinstance(resultat, (list, tuple)):
+        lignes = resultat
+        if lignes and isinstance(lignes[0], (list, tuple)) and len(lignes[0]) >= 2:
+            candidat = lignes[0][1]
+            if isinstance(candidat, (list, tuple)) and candidat and isinstance(candidat[0], str):
+                for ligne in lignes:
+                    if not isinstance(ligne, (list, tuple)) or len(ligne) < 2:
+                        continue
+                    candidat = ligne[1]
+                    if not isinstance(candidat, (list, tuple)) or not candidat:
+                        continue
+                    texte = candidat[0]
+                    score = candidat[1] if len(candidat) > 1 else 1.0
+                    try:
+                        if float(score) < 0.25:
+                            continue
+                    except (TypeError, ValueError):
+                        pass
+                    if isinstance(texte, str) and texte.strip():
+                        textes.append(texte.strip())
+    return textes
+
+
+def _ocr_image_paddle(image) -> str:
+    """Reconnaissance PP-OCRv5 sur CPU; ne télécharge les modèles qu'au besoin."""
+    moteur = _obtenir_moteur_paddleocr()
+    if moteur is None:
+        return ""
+    image_rgb = None
+    try:
+        import numpy as np
+
+        image_rgb = image.convert("RGB")
+        # PaddleX attend une image OpenCV (BGR) lorsqu'on lui transmet un ndarray.
+        tableau = np.asarray(image_rgb)[:, :, ::-1].copy()
+        with _PADDLE_OCR_INFERENCE_LOCK:
+            resultats = moteur.predict(tableau)
+        morceaux = []
+        for resultat in resultats or []:
+            morceaux.extend(_textes_depuis_resultat_paddle(resultat))
+        return "\n".join(morceaux).strip()[:MAX_TEXTE_EXTRAIT]
+    except Exception as erreur:
+        logger.warning("Échec PaddleOCR; repli Tesseract (%s).", type(erreur).__name__)
+        return ""
+    finally:
+        if image_rgb is not None:
+            image_rgb.close()
 
 
 def _acquerir_slot_extraction() -> None:
@@ -98,6 +229,26 @@ def _texte_docling_utilisable(texte: str) -> bool:
     return alphanumeriques >= 50 and taux_alphanumerique >= 0.18 and taux_remplacement <= 0.01
 
 
+def _pdf_contient_pages_scannes(chemin: Path) -> bool:
+    """Détecte les pages pauvres en texte pour leur réserver le pipeline OCR."""
+    try:
+        with pdfplumber.open(chemin) as pdf:
+            for page in pdf.pages[:MAX_PAGES_PDF_TEXTE]:
+                extraire = getattr(page, "extract_text", None)
+                # Les doubles de test ou extracteurs tiers sans API de page
+                # ne doivent pas être assimilés à des scans.
+                if not callable(extraire):
+                    continue
+                try:
+                    if len((extraire() or "").strip()) < SEUIL_CARACTERES_PDF_TEXTE:
+                        return True
+                except Exception:
+                    return True
+    except Exception:
+        return False
+    return False
+
+
 def _extraire_texte_detaille_sans_limite(chemin_fichier: str) -> ResultatExtraction:
     """Extrait le texte et décrit le moteur, sans exposer le contenu dans les logs."""
     chemin = Path(chemin_fichier)
@@ -112,7 +263,10 @@ def _extraire_texte_detaille_sans_limite(chemin_fichier: str) -> ResultatExtract
         except Exception:
             nombre_pages = MAX_PAGES_PDF_TEXTE + 1
 
-        if nombre_pages <= MAX_PAGES_PDF_TEXTE:
+        if (
+            nombre_pages <= MAX_PAGES_PDF_TEXTE
+            and not _pdf_contient_pages_scannes(chemin)
+        ):
             try:
                 from .docling_extraction import docling_actif, extraire_pdf_docling
 
@@ -135,7 +289,7 @@ def _extraire_texte_detaille_sans_limite(chemin_fichier: str) -> ResultatExtract
 
         return ResultatExtraction(
             texte=_extraire_texte_pdf_legacy(chemin),
-            moteur="pdfplumber + Tesseract",
+            moteur="pdfplumber + PaddleOCR/Tesseract",
         )
 
     texte = _extraire_texte_sans_limite_legacy(str(chemin))
@@ -144,7 +298,7 @@ def _extraire_texte_detaille_sans_limite(chemin_fichier: str) -> ResultatExtract
     elif suffixe == ".pptx":
         moteur = "python-pptx"
     elif suffixe in {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}:
-        moteur = "Tesseract OCR"
+        moteur = "PaddleOCR/Tesseract OCR"
     elif suffixe == ".doc":
         moteur = "antiword"
     elif suffixe == ".ppt":
@@ -249,11 +403,13 @@ def _extraire_texte_pdf_legacy(chemin: Path) -> str:
     morceaux = []
     nombre_pages_ocr = 0
     try:
-        import pytesseract
         from pdf2image import convert_from_path
     except ImportError:
-        pytesseract = None
         convert_from_path = None
+    try:
+        import pytesseract
+    except ImportError:
+        pytesseract = None
 
     try:
         with pdfplumber.open(chemin) as pdf:
@@ -262,8 +418,8 @@ def _extraire_texte_pdf_legacy(chemin: Path) -> str:
                 morceau = (page.extract_text() or "").strip()
                 if (
                     len(morceau) < SEUIL_CARACTERES_PDF_TEXTE
-                    and pytesseract is not None
                     and convert_from_path is not None
+                    and (pytesseract is not None or _paddleocr_installe())
                     and nombre_pages_ocr < MAX_PAGES_PDF_OCR
                 ):
                     try:
@@ -340,21 +496,40 @@ def _preparer_image_ocr(image):
 
 
 def _ocr_image(image, pytesseract) -> str:
+    """PaddleOCR est prioritaire; Tesseract corrige les résultats absents/faibles."""
     image_preparee = _preparer_image_ocr(image)
-    return (pytesseract.image_to_string(
-        image_preparee,
-        lang=_langue_tesseract(pytesseract),
-        config="--oem 1 --psm 3 -c preserve_interword_spaces=1",
-        timeout=25,
-    ) or "").strip()
+    texte_paddle = _ocr_image_paddle(image_preparee)
+    if len(texte_paddle) >= 30:
+        return texte_paddle
+    if pytesseract is None:
+        return texte_paddle
+
+    try:
+        texte_tesseract = (pytesseract.image_to_string(
+            image_preparee,
+            lang=_langue_tesseract(pytesseract),
+            config="--oem 1 --psm 3 -c preserve_interword_spaces=1",
+            timeout=25,
+        ) or "").strip()
+    except Exception as erreur:
+        logger.warning("Échec Tesseract OCR (%s).", type(erreur).__name__)
+        return texte_paddle
+
+    # Le repli n'écrase jamais un résultat PaddleOCR plus riche.
+    return texte_tesseract if len(texte_tesseract) > len(texte_paddle) else texte_paddle
 
 
 def _extraire_texte_pdf_par_ocr(chemin: Path) -> str:
     """OCR borné des PDF scannés, avec prétraitement et modèles FR/EN."""
     try:
-        import pytesseract
         from pdf2image import convert_from_path
     except ImportError:
+        return ""
+    try:
+        import pytesseract
+    except ImportError:
+        pytesseract = None
+    if pytesseract is None and not _paddleocr_installe():
         return ""
     try:
         pages = convert_from_path(
@@ -380,10 +555,13 @@ def _extraire_texte_pdf_par_ocr(chemin: Path) -> str:
 
 def _extraire_texte_image(chemin: Path) -> str:
     try:
-        import pytesseract
         from PIL import Image
     except ImportError:
         return ""
+    try:
+        import pytesseract
+    except ImportError:
+        pytesseract = None
     try:
         with Image.open(chemin) as image:
             return _ocr_image(image, pytesseract)[:MAX_TEXTE_EXTRAIT]
