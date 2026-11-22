@@ -26,6 +26,7 @@ from ..models import (
     NiveauScolaire,
     OptionScolaire,
     ParametresAcademiquesEtablissement,
+    ParametresAcademiquesEvenement,
     OffreEtablissementScolaire,
     ParcoursTechniqueProfessionnel,
     ProgrammeMatiereScolaire,
@@ -1076,6 +1077,67 @@ def _rediriger_parametres(ok: str | None = None, erreur: str | None = None) -> R
     return RedirectResponse(f"/admin/parametres-academiques{suffixe}", status_code=303)
 
 
+def _instantane_configuration_academique(
+    configuration: ParametresAcademiquesEtablissement,
+) -> dict:
+    try:
+        periodes = json.loads(configuration.periodes_json or "[]")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        periodes = []
+    return {
+        "calendrier": configuration.calendrier,
+        "periodes": periodes if isinstance(periodes, list) else [],
+        "note_maximale": float(configuration.note_maximale),
+        "seuil_reussite": float(configuration.seuil_reussite),
+        "est_actif": bool(configuration.est_actif),
+    }
+
+
+def _journaliser_parametres_academiques(
+    session: Session,
+    *,
+    admin: Utilisateur,
+    etablissement_id: int,
+    annee_scolaire: str,
+    action: str,
+    entite_type: str,
+    entite_id: int | None,
+    avant: dict | None,
+    apres: dict | None,
+    contexte: dict | None = None,
+) -> None:
+    """Ajoute l'événement dans la même transaction que la modification métier."""
+    details = {
+        "avant": avant,
+        "apres": apres,
+        "contexte": contexte or {},
+    }
+    session.add(
+        ParametresAcademiquesEvenement(
+            etablissement_id=etablissement_id,
+            annee_scolaire=annee_scolaire,
+            acteur_id=admin.id,
+            action=action,
+            entite_type=entite_type,
+            entite_id=entite_id,
+            details_json=json.dumps(
+                details, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+            ),
+            date_evenement=datetime.utcnow(),
+        )
+    )
+
+
+def _valeur_audit_affichable(valeur) -> str:
+    if valeur is None:
+        return "—"
+    if isinstance(valeur, bool):
+        return "Oui" if valeur else "Non"
+    if isinstance(valeur, (dict, list)):
+        return json.dumps(valeur, ensure_ascii=False, sort_keys=True)
+    return str(valeur)
+
+
 @router.get("/admin/parametres-academiques")
 def page_parametres_academiques(
     request: Request,
@@ -1225,6 +1287,12 @@ def enregistrer_parametres_annee_scolaire(
             ParametresAcademiquesEtablissement.annee_scolaire == annee,
         )
     ).first()
+    est_creation = configuration is None
+    etait_active = bool(configuration.est_actif) if configuration else False
+    avant_configuration = (
+        _instantane_configuration_academique(configuration)
+        if configuration else None
+    )
     maintenant = datetime.utcnow()
     if configuration:
         configuration.calendrier = calendrier
@@ -1259,9 +1327,42 @@ def enregistrer_parametres_annee_scolaire(
         )
     ).all()
     for ancienne in autres:
-        ancienne.est_actif = False
-        session.add(ancienne)
+        if ancienne.est_actif:
+            avant_ancienne = _instantane_configuration_academique(ancienne)
+            ancienne.est_actif = False
+            ancienne.date_modification = maintenant
+            session.add(ancienne)
+            _journaliser_parametres_academiques(
+                session,
+                admin=admin,
+                etablissement_id=etablissement.id,
+                annee_scolaire=ancienne.annee_scolaire,
+                action="desactivation",
+                entite_type="configuration",
+                entite_id=ancienne.id,
+                avant=avant_ancienne,
+                apres=_instantane_configuration_academique(ancienne),
+                contexte={"raison": "activation_d_une_autre_annee"},
+            )
+
     session.add(configuration)
+    session.flush()
+    action_configuration = (
+        "creation" if est_creation
+        else ("activation" if not etait_active else "modification")
+    )
+    _journaliser_parametres_academiques(
+        session,
+        admin=admin,
+        etablissement_id=etablissement.id,
+        annee_scolaire=annee,
+        action=action_configuration,
+        entite_type="configuration",
+        entite_id=configuration.id,
+        avant=avant_configuration,
+        apres=_instantane_configuration_academique(configuration),
+        contexte={"etablissement": etablissement.nom},
+    )
     session.commit()
     return _rediriger_parametres(ok="parametres_enregistres")
 
@@ -1358,6 +1459,14 @@ def enregistrer_coefficient_matiere(
     entree = session.exec(
         select(CoefficientMatiereEtablissement).where(*filtres_coefficient)
     ).first()
+    avant_coefficient = (
+        {
+            "coefficient": float(entree.coefficient),
+            "obligatoire": bool(entree.obligatoire),
+        }
+        if entree else None
+    )
+    est_creation = entree is None
     maintenant = datetime.utcnow()
     if entree:
         entree.coefficient = float(coefficient)
@@ -1375,6 +1484,29 @@ def enregistrer_coefficient_matiere(
             date_modification=maintenant,
         )
     session.add(entree)
+    session.flush()
+    _journaliser_parametres_academiques(
+        session,
+        admin=admin,
+        etablissement_id=etablissement.id,
+        annee_scolaire=configuration.annee_scolaire,
+        action="creation" if est_creation else "modification",
+        entite_type="coefficient_matiere",
+        entite_id=entree.id,
+        avant=avant_coefficient,
+        apres={
+            "coefficient": float(entree.coefficient),
+            "obligatoire": bool(entree.obligatoire),
+        },
+        contexte={
+            "niveau_id": niveau.id,
+            "niveau": niveau.libelle,
+            "option_id": option.id if option else None,
+            "option": option.libelle if option else None,
+            "matiere_id": matiere.id,
+            "matiere": matiere.libelle,
+        },
+    )
     session.commit()
     return _rediriger_parametres(ok="coefficient_enregistre")
 
@@ -1392,6 +1524,42 @@ def supprimer_coefficient_matiere(
     entree = session.get(CoefficientMatiereEtablissement, coefficient_id)
     if not entree:
         return _rediriger_parametres(erreur="coefficient_introuvable")
+    configuration = session.get(ParametresAcademiquesEtablissement, entree.parametres_id)
+    etablissement = (
+        session.get(EtablissementScolaire, configuration.etablissement_id)
+        if configuration else None
+    )
+    if not configuration or not etablissement:
+        return _rediriger_parametres(erreur="configuration_invalide")
+    niveau = session.get(NiveauScolaire, entree.niveau_id)
+    option = session.get(OptionScolaire, entree.option_id) if entree.option_id else None
+    matiere = session.get(MatiereScolaire, entree.matiere_id)
+    avant_coefficient = {
+        "coefficient": float(entree.coefficient),
+        "obligatoire": bool(entree.obligatoire),
+    }
+    contexte = {
+        "niveau_id": entree.niveau_id,
+        "niveau": niveau.libelle if niveau else None,
+        "option_id": entree.option_id,
+        "option": option.libelle if option else None,
+        "matiere_id": entree.matiere_id,
+        "matiere": matiere.libelle if matiere else None,
+    }
     session.delete(entree)
+    _journaliser_parametres_academiques(
+        session,
+        admin=admin,
+        etablissement_id=etablissement.id,
+        annee_scolaire=configuration.annee_scolaire,
+        action="suppression",
+        entite_type="coefficient_matiere",
+        entite_id=coefficient_id,
+        avant=avant_coefficient,
+        apres=None,
+        contexte=contexte,
+    )
     session.commit()
     return _rediriger_parametres(ok="coefficient_supprime")
+
+
