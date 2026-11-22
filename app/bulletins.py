@@ -415,10 +415,9 @@ def calculer_moyenne_generale(snapshots: list[dict[str, Any]], periode: str) -> 
 def generer_pdf_bulletin_general(snapshots: list[dict[str, Any]], periode: str) -> bytes:
     """Génère le bulletin récapitulatif multi-matières d'une période.
 
-    Chaque matière contribue une fois à la moyenne générale, car le
-    référentiel actuel ne fournit pas encore de coefficient officiel
-    transversal entre matières. Les coefficients d'évaluation restent
-    appliqués dans chaque moyenne de matière.
+    Les moyennes par matière sont ramenées sur 20 puis pondérées par
+    les coefficients configurés par l'établissement. Les anciens snapshots
+    restent compatibles avec le coefficient neutre 1.
     """
     periode_normalisee = normaliser_periode(periode)
     valides = [
