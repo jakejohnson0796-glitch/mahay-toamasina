@@ -202,11 +202,13 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         for entree in entrees:
             snapshot = entree["snapshot"]
             periode = str(snapshot.get("periode") or entree["bulletin"].periode).strip()
-            cle_periode = periode.casefold()
+            annee_scolaire = str(snapshot.get("annee_scolaire") or "").strip()
+            cle_periode = f"{annee_scolaire.casefold()}|{periode.casefold()}"
             stats = stats_par_periode.setdefault(
                 cle_periode,
                 {
                     "periode": periode,
+                    "annee_scolaire": annee_scolaire or None,
                     "snapshots": [],
                     "matieres": set(),
                     "date_recente": "",
@@ -220,7 +222,10 @@ def construire_portail_famille(session: Session, responsable_id: int) -> list[di
         moyennes_bulletins_par_eleve[eleve_id] = [
             {
                 "periode": stats["periode"],
-                "moyenne": calculer_moyenne_generale(stats["snapshots"], stats["periode"]),
+                "annee_scolaire": stats["annee_scolaire"],
+                "moyenne": calculer_moyenne_generale(
+                    stats["snapshots"], stats["periode"], stats["annee_scolaire"]
+                ),
                 "nb_matieres": len(stats["matieres"]),
             }
             for stats in sorted(
