@@ -74,20 +74,14 @@ def construire_snapshot_bulletin(
 
     configuration = None
     coefficient_matiere = 1.0
-    if cours.etablissement_scolaire_id is not None:
+    # Un cours ancien sans année liée reste en mode historique :
+    # ne jamais lui appliquer silencieusement le barème de l'année actuellement active.
+    if cours.etablissement_scolaire_id is not None and cours.annee_scolaire:
         configuration = session.exec(
             select(ParametresAcademiquesEtablissement)
             .where(
                 ParametresAcademiquesEtablissement.etablissement_id == cours.etablissement_scolaire_id,
-                *(
-                    [ParametresAcademiquesEtablissement.annee_scolaire == cours.annee_scolaire]
-                    if cours.annee_scolaire
-                    else [ParametresAcademiquesEtablissement.est_actif == True]  # noqa: E712
-                ),
-            )
-            .order_by(
-                ParametresAcademiquesEtablissement.date_modification.desc(),
-                ParametresAcademiquesEtablissement.id.desc(),
+                ParametresAcademiquesEtablissement.annee_scolaire == cours.annee_scolaire,
             )
             .limit(1)
         ).first()
