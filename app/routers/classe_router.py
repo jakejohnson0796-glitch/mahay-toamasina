@@ -26,6 +26,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSeance, Utilisateur, RoleUtilisateur, EvenementTableauBlanc, TypeEvenementTableau, AutorisationEcritureTableau, Devoir, RenduDevoir, ProgressionNotion, FicheRevisionCours, StatutFicheRevisionCours, Notification, TypeNotification, NoteSeance, ConsentementTranscription, TranscriptionSeance, CycleEnseigne, ReferentielScolaire, NiveauScolaire, OptionScolaire, MatiereScolaire, ProgrammeMatiereScolaire, EtablissementScolaire, ParametresAcademiquesEtablissement)
 from ..auth import utilisateur_courant, session_utilisateur_valide
+from ..localization import langue_depuis_requete
 from ..profile_approval import profil_validation_requise
 from ..websocket_security import origine_websocket_autorisee
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
@@ -684,6 +685,7 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
+    langue = langue_depuis_requete(request)
 
     cours = session.get(Cours, cours_id)
     if not cours:
@@ -709,6 +711,7 @@ def detail_cours(request: Request, cours_id: int, session: Session = Depends(get
             ai_queue.planifier_fiche_revision_cours(
                 seance_id_sans_fiche,
                 utilisateur.id,
+                langue=langue,
             )
         session.expire_all()
 
@@ -1222,6 +1225,7 @@ def consulter_fiche_revision_cours(
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
 
+    langue = langue_depuis_requete(request)
     fiche = session.get(FicheRevisionCours, fiche_id)
     if (
         not fiche
@@ -1232,11 +1236,16 @@ def consulter_fiche_revision_cours(
 
     if (
         fiche.statut == StatutFicheRevisionCours.TERMINEE
-        and fiche.version_generation != course_revision.VERSION_GENERATION
+        and (
+            fiche.version_generation != course_revision.VERSION_GENERATION
+            or getattr(fiche, "langue", "fr") != langue
+        )
     ):
         # Une seule fiche est régénérée quand l'étudiant l'ouvre ; les autres
         # fiches historiques ne sont pas toutes remises en file à la fois.
-        ai_queue.planifier_fiche_revision_cours(fiche.seance_id, utilisateur.id)
+        ai_queue.planifier_fiche_revision_cours(
+            fiche.seance_id, utilisateur.id, langue=langue
+        )
         session.expire_all()
         fiche = session.get(FicheRevisionCours, fiche_id)
         if not fiche:
@@ -1291,6 +1300,7 @@ def telecharger_fiche_revision_cours(
     if format_fichier not in {"pdf", "docx"}:
         return RedirectResponse("/classe", status_code=303)
 
+    langue = langue_depuis_requete(request)
     fiche = session.get(FicheRevisionCours, fiche_id)
     if (
         not fiche
@@ -1302,11 +1312,16 @@ def telecharger_fiche_revision_cours(
 
     if (
         fiche.statut == StatutFicheRevisionCours.TERMINEE
-        and fiche.version_generation != course_revision.VERSION_GENERATION
+        and (
+            fiche.version_generation != course_revision.VERSION_GENERATION
+            or getattr(fiche, "langue", "fr") != langue
+        )
     ):
         # Une seule fiche est régénérée quand l'étudiant l'ouvre ; les autres
         # fiches historiques ne sont pas toutes remises en file à la fois.
-        ai_queue.planifier_fiche_revision_cours(fiche.seance_id, utilisateur.id)
+        ai_queue.planifier_fiche_revision_cours(
+            fiche.seance_id, utilisateur.id, langue=langue
+        )
         session.expire_all()
         fiche = session.get(FicheRevisionCours, fiche_id)
         if not fiche:
@@ -1380,10 +1395,12 @@ def relancer_fiche_revision_cours(
     if fiche.statut != StatutFicheRevisionCours.ECHOUEE:
         return RedirectResponse(f"/classe/{fiche.cours_id}#seances", status_code=303)
 
+    langue = langue_depuis_requete(request)
     ai_queue.planifier_fiche_revision_cours(
         fiche.seance_id,
         utilisateur.id,
         forcer=True,
+        langue=langue,
     )
     return RedirectResponse(
         f"/classe/{fiche.cours_id}?fiche=relancee#seances",
