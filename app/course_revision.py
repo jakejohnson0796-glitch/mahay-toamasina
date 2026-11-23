@@ -779,7 +779,7 @@ def _texte_ia_non_fiable(contexte: dict, langue: str = "fr") -> str:
         "Garde le plan de révision à 3 étapes. Chaque champ doit tenir en quelques phrases.\n"
         "- Varie compréhension, application et analyse. Chaque exercice doit tester une compétence différente : ne crée pas le même exercice avec seulement d'autres nombres.\n"
         "- RUBRIQUE erreurs_frequentes : donne 3 à 5 erreurs réalistes adaptées à la matière, chacune avec son risque et une méthode concrète pour l'éviter. Pas de banalités.\n"
-        "- EXERCICES : propose une progression Facile, Moyen, Difficile quand il y a 3 exercices ou plus. L'énoncé doit être compréhensible seul ; l'indice aide sans donner la réponse.\n"
+        "- EXERCICES : propose une progression cohérente sur trois niveaux de difficulté distincts quand il y a 3 exercices ou plus. L'énoncé doit être compréhensible seul ; l'indice aide sans donner la réponse.\n"
         "- CORRECTIONS : explique les étapes dans leur ordre logique, justifie chaque opération et termine par un résultat ou une conclusion clairement identifiable. Ne valide pas un résultat sans vérifier le calcul.\n"
         "- RENDU SCIENTIFIQUE : les fiches dans le navigateur utilisent KaTeX. Conserve les formules LaTeX correctes avec délimiteurs \\(...\\) en ligne et \\[...\\] en affichage ; équilibre toutes les accolades et ferme chaque environnement.\n"
         "- MATRICES : utilise \\begin{pmatrix}...\\end{pmatrix} (ou l'environnement adapté), sépare les colonnes par & et les lignes par \\\\ ; ne colle jamais tous les coefficients dans une seule ligne et n'écris jamais beginpmatrix/endpmatrix sans les antislashs et accolades.\n"
@@ -821,7 +821,10 @@ def _liste_objets(valeur: Any, champs: tuple[str, ...], max_items: int, max_len:
     return resultat
 
 
-def normaliser_fiche_revision(contenu: Any, *, exiger_qualite: bool = False) -> dict:
+def normaliser_fiche_revision(
+    contenu: Any, *, exiger_qualite: bool = False, langue: str = "fr"
+) -> dict:
+    langue = normaliser_langue(langue)
     if not isinstance(contenu, dict):
         raise ValueError("La réponse IA n'est pas un objet JSON.")
     fiche = {
@@ -849,18 +852,20 @@ def normaliser_fiche_revision(contenu: Any, *, exiger_qualite: bool = False) -> 
         if not exercice["enonce"] or not exercice["indice"] or not exercice["correction"]:
             raise ValueError("Un exercice IA est incomplet : énoncé, indice et correction sont requis.")
         if not exercice["notion"]:
-            exercice["notion"] = _associer_notion_exercice(exercice, fiche["notions"])
+            exercice["notion"] = _associer_notion_exercice(
+                exercice, fiche["notions"], langue=langue
+            )
         cle_difficulte = _cle(exercice["difficulte"])
-        difficultes_autorisees = {
-            "facile": "Facile",
-            "moyen": "Moyen",
-            "intermediaire": "Moyen",
-            "difficile": "Difficile",
+        difficultes_par_langue = {
+            "fr": {"facile": "Facile", "moyen": "Moyen", "intermediaire": "Moyen", "difficile": "Difficile"},
+            "mg": {"facile": "Mora", "mora": "Mora", "moyen": "Antonony", "intermediaire": "Antonony", "antonony": "Antonony", "difficile": "Sarotra", "sarotra": "Sarotra"},
+            "en": {"facile": "Easy", "easy": "Easy", "moyen": "Medium", "intermediaire": "Medium", "intermediate": "Medium", "medium": "Medium", "difficile": "Hard", "difficult": "Hard", "hard": "Hard"},
         }
+        difficultes_autorisees = difficultes_par_langue[langue]
         if cle_difficulte not in difficultes_autorisees:
             if exiger_qualite:
                 raise ValueError("Une difficulté d'exercice n'est pas reconnue.")
-            exercice["difficulte"] = "Moyen"
+            exercice["difficulte"] = difficultes_autorisees["moyen"]
         else:
             exercice["difficulte"] = difficultes_autorisees[cle_difficulte]
 
@@ -921,14 +926,20 @@ def normaliser_fiche_revision(contenu: Any, *, exiger_qualite: bool = False) -> 
         signatures_auto_eval = [signature_distincte(item["question"]) for item in fiche["auto_evaluation"]]
         if len(set(signatures_auto_eval)) != len(signatures_auto_eval):
             raise ValueError("L'auto-évaluation contient des questions dupliquées.")
-        if not {"Facile", "Moyen", "Difficile"}.issubset(
+        niveaux_requis = {
+            difficultes_par_langue[langue][cle]
+            for cle in ("facile", "moyen", "difficile")
+        }
+        if not niveaux_requis.issubset(
             {item["difficulte"] for item in fiche["exercices"]}
         ):
             raise ValueError("Les exercices doivent couvrir les trois niveaux de difficulté.")
     return fiche
 
 
-def _associer_notion_exercice(exercice: dict, notions: list[dict]) -> str:
+def _associer_notion_exercice(
+    exercice: dict, notions: list[dict], langue: str = "fr"
+) -> str:
     """Associe un exercice à une notion explicite ; n'invente pas de notion inconnue."""
     stop = {
         "avec", "dans", "pour", "quelle", "quelles", "quel", "quels", "comment",
@@ -958,7 +969,11 @@ def _associer_notion_exercice(exercice: dict, notions: list[dict]) -> str:
             meilleur_titre = titre
             meilleur_score = score
 
-    return meilleur_titre if meilleur_score else "À confirmer à partir du cours"
+    return meilleur_titre if meilleur_score else {
+        "fr": "À confirmer à partir du cours",
+        "mg": "Mila hamarinina avy amin'ny lesona",
+        "en": "To be confirmed from the lesson",
+    }[normaliser_langue(langue)]
 
 
 def _texte_ia_document(contexte: dict, langue: str = "fr") -> str:
@@ -1029,7 +1044,7 @@ def _texte_ia_reprise_compacte(
         "Obligatoire : résumé, 2-3 objectifs, exactement 3 notions distinctes "
         "(explication et exemple), exactement 3 erreurs fréquentes distinctes "
         "(erreur, risque, prévention), jusqu'à 3 outils, exactement 3 exercices "
-        "(Facile, Moyen, Difficile) avec énoncé, indice et correction vérifiée, "
+        "(trois niveaux de difficulté dans la langue demandée) avec énoncé, indice et correction vérifiée, "
         "jusqu'à 3 points à retravailler, exactement 3 étapes de planification "
         "(Aujourd'hui, Dans 2 jours, Dans 7 jours), exactement 3 questions "
         "d'auto-évaluation avec réponses et limites_sources. Aucun champ requis "
@@ -1154,7 +1169,9 @@ def _generer_contenu_ia(
     except (TypeError, ValueError) as erreur:
         raise ValueError("Le modèle IA a renvoyé un contenu JSON invalide.") from erreur
     try:
-        return normaliser_fiche_revision(donnees, exiger_qualite=True)
+        return normaliser_fiche_revision(
+            donnees, exiger_qualite=True, langue=langue
+        )
     except ValueError as erreur_qualite:
         # Une réponse JSON valide peut tout de même être pauvre (questions répétées,
         # niveaux manquants, erreurs fréquentes vides). On demande une seule reprise
@@ -1186,7 +1203,9 @@ def _generer_contenu_ia(
             donnees_reprises = json.loads(message_reprise.content or "")
         except (TypeError, ValueError) as erreur_json:
             raise ValueError("La reprise pédagogique du modèle n'a pas renvoyé un JSON valide.") from erreur_json
-        return normaliser_fiche_revision(donnees_reprises, exiger_qualite=True)
+        return normaliser_fiche_revision(
+            donnees_reprises, exiger_qualite=True, langue=langue
+        )
 
 
 def generer_et_sauvegarder_fiche_revision_cours(fiche_id: int) -> None:
