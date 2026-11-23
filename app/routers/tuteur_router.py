@@ -12,6 +12,7 @@ from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
+from ..localization import langue_depuis_requete
 from ..dependencies import acces_ia_ou_redirection
 from ..models import (
     Document, MembreCercle, MissionApprentissage, SessionTuteur, ProgressionNotion,
@@ -366,6 +367,8 @@ def demander_tuteur(
     if redirection:
         return redirection
 
+    langue = langue_depuis_requete(request)
+
     contexte_scolaire = _contexte_scolaire_tuteur(utilisateur, session)
     if getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"} and not contexte_scolaire:
         return RedirectResponse(
@@ -494,6 +497,7 @@ def demander_tuteur(
             niveau=contexte_scolaire["niveau"],
             cycle_education=contexte_scolaire["cycle_education"],
             verifier=False,
+            langue=langue,
         )
     else:
         reponse = ai_quiz.generer_reponse_tuteur(
@@ -501,6 +505,7 @@ def demander_tuteur(
             notion=progression.notion if progression else None,
             matiere=matiere_pour_ia,
             verifier=False,
+            langue=langue,
         )
     # La génération initiale est déjà livrée. La relecture multi-modèles
     # est toujours une tâche durable et ne dépend plus du cycle de vie HTTP.
@@ -521,6 +526,7 @@ def demander_tuteur(
 
     session_tuteur = SessionTuteur(
         utilisateur_id=utilisateur.id,
+        langue=langue,
         document_id=document_source.id if document_source else None,
         notion=progression.notion if progression else None,
         progression_id=progression.id if progression else None,
@@ -664,6 +670,7 @@ def verifier_comprehension_tuteur_session(
         exemple=session_tuteur.exemple,
         indice_precedent=session_tuteur.indice,
         reponse_etudiant=reponse,
+        langue=getattr(session_tuteur, "langue", "fr"),
     )
     session_tuteur.comprehension_reponse = reponse
     session_tuteur.comprehension_feedback = str(evaluation.get("feedback") or "")[:900]
