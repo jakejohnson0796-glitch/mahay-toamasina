@@ -15,6 +15,7 @@ from typing import Any
 from groq import Groq
 
 from .config import parametres
+from .localization import instruction_langue_sortie, normaliser_langue
 
 logger = logging.getLogger(__name__)
 MAX_TEXTE_COPIE = 16_000
@@ -86,6 +87,7 @@ def generer_suggestion_correction(
     criteres: list[dict[str, Any]],
     texte_copie: str,
     commentaire_etudiant: str = "",
+    langue: str = "fr",
 ) -> dict[str, Any]:
     """Retourne un brouillon IA borné au barème, sans enregistrer la note officielle."""
     contenu = (texte_copie or "").strip()[:MAX_TEXTE_COPIE]
@@ -118,6 +120,7 @@ def generer_suggestion_correction(
         f"Commentaire de l'étudiant : {_texte(commentaire_etudiant, 1200) or 'Aucun'}\n\n"
         f"Texte extrait de la copie (extrait partiel possible) :\n{contenu}"
     )
+    langue = normaliser_langue(langue)
     prompt = (
         "Tu es un assistant qui aide un professeur à corriger un devoir. "
         "Évalue uniquement les éléments réellement présents dans la copie au regard de la consigne "
@@ -129,9 +132,12 @@ def generer_suggestion_correction(
         f"entre 0 et {maximum:g}, et cohérente avec les preuves observées. Si des critères sont fournis, "
         "évalue chacun d'eux sans dépasser son maximum et n'en invente pas d'autres. Si la preuve est "
         "insuffisante, formule des réserves plutôt que de compenser par une supposition. "
-        "L'appréciation doit être constructive, précise et rédigée en français. "
+        "Les commentaires, l'appréciation, les points forts, les améliorations et les limites doivent "
+        "être rédigés dans la langue demandée. Préserve les noms des critères tels qu'ils ont été fournis. "
         "Cette note n'est qu'une proposition : le professeur décidera lui-même de la note finale.\n\n"
         + contexte
+        + "\n\n"
+        + instruction_langue_sortie(langue)
     )
 
     try:
