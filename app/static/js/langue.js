@@ -3767,6 +3767,7 @@
     "Matière (A–Z)": "Taranja (A–Z)",
     "Rechercher et trier les documents": "Hitady sy handahatra ny tahirin-kevitra",
     "Titre, matière, notion ou mot-clé…": "Lohateny, taranja, hevitra na teny fototra…",
+    "Les questions en anglais ne sont pas disponibles pour le moment. Réessaie lorsque la génération IA sera disponible ; aucune question française ne sera mélangée à ta session anglaise.": "Tsy mbola misy amin'izao ny fanontaniana amin'ny teny anglisy. Andramo indray rehefa mandeha ny famoronana IA; tsy hampifangaroina amin'ny teny anglisy ny fanontaniana frantsay.",
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -6999,6 +7000,7 @@
     "Matière (A–Z)": "Subject (A–Z)",
     "Rechercher et trier les documents": "Search and sort documents",
     "Titre, matière, notion ou mot-clé…": "Title, subject, concept or keyword…",
+    "Les questions en anglais ne sont pas disponibles pour le moment. Réessaie lorsque la génération IA sera disponible ; aucune question française ne sera mélangée à ta session anglaise.": "English questions are not available right now. Try again when AI generation is available; French questions will not be mixed into your English session.",
   });
 
   var noeudsOriginaux = new WeakMap();
