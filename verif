@@ -1,36 +1,28 @@
 """
-Script de diagnostic : a lancer depuis E:\\New app\\mahay_build (venv active)
-avec : python verifier_env.py
+Diagnostic local de configuration.
+
+Les valeurs sensibles ne sont jamais affichées : seules leur présence et
+l'état du fichier .env sont indiqués.
 """
-from pathlib import Path
 import os
 
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-print("=" * 60)
-print("Dossier courant (cwd)       :", Path.cwd())
 
 chemin_trouve = find_dotenv(usecwd=True)
-print("Fichier .env trouve par dotenv :", chemin_trouve or "AUCUN !")
+print("Fichier .env trouvé :", "oui" if chemin_trouve else "non")
 
 if chemin_trouve:
-    taille = Path(chemin_trouve).stat().st_size
-    print("Taille du fichier trouve    :", taille, "octets")
-    # Lit les premiers octets en brut pour detecter un probleme d'encodage
-    with open(chemin_trouve, "rb") as f:
-        debut = f.read(20)
-    print("Premiers octets (hex)       :", debut.hex())
-    if debut.startswith(b"\xff\xfe") or debut.startswith(b"\xfe\xff"):
-        print("  -> ATTENTION : ce fichier est en UTF-16, pas en UTF-8 !")
-        print("  -> C'est tres probablement la cause du probleme.")
+    with open(chemin_trouve, "rb") as fichier:
+        debut = fichier.read(4)
+    if debut.startswith((b"\xff\xfe", b"\xfe\xff")):
+        print("Encodage .env : UTF-16 détecté (convertir en UTF-8).")
     elif debut.startswith(b"\xef\xbb\xbf"):
-        print("  -> Le fichier a un BOM UTF-8 (souvent OK, mais a noter).")
+        print("Encodage .env : BOM UTF-8 détecté.")
 
-resultat = load_dotenv(chemin_trouve or ".env", verbose=True, override=True)
-print("load_dotenv() a reussi      :", resultat)
+charge = load_dotenv(chemin_trouve or ".env", verbose=False, override=False)
+print("Chargement dotenv :", "effectué" if charge else "aucun fichier chargé")
 
-print("-" * 60)
-print("DATABASE_URL lu par Python  :", repr(os.getenv("DATABASE_URL")))
-print("SUPABASE_URL lu par Python  :", repr(os.getenv("SUPABASE_URL")))
-print("GROQ_API_KEY lu par Python  :", repr(os.getenv("GROQ_API_KEY")))
-print("=" * 60)
+for nom in ("DATABASE_URL", "SUPABASE_URL", "GROQ_API_KEY"):
+    configuree = bool(os.getenv(nom, "").strip())
+    print(f"{nom} configurée :", "oui" if configuree else "non")
