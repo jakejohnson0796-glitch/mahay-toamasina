@@ -1025,6 +1025,7 @@ def generer_banque_questions(
     """Génère une banque fraîche ; le mode local fait tourner les questions inédites."""
     theme = obtenir_theme(theme_id)
     theme_id = theme["id"]
+    langue = normaliser_langue(langue)
     historique = list(questions_a_eviter or [])[-24:]
     questions_ia: list[dict[str, Any]] = []
 
