@@ -131,3 +131,119 @@ def test_revision_difficulty_labels_follow_the_selected_language():
     assert [item["difficulte"] for item in malagasy["exercices"]] == [
         "Mora", "Antonony", "Sarotra"
     ]
+
+
+
+def test_class_ai_assistants_accept_and_use_the_selected_locale(monkeypatch):
+    import json
+    from types import SimpleNamespace
+
+    from app import classe_correction, classe_notes, classe_transcription
+    from app.config import parametres
+
+    monkeypatch.setattr(parametres, "groq_api_key", "test-key")
+    prompts = []
+
+    class FakeGroq:
+        def __init__(self, api_key):
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
+
+        def create(self, **kwargs):
+            prompts.append(kwargs["messages"])
+            if kwargs.get("tools"):
+                payload = {
+                    "note_suggeree": 7,
+                    "confiance": 0.8,
+                    "criteres": [
+                        {"nom": "Structure", "points_obtenus": 7, "commentaire": "Good structure"}
+                    ],
+                    "forces": ["Clear reasoning"],
+                    "ameliorations": ["Add an example"],
+                    "limites": "Only the extracted text was reviewed",
+                }
+                tool_call = SimpleNamespace(
+                    function=SimpleNamespace(arguments=json.dumps(payload))
+                )
+                message = SimpleNamespace(tool_calls=[tool_call])
+            else:
+                message = SimpleNamespace(content="Generated English learning content.")
+            return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+    monkeypatch.setattr(classe_notes, "Groq", FakeGroq)
+    monkeypatch.setattr(classe_correction, "Groq", FakeGroq)
+    monkeypatch.setattr(classe_transcription, "Groq", FakeGroq)
+
+    notes = classe_notes.organiser_notes(
+        contenu="These are sufficiently long student notes for a language test.",
+        nom_cours="Mathematics",
+        titre_seance="Matrices",
+        langue="en",
+    )
+    correction = classe_correction.generer_suggestion_correction(
+        titre="Algebra",
+        consigne="Solve the equation and explain your reasoning.",
+        bareme=10,
+        criteres=[{"nom": "Structure", "points": 10}],
+        texte_copie="A sufficiently long student submission text. " * 5,
+        langue="en",
+    )
+    summary = classe_transcription.resumer_transcription(
+        contenu="A sufficiently long transcript for testing the generated summary language. " * 3,
+        nom_cours="Mathematics",
+        langue="en",
+    )
+
+    assert notes == "Generated English learning content."
+    assert correction["appreciation"] == "Good structure" or correction["forces"] == ["Clear reasoning"]
+    assert summary == "Generated English learning content."
+    assert len(prompts) == 3
+    for messages in prompts:
+        combined = "\n".join(message["content"] for message in messages)
+        assert "MANDATORY OUTPUT LANGUAGE: English" in combined
+        assert "Do not mix English with French or Malagasy" in combined
+
+
+def test_cognitive_game_requires_english_native_questions(monkeypatch):
+    from app import jeu_cerebral
+
+    captured = {}
+
+    monkeypatch.setattr(jeu_cerebral.ai_quiz, "_obtenir_client", lambda: object())
+
+    def unavailable(client, messages, **kwargs):
+        captured["messages"] = messages
+        captured["langue"] = kwargs.get("langue")
+        return None, "AI unavailable"
+
+    monkeypatch.setattr(jeu_cerebral.ai_quiz, "_generer_completion_avec_reessai", unavailable)
+    questions, source = jeu_cerebral.generer_banque_questions(
+        "logique",
+        "en",
+        {"difficulte_depart": "Moyen"},
+        utiliser_ia=True,
+    )
+
+    assert questions == []
+    assert source == "langue_indisponible"
+    assert captured["langue"] == "en"
+    prompt = "\n".join(captured["messages"])
+    assert "MANDATORY OUTPUT LANGUAGE: English" in prompt
+
+
+def test_cognitive_game_does_not_use_french_local_bank_for_english(monkeypatch):
+    from app import jeu_cerebral
+
+    questions, source = jeu_cerebral.generer_banque_questions(
+        "logique", "en", {}, utiliser_ia=False
+    )
+    assert questions == []
+    assert source == "langue_indisponible"
+
+
+def test_class_ai_entrypoints_expose_language_parameters():
+    from inspect import signature
+    from app import classe_correction, classe_notes, classe_transcription
+
+    assert "langue" in signature(classe_notes.organiser_notes).parameters
+    assert "langue" in signature(classe_correction.generer_suggestion_correction).parameters
+    assert "langue" in signature(classe_transcription.resumer_transcription).parameters
