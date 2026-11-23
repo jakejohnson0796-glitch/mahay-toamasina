@@ -13,13 +13,17 @@ MAX_RESUME = 12000
 
 
 def resumer_transcription(*, contenu: str, nom_cours: str, langue: str = "fr") -> str:
+    langue = normaliser_langue(langue)
+    messages = {
+        "fr": {"short": "La transcription est trop courte pour produire un résumé fiable.", "disabled": "Le service IA n'est pas configuré sur ce serveur.", "empty": "L'assistant n'a pas retourné de compte rendu.", "unavailable": "Le résumé IA est temporairement indisponible. Réessaie plus tard."},
+        "mg": {"short": "Fohy loatra ny transcription ka tsy azo anaovana famintinana azo itokisana.", "disabled": "Mbola tsy voalamina eto amin'ity mpizara ity ny serivisy IA.", "empty": "Tsy namerina tatitra ny mpanampy.", "unavailable": "Tsy azo ampiasaina vetivety ny famintinana IA. Andramo indray afaka kelikely."},
+        "en": {"short": "The transcript is too short to produce a reliable summary.", "disabled": "The AI service is not configured on this server.", "empty": "The assistant did not return a meeting summary.", "unavailable": "The AI summary is temporarily unavailable. Please try again later."},
+    }[langue]
     texte = (contenu or "").strip()
     if len(texte) < 80:
-        raise ValueError("La transcription est trop courte pour produire un résumé fiable.")
+        raise ValueError(messages["short"])
     if not parametres.groq_api_key:
-        raise RuntimeError("Le service IA n'est pas configuré sur ce serveur.")
-
-    langue = normaliser_langue(langue)
+        raise RuntimeError(messages["disabled"])
     systeme = (
         "Tu es un assistant pédagogique. Transforme la transcription fournie en compte rendu "
         "fidèle et structuré dans la langue demandée. Inclue les sections correspondant à : "
@@ -50,11 +54,11 @@ def resumer_transcription(*, contenu: str, nom_cours: str, langue: str = "fr") -
         )
         resultat = (completion.choices[0].message.content or "").strip()
         if not resultat:
-            raise RuntimeError("L'assistant n'a pas retourné de compte rendu.")
+            raise RuntimeError(messages["empty"])
         return resultat[:MAX_RESUME]
     except ValueError:
         raise
     except RuntimeError:
         raise
     except Exception as erreur:
-        raise RuntimeError("Le résumé IA est temporairement indisponible. Réessaie plus tard.") from erreur
+        raise RuntimeError(messages["unavailable"]) from erreur
