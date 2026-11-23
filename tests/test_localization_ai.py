@@ -83,3 +83,51 @@ def test_course_revision_model_persists_locale():
 
     columns = {column.key for column in inspect(FicheRevisionCours).columns}
     assert "langue" in columns
+
+
+
+def test_revision_difficulty_labels_follow_the_selected_language():
+    from app.course_revision import normaliser_fiche_revision
+
+    contenu = {
+        "resume": "Revision summary",
+        "objectifs": ["Understand the method", "Apply the method"],
+        "notions": [
+            {"titre": f"Concept {i}", "explication": "Explanation", "exemple": "Example"}
+            for i in range(3)
+        ],
+        "erreurs_frequentes": [
+            {"erreur": f"Error {i}", "pourquoi": "Reason", "comment_eviter": "Prevention"}
+            for i in range(3)
+        ],
+        "outils_a_retenir": [],
+        "exercices": [
+            {"enonce": f"Exercise {i}", "difficulte": level, "indice": "Hint",
+             "correction": "Explanation", "notion": f"Concept {i}"}
+            for i, level in enumerate(("Easy", "Medium", "Hard"))
+        ],
+        "points_a_retravailler": [],
+        "plan_revision": [
+            {"moment": f"Day {i}", "action": f"Action {i}"} for i in range(3)
+        ],
+        "auto_evaluation": [
+            {"question": f"Question {i}", "reponse": f"Answer {i}"} for i in range(3)
+        ],
+        "limites_sources": "Based on the available course material.",
+    }
+    english = normaliser_fiche_revision(contenu, langue="en")
+    assert [item["difficulte"] for item in english["exercices"]] == [
+        "Easy", "Medium", "Hard"
+    ]
+
+    malagasy_input = {
+        **contenu,
+        "exercices": [
+            {**item, "difficulte": level}
+            for item, level in zip(contenu["exercices"], ("Mora", "Antonony", "Sarotra"))
+        ],
+    }
+    malagasy = normaliser_fiche_revision(malagasy_input, langue="mg")
+    assert [item["difficulte"] for item in malagasy["exercices"]] == [
+        "Mora", "Antonony", "Sarotra"
+    ]
