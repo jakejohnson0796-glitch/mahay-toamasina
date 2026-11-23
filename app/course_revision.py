@@ -1228,10 +1228,11 @@ def generer_et_sauvegarder_fiche_revision_cours(fiche_id: int) -> None:
             Notification(
                 destinataire_id=utilisateur_id,
                 type_notification=TypeNotification.FICHE_REVISION_PRETE,
-                contenu=(
-                    "Ta fiche de révision personnalisée est prête à télécharger. "
-                    "Ouvre ton cours pour récupérer le PDF ou la version Word."
-                ),
+                contenu={
+                    "fr": "Ta fiche de révision personnalisée est prête à télécharger. Ouvre ton cours pour récupérer le PDF ou la version Word.",
+                    "mg": "Efa vonona ny taratasy famerenana lesona natao manokana ho anao. Sokafy ny lesonao mba hakana azy amin'ny endrika PDF na Word.",
+                    "en": "Your personalised revision sheet is ready to download. Open your course to get the PDF or Word version.",
+                }.get(normaliser_langue(langue), "Ta fiche de révision personnalisée est prête à télécharger."),
                 acteur_id=None,
             )
         )
