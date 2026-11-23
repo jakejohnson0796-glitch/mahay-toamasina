@@ -24,6 +24,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (LeconReferentielle, Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
+from ..localization import langue_depuis_requete
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte, ExtractionSaturee
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
@@ -2160,6 +2161,8 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     if redirection:
         return redirection
 
+    langue = langue_depuis_requete(request)
+
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
@@ -2197,6 +2200,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
                     texte,
                     nb_questions=5,
                     questions_a_eviter=questions_a_eviter_essai,
+                    langue=langue,
                 )
                 questions_courantes = valider_questions(
                     questions_generees, expected_count=5
@@ -2295,6 +2299,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
+        langue=langue,
         document_id=document.id,
         matiere=matiere_quiz,
         niveau=niveau,
