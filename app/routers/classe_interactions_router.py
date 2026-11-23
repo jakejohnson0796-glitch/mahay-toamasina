@@ -11,6 +11,7 @@ from sqlalchemy import delete, func, update
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
+from ..localization import langue_depuis_requete
 from ..config import parametres
 from ..csrf import verifier_csrf
 from ..database import get_session
@@ -940,6 +941,7 @@ def resumer_transcription_seance(
         resume = classe_transcription.resumer_transcription(
             contenu=transcription.contenu,
             nom_cours=cours.nom,
+            langue=langue_depuis_requete(request),
         )
     except RuntimeError as erreur:
         return JSONResponse({"erreur": str(erreur)}, status_code=503)
