@@ -26,3 +26,17 @@ venv/
 htmlcov/
 playwright-report/
 test-results/
+
+# Certificats, bases locales, sauvegardes et identifiants locaux.
+.envrc
+.secrets/
+*.db
+*.dump
+*.sql.gz
+*.bak
+*.p12
+*.pfx
+*.jks
+*.log
+credentials.json
+service-account*.json
