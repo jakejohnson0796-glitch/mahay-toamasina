@@ -516,10 +516,11 @@ def demander_tuteur(
     # L'indice est capturé séparément des quatre sections canoniques.
     indice_tuteur = str(reponse.get("indice") or "").strip()[:2400]
     if not indice_tuteur:
-        indice_tuteur = (
-            "Indice de méthode : repère les données utiles et ce que l'on cherche. "
-            "Identifie la règle pertinente, puis essaie une première étape avant la correction."
-        )
+        indice_tuteur = {
+            "fr": "Indice de méthode : repère les données utiles et ce que l'on cherche. Identifie la règle pertinente, puis essaie une première étape avant la correction.",
+            "mg": "Torohevitra: fantaro ny angona ilaina sy izay tadiavina. Fantaro ny fitsipika mifandraika amin'izany, ary andramo ny dingana voalohany alohan'ny hijerena ny fanitsiana.",
+            "en": "Method hint: identify the useful information and what you are trying to find. Choose the relevant rule, then try the first step before looking at the solution.",
+        }[langue]
     # Canonisation finale avant tout stockage, même en cas de secours ou
     # d'arbitrage multi-modèles partiel.
     reponse = normaliser_structure_tuteur(reponse)
@@ -552,7 +553,11 @@ def demander_tuteur(
         mission_adaptative.etape = "pratiquer"
         mission_adaptative.derniere_tentative_id = None
         mission_adaptative.derniere_session_tuteur_id = session_tuteur.id
-        mission_adaptative.dernier_feedback = "Explication enregistrée. Passe maintenant au quiz ciblé sur cette même notion."
+        mission_adaptative.dernier_feedback = {
+            "fr": "Explication enregistrée. Passe maintenant au quiz ciblé sur cette même notion.",
+            "mg": "Voatahiry ny fanazavana. Tohizo amin'ny quiz mifantoka amin'io hevitra io ihany.",
+            "en": "Explanation saved. Now continue with a focused quiz on this same concept.",
+        }[langue]
         mission_adaptative.date_maj = datetime.utcnow()
         mission_adaptative.date_fin = None
         session.add(mission_adaptative)
