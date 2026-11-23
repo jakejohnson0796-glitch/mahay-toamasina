@@ -1264,7 +1264,8 @@ def consulter_fiche_revision_cours(
 
     try:
         contenu = course_revision.normaliser_fiche_revision(
-            json.loads(fiche.contenu_json)
+            json.loads(fiche.contenu_json),
+            langue=langue,
         )
     except (TypeError, ValueError, json.JSONDecodeError):
         return RedirectResponse(
@@ -1340,7 +1341,7 @@ def telecharger_fiche_revision_cours(
 
     try:
         contenu = json.loads(fiche.contenu_json)
-        contenu = course_revision.normaliser_fiche_revision(contenu)
+        contenu = course_revision.normaliser_fiche_revision(contenu, langue=langue)
     except (TypeError, ValueError, json.JSONDecodeError):
         return RedirectResponse(
             f"/classe/{cours.id}?fiche=indisponible#seances",
