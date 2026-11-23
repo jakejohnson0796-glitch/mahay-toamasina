@@ -1129,10 +1129,11 @@ def generer_reponse_tuteur(
                 "Tuteur indisponible après fallback fournisseur: %s",
                 type(derniere_erreur).__name__ if derniere_erreur else "format_invalide",
             )
-            return _reponse_tuteur_erreur(
-                "Le Tuteur IA est temporairement indisponible. "
-                "Ta question n'est pas perdue; reessaie dans quelques instants."
-            )
+            return _reponse_tuteur_erreur({
+                "fr": "Le Tuteur IA est temporairement indisponible. Ta question n'est pas perdue ; réessaie dans quelques instants.",
+                "mg": "Tsy azo ampiasaina vetivety ny Tuteur IA. Tsy very ny fanontanianao; andramo indray afaka kelikely.",
+                "en": "The AI Tutor is temporarily unavailable. Your question has not been lost; please try again shortly.",
+            }[langue])
 
     reponse_initiale = normaliser_structure_tuteur({
         "explication": arguments.get("explication") or "—",
@@ -1142,10 +1143,11 @@ def generer_reponse_tuteur(
     })
     indice = str(arguments.get("indice") or "").strip()[:2400]
     if not indice:
-        indice = (
-            "Indice de méthode : repère les données utiles et ce que l'on cherche. "
-            "Identifie la règle pertinente, puis essaie une première étape avant la correction."
-        )
+        indice = {
+            "fr": "Indice de méthode : repère les données utiles et ce que l'on cherche. Identifie la règle pertinente, puis essaie une première étape avant la correction.",
+            "mg": "Torohevitra: fantaro ny angona ilaina sy izay tadiavina. Fantaro ny fitsipika mifandraika amin'izany, ary andramo ny dingana voalohany alohan'ny hijerena ny fanitsiana.",
+            "en": "Method hint: identify the useful information and what you are trying to find. Choose the relevant rule, then try the first step before looking at the solution.",
+        }[langue]
     reponse_initiale["indice"] = indice
 
     if not verifier:
@@ -1156,6 +1158,7 @@ def generer_reponse_tuteur(
         question=question,
         notion=notion,
         matiere=matiere,
+        langue=langue,
     )
     verification_ok = bool(reponse_finale.pop("_verification_ok", True))
     if parametres.ai_ensemble_enabled and not verification_ok:
