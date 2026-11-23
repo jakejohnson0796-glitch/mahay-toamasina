@@ -51,13 +51,11 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   « \(\Delta E=\hbar\omega\) », « \(v=3\,\mathrm{m/s}\) »,
   « \(a=2\,\mathrm{m/s^{2}}\) », « \(\rho=1\,\mathrm{kg/m^{3}}\) ».
   Les unités sont en \(\mathrm{...}\) et séparées de la valeur par \(\,\).
-- RÉSULTATS : utilise la virgule décimale française à l'intérieur de la formule
-  (ex. \(31{,}6\)) et vérifie les opérations avant d'expliquer l'estimation.
-  Distingue explicitement la valeur exacte, l'approximation et l'arrondi; utilise ces trois
-  termes lorsqu'ils sont pertinents. Pour un arrondi à la dizaine, explique le chiffre des
-  unités et l'écart avec les deux dizaines voisines. Exemple : \(\sqrt{1000}\approx31{,}6\);
-  à la dizaine la plus proche, \(31{,}6\) s'arrondit à \(30\), car il est plus proche de
-  \(30\) que de \(40\). Ne présente jamais \(30\approx32\) comme une égalité d'estimation.
+- RÉSULTATS : utilise le séparateur décimal indiqué par la langue de sortie.
+  Vérifie les opérations avant d'expliquer une estimation. Distingue la valeur exacte,
+  l'approximation et l'arrondi; utilise ces termes lorsqu'ils sont pertinents. Pour un
+  arrondi à la dizaine, explique le chiffre des unités et l'écart avec les deux dizaines
+  voisines. Ne présente jamais un arrondi comme une égalité d'estimation.
 - CHIMIE : utilise mhchem uniquement dans un délimiteur mathématique :
   \( \ce{H2O} \)
   \( \ce{2H2 + O2 -> 2H2O} \)
