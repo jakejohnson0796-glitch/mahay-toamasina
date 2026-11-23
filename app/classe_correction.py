@@ -90,13 +90,32 @@ def generer_suggestion_correction(
     langue: str = "fr",
 ) -> dict[str, Any]:
     """Retourne un brouillon IA borné au barème, sans enregistrer la note officielle."""
+    langue = normaliser_langue(langue)
+    messages = {
+        "fr": {
+            "short": "Le texte de la copie est trop court ou illisible pour proposer une correction fiable.",
+            "disabled": "Le service IA n'est pas configuré sur ce serveur.",
+            "warning": "Suggestion générée par IA. Elle n'est ni une note officielle ni une décision automatique. Le professeur doit relire la copie et confirmer ou modifier la correction.",
+            "unavailable": "La correction assistée n'a pas pu être générée. Réessaie plus tard.",
+        },
+        "mg": {
+            "short": "Fohy loatra na tsy mazava tsara ny lahatsoratry ny asa ka tsy azo anaovana fanitsiana azo itokisana.",
+            "disabled": "Mbola tsy voalamina eto amin'ity mpizara ity ny serivisy IA.",
+            "warning": "Soso-kevitra novokarin'ny IA ity. Tsy naoty ofisialy na fanapahan-kevitra mandeha ho azy izy ity. Tsy maintsy mamaky sy manamarina na manova ny fanitsiana ny mpampianatra.",
+            "unavailable": "Tsy afaka namorona ny soso-kevitra fanitsiana ny rafitra. Andramo indray afaka kelikely.",
+        },
+        "en": {
+            "short": "The submission text is too short or unreadable for a reliable review.",
+            "disabled": "The AI service is not configured on this server.",
+            "warning": "AI-generated suggestion only. It is not an official grade or an automated decision. The teacher must review the submission and confirm or change the feedback.",
+            "unavailable": "The assisted review could not be generated. Please try again later.",
+        },
+    }[langue]
     contenu = (texte_copie or "").strip()[:MAX_TEXTE_COPIE]
     if len(contenu) < 80:
-        raise ValueError(
-            "Le texte de la copie est trop court ou illisible pour proposer une correction fiable."
-        )
+        raise ValueError(messages["short"])
     if not parametres.groq_api_key:
-        raise RuntimeError("Le service IA n'est pas configuré sur ce serveur.")
+        raise RuntimeError(messages["disabled"])
 
     maximum = float(bareme)
     if not math.isfinite(maximum) or maximum <= 0:
@@ -120,7 +139,6 @@ def generer_suggestion_correction(
         f"Commentaire de l'étudiant : {_texte(commentaire_etudiant, 1200) or 'Aucun'}\n\n"
         f"Texte extrait de la copie (extrait partiel possible) :\n{contenu}"
     )
-    langue = normaliser_langue(langue)
     prompt = (
         "Tu es un assistant qui aide un professeur à corriger un devoir. "
         "Évalue uniquement les éléments réellement présents dans la copie au regard de la consigne "
@@ -197,13 +215,10 @@ def generer_suggestion_correction(
             "limites": _texte(donnees.get("limites"), 1200),
             "confiance": confiance,
             "statut": "brouillon_a_valider",
-            "avertissement": (
-                "Suggestion générée par IA. Elle n'est ni une note officielle ni une décision automatique. "
-                "Le professeur doit relire la copie et confirmer ou modifier la correction."
-            ),
+            "avertissement": messages["warning"],
         }
     except (ValueError, TypeError, json.JSONDecodeError):
         raise
     except Exception as erreur:
         logger.warning("Aide de correction IA indisponible (%s).", type(erreur).__name__)
-        raise RuntimeError("La correction assistée n'a pas pu être générée. Réessaie plus tard.") from erreur
+        raise RuntimeError(messages["unavailable"]) from erreur
