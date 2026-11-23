@@ -20,7 +20,7 @@ from groq import Groq
 from .config import parametres
 from .json_latex import charger_json_ia
 from .ia_transport import (
-    PROMPT_TRANSPORT_SANS_ANTISLASH,
+    regles_format_pour_langue,
     normaliser_structure_quiz,
     normaliser_structure_tuteur,
 )
@@ -28,12 +28,11 @@ from .ia_transport import (
 logger = logging.getLogger(__name__)
 
 # MODIF : contrat commun de rendu LaTeX/Markdown pour tous les modèles de contrôle.
-REGLES_FORMAT = PROMPT_TRANSPORT_SANS_ANTISLASH
-# MODIF : suffixe commun ajouté à chaque prompt de critique/arbitrage.
-def _suffixe_format_prompt(quiz: bool = False) -> str:
-    if quiz:
-        return PROMPT_TRANSPORT_SANS_ANTISLASH
-    return "\n\n" + PROMPT_TRANSPORT_SANS_ANTISLASH
+REGLES_FORMAT = regles_format_pour_langue("fr")
+# Contrat commun : format scientifique + langue explicitement choisie.
+def _suffixe_format_prompt(quiz: bool = False, langue: str = "fr") -> str:
+    contrat = regles_format_pour_langue(langue)
+    return contrat if quiz else "\n\n" + contrat
 
 # Coupe-circuit court pour eviter de refaire plusieurs requetes Gemini
 # lorsque le fournisseur renvoie temporairement des 429/5xx.
@@ -617,6 +616,7 @@ def critiquer_quiz_groq(
     questions: List[Dict[str, Any]],
     matiere: str,
     niveau: str,
+    langue: str = "fr",
 ) -> Optional[Dict[str, Any]]:
     prompt = (
         "Tu es le deuxieme professeur-verificateur d'un moteur de quiz. "
@@ -638,7 +638,7 @@ def critiquer_quiz_groq(
         f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
         f"{json.dumps(questions, ensure_ascii=False)}"
     )
-    prompt += _suffixe_format_prompt(quiz=True)
+    prompt += _suffixe_format_prompt(quiz=True, langue=langue)
     critique = _groq_structured_tool(
         model=parametres.groq_critic_model,
         tool=OUTIL_CRITIQUE_QUIZ,
@@ -722,6 +722,7 @@ def critiquer_quiz_gemini(
     questions: List[Dict[str, Any]],
     matiere: str,
     niveau: str,
+    langue: str = "fr",
 ) -> Optional[Dict[str, Any]]:
     prompt = (
         "Tu es un correcteur universitaire independant. Examine le quiz ci-dessous "
@@ -737,7 +738,7 @@ def critiquer_quiz_gemini(
         f"Matiere: {matiere}\\nNiveau: {niveau}\\n"
         f"{json.dumps(questions, ensure_ascii=False)}"
     )
-    prompt += _suffixe_format_prompt(quiz=True)
+    prompt += _suffixe_format_prompt(quiz=True, langue=langue)
     return _gemini_json(prompt, GEMINI_QUIZ_SCHEMA)
 
 
@@ -747,6 +748,7 @@ def arbitrer_quiz(
     matiere: str,
     niveau: str,
     outil_verification: Dict[str, Any],
+    langue: str = "fr",
 ) -> Optional[Dict[str, Any]]:
     synthese = json.dumps(critiques, ensure_ascii=False)
     prompt = (
@@ -768,7 +770,7 @@ def arbitrer_quiz(
         f"ORIGINAL:\\n{json.dumps(original, ensure_ascii=False)}\\n\\n"
         f"CRITIQUES:\\n{synthese}"
     )
-    prompt += _suffixe_format_prompt(quiz=True)
+    prompt += _suffixe_format_prompt(quiz=True, langue=langue)
     return _groq_structured_tool(
         model=parametres.groq_model,
         tool=outil_verification,
@@ -786,6 +788,7 @@ def ensemble_verification_quiz(
     outil_verification: Dict[str, Any],
     validate,
     strategie: str = "standard",
+    langue: str = "fr",
 ) -> Tuple[List[Dict[str, Any]], bool, Dict[str, Any]]:
     """Fait collaborer les verificateurs avec un niveau de controle adaptatif.
 
@@ -801,7 +804,7 @@ def ensemble_verification_quiz(
         }
 
     critiques: List[Dict[str, Any]] = []
-    qwen = critiquer_quiz_groq(questions, matiere, niveau)
+    qwen = critiquer_quiz_groq(questions, matiere, niveau, langue=langue)
     if qwen:
         critiques.append({"model": parametres.groq_critic_model, "avis": qwen})
 
@@ -811,7 +814,7 @@ def ensemble_verification_quiz(
         strategie,
         qwen,
     ):
-        gemini = critiquer_quiz_gemini(questions, matiere, niveau)
+        gemini = critiquer_quiz_gemini(questions, matiere, niveau, langue=langue)
         if gemini:
             critiques.append({"model": parametres.gemini_model, "avis": gemini})
 
@@ -839,6 +842,7 @@ def ensemble_verification_quiz(
         matiere,
         niveau,
         outil_verification,
+        langue=langue,
     )
     if not arbitre:
         # Si l'arbitre est indisponible, on garde le resultat du premier
@@ -905,6 +909,7 @@ def _critique_tuteur_groq(
     question: str,
     notion: Optional[str],
     matiere: Optional[str],
+    langue: str = "fr",
 ) -> Optional[Dict[str, Any]]:
     prompt = (
         "Evalue la reponse d'un tuteur universitaire comme un correcteur "
@@ -922,7 +927,7 @@ def _critique_tuteur_groq(
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"REPONSE:\\n{json.dumps(reponse, ensure_ascii=False)}"
     )
-    prompt += _suffixe_format_prompt(quiz=False)
+    prompt += _suffixe_format_prompt(quiz=False, langue=langue)
     return _groq_structured_tool(
         model=parametres.groq_critic_model,
         tool=OUTIL_TUTEUR_CRITIQUE,
@@ -948,6 +953,7 @@ def _critique_tuteur_gemini(
     question: str,
     notion: Optional[str],
     matiere: Optional[str],
+    langue: str = "fr",
 ) -> Optional[Dict[str, Any]]:
     prompt = (
         "Tu es un controleur pedagogique independant. Recalcule les passages "
@@ -960,7 +966,7 @@ def _critique_tuteur_gemini(
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"{json.dumps(reponse, ensure_ascii=False)}"
     )
-    prompt += _suffixe_format_prompt(quiz=False)
+    prompt += _suffixe_format_prompt(quiz=False, langue=langue)
     return _gemini_json(prompt, TUTEUR_GEMINI_SCHEMA)
 
 
@@ -971,6 +977,7 @@ def verifier_tuteur(
     matiere: Optional[str],
     outil_tuteur: Dict[str, Any],
     strategie: str = "standard",
+    langue: str = "fr",
 ) -> Tuple[Dict[str, str], bool, Dict[str, Any]]:
     """Valide une reponse de tuteur avec des critiques independantes.
 
@@ -981,7 +988,7 @@ def verifier_tuteur(
         return reponse, False, {"models": [parametres.groq_model], "critics": []}
 
     critiques: List[Dict[str, Any]] = []
-    qwen = _critique_tuteur_groq(reponse, question, notion, matiere)
+    qwen = _critique_tuteur_groq(reponse, question, notion, matiere, langue=langue)
     if qwen:
         critiques.append({"model": parametres.groq_critic_model, "avis": qwen})
 
@@ -1002,7 +1009,7 @@ def verifier_tuteur(
         strategie,
         qwen,
     ):
-        gemini = _critique_tuteur_gemini(reponse, question, notion, matiere)
+        gemini = _critique_tuteur_gemini(reponse, question, notion, matiere, langue=langue)
         if gemini:
             critiques.append({"model": parametres.gemini_model, "avis": gemini})
 
@@ -1040,12 +1047,12 @@ def verifier_tuteur(
         "en maths/physique, ainsi que syntaxe/semantique/resultat du code en informatique. "
         "Ne laisse jamais une affirmation du type « aucune solution », « resultat "
         "impossible » ou « corrige l'enonce » sans expliquer et reparer l'incoherence. "
-        "Reponds en francais, clair et pedagogique.\\n\\n"
+        "Rédige la réponse finale dans la langue demandée.\\n\\n"
         f"Question: {question}\\nNotion: {notion or '-'}\\nMatiere: {matiere or '-'}\\n"
         f"REPONSE INITIALE:\\n{json.dumps(reponse, ensure_ascii=False)}\\n\\n"
         f"CRITIQUES:\\n{json.dumps(critiques, ensure_ascii=False)}"
     )
-    prompt += _suffixe_format_prompt(quiz=False)
+    prompt += _suffixe_format_prompt(quiz=False, langue=langue)
     result = _groq_structured_tool(
         model=parametres.groq_model,
         tool=outil_tuteur,
