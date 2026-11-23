@@ -18,6 +18,7 @@ from ..dependencies import acces_ia_ou_redirection
 from ..models import JeuCerebralSession
 from ..rate_limit import limite_depassee
 from ..templating import templates
+from ..localization import langue_depuis_requete
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ def demarrer_jeu_cerebral(
     ):
         return RedirectResponse("/jeu-cerebral?erreur=rythme", status_code=303)
 
-    langue = langue if langue in {"fr", "mg"} else "fr"
+    langue = langue_depuis_requete(request)
     if theme == "aleatoire":
         theme_id = random.choice(jeu_cerebral.THEMES)["id"]
     elif theme in jeu_cerebral.THEMES_PAR_ID:
@@ -162,6 +163,8 @@ def demarrer_jeu_cerebral(
         utiliser_ia=utiliser_ia,
         questions_a_eviter=questions_a_eviter,
     )
+    if source == "langue_indisponible":
+        return RedirectResponse("/jeu-cerebral?erreur=langue", status_code=303)
     if len(questions) < jeu_cerebral.NB_QUESTIONS_SESSION:
         logger.error("Banque de jeu cérébral insuffisante pour le thème %s.", theme_id)
         return RedirectResponse("/jeu-cerebral?erreur=questions", status_code=303)
