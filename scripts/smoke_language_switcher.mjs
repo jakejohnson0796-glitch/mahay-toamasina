@@ -433,6 +433,38 @@ if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord
   throw new Error('AI scientific content was modified while switching to English');
 }
 
+// Contrôle croisé des libellés des pages Objectif Examen, Quiz et Tuteur.
+const objectiveHeading = window.document.createElement('h1');
+objectiveHeading.textContent = 'Ton objectif. Ton programme. Ta progression.';
+const objectiveNotice = window.document.createElement('p');
+objectiveNotice.textContent = 'Entraînement pédagogique, pas sujet officiel';
+const quizHeading = window.document.createElement('h2');
+quizHeading.textContent = 'Tes résultats par thème';
+const tutorHeading = window.document.createElement('h2');
+tutorHeading.textContent = "Tuteur IA · session d'apprentissage";
+const generatedTutorOutput = window.document.createElement('div');
+generatedTutorOutput.dataset.rendu = '';
+generatedTutorOutput.textContent = 'English tutor explanation stays in its generated language.';
+window.document.body.append(objectiveHeading, objectiveNotice, quizHeading, tutorHeading, generatedTutorOutput);
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (objectiveHeading.textContent !== 'Your goal. Your programme. Your progress.') throw new Error('Objective Exam heading was not translated to English');
+if (objectiveNotice.textContent !== 'Practice exercise, not an official exam paper') throw new Error('Objective Exam notice was not translated to English');
+if (quizHeading.textContent !== 'Your results by topic') throw new Error('Quiz history heading was not translated to English');
+if (tutorHeading.textContent !== 'AI Tutor · learning session') throw new Error('Tutor session heading was not translated to English');
+if (!window.document.cookie.includes('mahay-langue=en')) throw new Error('English locale was not synchronised to the server cookie');
+select.value = 'mg';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (objectiveHeading.textContent !== 'Ny tanjonao. Ny fandaharam-pianaranao. Ny fivoaranao.') throw new Error('Objective Exam heading was not translated to Malagasy');
+if (objectiveNotice.textContent !== "Fanazaran-tena ara-pedagojika fa tsy taratasy fanadinana ofisialy") throw new Error('Objective Exam notice was not translated to Malagasy');
+if (quizHeading.textContent !== 'Ny vokatrao araka ny lohahevitra') throw new Error('Quiz history heading was not translated to Malagasy');
+if (tutorHeading.textContent !== "Tuteur IA · fotoam-pianarana") throw new Error('Tutor session heading was not translated to Malagasy');
+if (!window.document.cookie.includes('mahay-langue=mg')) throw new Error('Malagasy locale was not synchronised to the server cookie');
+if (generatedTutorOutput.textContent !== 'English tutor explanation stays in its generated language.') throw new Error('Generated AI content must remain protected from DOM translation');
+select.value = 'en';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+
 select.value = 'fr';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
 if (window.document.documentElement.getAttribute('lang') !== 'fr') throw new Error('HTML lang was not restored');
