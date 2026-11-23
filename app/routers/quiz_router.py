@@ -547,6 +547,8 @@ def lancer_objectif_examen(
     if redirection:
         return redirection
 
+    langue = langue_depuis_requete(request)
+
     host = adresse_ip_client(request)
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/objectif-examen?erreur=trop_de_generations", status_code=303)
@@ -696,6 +698,7 @@ def lancer_objectif_examen(
             niveau_scolaire_id=niveau_scolaire_id,
             option_scolaire_id=option_scolaire_id,
             sujet_cible=contexte_examen["instruction"],
+            langue=langue,
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/objectif-examen?erreur=generation_invalide", status_code=303)
