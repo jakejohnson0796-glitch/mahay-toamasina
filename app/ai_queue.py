@@ -837,8 +837,12 @@ def planifier_fiche_revision_cours(
     seance_id: int,
     utilisateur_id: int,
     forcer: bool = False,
+    langue: str = "fr",
 ) -> Optional[int]:
-    """Crée/relance la fiche d'un étudiant inscrit à une séance terminée."""
+    """Crée/relance la fiche privée dans la langue choisie par l'étudiant."""
+    from .localization import normaliser_langue
+
+    langue = normaliser_langue(langue)
     id_tache = None
     fiche_id = None
     notifier = False
@@ -868,10 +872,22 @@ def planifier_fiche_revision_cours(
                     cours_id=seance.cours_id,
                     seance_id=seance_id,
                     utilisateur_id=utilisateur_id,
+                    langue=langue,
                     statut=StatutFicheRevisionCours.EN_ATTENTE,
                 )
                 session.add(fiche)
                 session.flush()
+            elif fiche.langue != langue and fiche.statut != StatutFicheRevisionCours.EN_COURS:
+                # La fiche est privée à cet étudiant : un changement de langue
+                # invalide le contenu précédent et programme une nouvelle version.
+                fiche.langue = langue
+                fiche.statut = StatutFicheRevisionCours.EN_ATTENTE
+                fiche.contenu_json = "{}"
+                fiche.sources_json = "{}"
+                fiche.erreur_generation = None
+                fiche.date_modification = datetime.utcnow()
+                forcer = True
+                session.add(fiche)
             fiche_id = fiche.id
             if fiche.statut == StatutFicheRevisionCours.ECHOUEE and not forcer:
                 session.commit()
@@ -898,6 +914,7 @@ def planifier_fiches_revision_cours(
     cours_id: int,
     utilisateur_id: Optional[int] = None,
     seance_id: Optional[int] = None,
+    langue: str = "fr",
 ) -> int:
     """Planifie les fiches manquantes de toutes les séances terminées d'un cours.
 
@@ -924,7 +941,9 @@ def planifier_fiches_revision_cours(
     total = 0
     for seance in seances:
         for etudiant_id in ids_etudiants:
-            if planifier_fiche_revision_cours(seance.id, int(etudiant_id)) is not None:
+            if planifier_fiche_revision_cours(
+                seance.id, int(etudiant_id), langue=langue
+            ) is not None:
                 total += 1
     return total
 
