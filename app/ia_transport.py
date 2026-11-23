@@ -15,6 +15,8 @@ import re
 from math import gcd
 from typing import Any, Mapping
 
+from .localization import instruction_langue_sortie, normaliser_langue
+
 MARKER_INLINE = "[[MATH]]"
 MARKER_INLINE_END = "[[/MATH]]"
 MARKER_DISPLAY = "[[DISPLAY]]"
@@ -25,7 +27,7 @@ MARKER_CHEM_END = "[[/CHEM]]"
 REGLES_FORMAT = r"""
 CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 
-- Réponds en français et en Markdown clair et pédagogique.
+- Réponds dans la langue de sortie explicitement demandée en fin de contrat, en Markdown clair et pédagogique.
 - Le code informatique reste dans des blocs Markdown clôturés.
 - INTERDICTION DES BACKTICKS POUR LES MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris toute l'identité dans un seul délimiteur LaTeX, par exemple \\(123456=156\\\\times789+372\\), et jamais seulement la partie gauche en code avec l'opérateur en texte à côté.
 - FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\\\frac{a}{b}\\) ou \\[\\\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\\\frac{123456000}{789000}\\), conserve explicitement les deux nombres dans le numérateur et le dénominateur.
@@ -688,3 +690,14 @@ def normaliser_structure_tuteur(
         )
         for cle, valeur in sections.items()
     }
+
+
+def regles_format_pour_langue(langue: Any = "fr") -> str:
+    """Ajoute au contrat scientifique la langue exacte demandée à tous les modèles IA."""
+    code = normaliser_langue(langue)
+    separateur = (
+        "For English output, use a decimal point in decimal numbers."
+        if code == "en"
+        else "Use a decimal comma in decimal numbers."
+    )
+    return REGLES_FORMAT + "\\n\\n" + separateur + "\\n" + instruction_langue_sortie(code)
