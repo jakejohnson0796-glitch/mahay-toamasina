@@ -700,4 +700,4 @@ def regles_format_pour_langue(langue: Any = "fr") -> str:
         if code == "en"
         else "Use a decimal comma in decimal numbers."
     )
-    return REGLES_FORMAT + "\\n\\n" + separateur + "\\n" + instruction_langue_sortie(code)
+    return REGLES_FORMAT + "\n\n" + separateur + "\n" + instruction_langue_sortie(code)
