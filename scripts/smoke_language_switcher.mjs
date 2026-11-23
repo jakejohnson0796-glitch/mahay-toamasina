@@ -99,6 +99,81 @@ if (window.document.querySelector('#referentiel-value').textContent !== 'Science
     window.document.querySelector('#academic-values').options[0].text !== 'Sciences de Gestion') {
   throw new Error('Official academic reference values must remain in French');
 }
+select.value = 'en';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.documentElement.getAttribute('lang') !== 'en') {
+  throw new Error('English choice did not update the document language');
+}
+// Vérifie les parcours réels ajoutés dans l'espace enseignant, l'aide et la charte.
+const teacherIntro = window.document.createElement('p');
+teacherIntro.textContent = 'Prépare tes cours, accompagne tes apprenants et organise tes séances depuis un espace pensé pour l’enseignement.';
+const helpHeading = window.document.createElement('h2');
+helpHeading.textContent = 'Centre d\'aide · MITARIDALA';
+const legalHeading = window.document.createElement('h2');
+legalHeading.textContent = 'Éthique, conditions d’utilisation et confidentialité';
+const namedGreeting = window.document.createElement('p');
+namedGreeting.textContent = 'Bonjour Rakoto.';
+const loginHeading = window.document.createElement('h2');
+loginHeading.textContent = 'Bienvenue à nouveau.';
+const registerHeading = window.document.createElement('h2');
+registerHeading.textContent = 'Création de compte';
+const revisionHeading = window.document.createElement('h2');
+revisionHeading.textContent = 'Priorité du jour';
+window.document.body.append(teacherIntro, helpHeading, legalHeading, namedGreeting, loginHeading, registerHeading, revisionHeading);
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (teacherIntro.textContent !== 'Prepare lessons, support your learners, and organise sessions in a workspace designed for teaching.') {
+  throw new Error('Teacher workspace introduction was not translated to English');
+}
+if (helpHeading.textContent !== 'MITARIDALA Help Centre') {
+  throw new Error('Help centre heading was not translated to English');
+}
+if (legalHeading.textContent !== 'Ethics, terms of use, and privacy') {
+  throw new Error('Legal page heading was not translated to English');
+}
+if (namedGreeting.textContent !== 'Hello, Rakoto.') {
+  throw new Error('Personalised greeting was not translated to English');
+}
+if (loginHeading.textContent !== 'Welcome back.' || registerHeading.textContent !== 'Create an account' || revisionHeading.textContent !== "Today's priority") {
+  throw new Error('Login, registration, or revision copy was not translated to English');
+}
+
+select.value = 'mg';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.documentElement.getAttribute('lang') !== 'mg') {
+  throw new Error('Malagasy choice did not update the document language');
+}
+if (teacherIntro.textContent !== "Omano ny lesonao, araho ny mpianatrao ary alamino ny fotoam-pianarana ao amin'ny sehatra natao ho an'ny fampianarana.") {
+  throw new Error('Teacher workspace introduction was not translated to Malagasy');
+}
+if (helpHeading.textContent !== 'Ivon-toerana fanampiana · MITARIDALA') {
+  throw new Error('Help centre heading was not translated to Malagasy');
+}
+if (legalHeading.textContent !== 'Fitsipi-pitondrantena, fepetra fampiasana ary tsiambaratelo') {
+  throw new Error('Legal page heading was not translated to Malagasy');
+}
+if (namedGreeting.textContent !== 'Manao ahoana, Rakoto.') {
+  throw new Error('Personalised greeting was not translated to Malagasy');
+}
+if (loginHeading.textContent !== 'Tongasoa indray.' || registerHeading.textContent !== 'Famoronana kaonty' || revisionHeading.textContent !== 'Laharam-pahamehana androany') {
+  throw new Error('Login, registration, or revision copy was not translated to Malagasy');
+}
+
+select.value = 'en';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (namedGreeting.textContent !== 'Hello, Rakoto.') {
+  throw new Error('Switching back to English did not restore the personalised greeting');
+}
+
+select.value = 'mg';
+select.dispatchEvent(new window.Event('change', { bubbles: true }));
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (window.document.documentElement.getAttribute('lang') !== 'mg') {
+  throw new Error('Switching back to Malagasy did not update the document language');
+}
+
 if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord \\frac{1}{2}') {
   throw new Error('AI output must remain untouched by interface translation');
 }
