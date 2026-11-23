@@ -280,8 +280,14 @@
   function synchroniser() {
     var langue = "";
     try { langue = window.localStorage.getItem("mahay-langue") || ""; } catch (_erreur) {}
-    if (langue !== "mg" && langue !== "fr") langue = selecteur && selecteur.value === "mg" ? "mg" : "fr";
-    champ.value = langue === "mg" ? "mg" : "fr";
+    if (!["fr", "mg", "en"].includes(langue)) {
+      var cookie = document.cookie.match(/(?:^|;\\s*)mahay-langue=([^;]+)/);
+      try { langue = cookie ? decodeURIComponent(cookie[1]) : ""; } catch (_erreurCookie) {}
+    }
+    if (!["fr", "mg", "en"].includes(langue)) {
+      langue = selecteur && ["fr", "mg", "en"].includes(selecteur.value) ? selecteur.value : "fr";
+    }
+    champ.value = langue;
   }
   synchroniser();
   if (selecteur) selecteur.addEventListener("change", function () {
