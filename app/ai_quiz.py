@@ -1184,14 +1184,10 @@ def generer_reponse_tuteur(
 
 
 def _diagnostic_pedagogique_verification_tuteur(
-    audit: Dict[str, Any],
-    matiere: Optional[str] = None,
+    audit: Dict[str, Any], matiere: Optional[str] = None, langue: str = "fr"
 ) -> str:
-    """Retourne un diagnostic fixe et une méthode de reprise adaptée à la matière.
-
-    Les textes libres des modèles servent uniquement à sélectionner des catégories;
-    ils ne sont jamais restitués à l'étudiant.
-    """
+    """Retourne un diagnostic de secours dans la langue sélectionnée."""
+    langue = normaliser_langue(langue)
     critiques = (audit or {}).get("critics") or []
     textes = []
     for critique in critiques:
@@ -1200,75 +1196,101 @@ def _diagnostic_pedagogique_verification_tuteur(
             valeurs = avis.get(champ) or []
             if isinstance(valeurs, list):
                 textes.extend(str(valeur) for valeur in valeurs if valeur)
-
     source = " ".join(textes).casefold()
-    points = []
     categories = [
         (
             ("calcul", "signe", "unité", "unite", "dimension", "matrice", "fraction",
              "équation", "equation", "numérique", "numerique", "résultat", "resultat"),
-            "Les calculs, les signes et les résultats chiffrés doivent être revérifiés.",
+            {
+                "fr": "Les calculs, les signes et les résultats chiffrés doivent être revérifiés.",
+                "mg": "Mila averina hamarinina ny kajy, ny famantarana ary ny vokatra isa.",
+                "en": "Calculations, signs and numerical results should be checked again.",
+            },
         ),
         (
             ("cohérence", "coherence", "contradiction", "correspond", "exercice", "correction"),
-            "La cohérence entre l'explication, l'exercice et sa correction reste à confirmer.",
+            {
+                "fr": "La cohérence entre l'explication, l'exercice et sa correction reste à confirmer.",
+                "mg": "Mbola mila hamarinina ny fifanarahan'ny fanazavana, ny fanazaran-tena ary ny fanitsiana.",
+                "en": "Consistency between the explanation, exercise and solution still needs to be confirmed.",
+            },
         ),
         (
             ("explication", "étape", "etape", "justification", "démonstr", "demonstr", "raisonnement"),
-            "Certaines étapes de l'explication ou du raisonnement doivent être plus explicites.",
+            {
+                "fr": "Certaines étapes de l'explication ou du raisonnement doivent être plus explicites.",
+                "mg": "Mila hazavaina mazava kokoa ny dingana sasany amin'ny fanazavana na ny fomba fisainana.",
+                "en": "Some explanation or reasoning steps need to be made clearer.",
+            },
         ),
         (
             ("exemple", "application"),
-            "Le lien entre l'exemple et la notion travaillée doit être mieux établi.",
+            {
+                "fr": "Le lien entre l'exemple et la notion travaillée doit être mieux établi.",
+                "mg": "Mila hazavaina kokoa ny fifandraisan'ny ohatra sy ny hevitra ianarana.",
+                "en": "The connection between the example and the concept needs to be clearer.",
+            },
         ),
         (
             ("fait", "logique", "exact", "définition", "definition", "preuve"),
-            "L'exactitude de certaines affirmations ou justifications n'a pas pu être confirmée.",
+            {
+                "fr": "L'exactitude de certaines affirmations ou justifications n'a pas pu être confirmée.",
+                "mg": "Tsy voamarina tsara ny fahamarinan'ny fanambarana na fanazavana sasany.",
+                "en": "Some statements or justifications could not be confirmed as accurate.",
+            },
         ),
     ]
-    for mots_cles, libelle in categories:
-        if any(mot in source for mot in mots_cles):
-            points.append(libelle)
+    points = [
+        libelles[langue]
+        for mots_cles, libelles in categories
+        if any(mot in source for mot in mots_cles)
+    ]
     if not points:
-        points.append(
-            "Les vérificateurs ne sont pas parvenus à confirmer toutes les parties de la réponse."
-        )
+        points.append({
+            "fr": "Les vérificateurs ne sont pas parvenus à confirmer toutes les parties de la réponse.",
+            "mg": "Tsy afaka nanamarina ny ampahany rehetra tamin'ny valiny ireo mpanamarina.",
+            "en": "The reviewers could not confirm every part of the answer.",
+        }[langue])
 
     matiere_normalisee = str(matiere or "").casefold()
     if any(mot in matiere_normalisee for mot in ("math", "algèbre", "algebre", "géométr", "geometr")):
-        conseil = (
-            "Méthode de reprise en mathématiques : refais les calculs au brouillon sans regarder "
-            "la correction, puis vérifie chaque signe, opération et résultat intermédiaire."
-        )
+        conseil = {
+            "fr": "Méthode de reprise en mathématiques : refais les calculs au brouillon sans regarder la correction, puis vérifie chaque signe, opération et résultat intermédiaire.",
+            "mg": "Fomba famerenana matematika: avereno atao ny kajy nefa tsy mijery ny fanitsiana, ary hamarino tsirairay ny famantarana, ny asa ary ny vokatra isaky ny dingana.",
+            "en": "Mathematics review method: redo the calculations without looking at the solution, then check each sign, operation and intermediate result.",
+        }[langue]
     elif any(mot in matiere_normalisee for mot in ("physique", "chimie")):
-        conseil = (
-            "Méthode de reprise en sciences : écris la formule et les unités avant le calcul, "
-            "mets les grandeurs dans un même système d'unités, puis contrôle les dimensions du résultat."
-        )
+        conseil = {
+            "fr": "Méthode de reprise en sciences : écris la formule et les unités avant le calcul, mets les grandeurs dans un même système d'unités, puis contrôle les dimensions du résultat.",
+            "mg": "Fomba famerenana siansa: soraty aloha ny raikipohy sy ny singa, ampiraiso ny rafitra fandrefesana, ary hamarino ny refin'ny vokatra.",
+            "en": "Science review method: write the formula and units before calculating, use a consistent unit system, then check the dimensions of the result.",
+        }[langue]
     elif any(mot in matiere_normalisee for mot in ("informatique", "programmation", "algorithm")):
-        conseil = (
-            "Méthode de reprise en informatique : exécute le raisonnement étape par étape sur un "
-            "petit exemple, note les valeurs des variables et compare la sortie obtenue à la sortie attendue."
-        )
+        conseil = {
+            "fr": "Méthode de reprise en informatique : exécute le raisonnement étape par étape sur un petit exemple, note les valeurs des variables et compare la sortie obtenue à la sortie attendue.",
+            "mg": "Fomba famerenana informatika: araho tsikelikely amin'ny ohatra kely ny fomba fiasa, soraty ny sandan'ny miovaova, ary ampitahao ny vokatra azo amin'ny vokatra andrasana.",
+            "en": "Computing review method: follow the reasoning step by step with a small example, record variable values and compare the actual output with the expected output.",
+        }[langue]
     elif any(mot in matiere_normalisee for mot in ("comptab", "comptabilité", "comptabilite")):
-        conseil = (
-            "Méthode de reprise en comptabilité : reprends chaque écriture ligne par ligne, vérifie "
-            "les débits et crédits, puis contrôle les totaux avant de valider la conclusion."
-        )
+        conseil = {
+            "fr": "Méthode de reprise en comptabilité : reprends chaque écriture ligne par ligne, vérifie les débits et crédits, puis contrôle les totaux avant de valider la conclusion.",
+            "mg": "Fomba famerenana kaonty: avereno tsirairay ny fanoratana, hamarino ny trosa sy ny vola miditra, ary jereo ny fitambarany alohan'ny hanapahana hevitra.",
+            "en": "Accounting review method: revisit each entry line by line, check debits and credits, then verify the totals before confirming the conclusion.",
+        }[langue]
     else:
-        conseil = (
-            "Méthode de reprise : reprends une étape à la fois, explique pourquoi elle est valide, "
-            "puis compare les données de l'exercice à celles utilisées dans la correction."
-        )
+        conseil = {
+            "fr": "Méthode de reprise : reprends une étape à la fois, explique pourquoi elle est valide, puis compare les données de l'exercice à celles utilisées dans la correction.",
+            "mg": "Fomba famerenana: diniho tsikelikely ny dingana tsirairay, hazavao ny antony maha-marina azy, ary ampitahao ny angona ao amin'ny fanazaran-tena sy ny fanitsiana.",
+            "en": "Review method: revisit one step at a time, explain why it is valid, then compare the exercise data with the information used in the solution.",
+        }[langue]
 
-    details = " ".join(points[:3])
-    return (
-        "La vérification n'a pas confirmé tous les points pédagogiques. "
-        "Points à reprendre : "
-        + details
-        + " "
-        + conseil
-    )[:900]
+    prefixe = {
+        "fr": "La vérification n'a pas confirmé tous les points pédagogiques. Points à reprendre : ",
+        "mg": "Tsy voamarina avokoa ny lafiny ara-pedagojika rehetra. Ireto no tokony haverina jerena: ",
+        "en": "The review did not confirm every learning point. Areas to revisit: ",
+    }[langue]
+    return (prefixe + " ".join(points[:3]) + " " + conseil)[:900]
+
 
 def verifier_reponse_tuteur_structuree(
     reponse_initiale: Dict[str, str],
@@ -1321,14 +1343,15 @@ def verifier_reponse_tuteur_structuree(
             # Aucun retour exploitable n'a été obtenu : il s'agit d'une vérification
             # indisponible, pas d'un désaccord pédagogique. Le worker peut réessayer.
             reponse_finale["_statut_verification"] = "echouee"
-            reponse_finale["_erreur_verification"] = (
-                "Les vérificateurs indépendants n'ont pas fourni d'avis exploitable. "
-                "La réponse reste disponible, mais elle n'est pas validée. Réessaie plus tard."
-            )
+            reponse_finale["_erreur_verification"] = {
+                "fr": "Les vérificateurs indépendants n'ont pas fourni d'avis exploitable. La réponse reste disponible, mais elle n'est pas validée. Réessaie plus tard.",
+                "mg": "Tsy nahazo valiny azo ampiasaina avy amin'ireo mpanamarina tsy miankina. Mbola azo jerena ny valiny, saingy tsy voamarina. Andramo indray afaka kelikely.",
+                "en": "The independent reviewers did not provide a usable assessment. The answer remains available, but it is not verified. Please try again later.",
+            }[normaliser_langue(langue)]
         else:
             reponse_finale["_statut_verification"] = "a_revoir"
             reponse_finale["_erreur_verification"] = (
-                _diagnostic_pedagogique_verification_tuteur(audit, matiere=matiere)
+                _diagnostic_pedagogique_verification_tuteur(audit, matiere=matiere, langue=langue)
             )
         return reponse_finale
     except Exception as erreur:
@@ -1336,7 +1359,11 @@ def verifier_reponse_tuteur_structuree(
         reponse_secours = dict(reponse_initiale)
         reponse_secours["_verification_ok"] = False
         reponse_secours["_statut_verification"] = "echouee"
-        reponse_secours["_erreur_verification"] = str(erreur)[:500]
+        reponse_secours["_erreur_verification"] = {
+            "fr": "La vérification IA est temporairement indisponible. La réponse n'est pas validée.",
+            "mg": "Tsy misy vetivety ny fanamarinana IA. Mbola tsy voamarina ny valiny.",
+            "en": "AI review is temporarily unavailable. The answer has not been verified.",
+        }[normaliser_langue(langue)]
         return reponse_secours
 
 
