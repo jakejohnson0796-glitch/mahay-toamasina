@@ -171,6 +171,7 @@
   <div class="jeu-erreur" role="status">
     {% if request.query_params.get("erreur") == "rythme" %}Fais une petite pause avant de lancer un autre défi. Ton prochain jeu t'attendra. 
     {% elif request.query_params.get("erreur") == "questions" %}Le jeu n'a pas réussi à préparer assez de questions. Réessaie dans un instant, tranquillement.
+    {% elif request.query_params.get("erreur") == "langue" %}Les questions en anglais ne sont pas disponibles pour le moment. Réessaie lorsque la génération IA sera disponible ; aucune question française ne sera mélangée à ta session anglaise.
     {% else %}Ce thème n'est pas disponible. Choisis-en un autre ou laisse le hasard décider.{% endif %}
   </div>
   {% endif %}
