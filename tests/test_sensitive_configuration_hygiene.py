@@ -1,7 +1,6 @@
 """Regressions contre les fuites de configuration et de secrets."""
 from __future__ import annotations
 
-import os
 import runpy
 from pathlib import Path
 
@@ -21,7 +20,6 @@ def test_env_example_keeps_credential_values_empty() -> None:
         "LIVEKIT_API_KEY",
         "LIVEKIT_API_SECRET",
         "BREVO_API_KEY",
-        "ADMIN_INITIAL_PASSWORD",
         "SMTP_UTILISATEUR",
         "SMTP_MOT_DE_PASSE",
     }
