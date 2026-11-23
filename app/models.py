@@ -2025,6 +2025,7 @@ class FicheRevisionCours(SQLModel, table=True):
     cours_id: int = Field(foreign_key="cours.id", index=True)
     seance_id: int = Field(foreign_key="seance.id", index=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    langue: str = Field(default="fr", max_length=5, index=True)
     statut: StatutFicheRevisionCours = Field(
         default=StatutFicheRevisionCours.EN_ATTENTE,
         index=True,
