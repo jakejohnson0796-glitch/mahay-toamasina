@@ -28,9 +28,8 @@ def test_ai_language_contract_is_explicit_and_has_locale_correct_decimal_format(
     malagasy = regles_format_pour_langue("mg")
     french = regles_format_pour_langue("fr")
 
-    assert "MANDATORY OUTPUT LANGUAGE: English" in english
+    assert english.count("MANDATORY OUTPUT LANGUAGE: English") == 1
     assert "decimal point" in english
-    assert "MANDATORY OUTPUT LANGUAGE" not in english
     assert "Fiteny tsy maintsy ampiasaina : MALAGASY" in malagasy
     assert "Use a decimal comma" in malagasy
     assert "LANGUE DE SORTIE OBLIGATOIRE : français" in french
