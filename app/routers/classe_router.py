@@ -1657,7 +1657,10 @@ def organiser_notes_seance(
         return JSONResponse({"erreur": "Ajoute quelques phrases à tes notes avant de demander leur organisation."}, status_code=400)
     try:
         resultat = classe_notes.organiser_notes(
-            contenu=note.contenu, nom_cours=cours.nom, titre_seance=seance.titre,
+            contenu=note.contenu,
+            nom_cours=cours.nom,
+            titre_seance=seance.titre,
+            langue=langue_depuis_requete(request),
         )
     except ValueError as erreur:
         return JSONResponse({"erreur": str(erreur)}, status_code=400)
@@ -2447,6 +2450,7 @@ def aide_correction_ia(
             criteres=criteres,
             texte_copie=texte_copie,
             commentaire_etudiant=rendu.commentaire or "",
+            langue=langue_depuis_requete(request),
         )
         suggestion["generee_le"] = datetime.utcnow().isoformat()
         rendu.correction_ia_json = json.dumps(suggestion, ensure_ascii=False)
