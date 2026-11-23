@@ -6242,6 +6242,16 @@
   function appliquerLangue(langue, memoriser) {
     langueActuelle = langue === "mg" ? "mg" : langue === "en" ? "en" : "fr";
     document.documentElement.setAttribute("lang", langueActuelle);
+    // Synchronise la préférence avec le serveur : les contenus IA doivent être
+    // générés directement dans la langue choisie (ils ne sont pas traduits côté DOM).
+    try {
+      var cookieLangue = "mahay-langue=" + encodeURIComponent(langueActuelle) +
+        "; Path=/; Max-Age=31536000; SameSite=Lax";
+      if (window.location && window.location.protocol === "https:") cookieLangue += "; Secure";
+      document.cookie = cookieLangue;
+    } catch (_erreurCookie) {
+      // Le changement de langue de l'interface reste disponible sans cookie.
+    }
     document.querySelectorAll(SELECTEUR).forEach(function (selecteur) {
       if (selecteur.value !== langueActuelle) selecteur.value = langueActuelle;
     });
