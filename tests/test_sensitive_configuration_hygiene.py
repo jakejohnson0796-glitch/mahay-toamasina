@@ -12,6 +12,11 @@ def test_env_example_keeps_credential_values_empty() -> None:
     """Les exemples ne doivent contenir aucune vraie valeur d'identifiant."""
     sensitive_keys = {
         "DATABASE_URL",
+        "SUPABASE_URL",
+        "LIVEKIT_URL",
+        "GOOGLE_SITE_VERIFICATION",
+        "ADMIN_PHONE",
+        "SMTP_FROM_EMAIL",
         "REDIS_URL",
         "SESSION_SECRET_KEY",
         "SUPABASE_SERVICE_KEY",
