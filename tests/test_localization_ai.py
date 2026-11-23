@@ -60,3 +60,26 @@ def test_ai_quiz_and_tutor_entrypoints_expose_a_locale_parameter():
 
     assert "English" in ai_ensemble._suffixe_format_prompt(langue="en")
     assert "MALAGASY" in ai_ensemble._suffixe_format_prompt(langue="mg")
+
+
+
+def test_personal_course_revision_prompts_use_the_stored_locale():
+    from app.course_revision import _texte_ia_non_fiable, _texte_ia_reprise_compacte
+
+    prompt_en = _texte_ia_non_fiable({"matiere": "Mathematics"}, langue="en")
+    prompt_mg = _texte_ia_non_fiable({"matiere": "Mathematics"}, langue="mg")
+    retry_en = _texte_ia_reprise_compacte({"matiere": "Mathematics"}, langue="en")
+    retry_mg = _texte_ia_reprise_compacte({"matiere": "Mathematics"}, langue="mg")
+
+    assert "MANDATORY OUTPUT LANGUAGE: English" in prompt_en
+    assert "Fiteny tsy maintsy ampiasaina : MALAGASY" in prompt_mg
+    assert "MANDATORY OUTPUT LANGUAGE: English" in retry_en
+    assert "Fiteny tsy maintsy ampiasaina : MALAGASY" in retry_mg
+
+
+def test_course_revision_model_persists_locale():
+    from app.models import FicheRevisionCours
+    from sqlalchemy import inspect
+
+    columns = {column.key for column in inspect(FicheRevisionCours).columns}
+    assert "langue" in columns
