@@ -154,6 +154,7 @@ def test_class_ai_assistants_accept_and_use_the_selected_locale(monkeypatch):
                 payload = {
                     "note_suggeree": 7,
                     "confiance": 0.8,
+                    "appreciation": "The work is organised and supported.",
                     "criteres": [
                         {"nom": "Structure", "points_obtenus": 7, "commentaire": "Good structure"}
                     ],
@@ -194,7 +195,8 @@ def test_class_ai_assistants_accept_and_use_the_selected_locale(monkeypatch):
     )
 
     assert notes == "Generated English learning content."
-    assert correction["appreciation"] == "Good structure" or correction["forces"] == ["Clear reasoning"]
+    assert correction["appreciation"] == "The work is organised and supported."
+    assert correction["forces"] == ["Clear reasoning"]
     assert summary == "Generated English learning content."
     assert len(prompts) == 3
     for messages in prompts:
