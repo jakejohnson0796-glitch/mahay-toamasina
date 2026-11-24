@@ -1821,9 +1821,12 @@ def personnaliser_fiche_revision_document(
         prochaine = progression.prochaine_revision_le
         if prochaine is not None and getattr(prochaine, "tzinfo", None) is not None:
             prochaine = prochaine.replace(tzinfo=None)
+        prefixe_date = {"fr": "Le ", "mg": "Amin'ny ", "en": "On "}[langue]
         revision_prevue = (
-            "À revoir aujourd'hui" if due
-            else ("Le " + prochaine.strftime("%d/%m/%Y") if prochaine is not None else "À planifier après le diagnostic")
+            "À revoir aujourd'hui" if due and langue == "fr"
+            else "Haverina anio" if due and langue == "mg"
+            else "Review today" if due
+            else (prefixe_date + prochaine.strftime("%d/%m/%Y") if prochaine is not None else "À planifier après le diagnostic")
         )
         priorites.append({
             "progression_id": progression.id,
