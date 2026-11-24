@@ -3962,6 +3962,9 @@
     "Ton défi": "Ny fanamby-nao",
     "Réponse correcte": "Valiny marina",
     "Réponse choisie": "Valiny voafidy",
+    "🛡️ Validation modérateur": "🛡️ Fanamarinana ataon’ny mpandrindra",
+    "📚 Ce dépôt sera rattaché directement au cercle": "📚 Hampifandraisina mivantana amin’ny vondrona ity fampidirana ity",
+    "· Le document a été approuvé et peut être consulté directement.": "· Voamarina ilay tahirin-kevitra ary azo jerena mivantana.",
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -7565,6 +7568,10 @@
     "Réponse choisie": "Your answer",
     "Rejouer ce thème": "Play this topic again",
     "Choisir un autre thème": "Choose another topic",
+    "🛡️ Validation modérateur": "🛡️ Moderator approval",
+    "📚 Ce dépôt sera rattaché directement au cercle": "📚 This upload will be linked directly to the circle",
+    ". Après validation, il pourra être consulté par les étudiants concernés.": ". Once approved, students concerned will be able to view it.",
+    "· Le document a été approuvé et peut être consulté directement.": "· The document has been approved and can be viewed directly.",
   });
 
   var noeudsOriginaux = new WeakMap();
