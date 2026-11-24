@@ -974,8 +974,8 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision == "d1e6f9a2b4c8", (
-        "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic, incluant le module national."
+    assert revision == "f3b8d2a6c941", (
+        "Le test concurrent doit démarrer sur la tête actuelle du graphe Alembic, incluant les caches documentaires anglais."
     )
 
     # Reconstitue exactement la base Render actuelle depuis l'ancêtre commun :
@@ -1327,8 +1327,8 @@ def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monk
         monkeypatch.setattr(course_revision, "ouvrir_fichier_local", faux_fichier)
         monkeypatch.setattr(course_revision, "extraire_texte", lambda _path: source_texte)
 
-        def generer_fiche(contexte, mode_document=False):
-            contextes_generes.append((contexte, mode_document))
+        def generer_fiche(contexte, mode_document=False, langue="fr"):
+            contextes_generes.append((contexte, mode_document, langue))
             return json.loads(json.dumps(contenu_fiche, ensure_ascii=False))
 
         monkeypatch.setattr(course_revision, "_generer_contenu_ia", generer_fiche)
@@ -1351,6 +1351,7 @@ def test_postgres_fiche_revision_de_approbation_a_export_prive_personnalise(monk
             assert source["resume"] == contenu_fiche["resume"]
             assert json.loads(fiche.sources_json)["reference"] == reference
             assert contextes_generes and contextes_generes[0][1] is True
+            assert contextes_generes[0][2] == "fr"
             assert reference in contextes_generes[0][0]["source_document"]["reference"]
             assert len(contextes_generes[0][0]["source_document"]["contenu_extrait"]) >= 250
             assert session.exec(
