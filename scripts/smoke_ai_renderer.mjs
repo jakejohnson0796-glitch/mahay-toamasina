@@ -760,6 +760,32 @@ if (doubledDelimitersHost.querySelectorAll('.katex').length !== 1 ||
   throw new Error('Double-escaped inline math delimiters were not canonicalized');
 }
 
+
+// Les commandes sans délimiteur restent récupérables, et un saut de ligne
+// de matrice suivi de \lambda ne doit pas être réduit à un seul antislash.
+const nakedScienceHost = window.document.createElement('div');
+window.document.body.appendChild(nakedScienceHost);
+window.rendreReponseIA(
+  'Statistiques : ' + latexSlash + 'bar{x}, ' + latexSlash + 'chi^{2}, ' +
+    latexSlash + 'binom{n}{k}, ' + latexSlash + 'pu{9.81 m/s^2}.',
+  nakedScienceHost
+);
+if (nakedScienceHost.querySelectorAll('.katex').length !== 4 ||
+    nakedScienceHost.querySelector('.katex-error')) {
+  throw new Error('Undelimited statistical notation or scientific units were not recovered');
+}
+const matrixCommandHost = window.document.createElement('div');
+window.document.body.appendChild(matrixCommandHost);
+const matrixLineBreakAndCommand = latexSlash.repeat(3);
+const matrixWithCommand =
+  latexSlash + 'begin{pmatrix}1&2' + matrixLineBreakAndCommand +
+  'lambda&4' + latexSlash + 'end{pmatrix}';
+window.rendreReponseIA('Matrice : ' + inlineFormula(matrixWithCommand), matrixCommandHost);
+if (matrixCommandHost.querySelectorAll('.katex').length !== 1 ||
+    matrixCommandHost.querySelector('.katex-error')) {
+  throw new Error('A TeX matrix line break before a command was corrupted');
+}
+
 // Régression exacte du cas signalé : les escapes JSON \f doivent redevenir des fractions.
 const badQuizHost = window.document.createElement('div');
 window.document.body.appendChild(badQuizHost);
