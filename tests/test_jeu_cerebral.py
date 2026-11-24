@@ -411,6 +411,6 @@ def test_interfaces_jeu_cerebral_transmettent_la_langue_jusqu_au_resultat():
     assert 'langue == "en"' in accueil
     assert 'langue == "en"' in session
     assert 'langue == "en"' in resultat
-    assert "Your session, your progress" in resultat
+    assert "your session summary" in resultat
     assert 'language === "en" ? "Resume challenge"' in script
     assert "The target time has passed" in script
