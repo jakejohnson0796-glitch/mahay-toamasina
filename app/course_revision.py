@@ -1537,6 +1537,7 @@ def personnaliser_fiche_revision_document(
     document: Document,
     utilisateur_id: int,
     contenu_source: dict,
+    langue: str = "fr",
 ) -> dict:
     """Construit une copie privée de la fiche documentaire pour l'étudiant courant.
 
@@ -1545,7 +1546,172 @@ def personnaliser_fiche_revision_document(
     alignés sur la matière et le niveau du document.
     """
     # JSON round-trip : copie isolée des listes et dictionnaires de la fiche partagée.
+    langue = normaliser_langue(langue)
     contenu = json.loads(json.dumps(contenu_source, ensure_ascii=False))
+
+    # Les recommandations dérivées du profil sont ajoutées côté serveur :
+    # elles doivent suivre la langue de la fiche et non la langue historique
+    # du cache source.
+    traductions = {
+        "en": {
+            "À retravailler en premier": "Needs attention first",
+            "À consolider": "Needs more practice",
+            "Révision à faire": "Revision due",
+            "Acquis à entretenir": "Mastered — keep practising",
+            "À confirmer": "Needs confirmation",
+            "Les réponses enregistrées montrent que cette notion reste fragile.": "Your recorded answers show that this topic still needs work.",
+            "Les résultats disponibles ne montrent pas encore une maîtrise assez stable.": "Your current results do not yet show consistent mastery.",
+            "La date de révision prévue est atteinte.": "The planned revision date has arrived.",
+            "Aucune date de révision n'était planifiée ; un contrôle permet de définir le prochain intervalle.": "No revision date was set; a short check will help plan the next interval.",
+            "Une preuve de maîtrise est enregistrée et la prochaine révision n'est pas encore due.": "You have recorded evidence of mastery, and the next revision is not due yet.",
+            "Les résultats sont encourageants, mais il manque encore une preuve de maîtrise stable.": "Your results are encouraging, but consistent mastery still needs to be confirmed.",
+            "Repars de la définition, fais un exercice facile sans regarder la correction, puis explique chaque étape.": "Start again from the definition, solve an easy exercise without viewing the solution, then explain each step.",
+            "Refais un exercice de difficulté moyenne, puis vérifie ton raisonnement avec la correction.": "Try another medium-level exercise, then check your reasoning against the explanation.",
+            "Teste-toi de mémoire avant de relire l'explication ; reprends uniquement l'étape qui bloque.": "Test yourself from memory before rereading the explanation; focus only on the step that causes difficulty.",
+            "Essaie une question d'application différente pour entretenir tes acquis sans refaire inutilement toute la leçon.": "Try a different application question to maintain your skills without repeating the whole lesson.",
+            "Résous une variante sans indice et explique pourquoi la méthode fonctionne.": "Solve a variation without hints and explain why the method works.",
+            "À revoir aujourd'hui": "Review today",
+            "À planifier après le diagnostic": "Plan after the diagnostic",
+            "Tes derniers quiz sont à reprendre en priorité.": "Your recent quizzes should be reviewed first.",
+            "Tes derniers quiz montrent des acquis à consolider.": "Your recent quizzes show skills that need more practice.",
+            "Tes derniers quiz sont encourageants ; vérifie aussi la rétention quelques jours plus tard.": "Your recent quiz results are encouraging; also check what you remember after a few days.",
+            " Le résultat le plus récent progresse par rapport au précédent.": " The latest result is better than the previous one.",
+            " Le résultat récent a baissé : reprends les étapes avant d'augmenter la difficulté.": " The latest result is lower: review the steps before increasing the difficulty.",
+            "Pas encore de quiz soumis sur cette matière et ce niveau : un diagnostic servira à calibrer les prochaines révisions.": "No quiz has been submitted for this subject and level yet. A short diagnostic will help tailor future revisions.",
+            "Tu as déjà signalé une difficulté autour de « ": "You previously mentioned difficulty with “",
+            " ». Dans le Tuteur IA, reformule la méthode avec tes propres mots avant de consulter la correction.": "”. In the AI Tutor, explain the method in your own words before viewing the solution.",
+            "Pour « ": "For “",
+            " », demande au Tuteur IA une question différente et essaie d'expliquer ton raisonnement sans indice.": "”, ask the AI Tutor a different question and try to explain your reasoning without hints.",
+            "Après ton diagnostic, utilise le Tuteur IA pour faire expliquer l'étape précise qui te pose problème.": "After your diagnostic, ask the AI Tutor to explain the exact step that is difficult for you.",
+            "Ta fiche personnalisée": "Your personalised revision sheet",
+            "Adaptée à ton parcours": "Adapted to your learning progress",
+            "Personnalisation en démarrage": "Personalisation starting",
+            "Les priorités, l'ordre des entraînements et le calendrier ci-dessous utilisent uniquement ton historique personnel. Le cours source commun reste inchangé.": "The priorities, practice order and schedule below use only your own learning history. The shared source lesson remains unchanged.",
+            "Ton historique sur cette matière est encore trop limité pour établir des points faibles fiables. Cette fiche commence par un diagnostic, puis s'adaptera aux réponses que tu enregistreras.": "There is not enough learning history for this subject to identify reliable gaps yet. This sheet starts with a diagnostic and will adapt to your recorded answers.",
+            "Commence par « ": "Start with “",
+            " » : applique l'action proposée, puis fais un quiz ciblé.": "”: follow the suggested action, then take a focused quiz.",
+            "Entretien facultatif": "Optional practice",
+            "Aucune difficulté urgente n'est détectée dans les preuves disponibles. Choisis une application nouvelle si tu souhaites approfondir la notion.": "No urgent learning gap appears in the available evidence. Try a new application if you want to explore the topic further.",
+            "Réactive « ": "Refresh “",
+            " » sans relire la fiche, puis vérifie ta démarche avec une correction expliquée.": "” without rereading the sheet, then check your method against an explained solution.",
+            "Aujourd'hui": "Today",
+            "Demain": "Tomorrow",
+            "Dans 3 jours": "In 3 days",
+            "Dans 7 jours": "In 7 days",
+            "Priorité : ": "Priority: ",
+            " Essaie l'exercice ciblé avant d'ouvrir l'indice ou la correction.": " Try the focused exercise before opening the hint or solution.",
+            "Refais une question différente sur ": "Try a different question about ",
+            " sans aide. Si tu bloques, note l'étape précise qui manque.": " without help. If you get stuck, note the exact step you are missing.",
+            "Refais un quiz court avec des questions nouvelles sur les notions ciblées ; justifie la méthode plutôt que de retrouver seulement le résultat.": "Take a short quiz with new questions on the selected topics; explain your method rather than just finding the answer.",
+            "Teste la rétention sur au moins une question jamais rencontrée. Si tu réussis sans indice, confirme l'acquis ; sinon, reprogramme une révision.": "Check retention with at least one new question. If you solve it without hints, confirm your progress; otherwise, schedule another review.",
+            "Fais un premier diagnostic avec les exercices et note les notions que tu ne peux pas expliquer sans regarder la correction.": "Start with a diagnostic using the exercises and note which topics you cannot explain without viewing the solution.",
+            "Reprends une question ratée ou hésitante et explique la démarche avec tes propres mots.": "Retry a question you missed or found difficult, and explain the method in your own words.",
+            "Refais un quiz court pour vérifier ce que tu retiens sans indice.": "Take a short quiz to check what you remember without hints.",
+            "Reteste une question différente pour vérifier la rétention ; si le profil reste vide, lance un quiz de diagnostic.": "Try a different question to check retention; if your learning profile is still empty, take a diagnostic quiz.",
+            " — À retravailler en premier. ": " — Needs attention first. ",
+            " — À consolider. ": " — Needs more practice. ",
+            " — Révision à faire. ": " — Revision due. ",
+            " — Acquis à entretenir. ": " — Mastered — keep practising. ",
+            " — À confirmer. ": " — Needs confirmation. ",
+            "Cet exercice cible « ": "This exercise focuses on “",
+            " », classée « ": "”, which is marked as “",
+            " » dans ton parcours.": "” in your learning progress.",
+            "Progressif": "Progressive",
+            "Réussir une question nouvelle sans indice.": "Solve a new question without hints.",
+            "Expliquer le raisonnement avec ses propres mots.": "Explain the reasoning in your own words.",
+            "Repasser une question dans 7 jours pour vérifier la rétention.": "Try another question in 7 days to check retention.",
+            "Faire un diagnostic court sur les objectifs de la fiche.": "Complete a short diagnostic based on the sheet's objectives.",
+            "Identifier une erreur ou une hésitation à retravailler.": "Identify an error or uncertainty to practise.",
+            "Refaire une question différente dans 7 jours.": "Try a different question in 7 days."
+        },
+        "mg": {
+            "À retravailler en premier": "Mila haverina ianarana voalohany",
+            "À consolider": "Mila hamafisina",
+            "Révision à faire": "Fotoana hamerenana lesona",
+            "Acquis à entretenir": "Efa voafehy ka tohizo ny fanazarana",
+            "À confirmer": "Mila hamarinina",
+            "Les réponses enregistrées montrent que cette notion reste fragile.": "Asehon'ny valiny voarakitra fa mbola mila fanamafisana ity lohahevitra ity.",
+            "Les résultats disponibles ne montrent pas encore une maîtrise assez stable.": "Mbola tsy mampiseho fifehezana maharitra tsara ny vokatra misy.",
+            "La date de révision prévue est atteinte.": "Tonga ny daty voatondro hamerenana lesona.",
+            "Aucune date de révision n'était planifiée ; un contrôle permet de définir le prochain intervalle.": "Tsy mbola nisy daty voatondro; hanampy hametra ny fotoana manaraka ny fitsapana fohy.",
+            "Une preuve de maîtrise est enregistrée et la prochaine révision n'est pas encore due.": "Voarakitra ny porofo fa voafehy ilay lohahevitra, ary mbola tsy tonga ny fotoana famerenana manaraka.",
+            "Les résultats sont encourageants, mais il manque encore une preuve de maîtrise stable.": "Mampahery ny vokatra, saingy mbola ilaina ny manamarina fa voafehy tsara ilay lohahevitra.",
+            "Repars de la définition, fais un exercice facile sans regarder la correction, puis explique chaque étape.": "Atombohy amin'ny famaritana, valio ny fanazaran-tena mora nefa aza jerena ny valiny, ary hazavao tsikelikely ny fomba.",
+            "Refais un exercice de difficulté moyenne, puis vérifie ton raisonnement avec la correction.": "Manaova fanazaran-tena antonony indray, ary ampitahao amin'ny fanazavana ny fomba namahanao azy.",
+            "Teste-toi de mémoire avant de relire l'explication ; reprends uniquement l'étape qui bloque.": "Andramo tadidinao aloha ny valiny vao vakio indray ny fanazavana; avereno ilay dingana sarotra aminao.",
+            "Essaie une question d'application différente pour entretenir tes acquis sans refaire inutilement toute la leçon.": "Valio fanontaniana fampiharana hafa mba hitazonana ny fahaizanao, fa tsy averina tsy amin'antony ny lesona manontolo.",
+            "Résous une variante sans indice et explique pourquoi la méthode fonctionne.": "Vahao fanontaniana mitovitovy nefa tsy mampiasa torolalana, ary hazavao ny antony mampety ilay fomba.",
+            "À revoir aujourd'hui": "Haverina anio",
+            "À planifier après le diagnostic": "Halamina aorian'ny fitsapana",
+            "Tes derniers quiz sont à reprendre en priorité.": "Ireo quiz farany no tokony haverina voalohany.",
+            "Tes derniers quiz montrent des acquis à consolider.": "Mampiseho ireo zavatra mbola mila hamafisina ny quiz farany.",
+            "Tes derniers quiz sont encourageants ; vérifie aussi la rétention quelques jours plus tard.": "Mampahery ny quiz farany; zahao indray rehefa afaka andro vitsivitsy raha mbola tadidinao.",
+            " Le résultat le plus récent progresse par rapport au précédent.": " Tsara kokoa noho ny teo aloha ny vokatra farany.",
+            " Le résultat récent a baissé : reprends les étapes avant d'augmenter la difficulté.": " Nidina ny vokatra farany; avereno ny dingana alohan'ny hampitomboana ny fahasarotana.",
+            "Pas encore de quiz soumis sur cette matière et ce niveau : un diagnostic servira à calibrer les prochaines révisions.": "Mbola tsy misy quiz vita amin'ity taranja sy ambaratonga ity; hanampy handamina ny famerenana manaraka ny fitsapana voalohany.",
+            "Tu as déjà signalé une difficulté autour de « ": "Efa nilaza ianao fa sarotra aminao ny “",
+            " ». Dans le Tuteur IA, reformule la méthode avec tes propres mots avant de consulter la correction.": "”. Ao amin'ny Mpampianatra AI, hazavao amin'ny teninao manokana ilay fomba alohan'ny hijerena ny valiny.",
+            "Pour « ": "Ho an'ny “",
+            " », demande au Tuteur IA une question différente et essaie d'expliquer ton raisonnement sans indice.": "”, mangataha fanontaniana hafa amin'ny Mpampianatra AI ary hazavao ny fomba fisainanao tsy misy torolalana.",
+            "Après ton diagnostic, utilise le Tuteur IA pour faire expliquer l'étape précise qui te pose problème.": "Rehefa vita ny fitsapana voalohany, angataho ny Mpampianatra AI hanazava ilay dingana tena sarotra aminao.",
+            "Ta fiche personnalisée": "Taratasy famerenana mifanaraka amin'ny fandrosoanao",
+            "Adaptée à ton parcours": "Mifanaraka amin'ny fianaranao",
+            "Personnalisation en démarrage": "Vao manomboka ny fanamboarana manokana",
+            "Les priorités, l'ordre des entraînements et le calendrier ci-dessous utilisent uniquement ton historique personnel. Le cours source commun reste inchangé.": "Ny laharam-pahamehana, ny filaharan'ny fanazarana ary ny fandaharam-potoana eto ambany dia mifototra amin'ny tantaran'ny fianaranao manokana ihany. Tsy ovaina ny lesona fototra iombonana.",
+            "Ton historique sur cette matière est encore trop limité pour établir des points faibles fiables. Cette fiche commence par un diagnostic, puis s'adaptera aux réponses que tu enregistreras.": "Mbola tsy ampy ny tantaran'ny fianaranao amin'ity taranja ity hamantarana tsara izay mila hatsaraina. Hanomboka amin'ny fitsapana ity taratasy ity ary hifanaraka amin'ny valiny horaketinao avy eo.",
+            "Commence par « ": "Atombohy amin'ny “",
+            " » : applique l'action proposée, puis fais un quiz ciblé.": "”: araho ilay torohevitra, avy eo manaova quiz mifantoka amin'io lohahevitra io.",
+            "Entretien facultatif": "Fanazarana fanampiny raha ilaina",
+            "Aucune difficulté urgente n'est détectée dans les preuves disponibles. Choisis une application nouvelle si tu souhaites approfondir la notion.": "Tsy misy olana maika hita amin'ny porofo misy. Misafidiana fampiharana vaovao raha te handalina bebe kokoa ianao.",
+            "Réactive « ": "Avereno tadidina ny “",
+            " » sans relire la fiche, puis vérifie ta démarche avec une correction expliquée.": "” nefa aza vakina indray ny taratasy; jereo amin'ny fanazavana ny fomba namahanao azy.",
+            "Aujourd'hui": "Androany",
+            "Demain": "Rahampitso",
+            "Dans 3 jours": "Afaka 3 andro",
+            "Dans 7 jours": "Afaka 7 andro",
+            "Priorité : ": "Laharam-pahamehana: ",
+            " Essaie l'exercice ciblé avant d'ouvrir l'indice ou la correction.": " Ataovy aloha ilay fanazaran-tena mifantoka amin'io lohahevitra io vao sokafana ny torolalana na ny valiny.",
+            "Refais une question différente sur ": "Valio fanontaniana hafa momba ny ",
+            " sans aide. Si tu bloques, note l'étape précise qui manque.": " tsy misy fanampiana. Raha sahirana ianao dia soraty ilay dingana tsy azonao.",
+            "Refais un quiz court avec des questions nouvelles sur les notions ciblées ; justifie la méthode plutôt que de retrouver seulement le résultat.": "Manaova quiz fohy misy fanontaniana vaovao momba ireo lohahevitra kendrena; hazavao ny fomba fa aza mitady ny valiny fotsiny.",
+            "Teste la rétention sur au moins une question jamais rencontrée. Si tu réussis sans indice, confirme l'acquis ; sinon, reprogramme une révision.": "Andramo amin'ny fanontaniana mbola tsy hitanao raha mbola tadidinao. Raha voavaly tsy misy torolalana dia hamafiso fa voafehy; raha tsy izany dia mandamina famerenana indray.",
+            "Fais un premier diagnostic avec les exercices et note les notions que tu ne peux pas expliquer sans regarder la correction.": "Ataovy ny fitsapana voalohany amin'ireo fanazaran-tena ary soraty ireo lohahevitra tsy hainao hazavaina raha tsy mijery ny valiny.",
+            "Reprends une question ratée ou hésitante et explique la démarche avec tes propres mots.": "Avereno valiana ny fanontaniana diso na nampisalasala anao ary hazavao amin'ny teninao manokana ny fomba.",
+            "Refais un quiz court pour vérifier ce que tu retiens sans indice.": "Manaova quiz fohy indray hijerena izay tadidinao tsy misy torolalana.",
+            "Reteste une question différente pour vérifier la rétention ; si le profil reste vide, lance un quiz de diagnostic.": "Andramo fanontaniana hafa hijerena raha mbola tadidinao; raha mbola tsy misy tantara momba ny fandrosoanao dia manaova quiz fitsapana.",
+            " — À retravailler en premier. ": " — Mila haverina ianarana voalohany. ",
+            " — À consolider. ": " — Mila hamafisina. ",
+            " — Révision à faire. ": " — Fotoana hamerenana lesona. ",
+            " — Acquis à entretenir. ": " — Efa voafehy ka tohizo ny fanazarana. ",
+            " — À confirmer. ": " — Mila hamarinina. ",
+            "Cet exercice cible « ": "Ity fanazaran-tena ity dia mifantoka amin'ny “",
+            " », classée « ": "”, izay voasokajy ho “",
+            " » dans ton parcours.": "” ao amin'ny fandrosoanao.",
+            "Progressif": "Mivoatra tsikelikely",
+            "Réussir une question nouvelle sans indice.": "Mahavaha fanontaniana vaovao tsy misy torolalana.",
+            "Expliquer le raisonnement avec ses propres mots.": "Manazava ny fomba fisainana amin'ny teny manokana.",
+            "Repasser une question dans 7 jours pour vérifier la rétention.": "Mamaly fanontaniana indray afaka 7 andro hijerena raha mbola tadidinao.",
+            "Faire un diagnostic court sur les objectifs de la fiche.": "Manao fitsapana fohy mifanaraka amin'ny tanjon'ny taratasy.",
+            "Identifier une erreur ou une hésitation à retravailler.": "Mamantatra hadisoana na fisalasalana mila fanazarana.",
+            "Refaire une question différente dans 7 jours.": "Mamaly fanontaniana hafa afaka 7 andro."
+        },
+    }.get(langue, {})
+
+    def traduire_personnalisation(valeur):
+        if isinstance(valeur, str):
+            for source, traduction in sorted(
+                traductions.items(), key=lambda item: len(item[0]), reverse=True
+            ):
+                valeur = valeur.replace(source, traduction)
+            return valeur
+        if isinstance(valeur, list):
+            return [traduire_personnalisation(element) for element in valeur]
+        if isinstance(valeur, dict):
+            return {
+                cle: traduire_personnalisation(element)
+                for cle, element in valeur.items()
+            }
+        return valeur
     filiere_id = getattr(document, "filiere_id", None)
     niveau_scolaire_id = getattr(document, "niveau_scolaire_id", None)
     portee_academique = getattr(document, "portee_academique", "universitaire")
@@ -1804,6 +1970,9 @@ def personnaliser_fiche_revision_document(
             f"{item['notion']} — {item['statut']}. {item['raison']}"
             for item in priorites
         ]
+        points_personnels = [
+            traduire_personnalisation(item) for item in points_personnels
+        ]
         points_existants = list(contenu.get("points_a_retravailler") or [])
         contenu["points_a_retravailler"] = list(dict.fromkeys(points_personnels + points_existants))[:8]
         if all(item["statut"] == "Acquis à entretenir" for item in priorites):
@@ -1858,6 +2027,8 @@ def personnaliser_fiche_revision_document(
         if priorites else
         ["Faire un diagnostic court sur les objectifs de la fiche.", "Identifier une erreur ou une hésitation à retravailler.", "Refaire une question différente dans 7 jours."]
     )
+    contenu["plan_revision"] = traduire_personnalisation(contenu.get("plan_revision", []))
+    profil_personnalise = traduire_personnalisation(profil_personnalise)
     contenu["profil_personnalise"] = profil_personnalise
     return contenu
 
