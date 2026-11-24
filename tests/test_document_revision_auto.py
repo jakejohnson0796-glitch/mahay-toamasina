@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 import json
 
 import pytest
@@ -652,3 +653,54 @@ def test_planification_recupere_la_tache_existante_apres_conflit_concurrent(monk
     assert len(taches) == 1
     assert taches[0].id == task_id
     assert taches[0].statut == StatutTacheIA.EN_ATTENTE
+
+@pytest.mark.parametrize(
+    ("langue", "moment", "titre"),
+    [
+        ("en", "Today", "Your personalised revision sheet"),
+        ("mg", "Androany", "Taratasy famerenana mifanaraka amin'ny fandrosoanao"),
+    ],
+)
+def test_personnalisation_document_respecte_la_langue(monkeypatch, langue, moment, titre):
+    class RequeteVide:
+        def where(self, *_args):
+            return self
+
+        def order_by(self, *_args):
+            return self
+
+        def limit(self, *_args):
+            return self
+
+        def all(self):
+            return []
+
+    class SessionVide:
+        def exec(self, _requete):
+            return RequeteVide()
+
+        def get(self, *_args):
+            return None
+
+    monkeypatch.setattr(
+        course_revision,
+        "interactions_tuteur_recentes",
+        lambda *_args, **_kwargs: [],
+    )
+    document = SimpleNamespace(
+        filiere_id=None,
+        niveau_scolaire_id=None,
+        portee_academique="universitaire",
+        matiere="Mathématiques",
+    )
+
+    contenu = course_revision.personnaliser_fiche_revision_document(
+        SessionVide(), document, 17, fixture_fiche(), langue=langue
+    )
+
+    assert contenu["plan_revision"][0]["moment"] == moment
+    assert contenu["profil_personnalise"]["titre"] == titre
+    assert contenu["profil_personnalise"]["mode"] != "Personnalisation en démarrage"
+    assert "Aujourd'hui" not in str(contenu["plan_revision"])
+    assert "Demain" not in str(contenu["plan_revision"])
+    assert "Dans 7 jours" not in str(contenu["plan_revision"])
