@@ -1027,7 +1027,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
         revision_apres_render = connection.execute(
             text("SELECT version_num FROM public.alembic_version")
         ).scalar_one()
-    assert revision_apres_render == "d1e6f9a2b4c8"
+    assert revision_apres_render == "f3b8d2a6c941"
 
     # Retourne ensuite à un parent commun afin de tester la réapplication
     # concurrente des migrations sur deux connexions indépendantes.
@@ -1086,7 +1086,7 @@ def test_postgres_concurrent_alembic_upgrades_are_serialized():
             )
         ).scalar_one()
 
-    assert revision == "d1e6f9a2b4c8"
+    assert revision == "f3b8d2a6c941"
     assert index_count == 48
     assert institution_index_count == 1
 
