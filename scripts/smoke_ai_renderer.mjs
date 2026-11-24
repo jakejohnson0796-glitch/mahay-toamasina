@@ -697,7 +697,7 @@ const disciplinesHost = window.document.createElement('div');
 window.document.body.appendChild(disciplinesHost);
 const latexSlash = String.fromCharCode(92);
 const inlineFormula = (formula) => latexSlash + '(' + formula + latexSlash + ')';
-const codeFence = String.fromCharCode(96).repeat(3);
+const disciplineCodeFence = String.fromCharCode(96).repeat(3);
 const disciplinesSource = [
   'Mathématiques : ' + doubledBackslash + 'frac{3}{4} et ' + doubledBackslash + 'sqrt{81}.',
   'Physique : ' + inlineFormula(latexSlash + 'Delta E=' + latexSlash + 'hbar' + latexSlash + 'omega') +
@@ -712,7 +712,7 @@ const disciplinesSource = [
   'Médecine : tension (120/80 mmHg), glycémie 5 mg/dL, température 37,0 °C, SpO₂ 98 %.',
   'Géographie : coordonnées (18°54′S, 47°31′E), altitude 1 250 m.',
   'Histoire : armistice du (11/11/1918) ; révolution (1789-1799) ; indépendance 1960.',
-  'Informatique :\n' + codeFence + 'js\nconst ok = a <= b && value !== null;\nconst fallback = obj?.value ?? 0;\n' + codeFence
+  'Informatique :\n' + disciplineCodeFence + 'js\nconst ok = a <= b && value !== null;\nconst fallback = obj?.value ?? 0;\n' + disciplineCodeFence
 ].join('\n');
 window.rendreReponseIA(disciplinesSource, disciplinesHost);
 if (disciplinesHost.querySelectorAll('.katex-error').length) {
