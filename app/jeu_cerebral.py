@@ -1306,27 +1306,44 @@ def construire_recommandation(
     if score < 40:
         titre = "Chaque essai est un joli point de départ 🌱"
         titre_mg = "Fiandohana tsara ny fanandramana tsirairay 🌱"
+        titre_en = "Every attempt is a fresh starting point 🌱"
         message = "Merci d’avoir joué ! Les questions qui t’ont résisté nous donnent simplement une piste pour la prochaine fois. Ton score ne résume jamais tes capacités."
         message_mg = "Misaotra anao nilalao! Ireo fanontaniana sarotra taminao dia manampy antsika hahita izay azo ampiharina manaraka. Tsy mamaritra ny fahaizanao rehetra velively ny isa."
+        message_en = "Thanks for playing! The questions that challenged you simply give us an idea for next time. Your score never defines your abilities."
     elif score < 60:
         titre = "Tes repères sont en train de pousser 🌿"
         titre_mg = "Mihamiorina tsikelikely ny fahalalanao 🌿"
+        titre_en = "Your skills are taking root 🌿"
         message = "Tu construis tes repères, question après question. Un peu de pratique ciblée peut rendre ces réflexes plus familiers — sans te presser."
         message_mg = "Mihamiorina tsikelikely ny fahalalanao. Manampy hampahazatra ireo fomba fisainana ireo ny fampiharana kely, tsy mila maika."
+        message_en = "You are building your skills one question at a time. A little focused practice can make these ideas more familiar — at your own pace."
     elif score < 80:
         titre = "De beaux réflexes se dessinent ✨"
         titre_mg = "Mihamafy ny fomba fisainanao ✨"
+        titre_en = "You are developing strong habits ✨"
         message = "Tu as trouvé plusieurs bonnes pistes. En reprenant doucement les notions ci-dessous, tu pourras gagner encore en aisance."
         message_mg = "Maro ny valiny hitanao tsara. Raha averinao moramora ireo hevitra etsy ambany, dia hihamora kokoa ny fampiharana."
+        message_en = "You found several good approaches. Reviewing the ideas below at a comfortable pace can help you feel even more confident."
     else:
         titre = "Très belle session, bravo à toi 🌟"
         titre_mg = "Tsara dia tsara ny lalaonao 🌟"
+        titre_en = "A great session — well done! 🌟"
         message = "Tu as été attentif·ve et tu as bien avancé. Pour entretenir cette curiosité, tu peux essayer un autre thème ou un défi un peu plus corsé."
         message_mg = "Tsara dia tsara ny lalaonao! Nandinika tsara ianao ary nandroso. Mba hitohizan'ny fahalianana dia afaka manandrana lohahevitra hafa na fanamby somary sarotra kokoa ianao."
+        message_en = "You stayed focused and made good progress. To keep exploring, try another topic or a slightly more challenging activity."
+
+    langue = str(etat.get("langue") or "fr")
+    competence_en = {
+        "logique": "logical reasoning",
+        "calcul": "mental arithmetic and estimation",
+        "suites": "patterns and sequences",
+        "langage": "vocabulary and word relationships",
+        "observation": "attention to detail",
+    }.get(theme_id, "reasoning skills")
 
     def _competence(question: dict[str, Any]) -> str:
-        cle = "notion_mg" if etat.get("langue") == "mg" else "notion"
-        return str(question.get(cle) or question.get("notion") or theme["competence"]).strip()
+        cle = "notion_mg" if langue == "mg" else "notion"
+        return str(question.get(cle) or question.get("notion") or (competence_en if langue == "en" else theme["competence"])).strip()
 
     def _uniques(items: list[str]) -> list[str]:
         resultat = []
@@ -1351,12 +1368,26 @@ def construire_recommandation(
             + ", ".join(pistes)
             + ". Atombohy amin'ny ohatra tsotra, ary ampitomboy tsikelikely ny fahasarotana."
         )
+        conseil_en = (
+            "For your next short session, try practising: "
+            + ", ".join(pistes)
+            + ". Start with a simple example, then gradually increase the challenge."
+        )
     elif forces:
         conseil = "Tu sembles à l’aise sur " + ", ".join(forces) + ". Pour approfondir, essaie un niveau supérieur ou un nouveau thème."
         conseil_mg = "Toa mahazo aina amin'ny " + ", ".join(forces) + " ianao. Mba handalinana kokoa, andramo ny ambaratonga ambony kokoa na lohahevitra vaovao."
+        conseil_en = "You seem comfortable with " + ", ".join(forces) + ". To explore further, try a higher level or a new topic."
     else:
+        titre_theme_en = {
+            "logique": "logic and deduction",
+            "calcul": "mental arithmetic",
+            "suites": "patterns and sequences",
+            "langage": "words and analogies",
+            "observation": "observation and attention",
+        }.get(theme_id, "reasoning")
         conseil = f"Tu peux refaire une courte session de {theme['titre'].lower()} quand tu en auras envie."
         conseil_mg = "Afaka mamerina fanazaran-tena fohy amin'ity lohahevitra ity ianao rehefa vonona."
+        conseil_en = f"You can try another short {titre_theme_en} session whenever you feel ready."
 
     return {
         "score": score,
@@ -1364,12 +1395,15 @@ def construire_recommandation(
         "total": total,
         "titre": titre,
         "titre_mg": titre_mg,
+        "titre_en": titre_en,
         "message": message,
         "message_mg": message_mg,
+        "message_en": message_en,
         "points_forts": forces,
         "a_explorer": pistes,
         "conseil": conseil,
         "conseil_mg": conseil_mg,
+        "conseil_en": conseil_en,
         "competence": theme["competence"],
         "theme": theme["titre"],
     }
