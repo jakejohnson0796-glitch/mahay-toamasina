@@ -184,7 +184,8 @@ def test_reparation_tuteur_ne_reprend_pas_une_verification_en_cours_recente(monk
     assert appelees == []
 
 
-def test_verification_tuteur_charge_la_matiere_de_la_progression(monkeypatch):
+@pytest.mark.parametrize("langue", ["fr", "mg", "en"])
+def test_verification_tuteur_charge_la_matiere_de_la_progression(monkeypatch, langue):
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -225,6 +226,7 @@ def test_verification_tuteur_charge_la_matiere_de_la_progression(monkeypatch):
             exemple="Exemple.",
             exercice="Exercice.",
             correction="Correction.",
+            langue=langue,
         )
         session.add(session_tuteur)
         session.commit()
@@ -233,13 +235,14 @@ def test_verification_tuteur_charge_la_matiere_de_la_progression(monkeypatch):
 
     appels = []
 
-    def _verification_fictive(initiale, *, question, notion, matiere, strategie):
+    def _verification_fictive(initiale, *, question, notion, matiere, strategie, langue="fr"):
         appels.append(
             {
                 "question": question,
                 "notion": notion,
                 "matiere": matiere,
                 "strategie": strategie,
+                "langue": langue,
                 "initiale": initiale,
             }
         )
@@ -265,6 +268,7 @@ def test_verification_tuteur_charge_la_matiere_de_la_progression(monkeypatch):
             "notion": "Déterminant d'ordre 2",
             "matiere": "Mathématiques",
             "strategie": "legere",
+            "langue": langue,
             "initiale": {
                 "explication": "Réponse initiale.",
                 "exemple": "Exemple.",
