@@ -273,11 +273,11 @@ def page_session_jeu_cerebral(
 
     question = questions[index_question]
     difficulte = question.get("difficulte", "Moyen")
-    labels_difficulte = (
-        {"Facile": "En douceur", "Moyen": "À ton rythme", "Difficile": "Petit défi"}
-        if partie.langue == "fr"
-        else {"Facile": "Amim-pitoniana", "Moyen": "Amin'ny hafainganam-pandehanao", "Difficile": "Fanamby kely"}
-    )
+    labels_difficulte = {
+        "fr": {"Facile": "En douceur", "Moyen": "À ton rythme", "Difficile": "Petit défi"},
+        "mg": {"Facile": "Amim-pitoniana", "Moyen": "Amin'ny hafainganam-pandehanao", "Difficile": "Fanamby kely"},
+        "en": {"Facile": "Gentle", "Moyen": "At your pace", "Difficile": "A small challenge"},
+    }[partie.langue if partie.langue in {"fr", "mg", "en"} else "fr"]
     retour = etat.get("dernier_feedback")
     if retour and 0 <= int(retour.get("question_index", -1)) < len(questions):
         ancienne = questions[int(retour["question_index"])]
