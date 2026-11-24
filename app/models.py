@@ -2062,14 +2062,15 @@ class StatutFicheRevisionDocument(str, Enum):
 
 
 class FicheRevisionDocument(SQLModel, table=True):
-    """Fiche source unique pour un document de cours approuvé.
+    """Cache source séparé par document et langue de sortie.
 
-    Elle est générée une seule fois à partir du document réel puis accessible
-    aux étudiants autorisés à consulter cette ressource. Le profil personnel
-    reste séparé dans FicheRevisionCours.
+    Chaque version reste commune aux lecteurs autorisés qui ont choisi la même
+    langue ; les versions française, malagasy et anglaise ne se remplacent pas.
+    Le profil personnel reste séparé dans FicheRevisionCours.
     """
     id: Optional[int] = Field(default=None, primary_key=True)
     document_id: int = Field(foreign_key="document.id")
+    langue: str = Field(default="fr", max_length=5)
     statut: StatutFicheRevisionDocument = Field(
         default=StatutFicheRevisionDocument.EN_ATTENTE,
         index=True,
@@ -2082,10 +2083,13 @@ class FicheRevisionDocument(SQLModel, table=True):
     date_modification: datetime = Field(default_factory=datetime.utcnow)
     date_generation: Optional[datetime] = None
 
-
-
     __table_args__ = (
-        Index("uq_ficherevisiondocument_document", "document_id", unique=True),
+        Index(
+            "uq_ficherevisiondocument_document_langue",
+            "document_id",
+            "langue",
+            unique=True,
+        ),
     )
 
 
