@@ -127,7 +127,7 @@
     // On réduit les échappements multiples uniquement devant des commandes
     // TeX connues. Les doubles antislashs des matrices (\\\\) restent intacts.
     const commandesTeXReparables =
-      /(?:frac|dfrac|tfrac|binom|sqrt|ce|pu|text|textbf|textit|mathrm|mathbf|mathbb|mathcal|mathfrak|operatorname|vec|bar|overline|hat|widehat|widetilde|sum|prod|int|iint|iiint|oint|lim|log|ln|sin|cos|tan|cot|exp|det|tr|diag|min|max|alpha|beta|gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|hbar|nabla|partial|times|cdot|pm|leq|geq|neq|approx|infty|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow|iff)\b/;
+      /(?:begin|end|frac|dfrac|tfrac|binom|sqrt|ce|pu|text|textbf|textit|mathrm|mathbf|mathbb|mathcal|mathfrak|operatorname|vec|bar|overline|hat|widehat|widetilde|sum|prod|int|iint|iiint|oint|lim|log|ln|sin|cos|tan|cot|exp|det|tr|diag|min|max|alpha|beta|gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|hbar|nabla|partial|times|cdot|pm|leq|geq|neq|approx|infty|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow|iff)\b/;
     resultat = resultat
       .replace(/\\{2,}(?=[A-Za-z])/g, function (antislashs, offset, texte) {
         const commande = commandesTeXReparables.exec(texte.slice(offset + antislashs.length));
@@ -208,12 +208,12 @@
       return tokenBloc + index + finTokenBloc;
     });
 
-    // Certains transports ajoutent un antislash isolé après une fraction nue
+    // Certains transports ajoutent un antislash isolé après une formule nue
     // avant un espace suivi de prose (ex. « \\frac{18}{27}\\ rehefa »).
     // Les formules déjà délimitées et le code sont protégés ci-dessus.
-    const motifFractionAvecAntislashParasite =
-      /(\\(?:frac|dfrac|tfrac|binom)\{(?:[^{}\n]|\{[^{}\n]*\})+\}\{(?:[^{}\n]|\{[^{}\n]*\})+\})\\(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g;
-    resultat = resultat.replace(motifFractionAvecAntislashParasite, "$1");
+    const motifFormuleAvecAntislashParasite =
+      /(\\(?:frac|dfrac|tfrac|binom)\{(?:[^{}\n]|\{[^{}\n]*\})+\}\{(?:[^{}\n]|\{[^{}\n]*\})+\}|\\sqrt(?:\[[^\]\n]*\])?\{(?:[^{}\n]|\{[^{}\n]*\})+\}|\\(?:ce|pu|text|mathrm|mathbf|mathbb|mathcal|mathfrak|operatorname|bar|overline|hat|widehat|widetilde|vec)\{(?:[^{}\n]|\{[^{}\n]*\})+\})\\(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g;
+    resultat = resultat.replace(motifFormuleAvecAntislashParasite, "$1");
 
 
     resultat = resultat.split("\n").map(function (ligne) {
