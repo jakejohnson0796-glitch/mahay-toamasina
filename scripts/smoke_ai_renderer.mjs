@@ -711,7 +711,7 @@ const disciplinesSource = [
     ', ' + inlineFormula(latexSlash + 'chi^{2}=' + latexSlash + 'sum' + latexSlash + 'frac{(O-E)^2}{E}'),
   'Médecine : tension (120/80 mmHg), glycémie 5 mg/dL, température 37,0 °C, SpO₂ 98 %.',
   'Géographie : coordonnées (18°54′S, 47°31′E), altitude 1 250 m.',
-  'Histoire : armistice du (11/11/1918) ; révolution (1789-1799) ; indépendance 1960.',
+  'Histoire : armistice du (11/11/1918) ; révolution (1789-1799) ; guerre mondiale (1914–1918) ; indépendance 1960.',
   'Informatique :\n' + disciplineCodeFence + 'js\nconst ok = a <= b && value !== null;\nconst fallback = obj?.value ?? 0;\n' + disciplineCodeFence
 ].join('\n');
 window.rendreReponseIA(disciplinesSource, disciplinesHost);
