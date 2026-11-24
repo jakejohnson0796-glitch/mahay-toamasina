@@ -719,8 +719,12 @@ if (disciplinesHost.querySelectorAll('.katex-error').length) {
   throw new Error('A valid cross-disciplinary formula produced a KaTeX error');
 }
 if (disciplinesHost.querySelectorAll('.katex').length !== 11) {
+  const renderedExpressions = Array.from(disciplinesHost.querySelectorAll('.katex')).map((node) => {
+    const annotation = node.querySelector('annotation[encoding="application/x-tex"]');
+    return annotation ? annotation.textContent : (node.textContent || '');
+  });
   throw new Error('Expected 11 scientific formulas without converting dates/measurements; got ' +
-    disciplinesHost.querySelectorAll('.katex').length);
+    disciplinesHost.querySelectorAll('.katex').length + ': ' + JSON.stringify(renderedExpressions));
 }
 const disciplinesPlain = disciplinesHost.cloneNode(true);
 disciplinesPlain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
