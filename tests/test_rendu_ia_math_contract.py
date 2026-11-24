@@ -307,7 +307,7 @@ def test_renderer_canonicalise_le_latex_multidisciplinaire_sans_toucher_au_code(
 
     assert "commandesTeXReparables" in js
     assert r"/(^|[^\\])\\\\(?=[A-Za-z])/g" in js
-    assert "motifFractionAvecAntislashParasite" in js
+    assert "motifFormuleAvecAntislashParasite" in js
     assert "function normaliserCodeMathInline(source)" in js
     assert 'cible.dataset.renduVersion = "17"' in js
 
@@ -319,3 +319,20 @@ def test_renderer_preserve_dates_mesures_medicales_coordonnees_et_code():
     assert "expressionEstMesureClinique" in js
     assert r"\d{1,2}[./-]\d{1,2}" in js
     assert "mm\\s*hg" in js
+
+
+def test_contrat_ia_preserve_le_formatage_de_toutes_les_disciplines():
+    for discipline in (
+        "Mathématiques et statistiques",
+        "Physique et sciences de l'ingénieur",
+        "Chimie et biochimie",
+        "Biologie",
+        "Médecine et santé",
+        "Géographie, géologie et sciences de la Terre",
+        "Informatique et numérique",
+        "Histoire, géopolitique et sciences humaines",
+        "Économie, gestion et comptabilité",
+    ):
+        assert discipline in REGLES_FORMAT
+    assert "11/11/1918 n'est jamais une fraction" in REGLES_FORMAT
+    assert "120/80 mmHg" in REGLES_FORMAT
