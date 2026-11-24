@@ -104,7 +104,7 @@ def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
     js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
 
     assert '"ce"' in js
-    assert r"/\\ce\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g" in js
+    assert r"/\\(?:ce|pu)\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g" in js
     assert "motifReactionChimique" in js
     assert r'"\\ce{" + formuleChimique + "}"' in js
     # Le détecteur exige un indice/coefficient et une flèche pour préserver « Co » vs « CO ».
@@ -318,7 +318,7 @@ def test_renderer_preserve_dates_mesures_medicales_coordonnees_et_code():
     assert "expressionEstDate" in js
     assert "expressionEstMesureClinique" in js
     assert "expressionEstPeriodeHistorique" in js
-    assert r"\\d{3,4}\\s*[-–—]\\s*\\d{3,4}" in js
+    assert r"\d{3,4}\s*[-–—]\s*\d{3,4}" in js
     assert r"\d{1,2}[./-]\d{1,2}" in js
     assert "mm\\s*hg" in js
 
