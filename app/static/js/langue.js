@@ -7356,12 +7356,6 @@
     if (match) return "Your profile shows " + match[1] + ". The CEPE pathway and past papers are available from Grade T5.";
     match = cle.match(/^Documents scolaires publiés après modération et correspondant à ta classe vérifiée et à ta série (.+)$/i);
     if (match) return "School documents published after moderation and matching your verified grade and stream " + match[1];
-    match = cle.match(/^Ton profil indique actuellement (.+?)\\. Tu peux déjà poursuivre tes quiz et tes révisions, puis revenir à Objectif Examen lorsque ton profil sera à jour\\.$/i);
-    if (match) return "Asehon'ny mombamomba anao fa " + match[1] + ". Azonao tohizana aloha ny quiz sy ny famerenana lesona, ary miverina eto amin'ny Tanjona Fanadinana rehefa nohavaozina ny mombamomba anao.";
-    match = cle.match(/^Ton profil indique (.+?)\\. Le parcours CEPE et les annales d’examen sont accessibles à partir de la classe T5\\.$/i);
-    if (match) return "Asehon'ny mombamomba anao fa " + match[1] + ". Azo idirana manomboka amin'ny kilasy T5 ny lalam-piomanana CEPE sy ny fanadinana taloha.";
-    match = cle.match(/^Documents scolaires publiés après modération et correspondant à ta classe vérifiée et à ta série (.+)$/i);
-    if (match) return "Tahirin-kevitra an-tsekoly navoaka taorian'ny fanamarinana ary mifanaraka amin'ny kilasy sy sampam-pianarana voamarina anao " + match[1];
     match = cle.match(/^Quiz — (.+) — MITARIDALA$/i);
     if (match) return "Quiz — " + match[1] + " — MITARIDALA";
     match = cle.match(/^Résultat — (.+) — MITARIDALA$/i);
@@ -7423,6 +7417,12 @@
     if (match) return "Manao ahoana, " + match[1].trim();
     match = cle.match(/^Motif : (.+?)\. Tu peux envoyer une nouvelle demande\.$/i);
     if (match) return "Antony: " + match[1] + ". Afaka mandefa fangatahana vaovao ianao.";
+    match = cle.match(/^Ton profil indique actuellement (.+?)\\. Tu peux déjà poursuivre tes quiz et tes révisions, puis revenir à Objectif Examen lorsque ton profil sera à jour\\.$/i);
+    if (match) return "Asehon'ny mombamomba anao fa " + match[1] + ". Azonao tohizana aloha ny quiz sy ny famerenana lesona, ary miverina eto amin'ny Tanjona Fanadinana rehefa nohavaozina ny mombamomba anao.";
+    match = cle.match(/^Ton profil indique (.+?)\\. Le parcours CEPE et les annales d’examen sont accessibles à partir de la classe T5\\.$/i);
+    if (match) return "Asehon'ny mombamomba anao fa " + match[1] + ". Azo idirana manomboka amin'ny kilasy T5 ny lalam-piomanana CEPE sy ny fanadinana taloha.";
+    match = cle.match(/^Documents scolaires publiés après modération et correspondant à ta classe vérifiée et à ta série (.+)$/i);
+    if (match) return "Tahirin-kevitra an-tsekoly navoaka taorian'ny fanamarinana ary mifanaraka amin'ny kilasy sy sampam-pianarana voamarina anao " + match[1];
     match = cle.match(/^Quiz — (.+) — MITARIDALA$/i);
     if (match) return "Quiz — " + match[1] + " — MITARIDALA";
     match = cle.match(/^Résultat — (.+) — MITARIDALA$/i);
