@@ -1324,7 +1324,9 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
             session.commit()
             return
 
+        langue = normaliser_langue(getattr(fiche, "langue", "fr"))
         donnees = {
+            "langue": langue,
             "document_id": document.id,
             "reference": document.reference,
             "titre": document.titre,
@@ -1447,10 +1449,13 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
 
     # Vérification avant l'appel IA pour ne pas produire une révision à partir
     # d'un texte sans matière pédagogique détectée.
-    contenu = _generer_contenu_ia(contexte, mode_document=True)
+    contenu = _generer_contenu_ia(
+        contexte, mode_document=True, langue=donnees["langue"]
+    )
     maintenant = datetime.utcnow()
     avec_source = {
         "document_id": donnees["document_id"],
+        "langue": donnees["langue"],
         "reference": donnees["reference"],
         "titre": donnees["titre"],
         "matiere": donnees["matiere"],
