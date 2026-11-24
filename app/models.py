@@ -820,6 +820,10 @@ class Document(SQLModel, table=True):
     resume_ia_mg: str = Field(default="")
     fiche_pedagogique_mg_json: str = Field(default="{}")
     resume_statut_ia_mg: str = Field(default="a_generer", index=True)
+    # Version anglaise distincte, jamais remplacée par la version française.
+    resume_ia_en: str = Field(default="")
+    fiche_pedagogique_en_json: str = Field(default="{}")
+    resume_statut_ia_en: str = Field(default="a_generer", index=True)
     # Validation explicite de l’extraction pédagogique avant usage par le Quiz/Tuteur.
     fiche_validation_statut: str = Field(default="a_verifier", index=True)
     fiche_validee_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
