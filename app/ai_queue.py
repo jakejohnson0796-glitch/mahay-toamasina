@@ -518,7 +518,8 @@ def planifier_fiches_revision_documents_manquantes(max_documents: int = 3) -> in
             select(Document.id)
             .outerjoin(
                 FicheRevisionDocument,
-                FicheRevisionDocument.document_id == Document.id,
+                (FicheRevisionDocument.document_id == Document.id)
+                & (FicheRevisionDocument.langue == "fr"),
             )
             .where(
                 Document.statut == StatutDocument.APPROUVE,
