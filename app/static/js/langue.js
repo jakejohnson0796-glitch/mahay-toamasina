@@ -3930,6 +3930,16 @@
     "erreurs": "hadisoana",
     "temps utilisé": "fotoana nampiasaina",
     "Le contrôle précédent n'a pas conservé les détails permettant d'identifier les étapes exactes à reprendre. La réponse reste utile pour apprendre, mais sa vérification n'est pas confirmée. Pour un contrôle plus précis, pose une nouvelle question en indiquant les données de l'énoncé et l'étape qui te semble incertaine.": "Tsy voatahiry ny antsipiriany ahafantarana ireo dingana tokony haverina tamin'ny fanamarinana teo aloha. Mbola manampy amin'ny fianarana ny valiny, saingy tsy voamarina tanteraka. Raha mila fanamarinana mazava kokoa ianao dia mametraha fanontaniana vaovao miaraka amin'ny angona sy ny dingana mampisalasala anao.",
+    "raisonnement logique": "fomba fisainana lojika",
+    "calcul mental et estimation": "kajy an-tsaina sy tombana",
+    "repérage des régularités": "fahitana lamina miverimberina",
+    "vocabulaire et relations entre les idées": "voambolana sy fifandraisan'ny hevitra",
+    "attention aux détails": "fifantohana amin'ny antsipiriany",
+    "Ton défi — MITARIDALA": "Ny fanamby-nao — MITARIDALA",
+    "Progression en trois niveaux": "Fandrosoana amin'ny ambaratonga telo",
+    "Ton premier défi t'attend.": "Miandry anao ny fanamby voalohany.",
+    "Les questions qui t'ont résisté": "Ireo fanontaniana mbola sarotra taminao",
+    "Un objectif de 2 min 30 pour le jeu.": "Fotoana kendrena 2 minitra sy 30 segondra ho an'ny lalao.",
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -7483,6 +7493,26 @@
     "QUESTION": "QUESTION",
     "Vérification multi-modèles terminée": "Multi-model verification complete",
     "Le contrôle précédent n'a pas conservé les détails permettant d'identifier les étapes exactes à reprendre. La réponse reste utile pour apprendre, mais sa vérification n'est pas confirmée. Pour un contrôle plus précis, pose une nouvelle question en indiquant les données de l'énoncé et l'étape qui te semble incertaine.": "The previous check did not retain enough detail to identify the exact steps to review. The answer can still help you learn, but its verification is not confirmed. For a more precise check, ask a new question and include the problem details and the step you are unsure about.",
+    "Logique & déduction": "Logic & deduction",
+    "Relie les indices et trouve la conclusion la plus juste.": "Connect the clues and find the most reasonable conclusion.",
+    "raisonnement logique": "logical reasoning",
+    "Calcul mental": "Mental arithmetic",
+    "Joue avec les nombres, les estimations et les petits calculs.": "Work with numbers, estimates and simple calculations.",
+    "calcul mental et estimation": "mental arithmetic and estimation",
+    "Suites & régularités": "Sequences & patterns",
+    "Repère les motifs cachés et devine la prochaine étape.": "Spot hidden patterns and predict the next step.",
+    "repérage des régularités": "pattern recognition",
+    "Mots & analogies": "Words & analogies",
+    "Explore le vocabulaire, les liens entre les mots et les idées.": "Explore vocabulary and the connections between words and ideas.",
+    "vocabulaire et relations entre les idées": "vocabulary and relationships between ideas",
+    "Observation & attention": "Observation & attention",
+    "Compare les détails et prends le temps de bien observer.": "Compare details and take time to observe carefully.",
+    "attention aux détails": "attention to detail",
+    "Ton défi — MITARIDALA": "Your challenge — MITARIDALA",
+    "Progression en trois niveaux": "Three-level progression",
+    "Ton premier défi t'attend.": "Your first challenge is waiting.",
+    "Les questions qui t'ont résisté": "The questions that challenged you",
+    "Un objectif de 2 min 30 pour le jeu.": "A target time of 2 minutes 30 seconds for the game.",
   });
 
   var noeudsOriginaux = new WeakMap();
