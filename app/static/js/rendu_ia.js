@@ -254,9 +254,11 @@
         // Ex. 11/11/1918 et (120/80 mmHg) doivent rester du texte lisible.
         const expressionEstDate =
           /^\s*(?:\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\s*$/.test(expression);
+        const expressionEstPeriodeHistorique =
+          /^\s*\d{3,4}\s*[-–—]\s*\d{3,4}\s*$/.test(expression);
         const expressionEstMesureClinique =
           /^\s*\d{2,3}\s*\/\s*\d{2,3}\s*mm\s*hg\s*$/i.test(expression);
-        if (expressionEstDate || expressionEstMesureClinique) return match;
+        if (expressionEstDate || expressionEstPeriodeHistorique || expressionEstMesureClinique) return match;
         const contientMath = /(?:\\(?:sqrt|frac|dfrac|tfrac|binom|times|approx|cdot|pm|leq|geq|neq|sum|prod|int|sin|cos|tan|ln|log|ce|pu|bar|overline|hat|widehat|widetilde|operatorname)\b|[=+*/^_×÷≈≤≥≠±√∑∫]|(?:\d)\s*(?:[-+*/×÷]|\b(?:times|approx)\b)\s*\d)/i.test(expression);
         if (!contientMath) return match;
         // Si la barre oblique a disparu dans une ancienne sortie, récupérer les
