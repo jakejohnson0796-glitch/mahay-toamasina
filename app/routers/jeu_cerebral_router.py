@@ -93,6 +93,7 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
         "jeu_cerebral.html",
         {
             "utilisateur": utilisateur,
+            "langue": langue_depuis_requete(request),
             "themes": jeu_cerebral.THEMES,
             "historique": historique,
             "historique_affiche": historique_affiche,
