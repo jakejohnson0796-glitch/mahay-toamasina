@@ -761,3 +761,32 @@ def test_fiche_de_cours_integre_le_tutorat_recent_de_son_etudiant(monkeypatch):
     assert interactions[0]["etat_comprehension"] == "comprehension a retravailler"
     assert sources["personnalisation_tuteur"] is True
     assert "CONVERSATION PRIVÉE D'UN AUTRE ÉTUDIANT." not in str(contexte)
+
+@pytest.mark.parametrize(
+    ("langue", "niveaux", "moments"),
+    [
+        ("fr", ["Facile", "Moyen", "Difficile"], ["Aujourd'hui", "Dans 2 jours", "Dans 7 jours"]),
+        ("mg", ["Mora", "Antonony", "Sarotra"], ["Androany", "Afaka 2 andro", "Afaka 7 andro"]),
+        ("en", ["Easy", "Medium", "Hard"], ["Today", "In 2 days", "In 7 days"]),
+    ],
+)
+def test_revision_schema_et_plan_utilisent_la_langue_selectionnee(langue, niveaux, moments):
+    schema = course_revision._schema_fiche_revision_pour_langue(langue)
+    schema_compact = course_revision._schema_fiche_revision_compacte(
+        langue=langue, sans_notion=True
+    )
+
+    for definition in (schema, schema_compact):
+        assert definition["properties"]["exercices"]["items"]["properties"]["difficulte"]["enum"] == niveaux
+
+    contexte = {"cours": {}, "seance": {}, "source_document": {"contenu_extrait": "Cours de mathématiques."}}
+    prompts = (
+        course_revision._texte_ia_non_fiable(contexte, langue=langue),
+        course_revision._texte_ia_document(contexte, langue=langue),
+        course_revision._texte_ia_reprise_compacte(contexte, langue=langue),
+    )
+    for prompt in prompts:
+        for moment in moments:
+            assert moment in prompt
+        if langue != "fr":
+            assert "Aujourd'hui, Dans 2 jours et Dans 7 jours" not in prompt
