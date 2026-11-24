@@ -1514,10 +1514,11 @@ def generer_et_sauvegarder_fiche_revision_document(fiche_id: int) -> None:
             Notification(
                 destinataire_id=document.uploader_id,
                 type_notification=TypeNotification.FICHE_REVISION_DOCUMENT_PRETE,
-                contenu=(
-                    f"La fiche de révision automatique du cours « {document.titre} » "
-                    "est prête dans la bibliothèque."
-                ),
+                contenu={
+                    "fr": f"La fiche de révision automatique du cours « {document.titre} » est prête dans la bibliothèque.",
+                    "mg": f"Efa vonona ao amin'ny tranomboky ny taratasy famerenana lesona « {document.titre} ».",
+                    "en": f"The automatic revision sheet for “{document.titre}” is ready in the library.",
+                }[donnees["langue"]],
                 acteur_id=None,
             )
         )
