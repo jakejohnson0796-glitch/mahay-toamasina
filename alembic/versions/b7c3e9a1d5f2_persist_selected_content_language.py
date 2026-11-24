@@ -22,9 +22,20 @@ def upgrade() -> None:
         sa.Column("langue", sa.String(length=5), nullable=False, server_default="fr"),
     )
     op.create_index("ix_sessiontuteur_langue", "sessiontuteur", ["langue"])
+    op.add_column(
+        "analysecomparativelecon",
+        sa.Column("langue", sa.String(length=5), nullable=False, server_default="fr"),
+    )
+    op.create_index(
+        "ix_analysecomparativelecon_langue",
+        "analysecomparativelecon",
+        ["langue"],
+    )
 
 
 def downgrade() -> None:
+    op.drop_index("ix_analysecomparativelecon_langue", table_name="analysecomparativelecon")
+    op.drop_column("analysecomparativelecon", "langue")
     op.drop_index("ix_sessiontuteur_langue", table_name="sessiontuteur")
     op.drop_column("sessiontuteur", "langue")
     op.drop_index("ix_tentativequiz_langue", table_name="tentativequiz")
