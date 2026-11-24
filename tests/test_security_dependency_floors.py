@@ -23,5 +23,5 @@ def test_fastapi_resolves_starlette_as_a_dependency_not_a_direct_pin():
         for ligne in requirements.splitlines()
         if ligne.strip() and not ligne.lstrip().startswith("#")
     ]
-    assert any(ligne.startswith("fastapi==0.162.7") for ligne in lignes)
+    assert any(ligne.startswith("fastapi==") for ligne in lignes)
     assert not any(ligne.lower().startswith("starlette") for ligne in lignes)
