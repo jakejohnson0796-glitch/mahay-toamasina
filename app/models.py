@@ -2674,6 +2674,7 @@ class AnalyseComparativeLecon(SQLModel, table=True):
     """
     id: Optional[int] = Field(default=None, primary_key=True)
     lecon_id: int = Field(foreign_key="leconreferentielle.id", index=True)
+    langue: str = Field(default="fr", max_length=5, index=True)
     contributions_ids_json: str = Field(default="[]", max_length=2000)
     resultat_json: str = Field(max_length=60000)
     modele: str = Field(max_length=120)
