@@ -638,6 +638,41 @@ for (const command of ['\\Delta', '\\Omega', '\\hbar', '\\angle', '\\perp']) {
 for (const symbol of ['≤', 'ℝ', 'Ω', '∇', 'm/s²', 'Ω·m', 'Co ≠ CO', 'Ar 125 000', 'MGA', 'TVA', '&&', '?.', '??']) {
   if (!guideVisible.includes(symbol)) throw new Error('Guide symbol/context was altered: ' + symbol);
 }
+// Régression du Quiz adaptatif : certaines questions sont enregistrées avec
+// deux antislashs avant une fraction nue. Le titre ET les choix doivent être
+// convertis en KaTeX sans laisser un antislash parasite visible.
+const doubledBackslash = String.fromCharCode(92).repeat(2);
+const doubledQuizQuestion = window.document.createElement('h2');
+doubledQuizQuestion.className = 'quiz-question-title';
+doubledQuizQuestion.dataset.rendu = '';
+window.document.body.appendChild(doubledQuizQuestion);
+window.rendreReponseIA(
+  "Inona no endrika tsy azo ampahatsiahivana amin'ny " + doubledBackslash + "frac{18}{27} rehefa ampahatsiahivina?",
+  doubledQuizQuestion
+);
+if (!doubledQuizQuestion.querySelector('.katex') || doubledQuizQuestion.querySelector('.katex-error')) {
+  throw new Error('A double-escaped fraction in an adaptive quiz question was not rendered');
+}
+const doubledQuestionPlain = doubledQuizQuestion.cloneNode(true);
+doubledQuestionPlain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+if ((doubledQuestionPlain.textContent || '').includes(doubledBackslash) || (doubledQuestionPlain.textContent || '').includes('frac')) {
+  throw new Error('A raw/double-escaped fraction remained visible in the adaptive quiz question');
+}
+const doubledQuizChoice = window.document.createElement('span');
+doubledQuizChoice.className = 'quiz-choice-text';
+doubledQuizChoice.dataset.rendu = '';
+doubledQuizChoice.dataset.renduLigne = '';
+window.document.body.appendChild(doubledQuizChoice);
+window.rendreReponseIA(doubledBackslash + "frac{1}{3}", doubledQuizChoice, { enLigne: true });
+if (!doubledQuizChoice.querySelector('.katex') || doubledQuizChoice.querySelector('.katex-error')) {
+  throw new Error('A double-escaped fraction in an adaptive quiz choice was not rendered');
+}
+const doubledChoicePlain = doubledQuizChoice.cloneNode(true);
+doubledChoicePlain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+if ((doubledChoicePlain.textContent || '').includes(doubledBackslash) || (doubledChoicePlain.textContent || '').includes('frac')) {
+  throw new Error('A raw/double-escaped fraction remained visible in an adaptive quiz choice');
+}
+
 // Régression exacte du cas signalé : les escapes JSON \f doivent redevenir des fractions.
 const badQuizHost = window.document.createElement('div');
 window.document.body.appendChild(badQuizHost);
