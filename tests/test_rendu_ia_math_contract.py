@@ -97,14 +97,14 @@ def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathem
     assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
     assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
     assert "const contientMath =" in js
-    assert 'cible.dataset.renduVersion = "16"' in js
+    assert 'cible.dataset.renduVersion = "17"' in js
 
 
 def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
     js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
 
     assert '"ce"' in js
-    assert r"/\\ce\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g" in js
+    assert r"/\\(?:ce|pu)\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g" in js
     assert "motifReactionChimique" in js
     assert r'"\\ce{" + formuleChimique + "}"' in js
     # Le détecteur exige un indice/coefficient et une flèche pour préserver « Co » vs « CO ».
@@ -300,3 +300,41 @@ def test_version_katex_est_alignee_dans_build_runtime_et_ci():
     assert "simulation_count" in smoke
     assert "simulationsAttendues" in smoke
     assert "katex@0.19.1" in ci
+
+
+def test_renderer_canonicalise_le_latex_multidisciplinaire_sans_toucher_au_code():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    assert "commandesTeXReparables" in js
+    assert r"/(^|[^\\])\\\\(?=[A-Za-z])/g" in js
+    assert "motifFormuleAvecAntislashParasite" in js
+    assert "function normaliserCodeMathInline(source)" in js
+    assert 'cible.dataset.renduVersion = "17"' in js
+
+
+def test_renderer_preserve_dates_mesures_medicales_coordonnees_et_code():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    assert "expressionEstDate" in js
+    assert "expressionEstMesureClinique" in js
+    assert "expressionEstPeriodeHistorique" in js
+    assert r"\d{3,4}\s*[-–—]\s*\d{3,4}" in js
+    assert r"\d{1,2}[./-]\d{1,2}" in js
+    assert "mm\\s*hg" in js
+
+
+def test_contrat_ia_preserve_le_formatage_de_toutes_les_disciplines():
+    for discipline in (
+        "Mathématiques et statistiques",
+        "Physique et sciences de l'ingénieur",
+        "Chimie et biochimie",
+        "Biologie",
+        "Médecine et santé",
+        "Géographie, géologie et sciences de la Terre",
+        "Informatique et numérique",
+        "Histoire, géopolitique et sciences humaines",
+        "Économie, gestion et comptabilité",
+    ):
+        assert discipline in REGLES_FORMAT
+    assert "11/11/1918 n'est jamais une fraction" in REGLES_FORMAT
+    assert "120/80 mmHg" in REGLES_FORMAT

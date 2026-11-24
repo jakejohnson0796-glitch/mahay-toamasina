@@ -123,6 +123,21 @@
       .replace(/\u0008mod\b/g, "\\bmod")
       .replace(/\u0008ig\b/g, "\\big");
 
+    // Canonicalisation multidisciplinaire : le code est déjà protégé.
+    // On réduit les échappements multiples uniquement devant des commandes
+    // TeX connues. Les doubles antislashs des matrices (\\\\) restent intacts.
+    const commandesTeXReparables =
+      /(?:begin|end|frac|dfrac|tfrac|binom|sqrt|ce|pu|text|textbf|textit|mathrm|mathbf|mathbb|mathcal|mathfrak|operatorname|vec|bar|overline|hat|widehat|widetilde|sum|prod|int|iint|iiint|oint|lim|log|ln|sin|cos|tan|cot|exp|det|tr|diag|min|max|alpha|beta|gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|hbar|nabla|partial|times|cdot|pm|leq|geq|neq|approx|infty|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow|iff)\b/;
+    resultat = resultat
+      // Deux antislashs exactement : un triple peut être un saut de ligne TeX
+      // suivi d'une commande (\\\\\lambda) et doit rester intact.
+      .replace(/(^|[^\\])\\\\(?=[A-Za-z])/g, function (antislashs, prefixe, offset, texte) {
+        const commande = commandesTeXReparables.exec(texte.slice(offset + prefixe.length + 2));
+        return commande ? prefixe + "\\" : antislashs;
+      })
+      .replace(/(^|[^\\])\\\\(?=[([])/g, "$1\\")
+      .replace(/(^|[^\\])\\\\(?=[)\]])/g, "$1\\");
+
     // Répare les fiches anciennes où le transport ou le modèle a supprimé
     // les antislashs/accolades de begin{pmatrix} et end{pmatrix}.
     // On reste limité aux environnements appariés, afin de ne pas changer la prose.
@@ -195,6 +210,14 @@
       return tokenBloc + index + finTokenBloc;
     });
 
+    // Certains transports ajoutent un antislash isolé après une formule nue
+    // avant un espace suivi de prose (ex. « \\frac{18}{27}\\ rehefa »).
+    // Les formules déjà délimitées et le code sont protégés ci-dessus.
+    const motifFormuleAvecAntislashParasite =
+      /(\\(?:frac|dfrac|tfrac|binom)\{(?:[^{}\n]|\{[^{}\n]*\})+\}\{(?:[^{}\n]|\{[^{}\n]*\})+\}|\\sqrt(?:\[[^\]\n]*\])?\{(?:[^{}\n]|\{[^{}\n]*\})+\}|\\(?:ce|pu|text|mathrm|mathbf|mathbb|mathcal|mathfrak|operatorname|bar|overline|hat|widehat|widetilde|vec)\{(?:[^{}\n]|\{[^{}\n]*\})+\})\\(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g;
+    resultat = resultat.replace(motifFormuleAvecAntislashParasite, "$1");
+
+
     resultat = resultat.split("\n").map(function (ligne) {
       let normalisee = ligne;
       const formules = [];
@@ -227,7 +250,16 @@
       // et récupère les anciennes formes « (sqrt{1000}approx31,6) ».
       normalisee = normalisee.replace(/\(([^()\n]{1,160})\)/g, function (match, expression) {
         if (/\uE102GMATHRAW_\d+\uE103/.test(expression)) return match;
-        const contientMath = /(?:\\(?:sqrt|frac|dfrac|tfrac|times|approx|cdot|pm|leq|geq|neq|sum|prod|int|sin|cos|tan|ln|log|ce)\b|[=+*/^_×÷≈≤≥≠±√∑∫]|(?:\d)\s*(?:[-+*/×÷]|\b(?:times|approx)\b)\s*\d)/i.test(expression);
+        // Les dates historiques et mesures cliniques sont des données, pas des fractions.
+        // Ex. 11/11/1918 et (120/80 mmHg) doivent rester du texte lisible.
+        const expressionEstDate =
+          /^\s*(?:\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\s*$/.test(expression);
+        const expressionEstPeriodeHistorique =
+          /^\s*\d{3,4}\s*[-–—]\s*\d{3,4}\s*$/.test(expression);
+        const expressionEstMesureClinique =
+          /^\s*\d{2,3}\s*\/\s*\d{2,3}\s*mm\s*hg\s*$/i.test(expression);
+        if (expressionEstDate || expressionEstPeriodeHistorique || expressionEstMesureClinique) return match;
+        const contientMath = /(?:\\(?:sqrt|frac|dfrac|tfrac|binom|times|approx|cdot|pm|leq|geq|neq|sum|prod|int|sin|cos|tan|ln|log|ce|pu|bar|overline|hat|widehat|widetilde|operatorname)\b|[=+*/^_×÷≈≤≥≠±√∑∫]|(?:\d)\s*(?:[-+*/×÷]|\b(?:times|approx)\b)\s*\d)/i.test(expression);
         if (!contientMath) return match;
         // Si la barre oblique a disparu dans une ancienne sortie, récupérer les
         // noms de symboles grecs seulement DANS une expression déjà reconnue
@@ -997,6 +1029,8 @@
     "wedge", "vee", "lnot", "Rightarrow", "Leftarrow", "Leftrightarrow", "oplus", "hbar",
     "varepsilon", "vartheta", "varphi", "varsigma", "varkappa", "lfloor", "lceil", "lVert", "rVert",
     "ldots", "cdots", "vdots", "ddots", "overrightarrow", "overleftarrow", "because", "square", "Box",
+    "binom", "pu", "bar", "overline", "hat", "widehat", "widetilde", "mathcal", "mathfrak", "operatorname",
+    "Pr", "Var", "Cov", "tr", "diag", "chi", "zeta", "eta", "iota", "kappa", "xi", "upsilon", "varepsilon", "vartheta", "varphi",
     "iint", "iiint", "oint", "therefore", "top", "tilde", "tanh", "bmod", "to", "rfloor", "rangle", "rvert"
   ];
 
@@ -1007,12 +1041,12 @@
   }
 
   const MOTIFS_LATEX_NUS = [
-    /\\begin\{(bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|aligned|array)\}[\s\S]*?\\end\{\1\}/g,
-    /\\(?:frac|dfrac|tfrac)\{(?:[^{}\n]|\{[^{}\n]*\})*\}\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
+    /\\begin\{(bmatrix|pmatrix|Bmatrix|vmatrix|Vmatrix|matrix|cases|alignedat|aligned|gathered|array|align\*?|gather\*?|equation\*?|split)\}[\s\S]*?\\end\{\1\}/g,
+    /\\(?:frac|dfrac|tfrac|binom)\{(?:[^{}\n]|\{[^{}\n]*\})*\}\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
     /\\sqrt(?:\[[^\]\n]*\])?\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
-    /\\ce\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
-    /\\(?:text|mathrm|mathbf|mathbb|mathcal|operatorname|vec)\{[^{}\n]*\}/g,
-    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|pi|rho|sigma|tau|phi|omega|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Delta|Gamma|Lambda|Omega|Sigma|Theta|Xi|Pi|Phi|Psi|Upsilon|angle|triangle|perp|parallel|subset|supset|cup|cap|emptyset|setminus|wedge|vee|lnot|Rightarrow|Leftarrow|Leftrightarrow|oplus|hbar|varepsilon|vartheta|varphi|varsigma|varkappa|lfloor|lceil|lVert|rVert|ldots|cdots|vdots|ddots|overrightarrow|overleftarrow|because|square|Box|iint|iiint|oint|Re|Im|therefore|top|tilde|tanh|bmod)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^)\n]{0,40}\))?/g,
+    /\\(?:ce|pu)\{(?:[^{}\n]|\{[^{}\n]*\})*\}/g,
+    /\\(?:text|mathrm|mathbf|mathbb|mathcal|mathfrak|operatorname|vec|bar|overline|hat|widehat|widetilde)\{[^{}\n]*\}/g,
+    /\\(?:det|ln|log|sin|cos|tan|cot|exp|lim|partial|nabla|alpha|beta|gamma|delta|theta|lambda|mu|nu|xi|pi|rho|sigma|tau|phi|omega|chi|psi|zeta|eta|kappa|upsilon|forall|exists|neg|nexists|notin|subseteq|supseteq|nsubseteq|nleq|ngeq|equiv|cong|propto|rightarrow|leftarrow|leftrightarrow|Delta|Gamma|Lambda|Omega|Sigma|Theta|Xi|Pi|Phi|Psi|Upsilon|angle|triangle|perp|parallel|subset|supset|cup|cap|emptyset|setminus|wedge|vee|lnot|Rightarrow|Leftarrow|Leftrightarrow|oplus|hbar|varepsilon|vartheta|varphi|varsigma|varkappa|lfloor|lceil|lVert|rVert|ldots|cdots|vdots|ddots|overrightarrow|overleftarrow|because|square|Box|iint|iiint|oint|Re|Im|therefore|top|tilde|tanh|bmod|Pr|Var|Cov|tr|diag)(?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)?(?:\([^\n)]{0,40}\))?/g,
     /[A-Za-z](?:_\{[^{}\n]*\}|_[A-Za-z0-9]+|\^\{[^{}\n]*\}|\^[A-Za-z0-9]+)/g,
     /\\(?:cdot|times|pm|leq|geq|neq|approx|infty|to|rightarrow|left|right|,|:|;|!)/g
   ];
@@ -1147,7 +1181,7 @@
 
     const etat = verifierDependances();
     const signature = signatureDependances(etat);
-    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "16" && !configuration.force && cible.dataset.renduDeps === signature) {
+    if (cible.dataset.renduTraite === "1" && cible.dataset.renduVersion === "17" && !configuration.force && cible.dataset.renduDeps === signature) {
       return cible;
     }
 
@@ -1164,7 +1198,7 @@
     rendreLatexNu(cible);
     mettreEnFormeCode(cible);
     cible.dataset.renduTraite = "1";
-    cible.dataset.renduVersion = "16";
+    cible.dataset.renduVersion = "17";
     cible.dataset.renduDeps = signature;
     return cible;
   }
