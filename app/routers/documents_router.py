@@ -2594,21 +2594,24 @@ def enregistrer_modification_document(
         document.fiche_pedagogique_mg_json = "{}"
         document.resume_statut_ia_mg = "indisponible"
 
-    fiche_revision_document = session.exec(
+    fiches_revision_document = session.exec(
         select(FicheRevisionDocument).where(
             FicheRevisionDocument.document_id == document.id
         )
-    ).first()
-    if fiche_revision_document and modification:
-        # Le titre/matière/niveau ont changé : ne servir pas un carnet lié à
-        # d'anciennes métadonnées. Un recalcul sera mis en file après commit
-        # si le document reste un cours approuvé.
-        fiche_revision_document.statut = StatutFicheRevisionDocument.EN_ATTENTE
-        fiche_revision_document.contenu_json = "{}"
-        fiche_revision_document.sources_json = "{}"
-        fiche_revision_document.erreur_generation = None
-        fiche_revision_document.date_modification = datetime.utcnow()
-        session.add(fiche_revision_document)
+    ).all()
+    langues_revision_a_recalculer = sorted({
+        str(fiche.langue or "fr") for fiche in fiches_revision_document
+    })
+    if modification:
+        # Les métadonnées changent la pertinence de chaque cache linguistique.
+        # On invalide toutes les langues, pas seulement la fiche française.
+        for fiche_revision_document in fiches_revision_document:
+            fiche_revision_document.statut = StatutFicheRevisionDocument.EN_ATTENTE
+            fiche_revision_document.contenu_json = "{}"
+            fiche_revision_document.sources_json = "{}"
+            fiche_revision_document.erreur_generation = None
+            fiche_revision_document.date_modification = datetime.utcnow()
+            session.add(fiche_revision_document)
 
     est_cours_approuve = (
         document.statut == StatutDocument.APPROUVE
@@ -2617,7 +2620,10 @@ def enregistrer_modification_document(
     session.add(document)
     session.commit()
     if est_cours_approuve:
-        ai_queue.planifier_fiche_revision_document(document.id)
+        for langue_revision in langues_revision_a_recalculer or ["fr"]:
+            ai_queue.planifier_fiche_revision_document(
+                document.id, forcer=True, langue=langue_revision
+            )
     return _rediriger_moderation(
         "metadonnees_modifiees" if changement_contexte_pedagogique else "modifie"
     )
@@ -2732,17 +2738,18 @@ def supprimer_document(
             FicheRevisionDocument.document_id == document_id
         )
     ).all()
-    fiche_revision_document = fiches_revision_document[0] if fiches_revision_document else None
-    if fiche_revision_document:
+    if fiches_revision_document:
+        ids_fiches_revision = [fiche.id for fiche in fiches_revision_document]
         taches_revision_document = session.exec(
             select(TacheIA).where(
-                TacheIA.fiche_revision_document_id == fiche_revision_document.id
+                TacheIA.fiche_revision_document_id.in_(ids_fiches_revision)
             )
         ).all()
         for tache in taches_revision_document:
             session.delete(tache)
         session.commit()
-        session.delete(fiche_revision_document)
+        for fiche_revision_document in fiches_revision_document:
+            session.delete(fiche_revision_document)
         session.commit()
 
     supprimer_fichier(document.chemin_fichier)
