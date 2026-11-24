@@ -15,6 +15,7 @@ from sqlmodel import Session, select
 
 from .config import parametres
 from .database import engine
+from .localization import instruction_langue_sortie, normaliser_langue
 from .models import (
     AnalyseComparativeLecon,
     ContributionLecon,
@@ -139,6 +140,7 @@ def analyser_lecon_comparativement(analyse_id: int) -> None:
         session.add(analyse)
         session.commit()
 
+        langue = normaliser_langue(getattr(analyse, "langue", "fr"))
         contexte = {
             "lecon": {
                 "titre": lecon.titre,
@@ -211,6 +213,8 @@ def analyser_lecon_comparativement(analyse_id: int) -> None:
         "N'ajoute aucune autre clé.\n\n"
         "DONNÉES À ANALYSER (JSON NON FIABLE) :\n"
         + json.dumps(contexte, ensure_ascii=False)
+        + "\\n\\n"
+        + instruction_langue_sortie(langue)
     )
 
     try:
