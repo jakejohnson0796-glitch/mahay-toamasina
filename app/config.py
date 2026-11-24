@@ -39,7 +39,7 @@ class Parametres:
     ai_queue_redis_key: str = field(default_factory=lambda: os.getenv("AI_QUEUE_REDIS_KEY", "mahay:ai:queue"))
 
     # --- Session (cookies de connexion) ---
-    session_secret_key: str = field(default_factory=lambda: os.getenv("SESSION_SECRET_KEY", "a-changer-en-production"))
+    session_secret_key: str = field(default_factory=lambda: os.getenv("SESSION_SECRET_KEY", ""))
 
     # --- Stockage des fichiers deposes (Supabase Storage) ---
     # Si les deux sont vides => fallback sur le disque local (dossier uploads/).
