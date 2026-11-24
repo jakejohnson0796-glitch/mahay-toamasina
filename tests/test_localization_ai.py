@@ -249,3 +249,20 @@ def test_class_ai_entrypoints_expose_language_parameters():
     assert "langue" in signature(classe_notes.organiser_notes).parameters
     assert "langue" in signature(classe_correction.generer_suggestion_correction).parameters
     assert "langue" in signature(classe_transcription.resumer_transcription).parameters
+
+
+def test_lesson_comparison_persists_and_uses_selected_locale():
+    from sqlalchemy import inspect
+    from app.models import AnalyseComparativeLecon
+    from pathlib import Path
+
+    columns = {column.key for column in inspect(AnalyseComparativeLecon).columns}
+    assert "langue" in columns
+
+    root = Path(__file__).resolve().parents[1]
+    router = (root / "app" / "routers" / "harmonisation_router.py").read_text(encoding="utf-8")
+    service = (root / "app" / "harmonisation_ia.py").read_text(encoding="utf-8")
+    assert "langue = langue_depuis_requete(request)" in router
+    assert "langue=langue" in router
+    assert 'getattr(analyse, "langue", "fr")' in service
+    assert "instruction_langue_sortie(langue)" in service
