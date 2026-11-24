@@ -123,6 +123,15 @@
       .replace(/\u0008mod\b/g, "\\bmod")
       .replace(/\u0008ig\b/g, "\\big");
 
+    // L'IA ou un ancien transport peut doubler l'antislash d'une commande
+    // LaTeX nue (ex. « \\frac{18}{27} »). Le code est déjà protégé :
+    // réduire seulement les doubles antislashs immédiatement devant une
+    // commande mathématique connue, sans toucher aux \\ de fin de ligne TeX.
+    resultat = resultat.replace(
+      /(^|[^\\])\\\\(?=(?:frac|dfrac|tfrac|sqrt)\b)/g,
+      "$1\\"
+    );
+
     // Répare les fiches anciennes où le transport ou le modèle a supprimé
     // les antislashs/accolades de begin{pmatrix} et end{pmatrix}.
     // On reste limité aux environnements appariés, afin de ne pas changer la prose.
