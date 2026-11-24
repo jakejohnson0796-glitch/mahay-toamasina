@@ -292,7 +292,7 @@
   }
   synchroniser();
   if (selecteur) selecteur.addEventListener("change", function () {
-    champ.value = selecteur.value === "mg" ? "mg" : "fr";
+    champ.value = ["fr", "mg", "en"].includes(selecteur.value) ? selecteur.value : "fr";
   });
 })();
 </script>
