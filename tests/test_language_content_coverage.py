@@ -158,3 +158,38 @@ def test_language_switcher_syncs_server_cookie_and_keeps_ai_content_protected():
     assert "mahay-langue=en" in smoke
     assert "mahay-langue=mg" in smoke
     assert "Generated AI content must remain protected from DOM translation" in smoke
+
+def test_document_revision_detail_and_tutor_action_follow_selected_locale():
+    source = LANGUAGE_JS.read_text(encoding="utf-8")
+    template = (ROOT / "app" / "templates" / "document_revision.html").read_text(encoding="utf-8")
+    malagasy = _dictionary(
+        source,
+        "var TRADUCTIONS_MG = Object.freeze({",
+        "var TRADUCTIONS_EN",
+    )
+    english = _dictionary(
+        source,
+        "var TRADUCTIONS_EN = Object.freeze({",
+        "var noeudsOriginaux",
+    )
+
+    paragraph = (
+        "Cette fiche a été générée automatiquement depuis le texte extrait du cours. "
+        "Le rendu PDF/Word peut simplifier certaines notations scientifiques ; compare "
+        "les formules importantes avec le document original. Les exercices sont conçus "
+        "à partir des notions détectées, mais ils peuvent nécessiter une validation pédagogique."
+    )
+    assert paragraph in malagasy
+    assert paragraph in english
+    assert "Continuer mon parcours d'apprentissage" in malagasy
+    assert "Continuer mon parcours d'apprentissage" in english
+    assert malagasy["Exercice"] == "Fanazaran-tena"
+    assert 'langue == "en"' in template
+    assert 'langue == "mg"' in template
+    assert "Help me review the course" in template
+    assert "Ampio aho hamerina ny lesona" in template
+    assert "Revision sheet" in template
+    assert "Taratasy famerenana" in template
+    # Dynamic AI text is protected from interface translation; only static UI copy
+    # is translated by the browser dictionary.
+    assert 'class="ai-rendered-content" data-rendu' in template
