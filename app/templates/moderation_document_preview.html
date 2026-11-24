@@ -66,6 +66,24 @@
       {% endif %}
       <p class="moderation-fiche-note">Fanampiana hahatakarana ny tahirin-kevitra ity fiche ity; tsy misolo ny rakitra tany am-boalohany na ny fanapahan-kevitra momba ny fanamarinana.</p>
     </div>
+    <div data-fiche-lang="en" data-no-translate hidden>
+      {% if document.resume_ia_en %}
+        <div data-rendu>{{ document.resume_ia_en }}</div>
+        {% if fiche_document_en.get("objectif_pedagogique") %}<p><strong>Learning objective:</strong> <span data-rendu data-rendu-ligne>{{ fiche_document_en.get("objectif_pedagogique") }}</span></p>{% endif %}
+        {% if fiche_document_en.get("type_cours") %}<p><strong>Course type:</strong> <span data-rendu data-rendu-ligne>{{ fiche_document_en.get("type_cours") }}</span></p>{% endif %}
+        {% if fiche_document_en.get("niveau_cible") %}<p><strong>Target level:</strong> <span data-rendu data-rendu-ligne>{{ fiche_document_en.get("niveau_cible") }}</span></p>{% endif %}
+        {% if fiche_document_en.get("langue") %}<p><strong>Source language:</strong> <span data-rendu data-rendu-ligne>{{ fiche_document_en.get("langue") }}</span></p>{% endif %}
+        {% for etiquette, cle in [("Key topics", "notions_cles"), ("Skills developed", "competences_visees"), ("Prerequisites", "prerequis"), ("Identified outline", "plan_cours")] %}
+          {% if fiche_document_en.get(cle) %}<p><strong>{{ etiquette }}:</strong></p><ul>{% for valeur in fiche_document_en.get(cle, []) %}<li data-rendu data-rendu-ligne>{{ valeur }}</li>{% endfor %}</ul>{% endif %}
+        {% endfor %}
+        {% if fiche_document_en.get("limites") %}<div class="moderation-fiche-note" data-rendu>{{ fiche_document_en.get("limites") }}</div>{% endif %}
+      {% elif document.resume_statut_ia_en in ["en_attente", "en_cours", "a_generer"] %}
+        <p class="moderation-fiche-etat">The English summary is being prepared. This assistance does not replace reading the original file.</p>
+      {% else %}
+        <p class="moderation-fiche-etat">No verified English summary is available. Read the original file before making a decision.</p>
+      {% endif %}
+      <p class="moderation-fiche-note">This summary helps explain the document; it does not replace the original file or the moderation decision.</p>
+    </div>
   </section>
 
   <section class="moderation-preview-viewer">
@@ -166,7 +184,7 @@
 (function () {
   const fileUrl = "/moderation/{{ document.id }}/fichier";
   function afficherFicheDansLaLangue(langue) {
-    langue = langue === "mg" ? "mg" : "fr";
+    langue = langue === "mg" ? "mg" : langue === "en" ? "en" : "fr";
     document.querySelectorAll("[data-fiche-lang]").forEach(function (panneau) {
       panneau.hidden = panneau.getAttribute("data-fiche-lang") !== langue;
     });
