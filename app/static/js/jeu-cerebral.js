@@ -72,16 +72,16 @@
   function pauseCopy(isPaused) {
     if (!pauseButton) return;
     pauseButton.textContent = isPaused
-      ? (language === "mg" ? "Tohizo ny lalao" : "Reprendre le défi")
-      : (language === "mg" ? "Miato kely" : "Mettre en pause");
+      ? (language === "en" ? "Resume challenge" : language === "mg" ? "Tohizo ny lalao" : "Reprendre le défi")
+      : (language === "en" ? "Pause" : language === "mg" ? "Miato kely" : "Mettre en pause");
     pauseButton.setAttribute("aria-pressed", isPaused ? "true" : "false");
     if (pauseNotice) pauseNotice.hidden = !isPaused;
     if (answerFieldset) answerFieldset.disabled = isPaused;
     if (submitButton) submitButton.disabled = isPaused;
     root.classList.toggle("jeu-session-en-pause", isPaused);
     announcePause(isPaused
-      ? (language === "mg" ? "Miato ny lalao." : "Défi en pause.")
-      : (language === "mg" ? "Mitohy ny lalao." : "Défi repris."));
+      ? (language === "en" ? "The challenge is paused." : language === "mg" ? "Miato ny lalao." : "Défi en pause.")
+      : (language === "en" ? "The challenge has resumed." : language === "mg" ? "Mitohy ny lalao." : "Défi repris."));
   }
   function readDeadline() {
     var stored = Number(storageRead(deadlineKey));
@@ -96,9 +96,11 @@
     timerValue.textContent = formatSeconds(remaining);
     if (remaining <= 0) {
       if (timerPanel) timerPanel.classList.add("jeu-chrono-ecoule");
-      if (timerMessage) timerMessage.textContent = language === "mg"
-        ? "Tapitra ny fotoana kendrena — tohizo am-pitoniana."
-        : "Temps cible écoulé — tu peux continuer tranquillement.";
+      if (timerMessage) timerMessage.textContent = language === "en"
+        ? "The target time has passed — you can continue at your own pace."
+        : language === "mg"
+          ? "Tapitra ny fotoana kendrena — tohizo am-pitoniana."
+          : "Temps cible écoulé — tu peux continuer tranquillement.";
       if (interval) { window.clearInterval(interval); interval = null; }
     }
   }

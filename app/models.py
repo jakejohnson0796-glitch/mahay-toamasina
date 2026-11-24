@@ -820,6 +820,10 @@ class Document(SQLModel, table=True):
     resume_ia_mg: str = Field(default="")
     fiche_pedagogique_mg_json: str = Field(default="{}")
     resume_statut_ia_mg: str = Field(default="a_generer", index=True)
+    # Version anglaise distincte, jamais remplacée par la version française.
+    resume_ia_en: str = Field(default="")
+    fiche_pedagogique_en_json: str = Field(default="{}")
+    resume_statut_ia_en: str = Field(default="a_generer", index=True)
     # Validation explicite de l’extraction pédagogique avant usage par le Quiz/Tuteur.
     fiche_validation_statut: str = Field(default="a_verifier", index=True)
     fiche_validee_par_id: Optional[int] = Field(default=None, foreign_key="utilisateur.id")
@@ -984,6 +988,7 @@ class TentativeQuiz(SQLModel, table=True):
     tentative, pas besoin de la requeter en dehors de cette tentative."""
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    langue: str = Field(default="fr", max_length=5, index=True)
     # Source documentaire facultative : conserve le lien quiz → cours → Tuteur IA.
     document_id: Optional[int] = Field(default=None, foreign_key="document.id", index=True)
     matiere: str
@@ -1792,6 +1797,7 @@ class SessionTuteur(SQLModel, table=True):
     d'historique consultable plus tard."""
     id: Optional[int] = Field(default=None, primary_key=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id")
+    langue: str = Field(default="fr", max_length=5, index=True)
     # Source facultative conservée pour reprendre le même cours après la réponse.
     document_id: Optional[int] = Field(default=None, foreign_key="document.id", index=True)
     notion: Optional[str] = None
@@ -2023,6 +2029,7 @@ class FicheRevisionCours(SQLModel, table=True):
     cours_id: int = Field(foreign_key="cours.id", index=True)
     seance_id: int = Field(foreign_key="seance.id", index=True)
     utilisateur_id: int = Field(foreign_key="utilisateur.id", index=True)
+    langue: str = Field(default="fr", max_length=5, index=True)
     statut: StatutFicheRevisionCours = Field(
         default=StatutFicheRevisionCours.EN_ATTENTE,
         index=True,
@@ -2059,14 +2066,15 @@ class StatutFicheRevisionDocument(str, Enum):
 
 
 class FicheRevisionDocument(SQLModel, table=True):
-    """Fiche source unique pour un document de cours approuvé.
+    """Cache source séparé par document et langue de sortie.
 
-    Elle est générée une seule fois à partir du document réel puis accessible
-    aux étudiants autorisés à consulter cette ressource. Le profil personnel
-    reste séparé dans FicheRevisionCours.
+    Chaque version reste commune aux lecteurs autorisés qui ont choisi la même
+    langue ; les versions française, malagasy et anglaise ne se remplacent pas.
+    Le profil personnel reste séparé dans FicheRevisionCours.
     """
     id: Optional[int] = Field(default=None, primary_key=True)
     document_id: int = Field(foreign_key="document.id")
+    langue: str = Field(default="fr", max_length=5)
     statut: StatutFicheRevisionDocument = Field(
         default=StatutFicheRevisionDocument.EN_ATTENTE,
         index=True,
@@ -2079,10 +2087,13 @@ class FicheRevisionDocument(SQLModel, table=True):
     date_modification: datetime = Field(default_factory=datetime.utcnow)
     date_generation: Optional[datetime] = None
 
-
-
     __table_args__ = (
-        Index("uq_ficherevisiondocument_document", "document_id", unique=True),
+        Index(
+            "uq_ficherevisiondocument_document_langue",
+            "document_id",
+            "langue",
+            unique=True,
+        ),
     )
 
 
@@ -2671,6 +2682,7 @@ class AnalyseComparativeLecon(SQLModel, table=True):
     """
     id: Optional[int] = Field(default=None, primary_key=True)
     lecon_id: int = Field(foreign_key="leconreferentielle.id", index=True)
+    langue: str = Field(default="fr", max_length=5, index=True)
     contributions_ids_json: str = Field(default="[]", max_length=2000)
     resultat_json: str = Field(max_length=60000)
     modele: str = Field(max_length=120)

@@ -12,6 +12,7 @@ from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
+from ..localization import langue_depuis_requete
 from ..dependencies import acces_ia_ou_redirection
 from ..models import (
     Document, MembreCercle, MissionApprentissage, SessionTuteur, ProgressionNotion,
@@ -366,6 +367,8 @@ def demander_tuteur(
     if redirection:
         return redirection
 
+    langue = langue_depuis_requete(request)
+
     contexte_scolaire = _contexte_scolaire_tuteur(utilisateur, session)
     if getattr(utilisateur, "cycle_education", None) in {"primaire", "college", "lycee"} and not contexte_scolaire:
         return RedirectResponse(
@@ -494,6 +497,7 @@ def demander_tuteur(
             niveau=contexte_scolaire["niveau"],
             cycle_education=contexte_scolaire["cycle_education"],
             verifier=False,
+            langue=langue,
         )
     else:
         reponse = ai_quiz.generer_reponse_tuteur(
@@ -501,6 +505,7 @@ def demander_tuteur(
             notion=progression.notion if progression else None,
             matiere=matiere_pour_ia,
             verifier=False,
+            langue=langue,
         )
     # La génération initiale est déjà livrée. La relecture multi-modèles
     # est toujours une tâche durable et ne dépend plus du cycle de vie HTTP.
@@ -511,16 +516,18 @@ def demander_tuteur(
     # L'indice est capturé séparément des quatre sections canoniques.
     indice_tuteur = str(reponse.get("indice") or "").strip()[:2400]
     if not indice_tuteur:
-        indice_tuteur = (
-            "Indice de méthode : repère les données utiles et ce que l'on cherche. "
-            "Identifie la règle pertinente, puis essaie une première étape avant la correction."
-        )
+        indice_tuteur = {
+            "fr": "Indice de méthode : repère les données utiles et ce que l'on cherche. Identifie la règle pertinente, puis essaie une première étape avant la correction.",
+            "mg": "Torohevitra: fantaro ny angona ilaina sy izay tadiavina. Fantaro ny fitsipika mifandraika amin'izany, ary andramo ny dingana voalohany alohan'ny hijerena ny fanitsiana.",
+            "en": "Method hint: identify the useful information and what you are trying to find. Choose the relevant rule, then try the first step before looking at the solution.",
+        }[langue]
     # Canonisation finale avant tout stockage, même en cas de secours ou
     # d'arbitrage multi-modèles partiel.
     reponse = normaliser_structure_tuteur(reponse)
 
     session_tuteur = SessionTuteur(
         utilisateur_id=utilisateur.id,
+        langue=langue,
         document_id=document_source.id if document_source else None,
         notion=progression.notion if progression else None,
         progression_id=progression.id if progression else None,
@@ -546,7 +553,11 @@ def demander_tuteur(
         mission_adaptative.etape = "pratiquer"
         mission_adaptative.derniere_tentative_id = None
         mission_adaptative.derniere_session_tuteur_id = session_tuteur.id
-        mission_adaptative.dernier_feedback = "Explication enregistrée. Passe maintenant au quiz ciblé sur cette même notion."
+        mission_adaptative.dernier_feedback = {
+            "fr": "Explication enregistrée. Passe maintenant au quiz ciblé sur cette même notion.",
+            "mg": "Voatahiry ny fanazavana. Tohizo amin'ny quiz mifantoka amin'io hevitra io ihany.",
+            "en": "Explanation saved. Now continue with a focused quiz on this same concept.",
+        }[langue]
         mission_adaptative.date_maj = datetime.utcnow()
         mission_adaptative.date_fin = None
         session.add(mission_adaptative)
@@ -664,6 +675,7 @@ def verifier_comprehension_tuteur_session(
         exemple=session_tuteur.exemple,
         indice_precedent=session_tuteur.indice,
         reponse_etudiant=reponse,
+        langue=getattr(session_tuteur, "langue", "fr"),
     )
     session_tuteur.comprehension_reponse = reponse
     session_tuteur.comprehension_feedback = str(evaluation.get("feedback") or "")[:900]

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% block titre %}Fiche de révision — {{ document.titre }} — MITARIDALA{% endblock %}
+{% block titre %}{% if langue == "en" %}Revision sheet{% elif langue == "mg" %}Taratasy famerenana{% else %}Fiche de révision{% endif %} — {{ document.titre }} — MITARIDALA{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="ai-learning-page document-revision-page">
@@ -47,10 +47,10 @@
       <form method="post" action="/tuteur/demander" class="ai-inline-action">
         <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
         <input type="hidden" name="document_id" value="{{ document.id }}">
-        {% if priorite_cible.get("progression_id") and priorite_cible.get("statut") != "Acquis à entretenir" %}
+        {% if priorite_cible.get("progression_id") and priorite_cible.get("statut") not in ["Acquis à entretenir", "Mastered — keep practising", "Efa voafehy ka tohizo ny fanazarana"] %}
         <input type="hidden" name="progression_id" value="{{ priorite_cible.get('progression_id') }}">
         {% endif %}
-        <input type="hidden" name="question" value="Aide-moi à réviser le cours {{ document.titre }} en {{ document.matiere }}{% if priorite_cible.get('notion') %}, en priorité la notion {{ priorite_cible.get('notion') }}{% endif %}. Explique la méthode, donne un exemple, puis propose un exercice progressif sans révéler immédiatement la correction.">
+        <input type="hidden" name="question" value="{% if langue == 'en' %}Help me review the course{% elif langue == 'mg' %}Ampio aho hamerina ny lesona{% else %}Aide-moi à réviser le cours{% endif %} {{ document.titre }} {% if langue == 'en' %}in{% elif langue == 'mg' %}amin'ny taranja{% else %}en{% endif %} {{ document.matiere }}{% if priorite_cible.get('notion') %}{% if langue == 'en' %}, focusing first on{% elif langue == 'mg' %}, ka ny lohahevitra hatao laharam-pahamehana dia{% else %}, en priorité la notion{% endif %} {{ priorite_cible.get('notion') }}{% endif %}. {% if langue == 'en' %}Explain the method, give an example, then suggest a progressive exercise without revealing the solution immediately.{% elif langue == 'mg' %}Hazavao ny fomba, manomeza ohatra, ary manolora fanazaran-tena miandalana nefa aza aseho avy hatrany ny valiny.{% else %}Explique la méthode, donne un exemple, puis propose un exercice progressif sans révéler immédiatement la correction.{% endif %}">
         <button class="bouton bouton-secondaire" type="submit">Travailler avec le Tuteur IA</button>
       </form>
       {% else %}

@@ -16,6 +16,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
+from ..localization import langue_depuis_requete
 from ..config import parametres
 from ..csrf import verifier_csrf
 from ..database import get_session
@@ -1002,6 +1003,7 @@ def lancer_analyse_comparative_lecon(
     utilisateur = utilisateur_courant(request, session)
     if not administrateur_autorise(utilisateur):
         return RedirectResponse("/", status_code=303)
+    langue = langue_depuis_requete(request)
     if limite_depassee(f"harmonisation-analyse:{utilisateur.id}", 6, 3600):
         return RedirectResponse(
             f"/admin/harmonisation-nationale/lecons/{lecon_id}?erreur=limite_analyses",
@@ -1049,6 +1051,7 @@ def lancer_analyse_comparative_lecon(
         modele=str(parametres.groq_model)[:120],
         statut="en_attente",
         cree_par_id=utilisateur.id,
+        langue=langue,
     )
     session.add(analyse)
     session.commit()

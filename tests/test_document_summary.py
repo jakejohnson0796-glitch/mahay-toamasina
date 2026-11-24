@@ -172,6 +172,8 @@ def test_echec_final_ne_laisse_pas_fiche_bloquee_en_cours(monkeypatch):
         resume_statut_ia="en_cours",
         resume_ia_mg="",
         resume_statut_ia_mg="en_cours",
+        resume_ia_en="",
+        resume_statut_ia_en="en_cours",
     )
 
     class FauxSession:
@@ -218,6 +220,8 @@ def test_echec_traduction_preserve_fiche_francaise_deja_prete(monkeypatch):
         resume_statut_ia="generee",
         resume_ia_mg="",
         resume_statut_ia_mg="en_cours",
+        resume_ia_en="",
+        resume_statut_ia_en="en_cours",
     )
 
     class FauxSession:

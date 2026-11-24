@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% block titre %}{% if langue == "mg" %}Famintinana ny lalao — MITARIDALA{% else %}Ton bilan — Jeu cérébral — MITARIDALA{% endif %}{% endblock %}
+{% block titre %}{% if langue == "en" %}Your game summary — MITARIDALA{% elif langue == "mg" %}Famintinana ny lalao — MITARIDALA{% else %}Ton bilan — Jeu cérébral — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="jeu-result-page" data-partie-id="{{ partie.id }}" data-session-terminee="true">
@@ -93,97 +93,97 @@
 
   <header class="jeu-result-hero">
     <div>
-      <p class="jeu-result-eyebrow">MITARIDALA · ton petit bilan</p>
-      <h1>{% if langue == "mg" %}{{ recommandation.titre_mg }}{% else %}{{ recommandation.titre }}{% endif %}</h1>
-      <p data-no-translate>{% if langue == "mg" %}{{ recommandation.message_mg }}{% else %}{{ recommandation.message }}{% endif %}</p>
+      <p class="jeu-result-eyebrow">MITARIDALA · {% if langue == "en" %}your session summary{% elif langue == "mg" %}ny famintinanao{% else %}ton petit bilan{% endif %}</p>
+      <h1>{% if langue == "en" %}{{ recommandation.titre_en or "Your session, your progress 🌱" }}{% elif langue == "mg" %}{{ recommandation.titre_mg }}{% else %}{{ recommandation.titre }}{% endif %}</h1>
+      <p data-no-translate>{% if langue == "en" %}{{ recommandation.message_en or "Every session is a chance to practise and learn at your own pace." }}{% elif langue == "mg" %}{{ recommandation.message_mg }}{% else %}{{ recommandation.message }}{% endif %}</p>
       <div class="jeu-result-actions">
         <form method="post" action="/jeu-cerebral/demarrer">
           <input type="hidden" name="_csrf" value="{{ jeton_csrf(request) }}">
           <input type="hidden" name="theme" value="{{ partie.theme_id }}">
           <input type="hidden" name="langue" value="{{ langue }}">
-          <button class="jeu-btn jeu-btn-primary" type="submit">{{ icone("quiz", 16) }} {% if langue == "mg" %}Hilalao indray{% else %}Rejouer ce thème{% endif %}</button>
+          <button class="jeu-btn jeu-btn-primary" type="submit">{{ icone("quiz", 16) }} {% if langue == "en" %}Play this topic again{% elif langue == "mg" %}Hilalao indray{% else %}Rejouer ce thème{% endif %}</button>
         </form>
-        <a class="jeu-btn" href="/jeu-cerebral">{% if langue == "mg" %}Hanandrana lohahevitra hafa{% else %}Choisir un autre thème{% endif %}</a>
+        <a class="jeu-btn" href="/jeu-cerebral">{% if langue == "en" %}Choose another topic{% elif langue == "mg" %}Hanandrana lohahevitra hafa{% else %}Choisir un autre thème{% endif %}</a>
       </div>
     </div>
-    <div class="jeu-result-score" aria-label="Score de la session">
+    <div class="jeu-result-score" aria-label="{% if langue == 'en' %}Session score{% elif langue == 'mg' %}Isa azo tamin'ny lalao{% else %}Score de la session{% endif %}">
       <img src="/static/images/jeu-cerebral/trophy.webp" alt="" width="64" height="38" loading="lazy" decoding="async">
       <strong>{{ partie.score }} %</strong>
-      <span>{{ partie.bonnes_reponses }}/{{ partie.nb_questions }} {% if langue == "mg" %}valiny marina{% else %}bonnes réponses{% endif %}</span>
-      <div class="jeu-result-reward" role="status" aria-label="{% if langue == 'mg' %}Valisoa amin'ny lalao{% else %}Récompense de la session{% endif %}">
+      <span>{{ partie.bonnes_reponses }}/{{ partie.nb_questions }} {% if langue == "en" %}correct answers{% elif langue == "mg" %}valiny marina{% else %}bonnes réponses{% endif %}</span>
+      <div class="jeu-result-reward" role="status" aria-label="{% if langue == 'en' %}Session reward{% elif langue == 'mg' %}Valisoa amin'ny lalao{% else %}Récompense de la session{% endif %}">
         {% if partie.score >= 80 %}
           <span class="jeu-reward-stars" aria-hidden="true">✦ ✦ ✦</span>
-          <strong>{% if langue == "mg" %}Kintana telo mamirapiratra{% else %}Éclat brillant{% endif %}</strong>
-          <span>{% if langue == "mg" %}Faharetana sy fahaiza-manao{% else %}Trois étoiles de progression{% endif %}</span>
+          <strong>{% if langue == "en" %}Brilliant effort{% elif langue == "mg" %}Kintana telo mamirapiratra{% else %}Éclat brillant{% endif %}</strong>
+          <span>{% if langue == "en" %}Three stars of progress{% elif langue == "mg" %}Faharetana sy fahaiza-manao{% else %}Trois étoiles de progression{% endif %}</span>
         {% elif partie.score >= 60 %}
           <span class="jeu-reward-stars" aria-hidden="true">✦ ✦</span>
-          <strong>{% if langue == "mg" %}Kintana roa mitombo{% else %}Belle progression{% endif %}</strong>
-          <span>{% if langue == "mg" %}Mihamafy tsikelikely ny fahalalana{% else %}Deux étoiles de progression{% endif %}</span>
+          <strong>{% if langue == "en" %}Growing confidence{% elif langue == "mg" %}Kintana roa mitombo{% else %}Belle progression{% endif %}</strong>
+          <span>{% if langue == "en" %}Two stars of progress{% elif langue == "mg" %}Mihamafy tsikelikely ny fahalalana{% else %}Deux étoiles de progression{% endif %}</span>
         {% elif partie.score >= 40 %}
           <span class="jeu-reward-stars" aria-hidden="true">✦</span>
-          <strong>{% if langue == "mg" %}Kintan'ny fikirizana{% else %}Étoile de persévérance{% endif %}</strong>
-          <span>{% if langue == "mg" %}Ny fanandramana dia efa fandrosoana{% else %}Chaque essai compte{% endif %}</span>
+          <strong>{% if langue == "en" %}A star for persistence{% elif langue == "mg" %}Kintan'ny fikirizana{% else %}Étoile de persévérance{% endif %}</strong>
+          <span>{% if langue == "en" %}Every attempt counts{% elif langue == "mg" %}Ny fanandramana dia efa fandrosoana{% else %}Chaque essai compte{% endif %}</span>
         {% else %}
           <span class="jeu-reward-stars" aria-hidden="true">🌱</span>
-          <strong>{% if langue == "mg" %}Voan'ny fandrosoana{% else %}Graine de progrès{% endif %}</strong>
-          <span>{% if langue == "mg" %}Misy dingana kely foana azo atao{% else %}Un prochain petit pas t'attend{% endif %}</span>
+          <strong>{% if langue == "en" %}A seed of progress{% elif langue == "mg" %}Voan'ny fandrosoana{% else %}Graine de progrès{% endif %}</strong>
+          <span>{% if langue == "en" %}One small next step is always possible{% elif langue == "mg" %}Misy dingana kely foana azo atao{% else %}Un prochain petit pas t'attend{% endif %}</span>
         {% endif %}
       </div>
     </div>
   </header>
-  <div class="jeu-result-settings"><label><input type="checkbox" id="jeu-reduire-animations-resultat"><span>{% if langue == "mg" %}Ahena ny animation{% else %}Réduire les animations{% endif %}</span></label></div>
+  <div class="jeu-result-settings"><label><input type="checkbox" id="jeu-reduire-animations-resultat"><span>{% if langue == "en" %}Reduce animations{% elif langue == "mg" %}Ahena ny animation{% else %}Réduire les animations{% endif %}</span></label></div>
 
   {% if partie.source_generation != "ia" %}
   <div class="jeu-result-section" role="note">
-    <p class="jeu-result-muted" style="margin:0">{% if langue == "mg" %}{% if partie.source_generation == "mixte" %}Nampifangaroana fanontaniana IA vaovao sy fanazaran-tena hafa ny lalao mba hampihenana ny famerimberenana.{% else %}Fanazaran-tena voaomana no nampiasaina satria tsy nisy ny famoronana IA tamin'ity lalao ity.{% endif %}{% else %}{% if partie.source_generation == "mixte" %}Cette session mélange des questions IA inédites et des exercices de secours distincts pour limiter les répétitions.{% else %}Cette session a utilisé la banque locale de secours, car la génération IA était indisponible ou non autorisée pour cette partie.{% endif %}{% endif %}</p>
+    <p class="jeu-result-muted" style="margin:0">{% if langue == "en" %}{% if partie.source_generation == "mixte" %}This session combines new AI questions with distinct backup exercises to reduce repetition.{% else %}This session used prepared backup exercises because AI generation was unavailable or not enabled.{% endif %}{% elif langue == "mg" %}{% if partie.source_generation == "mixte" %}Nampifangaroana fanontaniana IA vaovao sy fanazaran-tena hafa ny lalao mba hampihenana ny famerimberenana.{% else %}Fanazaran-tena voaomana no nampiasaina satria tsy nisy ny famoronana IA tamin'ity lalao ity.{% endif %}{% else %}{% if partie.source_generation == "mixte" %}Cette session mélange des questions IA inédites et des exercices de secours distincts pour limiter les répétitions.{% else %}Cette session a utilisé la banque locale de secours, car la génération IA était indisponible ou non autorisée pour cette partie.{% endif %}{% endif %}</p>
   </div>
   {% endif %}
 
   <section class="jeu-result-section" aria-labelledby="jeu-conseils-title">
-    <h2 id="jeu-conseils-title">{% if langue == "mg" %}Hevitra malefaka ho an'ny dingana manaraka{% else %}Quelques pistes pour la suite{% endif %}</h2>
-    <p class="jeu-result-muted">{% if langue == "mg" %}Ireo soso-kevitra ireo dia mifototra amin'ny valinteninao tamin'ity lalao ity ihany. Tsy fitsarana anao izy ireo.{% else %}Ces pistes sont basées uniquement sur tes réponses à cette session. Elles ne sont ni une note scolaire ni un jugement sur tes capacités.{% endif %}</p>
+    <h2 id="jeu-conseils-title">{% if langue == "en" %}A few ideas for your next step{% elif langue == "mg" %}Hevitra malefaka ho an'ny dingana manaraka{% else %}Quelques pistes pour la suite{% endif %}</h2>
+    <p class="jeu-result-muted">{% if langue == "en" %}These suggestions are based only on your answers in this session. They are not a school grade or a judgement about your abilities.{% elif langue == "mg" %}Ireo soso-kevitra ireo dia mifototra amin'ny valinteninao tamin'ity lalao ity ihany. Tsy fitsarana anao izy ireo.{% else %}Ces pistes sont basées uniquement sur tes réponses à cette session. Elles ne sont ni une note scolaire ni un jugement sur tes capacités.{% endif %}</p>
     <div class="jeu-tip-grid">
       <article class="jeu-tip">
-        <h3>🌟 {% if langue == "mg" %}Izay efa hitanao tsara{% else %}Ce que tu as bien repéré{% endif %}</h3>
+        <h3>🌟 {% if langue == "en" %}What you did well{% elif langue == "mg" %}Izay efa hitanao tsara{% else %}Ce que tu as bien repéré{% endif %}</h3>
         {% if recommandation.points_forts %}
           <div class="jeu-chip-list" data-no-translate>{% for piste in recommandation.points_forts %}<span class="jeu-chip">{{ piste }}</span>{% endfor %}</div>
         {% else %}
-          <p>{% if langue == "mg" %}Mbola eo am-pananganana ireo fomba fisainana ireo ianao. Misy fotoana foana hianarana tsikelikely.{% else %}Ces réflexes sont encore en construction. Tu auras d'autres occasions de les pratiquer tranquillement.{% endif %}</p>
+          <p>{% if langue == "en" %}These skills are still developing. There will be other chances to practise them, one step at a time.{% elif langue == "mg" %}Mbola eo am-pananganana ireo fomba fisainana ireo ianao. Misy fotoana foana hianarana tsikelikely.{% else %}Ces réflexes sont encore en construction. Tu auras d'autres occasions de les pratiquer tranquillement.{% endif %}</p>
         {% endif %}
       </article>
       <article class="jeu-tip">
-        <h3>🌱 {% if langue == "mg" %}Hevitra azo hamafisina{% else %}Des idées à renforcer doucement{% endif %}</h3>
+        <h3>🌱 {% if langue == "en" %}Ideas to practise a little more{% elif langue == "mg" %}Hevitra azo hamafisina{% else %}Des idées à renforcer doucement{% endif %}</h3>
         {% if recommandation.a_explorer %}
           <div class="jeu-chip-list" data-no-translate>{% for piste in recommandation.a_explorer %}<span class="jeu-chip">{{ piste }}</span>{% endfor %}</div>
         {% else %}
-          <p>{% if langue == "mg" %}Tsy nisy lohahevitra iray tena niavaka ho sarotra. Azonao atao ny manandrana ambaratonga hafa mba hikarohana bebe kokoa.{% else %}Aucune notion n'est ressortie comme particulièrement difficile. Tu peux essayer un niveau différent pour explorer davantage.{% endif %}</p>
+          <p>{% if langue == "en" %}No topic stood out as especially difficult. You can try another level to explore further.{% elif langue == "mg" %}Tsy nisy lohahevitra iray tena niavaka ho sarotra. Azonao atao ny manandrana ambaratonga hafa mba hikarohana bebe kokoa.{% else %}Aucune notion n'est ressortie comme particulièrement difficile. Tu peux essayer un niveau différent pour explorer davantage.{% endif %}</p>
         {% endif %}
       </article>
     </div>
     <div class="jeu-advice" data-no-translate>
-      <strong>{% if langue == "mg" %}Soso-kevitra manokana{% else %}Une idée pour la prochaine fois{% endif %}</strong><br>
-      {% if langue == "mg" %}{{ recommandation.conseil_mg }}{% else %}{{ recommandation.conseil }}{% endif %}
+      <strong>{% if langue == "en" %}A suggestion for next time{% elif langue == "mg" %}Soso-kevitra manokana{% else %}Une idée pour la prochaine fois{% endif %}</strong><br>
+      {% if langue == "en" %}{{ recommandation.conseil_en or "Try another short activity on the same topic when you feel ready." }}{% elif langue == "mg" %}{{ recommandation.conseil_mg }}{% else %}{{ recommandation.conseil }}{% endif %}
     </div>
     <div class="jeu-result-actions">
-      <a class="jeu-btn" href="/quiz">{{ icone("quiz", 16) }} {% if langue == "mg" %}Hanao quiz momba ny lesona{% else %}Relier ces réflexes à mes cours{% endif %}</a>
-      <a class="jeu-btn" href="/mes-revisions">{% if langue == "mg" %}Hijery ny famerenako lesona{% else %}Voir mes révisions{% endif %}</a>
+      <a class="jeu-btn" href="/quiz">{{ icone("quiz", 16) }} {% if langue == "en" %}Connect these skills to my courses{% elif langue == "mg" %}Hanao quiz momba ny lesona{% else %}Relier ces réflexes à mes cours{% endif %}</a>
+      <a class="jeu-btn" href="/mes-revisions">{% if langue == "en" %}View my revision sheets{% elif langue == "mg" %}Hijery ny famerenako lesona{% else %}Voir mes révisions{% endif %}</a>
     </div>
   </section>
 
   <section class="jeu-result-section" aria-labelledby="jeu-reponses-title">
-    <h2 id="jeu-reponses-title">{% if langue == "mg" %}Hodinihintsika moramora ireo fanontaniana{% else %}Revenons doucement sur les questions{% endif %}</h2>
-    <p class="jeu-result-muted">{% if langue == "mg" %}Ny fanazavana dia manampy hahatakatra ny fomba fisainana, fa tsy ny isa ihany.{% else %}Les explications servent à comprendre le raisonnement, pas seulement à regarder le score.{% endif %}</p>
+    <h2 id="jeu-reponses-title">{% if langue == "en" %}Let's review the questions{% elif langue == "mg" %}Hodinihintsika moramora ireo fanontaniana{% else %}Revenons doucement sur les questions{% endif %}</h2>
+    <p class="jeu-result-muted">{% if langue == "en" %}The explanations help you understand the reasoning, not just see your score.{% elif langue == "mg" %}Ny fanazavana dia manampy hahatakatra ny fomba fisainana, fa tsy ny isa ihany.{% else %}Les explications servent à comprendre le raisonnement, pas seulement à regarder le score.{% endif %}</p>
     <div class="jeu-answer-list">
       {% for correction in corrections %}
       <article class="jeu-answer">
         <div class="jeu-answer-head">
           <strong>{{ correction.numero }}. <span data-no-translate data-rendu>{{ correction.question }}</span></strong>
-          <span class="jeu-answer-state">{% if correction.correcte %}{% if langue == "mg" %}Marina 🌱{% else %}Juste 🌱{% endif %}{% else %}{% if langue == "mg" %}Fotoana hianarana 🌷{% else %}À retenir 🌷{% endif %}{% endif %}</span>
+          <span class="jeu-answer-state">{% if correction.correcte %}{% if langue == "en" %}Correct 🌱{% elif langue == "mg" %}Marina 🌱{% else %}Juste 🌱{% endif %}{% else %}{% if langue == "en" %}A chance to learn 🌷{% elif langue == "mg" %}Fotoana hianarana 🌷{% else %}À retenir 🌷{% endif %}{% endif %}</span>
         </div>
-        <p class="jeu-answer-label">{% if langue == "mg" %}Valinteninao{% else %}Ta réponse{% endif %} :</p>
+        <p class="jeu-answer-label">{% if langue == "en" %}Your answer{% elif langue == "mg" %}Valinteninao{% else %}Ta réponse{% endif %} :</p>
         <p data-no-translate data-rendu>{% if correction.reponse_choisie is not none and correction.reponse_choisie >= 0 and correction.reponse_choisie < correction.choix|length %}{{ correction.choix[correction.reponse_choisie] }}{% else %}—{% endif %}</p>
         {% if not correction.correcte %}
-        <p class="jeu-answer-label">{% if langue == "mg" %}Valiny marina{% else %}Bonne réponse{% endif %} :</p>
+        <p class="jeu-answer-label">{% if langue == "en" %}Correct answer{% elif langue == "mg" %}Valiny marina{% else %}Bonne réponse{% endif %} :</p>
         <p data-no-translate data-rendu>{% if correction.reponse_correcte is not none and correction.reponse_correcte >= 0 and correction.reponse_correcte < correction.choix|length %}{{ correction.choix[correction.reponse_correcte] }}{% endif %}</p>
         {% endif %}
         {% if correction.explication %}<p class="jeu-answer-explain" data-no-translate data-rendu>{{ correction.explication }}</p>{% endif %}

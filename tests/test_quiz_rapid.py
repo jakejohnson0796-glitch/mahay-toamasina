@@ -375,7 +375,7 @@ def test_quiz_cible_n_utilise_pas_un_budget_inexistant(monkeypatch):
     class _Completion:
         choices = [_Choice()]
 
-    def fake_completion(client, messages, max_completion_tokens, expected_count):
+    def fake_completion(client, messages, max_completion_tokens, expected_count, langue="fr"):
         captured["max_completion_tokens"] = max_completion_tokens
         captured["expected_count"] = expected_count
         return _Completion(), None
@@ -479,7 +479,7 @@ def test_quiz_cible_utilise_la_memoire_tuteur_sans_en_faire_des_instructions(mon
         lambda **_kwargs: "",
     )
 
-    def generation_fictive(_client, messages_par_essai, max_completion_tokens, expected_count):
+    def generation_fictive(_client, messages_par_essai, max_completion_tokens, expected_count, langue="fr"):
         capture["prompt"] = messages_par_essai[0]
         capture["tokens"] = max_completion_tokens
         capture["count"] = expected_count
@@ -520,7 +520,7 @@ def test_quiz_general_tient_compte_des_notion_a_consolider_du_profil(monkeypatch
         lambda **_kwargs: "",
     )
 
-    def generation_fictive(_client, messages_par_essai, max_completion_tokens, expected_count):
+    def generation_fictive(_client, messages_par_essai, max_completion_tokens, expected_count, langue="fr"):
         capture["prompt"] = messages_par_essai[0]
         return object(), None
 

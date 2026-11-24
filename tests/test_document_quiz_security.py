@@ -55,10 +55,11 @@ def test_quiz_depuis_document_cree_une_tentative_interactive(monkeypatch):
     monkeypatch.setattr(documents_router, "acces_premium_ou_redirection", lambda utilisateur, session: None)
     monkeypatch.setattr(documents_router, "ouvrir_fichier_local", lambda chemin: _FakeContext("/tmp/cours.pdf"))
     monkeypatch.setattr(documents_router, "extraire_texte", lambda chemin: "Texte de cours suffisamment long pour générer un quiz.")
-    monkeypatch.setattr(
-        documents_router,
-        "generer_quiz_depuis_texte",
-        lambda texte, nb_questions=5, questions_a_eviter=None: [
+    langues_recues = []
+
+    def generer_quiz_simule(texte, nb_questions=5, questions_a_eviter=None, langue="fr"):
+        langues_recues.append(langue)
+        return [
             {
                 "question": enonce,
                 "choix": ["A", "B", "C", "D"],
@@ -73,16 +74,27 @@ def test_quiz_depuis_document_cree_une_tentative_interactive(monkeypatch):
                 "Quelle est la dérivée de x² ?",
                 "Quel nombre suit la suite 2, 4, 6 ?",
             ][:nb_questions]
-        ],
+        ]
+
+    monkeypatch.setattr(
+        documents_router,
+        "generer_quiz_depuis_texte",
+        generer_quiz_simule,
     )
     monkeypatch.setattr(documents_router.ai_queue, "planifier_verification_quiz", lambda tentative_id: 9)
 
     session = FakeSession()
-    response = documents_router.quiz_document(SimpleNamespace(session={}), 42, session)
+    response = documents_router.quiz_document(
+        SimpleNamespace(session={}, cookies={"mahay-langue": "en"}),
+        42,
+        session,
+    )
     assert response.status_code == 303
     assert response.headers["location"] == "/quiz/123"
     assert session.tentative is not None
     assert session.tentative.nb_questions == 5
+    assert session.tentative.langue == "en"
+    assert langues_recues == ["en"]
     assert session.tentative.reponses_json is None
 
 
