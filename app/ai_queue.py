@@ -348,8 +348,12 @@ def planifier_analyse_comparative_lecon(analyse_id: int) -> Optional[int]:
 def planifier_fiche_revision_document(
     document_id: int,
     forcer: bool = False,
+    langue: str = "fr",
 ) -> Optional[int]:
-    """Met en file une fiche téléchargeable depuis le contenu d'un cours approuvé."""
+    """Met en file la fiche source du cours dans la langue demandée."""
+    from .localization import normaliser_langue
+
+    langue = normaliser_langue(langue)
     tache_id = None
     notifier = False
     maintenant = datetime.utcnow()
@@ -365,7 +369,10 @@ def planifier_fiche_revision_document(
 
             fiche = session.exec(
                 select(FicheRevisionDocument)
-                .where(FicheRevisionDocument.document_id == document_id)
+                .where(
+                    FicheRevisionDocument.document_id == document_id,
+                    FicheRevisionDocument.langue == langue,
+                )
                 .limit(1)
             ).first()
             from .course_revision import VERSION_GENERATION_DOCUMENT
@@ -383,6 +390,7 @@ def planifier_fiche_revision_document(
             if fiche is None:
                 fiche = FicheRevisionDocument(
                     document_id=document_id,
+                    langue=langue,
                     statut=StatutFicheRevisionDocument.EN_ATTENTE,
                 )
                 session.add(fiche)
@@ -460,7 +468,10 @@ def planifier_fiche_revision_document(
             with Session(engine) as session:
                 fiche = session.exec(
                     select(FicheRevisionDocument)
-                    .where(FicheRevisionDocument.document_id == document_id)
+                    .where(
+                        FicheRevisionDocument.document_id == document_id,
+                        FicheRevisionDocument.langue == langue,
+                    )
                     .limit(1)
                 ).first()
                 if fiche is None:
@@ -533,6 +544,7 @@ def planifier_fiches_revision_documents_manquantes(max_documents: int = 3) -> in
 def reparer_fiches_revision_documents_bloquees(
     max_documents: int = 5,
     document_ids: Optional[list[int]] = None,
+    langue: str = "fr",
 ) -> int:
     """Répare les fiches en attente/en cours dont la tâche IA manque ou est terminale.
 
@@ -540,6 +552,9 @@ def reparer_fiches_revision_documents_bloquees(
     affichage de la bibliothèque. Les fiches ayant réellement échoué restent
     en échec et nécessitent la relance explicite réservée au déposant/admin.
     """
+    from .localization import normaliser_langue
+
+    langue = normaliser_langue(langue)
     limite = max(1, min(int(max_documents or 1), 10))
     with Session(engine) as session:
         requete = (
@@ -559,6 +574,7 @@ def reparer_fiches_revision_documents_bloquees(
             .where(
                 Document.statut == StatutDocument.APPROUVE,
                 Document.type_document == TypeDocument.COURS,
+                FicheRevisionDocument.langue == langue,
                 or_(
                     (
                         FicheRevisionDocument.statut.in_([
@@ -634,7 +650,9 @@ def reparer_fiches_revision_documents_bloquees(
                 StatutTacheIA.TERMINEE,
             }
         ):
-            if planifier_fiche_revision_document(int(document_id)) is not None:
+            if planifier_fiche_revision_document(
+                int(document_id), langue=langue
+            ) is not None:
                 reparations += 1
 
     if reparations:
