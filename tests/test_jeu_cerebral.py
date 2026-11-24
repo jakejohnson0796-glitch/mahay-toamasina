@@ -372,3 +372,45 @@ def test_historique_du_jeu_ne_retient_que_les_questions_reellement_posees():
         banque[3]["question"],
         banque[1]["question"],
     ]
+
+def test_recommandation_de_jeu_fournit_des_messages_dans_les_trois_langues():
+    for langue in ("fr", "mg", "en"):
+        questions = _questions_test()
+        for question in questions:
+            question["notion"] = "logical reasoning" if langue == "en" else question["notion"]
+        etat = jeu_cerebral.etat_initial(questions, "Facile")
+        etat["langue"] = langue
+        for numero in range(jeu_cerebral.NB_QUESTIONS_SESSION):
+            courant = etat["ordre"][-1]
+            etat, _, _ = jeu_cerebral.enregistrer_reponse(
+                questions, etat, courant, 1, langue=langue
+            )
+
+        bilan = jeu_cerebral.construire_recommandation("logique", questions, etat)
+
+        assert bilan["titre"]
+        assert bilan["message"]
+        assert bilan["titre_mg"]
+        assert bilan["message_mg"]
+        assert bilan["titre_en"]
+        assert bilan["message_en"]
+        assert bilan["conseil_en"]
+        if langue == "en":
+            assert "Every attempt" in bilan["message_en"] or "Thanks for playing" in bilan["message_en"]
+            assert "logique" not in bilan["conseil_en"].lower()
+
+
+def test_interfaces_jeu_cerebral_transmettent_la_langue_jusqu_au_resultat():
+    route = (ROOT / "app" / "routers" / "jeu_cerebral_router.py").read_text(encoding="utf-8")
+    accueil = (ROOT / "app" / "templates" / "jeu_cerebral.html").read_text(encoding="utf-8")
+    session = (ROOT / "app" / "templates" / "jeu_cerebral_session.html").read_text(encoding="utf-8")
+    resultat = (ROOT / "app" / "templates" / "jeu_cerebral_resultat.html").read_text(encoding="utf-8")
+    script = (ROOT / "app" / "static" / "js" / "jeu-cerebral.js").read_text(encoding="utf-8")
+
+    assert '"langue": langue_depuis_requete(request)' in route
+    assert 'langue == "en"' in accueil
+    assert 'langue == "en"' in session
+    assert 'langue == "en"' in resultat
+    assert "Your session, your progress" in resultat
+    assert 'language === "en" ? "Resume challenge"' in script
+    assert "The target time has passed" in script
