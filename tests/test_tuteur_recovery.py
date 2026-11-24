@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+import pytest
+
 from sqlmodel import Session, SQLModel, create_engine
 
 from app import ai_queue, ai_quiz
