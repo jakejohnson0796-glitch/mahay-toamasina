@@ -160,7 +160,8 @@ def test_fiche_revision_refuse_un_non_membre_du_cercle(monkeypatch, route_kind):
     assert response.headers["location"] == "/cercles/321"
 
 
-def test_consultation_construit_une_fiche_personnalisee_pour_le_compte_connecte(monkeypatch):
+@pytest.mark.parametrize("langue", ["fr", "mg", "en"])
+def test_consultation_construit_une_fiche_personnalisee_pour_le_compte_connecte(monkeypatch, langue):
     users = [make_user(7, "Étudiant A"), make_user(8, "Étudiant B")]
     current = {"user": users[0]}
     source = {"resume": "Contenu source partagé"}
@@ -175,7 +176,7 @@ def test_consultation_construit_une_fiche_personnalisee_pour_le_compte_connecte(
     monkeypatch.setattr(course_revision, "normaliser_fiche_revision", lambda _raw, langue="fr": dict(source))
 
     def personnaliser(_session, _document, utilisateur_id, fiche, langue="fr"):
-        profil = {"utilisateur_id": utilisateur_id}
+        profil = {"utilisateur_id": utilisateur_id, "langue": langue}
         profils_generes.append(profil)
         return {**fiche, "profil_personnalise": profil}
 
@@ -197,7 +198,7 @@ def test_consultation_construit_une_fiche_personnalisee_pour_le_compte_connecte(
     for user in users:
         current["user"] = user
         response = documents_router.consulter_fiche_revision_document(
-            SimpleNamespace(session={}),
+            SimpleNamespace(session={}, cookies={"mahay-langue": langue}),
             51,
             FakeSession(make_document(), make_fiche()),
         )
@@ -205,6 +206,7 @@ def test_consultation_construit_une_fiche_personnalisee_pour_le_compte_connecte(
 
     assert [c["fiche_contenu"]["profil_personnalise"]["utilisateur_id"] for c in contextes] == [7, 8]
     assert [p["utilisateur_id"] for p in profils_generes] == [7, 8]
+    assert [p["langue"] for p in profils_generes] == [langue, langue]
     assert source == {"resume": "Contenu source partagé"}
 
 
@@ -219,8 +221,9 @@ def test_consultation_construit_une_fiche_personnalisee_pour_le_compte_connecte(
         ),
     ],
 )
+@pytest.mark.parametrize("langue", ["fr", "mg", "en"])
 def test_export_revision_recalcule_le_profil_du_compte_et_ne_cache_pas_la_fiche(
-    monkeypatch, format_fichier, media_type, prefix
+    monkeypatch, format_fichier, media_type, prefix, langue
 ):
     users = [make_user(7, "Étudiant A"), make_user(8, "Étudiant B")]
     current = {"user": users[0]}
@@ -238,7 +241,7 @@ def test_export_revision_recalcule_le_profil_du_compte_et_ne_cache_pas_la_fiche(
     )
 
     def personnaliser(_session, _document, utilisateur_id, fiche, langue="fr"):
-        profil = {"utilisateur_id": utilisateur_id}
+        profil = {"utilisateur_id": utilisateur_id, "langue": langue}
         profils_generes.append(profil)
         return {**fiche, "profil_personnalise": profil}
 
@@ -258,7 +261,7 @@ def test_export_revision_recalcule_le_profil_du_compte_et_ne_cache_pas_la_fiche(
     for user in users:
         current["user"] = user
         response = documents_router.telecharger_fiche_revision_document(
-            SimpleNamespace(session={}),
+            SimpleNamespace(session={}, cookies={"mahay-langue": langue}),
             51,
             format_fichier,
             FakeSession(make_document(), make_fiche()),
@@ -274,3 +277,4 @@ def test_export_revision_recalcule_le_profil_du_compte_et_ne_cache_pas_la_fiche(
         f"{prefix}:Étudiant B:8".encode(),
     ]
     assert [p["utilisateur_id"] for p in profils_generes] == [7, 8]
+    assert [p["langue"] for p in profils_generes] == [langue, langue]
