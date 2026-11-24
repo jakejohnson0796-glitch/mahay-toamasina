@@ -1469,6 +1469,7 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
         {
             "utilisateur": utilisateur,
             "tentative": tentative,
+            "langue": tentative.langue or "fr",
             "questions": questions_resultat,
             "reponses": reponses_resultat,
             "confiances": confiances_resultat,
