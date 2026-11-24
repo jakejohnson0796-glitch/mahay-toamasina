@@ -1875,6 +1875,7 @@ def telecharger_fiche_revision_document(
     session: Session = Depends(get_session),
 ):
     """Télécharge le carnet source dans un format lisible, après recontrôle d'accès."""
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -1895,14 +1896,20 @@ def telecharger_fiche_revision_document(
 
     fiche = session.exec(
         select(FicheRevisionDocument).where(
-            FicheRevisionDocument.document_id == document_id
+            FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
         )
     ).first()
+    if fiche is None:
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
+            status_code=303,
+        )
     if fiche and (
         fiche.statut == StatutFicheRevisionDocument.TERMINEE
         and fiche.version_generation != course_revision.VERSION_GENERATION_DOCUMENT
     ):
-        ai_queue.planifier_fiche_revision_document(document_id)
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
         return RedirectResponse(
             f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
             status_code=303,
@@ -1914,7 +1921,7 @@ def telecharger_fiche_revision_document(
         )
 
     try:
-        contenu = course_revision.normaliser_fiche_revision(json.loads(fiche.contenu_json))
+        contenu = course_revision.normaliser_fiche_revision(json.loads(fiche.contenu_json), langue=langue)
     except (TypeError, ValueError, json.JSONDecodeError):
         return RedirectResponse(
             f"/documents/{document_id}/apprendre?revision=indisponible#revision-automatique",
@@ -1923,7 +1930,7 @@ def telecharger_fiche_revision_document(
 
     # Les exports PDF et Word reçoivent la même version privée que le navigateur.
     contenu = course_revision.personnaliser_fiche_revision_document(
-        session, document, utilisateur.id, contenu
+        session, document, utilisateur.id, contenu, langue=langue
     )
 
     filiere = session.get(Filiere, document.filiere_id) if document.filiere_id else None
@@ -1993,6 +2000,7 @@ def relancer_fiche_revision_document(
     _csrf: None = Depends(verifier_csrf),
 ):
     """Autorise l'auteur ou un administrateur à relancer une fiche qui a échoué."""
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -2014,13 +2022,13 @@ def relancer_fiche_revision_document(
 
     fiche = session.exec(
         select(FicheRevisionDocument).where(
-            FicheRevisionDocument.document_id == document_id
+            FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
         )
     ).first()
     if not fiche or fiche.statut != StatutFicheRevisionDocument.ECHOUEE:
         return RedirectResponse(f"/documents/{document_id}/apprendre#revision-automatique", status_code=303)
 
-    ai_queue.planifier_fiche_revision_document(document_id, forcer=True)
+    ai_queue.planifier_fiche_revision_document(document_id, forcer=True, langue=langue)
     return RedirectResponse(
         f"/documents/{document_id}/apprendre?revision=relancee#revision-automatique",
         status_code=303,
