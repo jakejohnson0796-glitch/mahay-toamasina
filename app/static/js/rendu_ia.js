@@ -129,12 +129,14 @@
     const commandesTeXReparables =
       /(?:begin|end|frac|dfrac|tfrac|binom|sqrt|ce|pu|text|textbf|textit|mathrm|mathbf|mathbb|mathcal|mathfrak|operatorname|vec|bar|overline|hat|widehat|widetilde|sum|prod|int|iint|iiint|oint|lim|log|ln|sin|cos|tan|cot|exp|det|tr|diag|min|max|alpha|beta|gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|hbar|nabla|partial|times|cdot|pm|leq|geq|neq|approx|infty|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow|iff)\b/;
     resultat = resultat
-      .replace(/\\{2,}(?=[A-Za-z])/g, function (antislashs, offset, texte) {
-        const commande = commandesTeXReparables.exec(texte.slice(offset + antislashs.length));
-        return commande ? "\\" : antislashs;
+      // Deux antislashs exactement : un triple peut être un saut de ligne TeX
+      // suivi d'une commande (\\\\\lambda) et doit rester intact.
+      .replace(/(^|[^\\])\\\\(?=[A-Za-z])/g, function (antislashs, prefixe, offset, texte) {
+        const commande = commandesTeXReparables.exec(texte.slice(offset + prefixe.length + 2));
+        return commande ? prefixe + "\\" : antislashs;
       })
-      .replace(/\\{2,}(?=[([])/g, "\\")
-      .replace(/\\{2,}(?=[)\]])/g, "\\");
+      .replace(/(^|[^\\])\\\\(?=[([])/g, "$1\\")
+      .replace(/(^|[^\\])\\\\(?=[)\]])/g, "$1\\");
 
     // Répare les fiches anciennes où le transport ou le modèle a supprimé
     // les antislashs/accolades de begin{pmatrix} et end{pmatrix}.
