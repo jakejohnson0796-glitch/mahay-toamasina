@@ -408,6 +408,7 @@ def test_interfaces_jeu_cerebral_transmettent_la_langue_jusqu_au_resultat():
     script = (ROOT / "app" / "static" / "js" / "jeu-cerebral.js").read_text(encoding="utf-8")
 
     assert '"langue": langue_depuis_requete(request)' in route
+    assert "normaliser_langue(langue or langue_depuis_requete(request))" in route
     assert 'langue == "en"' in accueil
     assert 'langue == "en"' in session
     assert 'langue == "en"' in resultat
