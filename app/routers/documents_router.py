@@ -1858,6 +1858,7 @@ def consulter_fiche_revision_document(
         "document_revision.html",
         {
             "utilisateur": utilisateur,
+            "langue": langue,
             "document": document,
             "fiche_revision_document": fiche,
             "fiche_contenu": contenu,
