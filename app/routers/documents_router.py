@@ -410,6 +410,10 @@ def liste_documents(
         document.id: _charger_fiche_pedagogique_json(document.fiche_pedagogique_mg_json)
         for document in documents_affiches
     }
+    fiches_documents_en = {
+        document.id: _charger_fiche_pedagogique_json(document.fiche_pedagogique_en_json)
+        for document in documents_affiches
+    }
 
     # État du carnet de révision basé sur le document source, distinct
     # de la fiche pédagogique et du carnet individuel des classes virtuelles.
@@ -568,6 +572,8 @@ def liste_documents(
             "mes_depots": mes_depots,
             "fiches_documents": fiches_documents,
             "fiches_documents_mg": fiches_documents_mg,
+            "fiches_documents_en": fiches_documents_en,
+            "langue": langue,
             "fiches_revision_documents": fiches_revision_documents,
             "filieres": filieres,
             "niveaux_scolaires": niveaux_scolaires,
@@ -1628,6 +1634,7 @@ def consulter_document_moderation(
             "erreur_apercu": erreur_apercu,
             "fiche_document": _charger_fiche_pedagogique(document),
             "fiche_document_mg": _charger_fiche_pedagogique_json(document.fiche_pedagogique_mg_json),
+            "fiche_document_en": _charger_fiche_pedagogique_json(document.fiche_pedagogique_en_json),
         },
     )
 
@@ -2157,6 +2164,9 @@ def valider_fiche_document(
         document.resume_ia_mg = ""
         document.fiche_pedagogique_mg_json = "{}"
         document.resume_statut_ia_mg = "indisponible"
+        document.resume_ia_en = ""
+        document.fiche_pedagogique_en_json = "{}"
+        document.resume_statut_ia_en = "a_generer"
 
     session.add(document)
     session.commit()
@@ -2594,6 +2604,9 @@ def enregistrer_modification_document(
         document.resume_ia_mg = ""
         document.fiche_pedagogique_mg_json = "{}"
         document.resume_statut_ia_mg = "indisponible"
+        document.resume_ia_en = ""
+        document.fiche_pedagogique_en_json = "{}"
+        document.resume_statut_ia_en = "a_generer"
 
     fiches_revision_document = session.exec(
         select(FicheRevisionDocument).where(
