@@ -673,6 +673,93 @@ if ((doubledChoicePlain.textContent || '').includes(doubledBackslash) || (double
   throw new Error('A raw/double-escaped fraction remained visible in an adaptive quiz choice');
 }
 
+// Cas multidisciplinaires : réparer les notations scientifiques sans réécrire
+// les données cliniques, coordonnées, dates historiques ou le code informatique.
+const singleBackslash = String.fromCharCode(92);
+const trailingFractionHost = window.document.createElement('h2');
+trailingFractionHost.className = 'quiz-question-title';
+trailingFractionHost.dataset.rendu = '';
+window.document.body.appendChild(trailingFractionHost);
+window.rendreReponseIA(
+  'Fraction : ' + doubledBackslash + 'frac{18}{27}' + singleBackslash + ' rehefa ampahatsiahivina.',
+  trailingFractionHost
+);
+if (!trailingFractionHost.querySelector('.katex') || trailingFractionHost.querySelector('.katex-error')) {
+  throw new Error('A trailing transport backslash prevented quiz fraction rendering');
+}
+const trailingFractionPlain = trailingFractionHost.cloneNode(true);
+trailingFractionPlain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+if ((trailingFractionPlain.textContent || '').includes(singleBackslash) || (trailingFractionPlain.textContent || '').includes('frac')) {
+  throw new Error('A trailing transport backslash or raw fraction command remained visible');
+}
+
+const disciplinesHost = window.document.createElement('div');
+window.document.body.appendChild(disciplinesHost);
+const latexSlash = String.fromCharCode(92);
+const inlineFormula = (formula) => latexSlash + '(' + formula + latexSlash + ')';
+const codeFence = String.fromCharCode(96).repeat(3);
+const disciplinesSource = [
+  'Mathématiques : ' + doubledBackslash + 'frac{3}{4} et ' + doubledBackslash + 'sqrt{81}.',
+  'Physique : ' + inlineFormula(latexSlash + 'Delta E=' + latexSlash + 'hbar' + latexSlash + 'omega') +
+    ', ' + inlineFormula('v=3' + latexSlash + ', ' + latexSlash + 'mathrm{m/s}') +
+    ', ' + inlineFormula('a=2' + latexSlash + ', ' + latexSlash + 'mathrm{m/s^{2}}') +
+    ', ' + inlineFormula(latexSlash + 'pu{9.81 m/s^2}'),
+  "Chimie : " + inlineFormula(latexSlash + 'ce{2H2 + O2 -> 2H2O}') +
+    '. Biologie : ' + inlineFormula(latexSlash + 'ce{C6H12O6}') + ". Co n'est pas CO.",
+  'Statistiques : ' + inlineFormula(latexSlash + 'bar{x}=' + latexSlash + 'frac{1}{n}' + latexSlash + 'sum_{i=1}^{n}x_i') +
+    ', ' + inlineFormula('P(X=k)=' + latexSlash + 'binom{n}{k}p^k(1-p)^{n-k}') +
+    ', ' + inlineFormula(latexSlash + 'chi^{2}=' + latexSlash + 'sum' + latexSlash + 'frac{(O-E)^2}{E}'),
+  'Médecine : tension (120/80 mmHg), glycémie 5 mg/dL, température 37,0 °C, SpO₂ 98 %.',
+  'Géographie : coordonnées (18°54′S, 47°31′E), altitude 1 250 m.',
+  'Histoire : armistice du (11/11/1918) ; révolution (1789-1799) ; indépendance 1960.',
+  'Informatique :\n' + codeFence + 'js\nconst ok = a <= b && value !== null;\nconst fallback = obj?.value ?? 0;\n' + codeFence
+].join('\n');
+window.rendreReponseIA(disciplinesSource, disciplinesHost);
+if (disciplinesHost.querySelectorAll('.katex-error').length) {
+  throw new Error('A valid cross-disciplinary formula produced a KaTeX error');
+}
+if (disciplinesHost.querySelectorAll('.katex').length !== 11) {
+  throw new Error('Expected 11 scientific formulas without converting dates/measurements; got ' +
+    disciplinesHost.querySelectorAll('.katex').length);
+}
+const disciplinesPlain = disciplinesHost.cloneNode(true);
+disciplinesPlain.querySelectorAll('.katex, .gm-katex, .gm-latex-fallback').forEach((node) => node.remove());
+const disciplinesText = disciplinesPlain.textContent || '';
+for (const preserved of [
+  '120/80 mmHg',
+  '5 mg/dL',
+  '37,0 °C',
+  'SpO₂ 98 %',
+  '18°54′S, 47°31′E',
+  '11/11/1918',
+  '1789-1799',
+  'indépendance 1960',
+  "Co n'est pas CO"
+]) {
+  if (!disciplinesText.includes(preserved)) {
+    throw new Error('A non-mathematical domain value was altered: ' + preserved);
+  }
+}
+const sourceCode = disciplinesHost.querySelector('pre code');
+if (!sourceCode || !sourceCode.textContent.includes('value !== null') ||
+    disciplinesHost.querySelector('pre .katex, code .katex')) {
+  throw new Error('Programming source was not preserved as code');
+}
+
+// Les délimiteurs eux-mêmes peuvent être doublés par certains transports.
+const doubledDelimitersHost = window.document.createElement('div');
+window.document.body.appendChild(doubledDelimitersHost);
+window.rendreReponseIA(
+  'Notation transportée : ' + doubledBackslash + '(' + doubledBackslash +
+    'Delta E=' + doubledBackslash + 'hbar' + doubledBackslash + 'omega' +
+    doubledBackslash + ')',
+  doubledDelimitersHost
+);
+if (doubledDelimitersHost.querySelectorAll('.katex').length !== 1 ||
+    doubledDelimitersHost.querySelector('.katex-error')) {
+  throw new Error('Double-escaped inline math delimiters were not canonicalized');
+}
+
 // Régression exacte du cas signalé : les escapes JSON \f doivent redevenir des fractions.
 const badQuizHost = window.document.createElement('div');
 window.document.body.appendChild(badQuizHost);
