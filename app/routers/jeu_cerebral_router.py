@@ -18,7 +18,7 @@ from ..dependencies import acces_ia_ou_redirection
 from ..models import JeuCerebralSession
 from ..rate_limit import limite_depassee
 from ..templating import templates
-from ..localization import langue_depuis_requete
+from ..localization import langue_depuis_requete, normaliser_langue
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -123,7 +123,8 @@ def demarrer_jeu_cerebral(
     ):
         return RedirectResponse("/jeu-cerebral?erreur=rythme", status_code=303)
 
-    langue = langue_depuis_requete(request)
+    # Le choix explicite du formulaire prime sur le cookie ; le cookie reste le secours.
+    langue = normaliser_langue(langue or langue_depuis_requete(request))
     if theme == "aleatoire":
         theme_id = random.choice(jeu_cerebral.THEMES)["id"]
     elif theme in jeu_cerebral.THEMES_PAR_ID:
