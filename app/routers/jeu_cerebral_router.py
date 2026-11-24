@@ -18,6 +18,7 @@ from ..dependencies import acces_ia_ou_redirection
 from ..models import JeuCerebralSession
 from ..rate_limit import limite_depassee
 from ..templating import templates
+from ..localization import langue_depuis_requete, normaliser_langue
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -92,6 +93,7 @@ def page_jeu_cerebral(request: Request, session: Session = Depends(get_session))
         "jeu_cerebral.html",
         {
             "utilisateur": utilisateur,
+            "langue": langue_depuis_requete(request),
             "themes": jeu_cerebral.THEMES,
             "historique": historique,
             "historique_affiche": historique_affiche,
@@ -121,7 +123,8 @@ def demarrer_jeu_cerebral(
     ):
         return RedirectResponse("/jeu-cerebral?erreur=rythme", status_code=303)
 
-    langue = langue if langue in {"fr", "mg"} else "fr"
+    # Le choix explicite du formulaire prime sur le cookie ; le cookie reste le secours.
+    langue = normaliser_langue(langue or langue_depuis_requete(request))
     if theme == "aleatoire":
         theme_id = random.choice(jeu_cerebral.THEMES)["id"]
     elif theme in jeu_cerebral.THEMES_PAR_ID:
@@ -162,6 +165,8 @@ def demarrer_jeu_cerebral(
         utiliser_ia=utiliser_ia,
         questions_a_eviter=questions_a_eviter,
     )
+    if source == "langue_indisponible":
+        return RedirectResponse("/jeu-cerebral?erreur=langue", status_code=303)
     if len(questions) < jeu_cerebral.NB_QUESTIONS_SESSION:
         logger.error("Banque de jeu cérébral insuffisante pour le thème %s.", theme_id)
         return RedirectResponse("/jeu-cerebral?erreur=questions", status_code=303)
@@ -270,11 +275,11 @@ def page_session_jeu_cerebral(
 
     question = questions[index_question]
     difficulte = question.get("difficulte", "Moyen")
-    labels_difficulte = (
-        {"Facile": "En douceur", "Moyen": "À ton rythme", "Difficile": "Petit défi"}
-        if partie.langue == "fr"
-        else {"Facile": "Amim-pitoniana", "Moyen": "Amin'ny hafainganam-pandehanao", "Difficile": "Fanamby kely"}
-    )
+    labels_difficulte = {
+        "fr": {"Facile": "En douceur", "Moyen": "À ton rythme", "Difficile": "Petit défi"},
+        "mg": {"Facile": "Amim-pitoniana", "Moyen": "Amin'ny hafainganam-pandehanao", "Difficile": "Fanamby kely"},
+        "en": {"Facile": "Gentle", "Moyen": "At your pace", "Difficile": "A small challenge"},
+    }[partie.langue if partie.langue in {"fr", "mg", "en"} else "fr"]
     retour = etat.get("dernier_feedback")
     if retour and 0 <= int(retour.get("question_index", -1)) < len(questions):
         ancienne = questions[int(retour["question_index"])]

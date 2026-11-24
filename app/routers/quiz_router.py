@@ -12,6 +12,7 @@ from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
+from ..localization import langue_depuis_requete
 from ..dependencies import acces_ia_ou_redirection
 from ..models import (
     Document, MembreCercle, MissionApprentissage, StatutDocument, TypeDocument, TentativeQuiz, ProgressionNotion,
@@ -546,6 +547,8 @@ def lancer_objectif_examen(
     if redirection:
         return redirection
 
+    langue = langue_depuis_requete(request)
+
     host = adresse_ip_client(request)
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/objectif-examen?erreur=trop_de_generations", status_code=303)
@@ -695,6 +698,7 @@ def lancer_objectif_examen(
             niveau_scolaire_id=niveau_scolaire_id,
             option_scolaire_id=option_scolaire_id,
             sujet_cible=contexte_examen["instruction"],
+            langue=langue,
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/objectif-examen?erreur=generation_invalide", status_code=303)
@@ -784,6 +788,8 @@ def generer_quiz(
     redirection = acces_ia_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
+
+    langue = langue_depuis_requete(request)
 
     host = adresse_ip_client(request)
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
@@ -927,6 +933,7 @@ def generer_quiz(
             niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
             option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
             sujet_cible=sujet_cible,
+            langue=langue,
         )
     except quiz_module.QuizValidationError as erreur:
         logger.warning(
@@ -1115,6 +1122,8 @@ def generer_quiz_cible(
     if redirection:
         return redirection
 
+    langue = langue_depuis_requete(request)
+
     progression = session.get(ProgressionNotion, progression_id)
     if not progression or progression.utilisateur_id != utilisateur.id:
         return RedirectResponse("/mes-revisions", status_code=303)
@@ -1197,6 +1206,7 @@ def generer_quiz_cible(
             cycle_education=contexte_scolaire["cycle_education"] if contexte_scolaire else None,
             niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
             option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
+            langue=langue,
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/mes-revisions?erreur=generation_ciblee", status_code=303)
@@ -1235,6 +1245,8 @@ def generer_examen(
     if redirection:
         return redirection
 
+    langue = langue_depuis_requete(request)
+
     host = adresse_ip_client(request)
     if limite_depassee(f"ia-quiz:user:{utilisateur.id}", 3, 300) or limite_depassee(f"ia-quiz:ip:{host}", 12, 300):
         return RedirectResponse("/quiz?erreur=trop_de_generations", status_code=303)
@@ -1269,6 +1281,7 @@ def generer_examen(
             cycle_education=contexte_scolaire["cycle_education"] if contexte_scolaire else None,
             niveau_scolaire_id=contexte_scolaire["niveau_scolaire_id"] if contexte_scolaire else None,
             option_scolaire_id=contexte_scolaire["option_scolaire_id"] if contexte_scolaire else None,
+            langue=langue,
         )
     except quiz_module.QuizValidationError:
         return RedirectResponse("/quiz?erreur=generation_invalide", status_code=303)
@@ -1456,6 +1469,7 @@ def page_resultat_quiz(request: Request, tentative_id: int, session: Session = D
         {
             "utilisateur": utilisateur,
             "tentative": tentative,
+            "langue": tentative.langue or "fr",
             "questions": questions_resultat,
             "reponses": reponses_resultat,
             "confiances": confiances_resultat,

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% block titre %}Jeu cérébral — MITARIDALA{% endblock %}
+{% block titre %}{% if langue == "en" %}Brain game — MITARIDALA{% elif langue == "mg" %}Lalao mampieritreritra — MITARIDALA{% else %}Jeu cérébral — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="jeu-cerebral-page">
@@ -171,6 +171,7 @@
   <div class="jeu-erreur" role="status">
     {% if request.query_params.get("erreur") == "rythme" %}Fais une petite pause avant de lancer un autre défi. Ton prochain jeu t'attendra. 
     {% elif request.query_params.get("erreur") == "questions" %}Le jeu n'a pas réussi à préparer assez de questions. Réessaie dans un instant, tranquillement.
+    {% elif request.query_params.get("erreur") == "langue" %}Les questions en anglais ne sont pas disponibles pour le moment. Réessaie lorsque la génération IA sera disponible ; aucune question française ne sera mélangée à ta session anglaise.
     {% else %}Ce thème n'est pas disponible. Choisis-en un autre ou laisse le hasard décider.{% endif %}
   </div>
   {% endif %}
@@ -250,7 +251,7 @@
   <section class="jeu-section" aria-labelledby="jeu-historique">
     <div class="jeu-section-head">
       <div>
-        <h2 id="jeu-historique">Tes derniers petits défis</h2>
+        <h2 id="jeu-historique">{% if langue == "en" %}Your recent challenges{% elif langue == "mg" %}Ireo fanamby farany nataonao{% else %}Tes derniers petits défis{% endif %}</h2>
         <p>Observe ton évolution sans te comparer aux autres.</p>
       </div>
     </div>
@@ -261,7 +262,7 @@
         <span class="jeu-history-icon" aria-hidden="true">{{ entree.theme.emoji }}</span>
         <div class="jeu-history-main">
           <strong>{{ entree.theme.titre }}</strong>
-          <span>{{ entree.partie.date_creation.strftime("%d/%m/%Y") }} · {% if entree.partie.bonnes_reponses is not none %}{{ entree.partie.bonnes_reponses }}/{{ entree.partie.nb_questions }} bonnes réponses{% else %}session terminée{% endif %}</span>
+          <span>{{ entree.partie.date_creation.strftime("%d/%m/%Y") }} · {% if entree.partie.bonnes_reponses is not none %}{{ entree.partie.bonnes_reponses }}/{{ entree.partie.nb_questions }} {% if langue == "en" %}correct answers{% elif langue == "mg" %}valiny marina{% else %}bonnes réponses{% endif %}{% else %}{% if langue == "en" %}session completed{% elif langue == "mg" %}lalao vita{% else %}session terminée{% endif %}{% endif %}</span>
         </div>
         <span class="jeu-history-score">{{ entree.partie.score }} %</span>
       </article>
@@ -280,12 +281,18 @@
   function synchroniser() {
     var langue = "";
     try { langue = window.localStorage.getItem("mahay-langue") || ""; } catch (_erreur) {}
-    if (langue !== "mg" && langue !== "fr") langue = selecteur && selecteur.value === "mg" ? "mg" : "fr";
-    champ.value = langue === "mg" ? "mg" : "fr";
+    if (!["fr", "mg", "en"].includes(langue)) {
+      var cookie = document.cookie.match(/(?:^|;\\s*)mahay-langue=([^;]+)/);
+      try { langue = cookie ? decodeURIComponent(cookie[1]) : ""; } catch (_erreurCookie) {}
+    }
+    if (!["fr", "mg", "en"].includes(langue)) {
+      langue = selecteur && ["fr", "mg", "en"].includes(selecteur.value) ? selecteur.value : "fr";
+    }
+    champ.value = langue;
   }
   synchroniser();
   if (selecteur) selecteur.addEventListener("change", function () {
-    champ.value = selecteur.value === "mg" ? "mg" : "fr";
+    champ.value = ["fr", "mg", "en"].includes(selecteur.value) ? selecteur.value : "fr";
   });
 })();
 </script>

@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 import json
 
 import pytest
@@ -124,6 +125,46 @@ def test_planifie_une_fiche_une_seule_fois_pour_un_cours_approuve(monkeypatch):
         fiche = session.get(FicheRevisionDocument, taches[0].fiche_revision_document_id)
         assert fiche is not None
         assert fiche.statut == StatutFicheRevisionDocument.EN_ATTENTE
+
+
+def test_cree_une_fiche_et_une_tache_par_langue(monkeypatch):
+    engine = moteur_sqlite()
+    notifications = []
+    monkeypatch.setattr(ai_queue, "engine", engine)
+    monkeypatch.setattr(
+        ai_queue, "notifier_tache", lambda task_id: notifications.append(task_id) or True
+    )
+
+    with Session(engine) as session:
+        document, _ = creer_document(session)
+        document_id = document.id
+
+    task_ids = {
+        langue: ai_queue.planifier_fiche_revision_document(
+            document_id, langue=langue
+        )
+        for langue in ("fr", "mg", "en")
+    }
+
+    assert all(task_ids.values())
+    assert len(set(task_ids.values())) == 3
+    with Session(engine) as session:
+        fiches = session.exec(
+            select(FicheRevisionDocument)
+            .where(FicheRevisionDocument.document_id == document_id)
+            .order_by(FicheRevisionDocument.langue)
+        ).all()
+        assert [fiche.langue for fiche in fiches] == ["en", "fr", "mg"]
+        assert len({fiche.id for fiche in fiches}) == 3
+        taches = session.exec(
+            select(TacheIA).where(
+                TacheIA.type_tache == ai_queue.TYPE_FICHE_REVISION_DOCUMENT
+            )
+        ).all()
+        assert {tache.fiche_revision_document_id for tache in taches} == {
+            fiche.id for fiche in fiches
+        }
+    assert set(notifications) == set(task_ids.values())
 
 
 def test_repare_une_fiche_en_attente_sans_tache(monkeypatch):
@@ -306,7 +347,8 @@ def test_ne_genere_pas_de_fiche_pour_une_ressource_non_eligible(
         ).one() == 0
 
 
-def test_fiche_est_generee_depuis_le_texte_reel_et_enregistree(monkeypatch):
+@pytest.mark.parametrize("langue", ["fr", "mg", "en"])
+def test_fiche_est_generee_depuis_le_texte_reel_et_enregistree(monkeypatch, langue):
     engine = moteur_sqlite()
     monkeypatch.setattr(course_revision, "engine", engine)
 
@@ -321,10 +363,13 @@ def test_fiche_est_generee_depuis_le_texte_reel_et_enregistree(monkeypatch):
         yield Path("/tmp/cours-source.pdf")
 
     contexte_capture = {}
-    def generer(contexte, mode_document=False):
+    def generer(contexte, mode_document=False, langue="fr"):
         contexte_capture["contexte"] = contexte
         contexte_capture["mode_document"] = mode_document
-        return course_revision.normaliser_fiche_revision(fixture_fiche())
+        contexte_capture["langue"] = langue
+        return course_revision.normaliser_fiche_revision(
+            fixture_fiche(), langue=langue
+        )
 
     monkeypatch.setattr(course_revision, "ouvrir_fichier_local", faux_fichier)
     monkeypatch.setattr(course_revision, "extraire_texte", lambda _chemin: texte_cours)
@@ -334,6 +379,7 @@ def test_fiche_est_generee_depuis_le_texte_reel_et_enregistree(monkeypatch):
         document, utilisateur = creer_document(session)
         fiche = FicheRevisionDocument(
             document_id=document.id,
+            langue=langue,
             statut=StatutFicheRevisionDocument.EN_ATTENTE,
         )
         session.add(fiche)
@@ -364,6 +410,8 @@ def test_fiche_est_generee_depuis_le_texte_reel_et_enregistree(monkeypatch):
 
     contexte = contexte_capture["contexte"]
     assert contexte_capture["mode_document"] is True
+    assert contexte_capture["langue"] == langue
+    assert sources["langue"] == langue
     assert "déterminant" in contexte["source_document"]["contenu_extrait"].lower()
     assert contexte["source_document"]["reference"] == "TEST-COURS-AUTO-0001"
 
@@ -605,3 +653,54 @@ def test_planification_recupere_la_tache_existante_apres_conflit_concurrent(monk
     assert len(taches) == 1
     assert taches[0].id == task_id
     assert taches[0].statut == StatutTacheIA.EN_ATTENTE
+
+@pytest.mark.parametrize(
+    ("langue", "moment", "titre"),
+    [
+        ("en", "Today", "Your personalised revision sheet"),
+        ("mg", "Androany", "Taratasy famerenana mifanaraka amin'ny fandrosoanao"),
+    ],
+)
+def test_personnalisation_document_respecte_la_langue(monkeypatch, langue, moment, titre):
+    class RequeteVide:
+        def where(self, *_args):
+            return self
+
+        def order_by(self, *_args):
+            return self
+
+        def limit(self, *_args):
+            return self
+
+        def all(self):
+            return []
+
+    class SessionVide:
+        def exec(self, _requete):
+            return RequeteVide()
+
+        def get(self, *_args):
+            return None
+
+    monkeypatch.setattr(
+        course_revision,
+        "interactions_tuteur_recentes",
+        lambda *_args, **_kwargs: [],
+    )
+    document = SimpleNamespace(
+        filiere_id=None,
+        niveau_scolaire_id=None,
+        portee_academique="universitaire",
+        matiere="Mathématiques",
+    )
+
+    contenu = course_revision.personnaliser_fiche_revision_document(
+        SessionVide(), document, 17, fixture_fiche(), langue=langue
+    )
+
+    assert contenu["plan_revision"][0]["moment"] == moment
+    assert contenu["profil_personnalise"]["titre"] == titre
+    assert contenu["profil_personnalise"]["mode"] != "Personnalisation en démarrage"
+    assert "Aujourd'hui" not in str(contenu["plan_revision"])
+    assert "Demain" not in str(contenu["plan_revision"])
+    assert "Dans 7 jours" not in str(contenu["plan_revision"])

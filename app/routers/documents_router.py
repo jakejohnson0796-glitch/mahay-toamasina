@@ -24,6 +24,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (LeconReferentielle, Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
+from ..localization import langue_depuis_requete
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte, ExtractionSaturee
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, ouvrir_fichier_local, stockage_distant_actif, FichierInvalide, supprimer_fichier
@@ -277,6 +278,7 @@ def liste_documents(
     session: Session = Depends(get_session),
 ):
     filiere_id = entier_ou_none(filiere_id)
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     cercle = None
     if cercle_id is not None:
@@ -408,6 +410,10 @@ def liste_documents(
         document.id: _charger_fiche_pedagogique_json(document.fiche_pedagogique_mg_json)
         for document in documents_affiches
     }
+    fiches_documents_en = {
+        document.id: _charger_fiche_pedagogique_json(document.fiche_pedagogique_en_json)
+        for document in documents_affiches
+    }
 
     # État du carnet de révision basé sur le document source, distinct
     # de la fiche pédagogique et du carnet individuel des classes virtuelles.
@@ -420,7 +426,7 @@ def liste_documents(
             fiche.document_id: fiche
             for fiche in session.exec(
                 select(FicheRevisionDocument).where(
-                    FicheRevisionDocument.document_id.in_(ids_documents_affiches)
+                    FicheRevisionDocument.document_id.in_(ids_documents_affiches), FicheRevisionDocument.langue == langue
                 )
             ).all()
         }
@@ -437,7 +443,7 @@ def liste_documents(
             and document.id not in fiches_revision_documents
         ]
         for document_id in cours_sans_fiche[:10]:
-            ai_queue.planifier_fiche_revision_document(document_id)
+            ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
 
         # Répare en petit lot les fiches existantes dont la tâche durable a
         # disparu ou est terminée/échouée alors que la fiche prétend attendre.
@@ -464,6 +470,7 @@ def liste_documents(
         reparations = ai_queue.reparer_fiches_revision_documents_bloquees(
             max_documents=5,
             document_ids=cours_a_reparer,
+            langue=langue,
         ) if cours_a_reparer else 0
 
         if cours_sans_fiche or reparations:
@@ -471,7 +478,7 @@ def liste_documents(
                 fiche.document_id: fiche
                 for fiche in session.exec(
                     select(FicheRevisionDocument).where(
-                        FicheRevisionDocument.document_id.in_(ids_documents_affiches)
+                        FicheRevisionDocument.document_id.in_(ids_documents_affiches), FicheRevisionDocument.langue == langue
                     )
                 ).all()
             }
@@ -565,6 +572,8 @@ def liste_documents(
             "mes_depots": mes_depots,
             "fiches_documents": fiches_documents,
             "fiches_documents_mg": fiches_documents_mg,
+            "fiches_documents_en": fiches_documents_en,
+            "langue": langue,
             "fiches_revision_documents": fiches_revision_documents,
             "filieres": filieres,
             "niveaux_scolaires": niveaux_scolaires,
@@ -1625,6 +1634,7 @@ def consulter_document_moderation(
             "erreur_apercu": erreur_apercu,
             "fiche_document": _charger_fiche_pedagogique(document),
             "fiche_document_mg": _charger_fiche_pedagogique_json(document.fiche_pedagogique_mg_json),
+            "fiche_document_en": _charger_fiche_pedagogique_json(document.fiche_pedagogique_en_json),
         },
     )
 
@@ -1667,6 +1677,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
     Il ne remplace aucun flux existant : il ajoute un point d'entrée qui
     relie lecture, quiz et Tuteur contextualisé autour de la même ressource.
     """
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -1684,7 +1695,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
     if document.type_document == TypeDocument.COURS:
         fiche_revision_document = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document.id
+                FicheRevisionDocument.document_id == document.id, FicheRevisionDocument.langue == langue
             )
         ).first()
         if (
@@ -1697,11 +1708,11 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             # Les anciens cours et les enregistrements terminés sans contenu
             # sont planifiés ou réparés à leur première consultation.
             session.commit()
-            ai_queue.planifier_fiche_revision_document(document.id)
+            ai_queue.planifier_fiche_revision_document(document.id, langue=langue)
             session.expire_all()
             fiche_revision_document = session.exec(
                 select(FicheRevisionDocument).where(
-                    FicheRevisionDocument.document_id == document.id
+                    FicheRevisionDocument.document_id == document.id, FicheRevisionDocument.langue == langue
                 )
             ).first()
         elif fiche_revision_document.statut in {
@@ -1711,11 +1722,12 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             ai_queue.reparer_fiches_revision_documents_bloquees(
                 max_documents=1,
                 document_ids=[int(document.id)],
+                langue=langue,
             )
             session.expire_all()
             fiche_revision_document = session.exec(
                 select(FicheRevisionDocument).where(
-                    FicheRevisionDocument.document_id == document.id
+                    FicheRevisionDocument.document_id == document.id, FicheRevisionDocument.langue == langue
                 )
             ).first()
 
@@ -1750,6 +1762,7 @@ def consulter_fiche_revision_document(
     session: Session = Depends(get_session),
 ):
     """Affiche le carnet IA fondé sur le texte source d'un cours approuvé."""
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -1768,7 +1781,7 @@ def consulter_fiche_revision_document(
 
     fiche = session.exec(
         select(FicheRevisionDocument).where(
-            FicheRevisionDocument.document_id == document_id
+            FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
         )
     ).first()
     if (
@@ -1779,11 +1792,11 @@ def consulter_fiche_revision_document(
         )
     ):
         session.commit()
-        ai_queue.planifier_fiche_revision_document(document_id)
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
         session.expire_all()
         fiche = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document_id
+                FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
             )
         ).first()
     elif (
@@ -1791,11 +1804,11 @@ def consulter_fiche_revision_document(
         and fiche.version_generation != course_revision.VERSION_GENERATION_DOCUMENT
     ):
         # Régénère les fiches existantes une par une, uniquement lors d'une consultation.
-        ai_queue.planifier_fiche_revision_document(document_id)
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
         session.expire_all()
         fiche = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document_id
+                FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
             )
         ).first()
     elif fiche.statut in {
@@ -1805,11 +1818,12 @@ def consulter_fiche_revision_document(
         ai_queue.reparer_fiches_revision_documents_bloquees(
             max_documents=1,
             document_ids=[document_id],
+            langue=langue,
         )
         session.expire_all()
         fiche = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document_id
+                FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
             )
         ).first()
 
@@ -1829,7 +1843,7 @@ def consulter_fiche_revision_document(
 
     try:
         contenu = course_revision.normaliser_fiche_revision(
-            json.loads(fiche.contenu_json)
+            json.loads(fiche.contenu_json), langue=langue
         )
         sources = json.loads(fiche.sources_json or "{}")
         if not isinstance(sources, dict):
@@ -1843,7 +1857,7 @@ def consulter_fiche_revision_document(
     # La fiche conservée en base reste commune et immuable. Chaque affichage reçoit
     # une copie adaptée au compte courant, à ses notions fragiles et à ses quiz.
     contenu = course_revision.personnaliser_fiche_revision_document(
-        session, document, utilisateur.id, contenu
+        session, document, utilisateur.id, contenu, langue=langue
     )
 
     return templates.TemplateResponse(
@@ -1851,6 +1865,7 @@ def consulter_fiche_revision_document(
         "document_revision.html",
         {
             "utilisateur": utilisateur,
+            "langue": langue,
             "document": document,
             "fiche_revision_document": fiche,
             "fiche_contenu": contenu,
@@ -1868,6 +1883,7 @@ def telecharger_fiche_revision_document(
     session: Session = Depends(get_session),
 ):
     """Télécharge le carnet source dans un format lisible, après recontrôle d'accès."""
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -1888,14 +1904,20 @@ def telecharger_fiche_revision_document(
 
     fiche = session.exec(
         select(FicheRevisionDocument).where(
-            FicheRevisionDocument.document_id == document_id
+            FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
         )
     ).first()
+    if fiche is None:
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
+        return RedirectResponse(
+            f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
+            status_code=303,
+        )
     if fiche and (
         fiche.statut == StatutFicheRevisionDocument.TERMINEE
         and fiche.version_generation != course_revision.VERSION_GENERATION_DOCUMENT
     ):
-        ai_queue.planifier_fiche_revision_document(document_id)
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
         return RedirectResponse(
             f"/documents/{document_id}/apprendre?revision=en_cours#revision-automatique",
             status_code=303,
@@ -1907,7 +1929,7 @@ def telecharger_fiche_revision_document(
         )
 
     try:
-        contenu = course_revision.normaliser_fiche_revision(json.loads(fiche.contenu_json))
+        contenu = course_revision.normaliser_fiche_revision(json.loads(fiche.contenu_json), langue=langue)
     except (TypeError, ValueError, json.JSONDecodeError):
         return RedirectResponse(
             f"/documents/{document_id}/apprendre?revision=indisponible#revision-automatique",
@@ -1916,7 +1938,7 @@ def telecharger_fiche_revision_document(
 
     # Les exports PDF et Word reçoivent la même version privée que le navigateur.
     contenu = course_revision.personnaliser_fiche_revision_document(
-        session, document, utilisateur.id, contenu
+        session, document, utilisateur.id, contenu, langue=langue
     )
 
     filiere = session.get(Filiere, document.filiere_id) if document.filiere_id else None
@@ -1986,6 +2008,7 @@ def relancer_fiche_revision_document(
     _csrf: None = Depends(verifier_csrf),
 ):
     """Autorise l'auteur ou un administrateur à relancer une fiche qui a échoué."""
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -2007,13 +2030,13 @@ def relancer_fiche_revision_document(
 
     fiche = session.exec(
         select(FicheRevisionDocument).where(
-            FicheRevisionDocument.document_id == document_id
+            FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
         )
     ).first()
     if not fiche or fiche.statut != StatutFicheRevisionDocument.ECHOUEE:
         return RedirectResponse(f"/documents/{document_id}/apprendre#revision-automatique", status_code=303)
 
-    ai_queue.planifier_fiche_revision_document(document_id, forcer=True)
+    ai_queue.planifier_fiche_revision_document(document_id, forcer=True, langue=langue)
     return RedirectResponse(
         f"/documents/{document_id}/apprendre?revision=relancee#revision-automatique",
         status_code=303,
@@ -2141,6 +2164,9 @@ def valider_fiche_document(
         document.resume_ia_mg = ""
         document.fiche_pedagogique_mg_json = "{}"
         document.resume_statut_ia_mg = "indisponible"
+        document.resume_ia_en = ""
+        document.fiche_pedagogique_en_json = "{}"
+        document.resume_statut_ia_en = "a_generer"
 
     session.add(document)
     session.commit()
@@ -2159,6 +2185,8 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
     redirection = acces_premium_ou_redirection(utilisateur, session)
     if redirection:
         return redirection
+
+    langue = langue_depuis_requete(request)
 
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
@@ -2197,6 +2225,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
                     texte,
                     nb_questions=5,
                     questions_a_eviter=questions_a_eviter_essai,
+                    langue=langue,
                 )
                 questions_courantes = valider_questions(
                     questions_generees, expected_count=5
@@ -2295,6 +2324,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
+        langue=langue,
         document_id=document.id,
         matiere=matiere_quiz,
         niveau=niveau,
@@ -2574,22 +2604,28 @@ def enregistrer_modification_document(
         document.resume_ia_mg = ""
         document.fiche_pedagogique_mg_json = "{}"
         document.resume_statut_ia_mg = "indisponible"
+        document.resume_ia_en = ""
+        document.fiche_pedagogique_en_json = "{}"
+        document.resume_statut_ia_en = "a_generer"
 
-    fiche_revision_document = session.exec(
+    fiches_revision_document = session.exec(
         select(FicheRevisionDocument).where(
             FicheRevisionDocument.document_id == document.id
         )
-    ).first()
-    if fiche_revision_document and modification:
-        # Le titre/matière/niveau ont changé : ne servir pas un carnet lié à
-        # d'anciennes métadonnées. Un recalcul sera mis en file après commit
-        # si le document reste un cours approuvé.
-        fiche_revision_document.statut = StatutFicheRevisionDocument.EN_ATTENTE
-        fiche_revision_document.contenu_json = "{}"
-        fiche_revision_document.sources_json = "{}"
-        fiche_revision_document.erreur_generation = None
-        fiche_revision_document.date_modification = datetime.utcnow()
-        session.add(fiche_revision_document)
+    ).all()
+    langues_revision_a_recalculer = sorted({
+        str(fiche.langue or "fr") for fiche in fiches_revision_document
+    })
+    if modification:
+        # Les métadonnées changent la pertinence de chaque cache linguistique.
+        # On invalide toutes les langues, pas seulement la fiche française.
+        for fiche_revision_document in fiches_revision_document:
+            fiche_revision_document.statut = StatutFicheRevisionDocument.EN_ATTENTE
+            fiche_revision_document.contenu_json = "{}"
+            fiche_revision_document.sources_json = "{}"
+            fiche_revision_document.erreur_generation = None
+            fiche_revision_document.date_modification = datetime.utcnow()
+            session.add(fiche_revision_document)
 
     est_cours_approuve = (
         document.statut == StatutDocument.APPROUVE
@@ -2598,7 +2634,10 @@ def enregistrer_modification_document(
     session.add(document)
     session.commit()
     if est_cours_approuve:
-        ai_queue.planifier_fiche_revision_document(document.id)
+        for langue_revision in langues_revision_a_recalculer or ["fr"]:
+            ai_queue.planifier_fiche_revision_document(
+                document.id, forcer=True, langue=langue_revision
+            )
     return _rediriger_moderation(
         "metadonnees_modifiees" if changement_contexte_pedagogique else "modifie"
     )
@@ -2713,17 +2752,18 @@ def supprimer_document(
             FicheRevisionDocument.document_id == document_id
         )
     ).all()
-    fiche_revision_document = fiches_revision_document[0] if fiches_revision_document else None
-    if fiche_revision_document:
+    if fiches_revision_document:
+        ids_fiches_revision = [fiche.id for fiche in fiches_revision_document]
         taches_revision_document = session.exec(
             select(TacheIA).where(
-                TacheIA.fiche_revision_document_id == fiche_revision_document.id
+                TacheIA.fiche_revision_document_id.in_(ids_fiches_revision)
             )
         ).all()
         for tache in taches_revision_document:
             session.delete(tache)
         session.commit()
-        session.delete(fiche_revision_document)
+        for fiche_revision_document in fiches_revision_document:
+            session.delete(fiche_revision_document)
         session.commit()
 
     supprimer_fichier(document.chemin_fichier)

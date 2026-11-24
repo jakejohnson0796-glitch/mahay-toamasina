@@ -15,6 +15,8 @@ import re
 from math import gcd
 from typing import Any, Mapping
 
+from .localization import instruction_langue_sortie, normaliser_langue
+
 MARKER_INLINE = "[[MATH]]"
 MARKER_INLINE_END = "[[/MATH]]"
 MARKER_DISPLAY = "[[DISPLAY]]"
@@ -25,7 +27,7 @@ MARKER_CHEM_END = "[[/CHEM]]"
 REGLES_FORMAT = r"""
 CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
 
-- Réponds en français et en Markdown clair et pédagogique.
+- Réponds dans la langue de sortie explicitement demandée en fin de contrat, en Markdown clair et pédagogique.
 - Le code informatique reste dans des blocs Markdown clôturés.
 - INTERDICTION DES BACKTICKS POUR LES MATHS : n'entoure jamais une formule, une fraction, une égalité, un calcul ou une puissance avec des backticks Markdown. Les backticks sont réservés au code informatique réel. Même dans une liste, écris toute l'identité dans un seul délimiteur LaTeX, par exemple \\(123456=156\\\\times789+372\\), et jamais seulement la partie gauche en code avec l'opérateur en texte à côté.
 - FRACTIONS : écris toujours le numérateur et le dénominateur explicitement avec \\(\\\\frac{a}{b}\\) ou \\[\\\\frac{a}{b}\\]. N'écris jamais les deux nombres collés, ni seulement la fraction visuelle sans commandes LaTeX. Pour \\(\\\\frac{123456000}{789000}\\), conserve explicitement les deux nombres dans le numérateur et le dénominateur.
@@ -49,13 +51,11 @@ CONTRAT DE FORMATAGE UNIQUE DU TUTEUR IA ET DU QUIZ IA — OBLIGATOIRE :
   « \(\Delta E=\hbar\omega\) », « \(v=3\,\mathrm{m/s}\) »,
   « \(a=2\,\mathrm{m/s^{2}}\) », « \(\rho=1\,\mathrm{kg/m^{3}}\) ».
   Les unités sont en \(\mathrm{...}\) et séparées de la valeur par \(\,\).
-- RÉSULTATS : utilise la virgule décimale française à l'intérieur de la formule
-  (ex. \(31{,}6\)) et vérifie les opérations avant d'expliquer l'estimation.
-  Distingue explicitement la valeur exacte, l'approximation et l'arrondi; utilise ces trois
-  termes lorsqu'ils sont pertinents. Pour un arrondi à la dizaine, explique le chiffre des
-  unités et l'écart avec les deux dizaines voisines. Exemple : \(\sqrt{1000}\approx31{,}6\);
-  à la dizaine la plus proche, \(31{,}6\) s'arrondit à \(30\), car il est plus proche de
-  \(30\) que de \(40\). Ne présente jamais \(30\approx32\) comme une égalité d'estimation.
+- RÉSULTATS : utilise le séparateur décimal indiqué par la langue de sortie.
+  Vérifie les opérations avant d'expliquer une estimation. Distingue la valeur exacte,
+  l'approximation et l'arrondi; utilise ces termes lorsqu'ils sont pertinents. Pour un
+  arrondi à la dizaine, explique le chiffre des unités et l'écart avec les deux dizaines
+  voisines. Ne présente jamais un arrondi comme une égalité d'estimation.
 - CHIMIE : utilise mhchem uniquement dans un délimiteur mathématique :
   \( \ce{H2O} \)
   \( \ce{2H2 + O2 -> 2H2O} \)
@@ -688,3 +688,14 @@ def normaliser_structure_tuteur(
         )
         for cle, valeur in sections.items()
     }
+
+
+def regles_format_pour_langue(langue: Any = "fr") -> str:
+    """Ajoute au contrat scientifique la langue exacte demandée à tous les modèles IA."""
+    code = normaliser_langue(langue)
+    separateur = (
+        "For English output, use a decimal point in decimal numbers."
+        if code == "en"
+        else "Use a decimal comma in decimal numbers."
+    )
+    return REGLES_FORMAT + "\n\n" + separateur + "\n" + instruction_langue_sortie(code)

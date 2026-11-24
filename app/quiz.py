@@ -21,6 +21,7 @@ from .apprentissage_memoire import interactions_tuteur_recentes, formater_memoir
 from .quiz_validation import QuizValidationError, valider_questions
 from .ia_transport import normaliser_structure_quiz
 from .config import parametres
+from .localization import normaliser_langue
 
 from .referentiel import NIVEAUX  # centralise (voir app/referentiel.py) ; reexporte ici pour ne rien casser dans quiz_router.py qui importe quiz_module.NIVEAUX
 
@@ -58,6 +59,7 @@ def _generer_quiz_rapide(
     nb_questions: int,
     questions_a_eviter: Optional[List[str]] = None,
     contexte_apprentissage: Optional[str] = None,
+    langue: str = "fr",
 ) -> List[Dict]:
     """Genere le quiz et ne fait sur le chemin utilisateur que la validation locale.
 
@@ -65,7 +67,8 @@ def _generer_quiz_rapide(
     l'ensemble, mais elle est lancee en arriere-plan apres l'envoi de la
     reponse HTTP. Un etudiant ne doit jamais attendre Qwen + Gemini + arbitre
     pour commencer son quiz."""
-    options_generation = {"questions_a_eviter": questions_a_eviter}
+    langue = normaliser_langue(langue)
+    options_generation = {"questions_a_eviter": questions_a_eviter, "langue": langue}
     if contexte_apprentissage:
         options_generation["contexte_apprentissage"] = contexte_apprentissage
     questions_generees = ai_quiz.generer_quiz_par_theme(
@@ -82,6 +85,7 @@ def _verifier_questions_avant_stockage(
     questions: List[Dict],
     matiere: str,
     niveau: str,
+    langue: str = "fr",
 ) -> List[Dict]:
     """Applique une relecture multi-modeles avant de livrer le quiz.
 
@@ -97,6 +101,7 @@ def _verifier_questions_avant_stockage(
             matiere,
             niveau,
             strategie="standard",
+            langue=normaliser_langue(langue),
         )
         questions_finales = valider_questions(
             questions_finales,
@@ -298,6 +303,7 @@ def creer_tentative(
     niveau_scolaire_id: Optional[int] = None,
     option_scolaire_id: Optional[int] = None,
     sujet_cible: Optional[str] = None,
+    langue: str = "fr",
 ) -> TentativeQuiz:
     """Genere et publie rapidement un quiz après validation locale.
 
@@ -305,6 +311,7 @@ def creer_tentative(
     la route met ensuite la tentative en file via ai_queue. Cela évite de
     faire attendre l'étudiant pendant les critiques/arbitrages Gemini/Groq.
     """
+    langue = normaliser_langue(langue)
     matiere = valider_parametres(matiere, niveau, difficulte, nb_questions)
     questions_a_eviter = _questions_vues_recemment(session, utilisateur.id, matiere)
     contexte_apprentissage = _contexte_personnalise_quiz(
@@ -346,6 +353,7 @@ def creer_tentative(
                 nb_questions,
                 questions_a_eviter=questions_a_eviter_essai,
                 contexte_apprentissage=contexte_apprentissage,
+                langue=langue,
             )
             questions_validees = valider_questions(
                 questions_generees,
@@ -414,6 +422,7 @@ def creer_tentative(
 
             tentative = TentativeQuiz(
                 utilisateur_id=utilisateur.id,
+                langue=langue,
                 matiere=matiere,
                 niveau=niveau,
                 cycle_education=cycle_education,
@@ -1040,11 +1049,13 @@ def creer_tentative_ciblee(
     cycle_education: Optional[str] = None,
     niveau_scolaire_id: Optional[int] = None,
     option_scolaire_id: Optional[int] = None,
+    langue: str = "fr",
 ) -> TentativeQuiz:
     """Construit un quiz court centre sur une faiblesse, sans répéter les derniers énoncés."""
     if progression is not None and progression.utilisateur_id != utilisateur.id:
         progression = None
 
+    langue = normaliser_langue(langue)
     difficulte_ciblee = difficulte_revision_adaptative(progression)
     matiere = valider_parametres(matiere, niveau, difficulte_ciblee, nb_questions)
     notion = (notion or "").strip()[:100]
@@ -1087,6 +1098,7 @@ def creer_tentative_ciblee(
                 nb_questions,
                 difficulte=difficulte_ciblee,
                 questions_a_eviter=questions_a_eviter_essai,
+                langue=langue,
                 **(
                     {"contexte_apprentissage": contexte_apprentissage}
                     if contexte_apprentissage else {}
@@ -1133,6 +1145,7 @@ def creer_tentative_ciblee(
 
     tentative = TentativeQuiz(
         utilisateur_id=utilisateur.id,
+        langue=langue,
         matiere=matiere,
         niveau=niveau,
         cycle_education=cycle_education,
@@ -1179,6 +1192,7 @@ def verifier_tentative_en_arriere_plan(tentative_id: int, strategie: Optional[st
                 tentative.matiere,
                 tentative.niveau,
                 strategie=strategie or "standard",
+                langue=getattr(tentative, "langue", "fr"),
             )
             try:
                 valider_questions(
@@ -1419,6 +1433,7 @@ def creer_tentative_examen(
     niveau_scolaire_id: Optional[int] = None,
     option_scolaire_id: Optional[int] = None,
     sujet_cible: Optional[str] = None,
+    langue: str = "fr",
 ) -> TentativeQuiz:
     """Cree un examen blanc court dans le contexte scolaire deja valide."""
     tentative = creer_tentative(
@@ -1432,6 +1447,7 @@ def creer_tentative_examen(
         niveau_scolaire_id=niveau_scolaire_id,
         option_scolaire_id=option_scolaire_id,
         sujet_cible=sujet_cible,
+        langue=langue,
     )
     tentative.mode_examen = True
     tentative.duree_secondes = NB_QUESTIONS_EXAMEN * SECONDES_PAR_QUESTION_EXAMEN

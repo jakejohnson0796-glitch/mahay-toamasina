@@ -42,7 +42,7 @@ def test_anciens_cours_sans_fiche_sont_planifies_automatiquement():
     assert "cours_sans_fiche" in route
     assert "document.type_document == TypeDocument.COURS" in route
     assert "for document_id in cours_sans_fiche[:10]" in route
-    assert "ai_queue.planifier_fiche_revision_document(document_id)" in route
+    assert "ai_queue.planifier_fiche_revision_document(document_id, langue=langue)" in route
 
 
 def test_templates_de_la_bibliotheque_et_du_parcours_compilent():

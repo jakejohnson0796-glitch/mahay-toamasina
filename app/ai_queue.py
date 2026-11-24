@@ -196,7 +196,11 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 document.resume_ia_mg
                 and document.resume_statut_ia_mg in {"generee", "indisponible"}
             )
-            if fiche_fr_prete and fiche_mg_finale:
+            fiche_en_finale = bool(
+                document.resume_ia_en
+                and document.resume_statut_ia_en in {"generee", "indisponible"}
+            )
+            if fiche_fr_prete and fiche_mg_finale and fiche_en_finale:
                 return None
 
             existante = session.exec(
@@ -211,7 +215,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
             if existante and existante.statut == StatutTacheIA.EN_COURS:
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_cours"
-                document.resume_statut_ia_mg = "en_cours"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_cours"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_cours"
                 session.add(document)
                 session.commit()
                 return existante.id
@@ -221,7 +228,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 existante.derniere_erreur = None
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_attente"
-                document.resume_statut_ia_mg = "en_attente"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_attente"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_attente"
                 session.add(existante)
                 session.add(document)
                 session.commit()
@@ -235,7 +245,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 existante.derniere_erreur = None
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_attente"
-                document.resume_statut_ia_mg = "en_attente"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_attente"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_attente"
                 session.add(existante)
                 session.add(document)
                 session.commit()
@@ -254,7 +267,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 )
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_attente"
-                document.resume_statut_ia_mg = "en_attente"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_attente"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_attente"
                 session.add(tache)
                 session.add(document)
                 session.commit()
@@ -348,8 +364,12 @@ def planifier_analyse_comparative_lecon(analyse_id: int) -> Optional[int]:
 def planifier_fiche_revision_document(
     document_id: int,
     forcer: bool = False,
+    langue: str = "fr",
 ) -> Optional[int]:
-    """Met en file une fiche téléchargeable depuis le contenu d'un cours approuvé."""
+    """Met en file la fiche source du cours dans la langue demandée."""
+    from .localization import normaliser_langue
+
+    langue = normaliser_langue(langue)
     tache_id = None
     notifier = False
     maintenant = datetime.utcnow()
@@ -365,7 +385,10 @@ def planifier_fiche_revision_document(
 
             fiche = session.exec(
                 select(FicheRevisionDocument)
-                .where(FicheRevisionDocument.document_id == document_id)
+                .where(
+                    FicheRevisionDocument.document_id == document_id,
+                    FicheRevisionDocument.langue == langue,
+                )
                 .limit(1)
             ).first()
             from .course_revision import VERSION_GENERATION_DOCUMENT
@@ -383,6 +406,7 @@ def planifier_fiche_revision_document(
             if fiche is None:
                 fiche = FicheRevisionDocument(
                     document_id=document_id,
+                    langue=langue,
                     statut=StatutFicheRevisionDocument.EN_ATTENTE,
                 )
                 session.add(fiche)
@@ -460,7 +484,10 @@ def planifier_fiche_revision_document(
             with Session(engine) as session:
                 fiche = session.exec(
                     select(FicheRevisionDocument)
-                    .where(FicheRevisionDocument.document_id == document_id)
+                    .where(
+                        FicheRevisionDocument.document_id == document_id,
+                        FicheRevisionDocument.langue == langue,
+                    )
                     .limit(1)
                 ).first()
                 if fiche is None:
@@ -507,7 +534,8 @@ def planifier_fiches_revision_documents_manquantes(max_documents: int = 3) -> in
             select(Document.id)
             .outerjoin(
                 FicheRevisionDocument,
-                FicheRevisionDocument.document_id == Document.id,
+                (FicheRevisionDocument.document_id == Document.id)
+                & (FicheRevisionDocument.langue == "fr"),
             )
             .where(
                 Document.statut == StatutDocument.APPROUVE,
@@ -533,6 +561,7 @@ def planifier_fiches_revision_documents_manquantes(max_documents: int = 3) -> in
 def reparer_fiches_revision_documents_bloquees(
     max_documents: int = 5,
     document_ids: Optional[list[int]] = None,
+    langue: str = "fr",
 ) -> int:
     """Répare les fiches en attente/en cours dont la tâche IA manque ou est terminale.
 
@@ -540,6 +569,9 @@ def reparer_fiches_revision_documents_bloquees(
     affichage de la bibliothèque. Les fiches ayant réellement échoué restent
     en échec et nécessitent la relance explicite réservée au déposant/admin.
     """
+    from .localization import normaliser_langue
+
+    langue = normaliser_langue(langue)
     limite = max(1, min(int(max_documents or 1), 10))
     with Session(engine) as session:
         requete = (
@@ -559,6 +591,7 @@ def reparer_fiches_revision_documents_bloquees(
             .where(
                 Document.statut == StatutDocument.APPROUVE,
                 Document.type_document == TypeDocument.COURS,
+                FicheRevisionDocument.langue == langue,
                 or_(
                     (
                         FicheRevisionDocument.statut.in_([
@@ -634,7 +667,9 @@ def reparer_fiches_revision_documents_bloquees(
                 StatutTacheIA.TERMINEE,
             }
         ):
-            if planifier_fiche_revision_document(int(document_id)) is not None:
+            if planifier_fiche_revision_document(
+                int(document_id), langue=langue
+            ) is not None:
                 reparations += 1
 
     if reparations:
@@ -651,6 +686,7 @@ def planifier_resumes_documents_manquants(max_documents: int = 3) -> int:
             .where(or_(
                 Document.resume_statut_ia == "a_generer",
                 Document.resume_statut_ia_mg == "a_generer",
+                Document.resume_statut_ia_en == "a_generer",
             ))
             .order_by(Document.date_upload, Document.id)
             .limit(limite)
@@ -837,8 +873,12 @@ def planifier_fiche_revision_cours(
     seance_id: int,
     utilisateur_id: int,
     forcer: bool = False,
+    langue: str = "fr",
 ) -> Optional[int]:
-    """Crée/relance la fiche d'un étudiant inscrit à une séance terminée."""
+    """Crée/relance la fiche privée dans la langue choisie par l'étudiant."""
+    from .localization import normaliser_langue
+
+    langue = normaliser_langue(langue)
     id_tache = None
     fiche_id = None
     notifier = False
@@ -868,10 +908,22 @@ def planifier_fiche_revision_cours(
                     cours_id=seance.cours_id,
                     seance_id=seance_id,
                     utilisateur_id=utilisateur_id,
+                    langue=langue,
                     statut=StatutFicheRevisionCours.EN_ATTENTE,
                 )
                 session.add(fiche)
                 session.flush()
+            elif fiche.langue != langue and fiche.statut != StatutFicheRevisionCours.EN_COURS:
+                # La fiche est privée à cet étudiant : un changement de langue
+                # invalide le contenu précédent et programme une nouvelle version.
+                fiche.langue = langue
+                fiche.statut = StatutFicheRevisionCours.EN_ATTENTE
+                fiche.contenu_json = "{}"
+                fiche.sources_json = "{}"
+                fiche.erreur_generation = None
+                fiche.date_modification = datetime.utcnow()
+                forcer = True
+                session.add(fiche)
             fiche_id = fiche.id
             if fiche.statut == StatutFicheRevisionCours.ECHOUEE and not forcer:
                 session.commit()
@@ -898,6 +950,7 @@ def planifier_fiches_revision_cours(
     cours_id: int,
     utilisateur_id: Optional[int] = None,
     seance_id: Optional[int] = None,
+    langue: str = "fr",
 ) -> int:
     """Planifie les fiches manquantes de toutes les séances terminées d'un cours.
 
@@ -924,7 +977,9 @@ def planifier_fiches_revision_cours(
     total = 0
     for seance in seances:
         for etudiant_id in ids_etudiants:
-            if planifier_fiche_revision_cours(seance.id, int(etudiant_id)) is not None:
+            if planifier_fiche_revision_cours(
+                seance.id, int(etudiant_id), langue=langue
+            ) is not None:
                 total += 1
     return total
 
@@ -1160,6 +1215,8 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
                         document.resume_statut_ia = "indisponible"
                     if document.resume_statut_ia_mg not in {"generee", "indisponible"}:
                         document.resume_statut_ia_mg = "indisponible"
+                    if document.resume_statut_ia_en not in {"generee", "indisponible"}:
+                        document.resume_statut_ia_en = "indisponible"
                     session.add(document)
             if tache.type_tache == TYPE_FICHE_REVISION_COURS and tache.fiche_revision_cours_id:
                 fiche_revision = session.get(FicheRevisionCours, tache.fiche_revision_cours_id)

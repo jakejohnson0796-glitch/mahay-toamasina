@@ -92,7 +92,7 @@ def test_route_validation_fiche_enregistre_corrections_et_audit(monkeypatch):
     original = {"resume":"Résumé ancien.","type_cours":"Cours magistral","objectif_pedagogique":"Objectif ancien.","niveau_cible":"L1","notions_cles":["Ancienne notion"],"source":"ia","statut":"generee"}
     document = SimpleNamespace(id=43,uploader_id=user.id,statut=StatutDocument.APPROUVE,cercle_id=None,matiere="Mathématiques",type_document=TypeDocument.COURS,resume_ia="Résumé ancien.",
         resume_statut_ia="generee",fiche_pedagogique_json=json.dumps(original,ensure_ascii=False),fiche_validation_statut="a_verifier",
-        fiche_validee_par_id=None,fiche_validee_le=None,resume_ia_mg="Résumé MG",fiche_pedagogique_mg_json='{"resume":"Résumé MG"}',resume_statut_ia_mg="generee")
+        fiche_validee_par_id=None,fiche_validee_le=None,resume_ia_mg="Résumé MG",fiche_pedagogique_mg_json='{"resume":"Résumé MG"}',resume_statut_ia_mg="generee",resume_ia_en="",fiche_pedagogique_en_json="{}",resume_statut_ia_en="a_generer")
     class FakeSession:
         def get(self, model, ident): return document if model is Document and ident == document.id else None
         def add(self, _obj): pass

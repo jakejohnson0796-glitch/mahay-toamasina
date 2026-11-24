@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
 
-{% block titre %}Résultat — {{ tentative.matiere }} — MITARIDALA{% endblock %}
+{% block titre %}{% if langue == "en" %}Result — {{ tentative.matiere }} — MITARIDALA{% elif langue == "mg" %}Vokatra — {{ tentative.matiere }} — MITARIDALA{% else %}Résultat — {{ tentative.matiere }} — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 
 {% block contenu %}
@@ -111,7 +111,7 @@
             <input type="hidden" name="document_id" value="{{ tentative.document_id }}">
             {% endif %}
           <input type="hidden" name="progression_id" value="{{ notions_detectees[0].progression_id }}">
-          <input type="hidden" name="question" value="Aide-moi à consolider {{ notions_detectees[0].notion }} après mon examen blanc {{ tentative.matiere }}. Explique mon point faible puis donne-moi un exercice progressif.">
+          <input type="hidden" name="question" value="{% if langue == 'en' %}Help me strengthen {{ notions_detectees[0].notion }} after my {{ tentative.matiere }} mock exam. Explain the area I should review, then give me a gradual practice exercise.{% elif langue == 'mg' %}Ampio aho hanamafy ny fahalalako momba ny {{ notions_detectees[0].notion }} taorian'ny fanadinana fanazaran-tena {{ tentative.matiere }}. Hazavao izay mbola mila averina ary omeo fanazaran-tena miandalana.{% else %}Aide-moi à consolider {{ notions_detectees[0].notion }} après mon examen blanc {{ tentative.matiere }}. Explique mon point faible puis donne-moi un exercice progressif.{% endif %}">
           <button class="bouton bouton-secondaire" type="submit">Avec le Tuteur</button>
         </form>
         <form method="post" action="/quiz/cible" class="ai-inline-action">
