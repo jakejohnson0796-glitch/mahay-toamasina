@@ -434,6 +434,8 @@ if (window.document.querySelector('#ai-output').textContent !== 'Tableau de bord
 }
 
 // Contrôle croisé des libellés des pages Objectif Examen, Quiz et Tuteur.
+const objectiveDynamicText = window.document.createElement('p');
+objectiveDynamicText.textContent = 'Ton profil indique actuellement 3e. Tu peux déjà poursuivre tes quiz et tes révisions, puis revenir à Objectif Examen lorsque ton profil sera à jour.';
 const objectiveHeading = window.document.createElement('h1');
 objectiveHeading.textContent = 'Ton objectif. Ton programme. Ta progression.';
 const objectiveNotice = window.document.createElement('p');
@@ -445,8 +447,9 @@ tutorHeading.textContent = "Tuteur IA · session d'apprentissage";
 const generatedTutorOutput = window.document.createElement('div');
 generatedTutorOutput.dataset.rendu = '';
 generatedTutorOutput.textContent = 'English tutor explanation stays in its generated language.';
-window.document.body.append(objectiveHeading, objectiveNotice, quizHeading, tutorHeading, generatedTutorOutput);
+window.document.body.append(objectiveDynamicText, objectiveHeading, objectiveNotice, quizHeading, tutorHeading, generatedTutorOutput);
 await new Promise((resolve) => setTimeout(resolve, 0));
+if (objectiveDynamicText.textContent !== 'Your profile currently shows 3e. You can continue with quizzes and revisions for now, then return to Exam Goal once your profile is up to date.') throw new Error('Interpolated Objective Exam message was not translated to English');
 if (objectiveHeading.textContent !== 'Your goal. Your programme. Your progress.') throw new Error('Objective Exam heading was not translated to English');
 if (objectiveNotice.textContent !== 'Practice exercise, not an official exam paper') throw new Error('Objective Exam notice was not translated to English');
 if (quizHeading.textContent !== 'Your results by topic') throw new Error('Quiz history heading was not translated to English');
@@ -455,6 +458,7 @@ if (!window.document.cookie.includes('mahay-langue=en')) throw new Error('Englis
 select.value = 'mg';
 select.dispatchEvent(new window.Event('change', { bubbles: true }));
 await new Promise((resolve) => setTimeout(resolve, 0));
+if (objectiveDynamicText.textContent !== "Asehon'ny mombamomba anao fa 3e. Azonao tohizana aloha ny quiz sy ny famerenana lesona, ary miverina eto amin'ny Tanjona Fanadinana rehefa nohavaozina ny mombamomba anao.") throw new Error('Interpolated Objective Exam message was not translated to Malagasy');
 if (objectiveHeading.textContent !== 'Ny tanjonao. Ny fandaharam-pianaranao. Ny fivoaranao.') throw new Error('Objective Exam heading was not translated to Malagasy');
 if (objectiveNotice.textContent !== "Fanazaran-tena ara-pedagojika fa tsy taratasy fanadinana ofisialy") throw new Error('Objective Exam notice was not translated to Malagasy');
 if (quizHeading.textContent !== 'Ny vokatrao araka ny lohahevitra') throw new Error('Quiz history heading was not translated to Malagasy');
