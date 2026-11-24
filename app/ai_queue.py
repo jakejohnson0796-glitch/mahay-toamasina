@@ -196,7 +196,11 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 document.resume_ia_mg
                 and document.resume_statut_ia_mg in {"generee", "indisponible"}
             )
-            if fiche_fr_prete and fiche_mg_finale:
+            fiche_en_finale = bool(
+                document.resume_ia_en
+                and document.resume_statut_ia_en in {"generee", "indisponible"}
+            )
+            if fiche_fr_prete and fiche_mg_finale and fiche_en_finale:
                 return None
 
             existante = session.exec(
@@ -211,7 +215,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
             if existante and existante.statut == StatutTacheIA.EN_COURS:
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_cours"
-                document.resume_statut_ia_mg = "en_cours"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_cours"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_cours"
                 session.add(document)
                 session.commit()
                 return existante.id
@@ -221,7 +228,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 existante.derniere_erreur = None
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_attente"
-                document.resume_statut_ia_mg = "en_attente"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_attente"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_attente"
                 session.add(existante)
                 session.add(document)
                 session.commit()
@@ -235,7 +245,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 existante.derniere_erreur = None
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_attente"
-                document.resume_statut_ia_mg = "en_attente"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_attente"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_attente"
                 session.add(existante)
                 session.add(document)
                 session.commit()
@@ -254,7 +267,10 @@ def planifier_resume_document(document_id: int) -> Optional[int]:
                 )
                 if not fiche_fr_prete:
                     document.resume_statut_ia = "en_attente"
-                document.resume_statut_ia_mg = "en_attente"
+                if not fiche_mg_finale:
+                    document.resume_statut_ia_mg = "en_attente"
+                if not fiche_en_finale:
+                    document.resume_statut_ia_en = "en_attente"
                 session.add(tache)
                 session.add(document)
                 session.commit()
@@ -670,6 +686,7 @@ def planifier_resumes_documents_manquants(max_documents: int = 3) -> int:
             .where(or_(
                 Document.resume_statut_ia == "a_generer",
                 Document.resume_statut_ia_mg == "a_generer",
+                Document.resume_statut_ia_en == "a_generer",
             ))
             .order_by(Document.date_upload, Document.id)
             .limit(limite)
