@@ -6726,7 +6726,6 @@
     "quiz · dernier le": "quiz · last on",
     "Pas encore assez de données": "Not enough data yet",
     "Termine ton premier quiz pour voir apparaître ta progression par matière.": "Complete your first quiz to see your progress by subject.",
-    "Commencer un quiz": "Start a quiz",
     "Nouveau · Carte cognitive": "New · Cognitive map",
     "Comprendre l'ordre des notions": "Understand how concepts are ordered",
     "Le moteur de maîtrise sait déjà mesurer chaque notion. Cette carte ajoute maintenant les liens entre elles pour repérer les prérequis qui bloquent la suite.": "The mastery engine already measures each concept. This map adds the links between them to identify prerequisites that block further progress.",
