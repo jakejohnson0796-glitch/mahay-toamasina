@@ -278,6 +278,7 @@ def liste_documents(
     session: Session = Depends(get_session),
 ):
     filiere_id = entier_ou_none(filiere_id)
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     cercle = None
     if cercle_id is not None:
@@ -421,7 +422,7 @@ def liste_documents(
             fiche.document_id: fiche
             for fiche in session.exec(
                 select(FicheRevisionDocument).where(
-                    FicheRevisionDocument.document_id.in_(ids_documents_affiches)
+                    FicheRevisionDocument.document_id.in_(ids_documents_affiches), FicheRevisionDocument.langue == langue
                 )
             ).all()
         }
@@ -438,7 +439,7 @@ def liste_documents(
             and document.id not in fiches_revision_documents
         ]
         for document_id in cours_sans_fiche[:10]:
-            ai_queue.planifier_fiche_revision_document(document_id)
+            ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
 
         # Répare en petit lot les fiches existantes dont la tâche durable a
         # disparu ou est terminée/échouée alors que la fiche prétend attendre.
@@ -465,6 +466,7 @@ def liste_documents(
         reparations = ai_queue.reparer_fiches_revision_documents_bloquees(
             max_documents=5,
             document_ids=cours_a_reparer,
+            langue=langue,
         ) if cours_a_reparer else 0
 
         if cours_sans_fiche or reparations:
@@ -472,7 +474,7 @@ def liste_documents(
                 fiche.document_id: fiche
                 for fiche in session.exec(
                     select(FicheRevisionDocument).where(
-                        FicheRevisionDocument.document_id.in_(ids_documents_affiches)
+                        FicheRevisionDocument.document_id.in_(ids_documents_affiches), FicheRevisionDocument.langue == langue
                     )
                 ).all()
             }
@@ -1668,6 +1670,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
     Il ne remplace aucun flux existant : il ajoute un point d'entrée qui
     relie lecture, quiz et Tuteur contextualisé autour de la même ressource.
     """
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -1685,7 +1688,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
     if document.type_document == TypeDocument.COURS:
         fiche_revision_document = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document.id
+                FicheRevisionDocument.document_id == document.id, FicheRevisionDocument.langue == langue
             )
         ).first()
         if (
@@ -1698,11 +1701,11 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             # Les anciens cours et les enregistrements terminés sans contenu
             # sont planifiés ou réparés à leur première consultation.
             session.commit()
-            ai_queue.planifier_fiche_revision_document(document.id)
+            ai_queue.planifier_fiche_revision_document(document.id, langue=langue)
             session.expire_all()
             fiche_revision_document = session.exec(
                 select(FicheRevisionDocument).where(
-                    FicheRevisionDocument.document_id == document.id
+                    FicheRevisionDocument.document_id == document.id, FicheRevisionDocument.langue == langue
                 )
             ).first()
         elif fiche_revision_document.statut in {
@@ -1712,11 +1715,12 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             ai_queue.reparer_fiches_revision_documents_bloquees(
                 max_documents=1,
                 document_ids=[int(document.id)],
+                langue=langue,
             )
             session.expire_all()
             fiche_revision_document = session.exec(
                 select(FicheRevisionDocument).where(
-                    FicheRevisionDocument.document_id == document.id
+                    FicheRevisionDocument.document_id == document.id, FicheRevisionDocument.langue == langue
                 )
             ).first()
 
@@ -1751,6 +1755,7 @@ def consulter_fiche_revision_document(
     session: Session = Depends(get_session),
 ):
     """Affiche le carnet IA fondé sur le texte source d'un cours approuvé."""
+    langue = langue_depuis_requete(request)
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
@@ -1769,7 +1774,7 @@ def consulter_fiche_revision_document(
 
     fiche = session.exec(
         select(FicheRevisionDocument).where(
-            FicheRevisionDocument.document_id == document_id
+            FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
         )
     ).first()
     if (
@@ -1780,11 +1785,11 @@ def consulter_fiche_revision_document(
         )
     ):
         session.commit()
-        ai_queue.planifier_fiche_revision_document(document_id)
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
         session.expire_all()
         fiche = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document_id
+                FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
             )
         ).first()
     elif (
@@ -1792,11 +1797,11 @@ def consulter_fiche_revision_document(
         and fiche.version_generation != course_revision.VERSION_GENERATION_DOCUMENT
     ):
         # Régénère les fiches existantes une par une, uniquement lors d'une consultation.
-        ai_queue.planifier_fiche_revision_document(document_id)
+        ai_queue.planifier_fiche_revision_document(document_id, langue=langue)
         session.expire_all()
         fiche = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document_id
+                FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
             )
         ).first()
     elif fiche.statut in {
@@ -1806,11 +1811,12 @@ def consulter_fiche_revision_document(
         ai_queue.reparer_fiches_revision_documents_bloquees(
             max_documents=1,
             document_ids=[document_id],
+            langue=langue,
         )
         session.expire_all()
         fiche = session.exec(
             select(FicheRevisionDocument).where(
-                FicheRevisionDocument.document_id == document_id
+                FicheRevisionDocument.document_id == document_id, FicheRevisionDocument.langue == langue
             )
         ).first()
 
@@ -1830,7 +1836,7 @@ def consulter_fiche_revision_document(
 
     try:
         contenu = course_revision.normaliser_fiche_revision(
-            json.loads(fiche.contenu_json)
+            json.loads(fiche.contenu_json), langue=langue
         )
         sources = json.loads(fiche.sources_json or "{}")
         if not isinstance(sources, dict):
@@ -1844,7 +1850,7 @@ def consulter_fiche_revision_document(
     # La fiche conservée en base reste commune et immuable. Chaque affichage reçoit
     # une copie adaptée au compte courant, à ses notions fragiles et à ses quiz.
     contenu = course_revision.personnaliser_fiche_revision_document(
-        session, document, utilisateur.id, contenu
+        session, document, utilisateur.id, contenu, langue=langue
     )
 
     return templates.TemplateResponse(
