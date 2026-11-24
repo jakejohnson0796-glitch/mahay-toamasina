@@ -71,6 +71,7 @@ def make_document(*, statut=StatutDocument.APPROUVE, type_document=TypeDocument.
 def make_fiche():
     return SimpleNamespace(
         document_id=51,
+        langue="fr",
         statut=StatutFicheRevisionDocument.TERMINEE,
         version_generation=course_revision.VERSION_GENERATION_DOCUMENT,
         contenu_json=json.dumps({"resume": "Contenu source partagé"}),
@@ -171,9 +172,9 @@ def test_consultation_construit_une_fiche_personnalisee_pour_le_compte_connecte(
         "utilisateur_courant",
         lambda _request, _session: current["user"],
     )
-    monkeypatch.setattr(course_revision, "normaliser_fiche_revision", lambda _raw: dict(source))
+    monkeypatch.setattr(course_revision, "normaliser_fiche_revision", lambda _raw, langue="fr": dict(source))
 
-    def personnaliser(_session, _document, utilisateur_id, fiche):
+    def personnaliser(_session, _document, utilisateur_id, fiche, langue="fr"):
         profil = {"utilisateur_id": utilisateur_id}
         profils_generes.append(profil)
         return {**fiche, "profil_personnalise": profil}
@@ -233,10 +234,10 @@ def test_export_revision_recalcule_le_profil_du_compte_et_ne_cache_pas_la_fiche(
     monkeypatch.setattr(
         course_revision,
         "normaliser_fiche_revision",
-        lambda _raw: {"resume": "Contenu source partagé"},
+        lambda _raw, langue="fr": {"resume": "Contenu source partagé"},
     )
 
-    def personnaliser(_session, _document, utilisateur_id, fiche):
+    def personnaliser(_session, _document, utilisateur_id, fiche, langue="fr"):
         profil = {"utilisateur_id": utilisateur_id}
         profils_generes.append(profil)
         return {**fiche, "profil_personnalise": profil}
