@@ -737,6 +737,7 @@ for (const preserved of [
   '18°54′S, 47°31′E',
   '11/11/1918',
   '1789-1799',
+  '1914–1918',
   'indépendance 1960',
   "Co n'est pas CO"
 ]) {
