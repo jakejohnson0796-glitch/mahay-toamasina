@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% block titre %}Jeu cérébral — MITARIDALA{% endblock %}
+{% block titre %}{% if langue == "en" %}Brain game — MITARIDALA{% elif langue == "mg" %}Lalao mampieritreritra — MITARIDALA{% else %}Jeu cérébral — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="jeu-cerebral-page">
@@ -251,7 +251,7 @@
   <section class="jeu-section" aria-labelledby="jeu-historique">
     <div class="jeu-section-head">
       <div>
-        <h2 id="jeu-historique">Tes derniers petits défis</h2>
+        <h2 id="jeu-historique">{% if langue == "en" %}Your recent challenges{% elif langue == "mg" %}Ireo fanamby farany nataonao{% else %}Tes derniers petits défis{% endif %}</h2>
         <p>Observe ton évolution sans te comparer aux autres.</p>
       </div>
     </div>
@@ -262,7 +262,7 @@
         <span class="jeu-history-icon" aria-hidden="true">{{ entree.theme.emoji }}</span>
         <div class="jeu-history-main">
           <strong>{{ entree.theme.titre }}</strong>
-          <span>{{ entree.partie.date_creation.strftime("%d/%m/%Y") }} · {% if entree.partie.bonnes_reponses is not none %}{{ entree.partie.bonnes_reponses }}/{{ entree.partie.nb_questions }} bonnes réponses{% else %}session terminée{% endif %}</span>
+          <span>{{ entree.partie.date_creation.strftime("%d/%m/%Y") }} · {% if entree.partie.bonnes_reponses is not none %}{{ entree.partie.bonnes_reponses }}/{{ entree.partie.nb_questions }} {% if langue == "en" %}correct answers{% elif langue == "mg" %}valiny marina{% else %}bonnes réponses{% endif %}{% else %}{% if langue == "en" %}session completed{% elif langue == "mg" %}lalao vita{% else %}session terminée{% endif %}{% endif %}</span>
         </div>
         <span class="jeu-history-score">{{ entree.partie.score }} %</span>
       </article>
