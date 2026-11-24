@@ -306,7 +306,7 @@ def test_renderer_canonicalise_le_latex_multidisciplinaire_sans_toucher_au_code(
     js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
 
     assert "commandesTeXReparables" in js
-    assert r"/\\{2,}(?=[A-Za-z])/g" in js
+    assert r"/(^|[^\\])\\\\(?=[A-Za-z])/g" in js
     assert "motifFractionAvecAntislashParasite" in js
     assert "function normaliserCodeMathInline(source)" in js
     assert 'cible.dataset.renduVersion = "17"' in js
