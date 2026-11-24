@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icone.html" import icone %}
-{% block titre %}{% if langue == "mg" %}Ny fanamby-nao — MITARIDALA{% else %}Ton défi — MITARIDALA{% endif %}{% endblock %}
+{% block titre %}{% if langue == "en" %}Your challenge — MITARIDALA{% elif langue == "mg" %}Ny fanamby-nao — MITARIDALA{% else %}Ton défi — MITARIDALA{% endif %}{% endblock %}
 {% block main_classe %}main-clair main-clair-pleine-largeur{% endblock %}
 {% block contenu %}
 <div class="jeu-session-page" data-partie-id="{{ partie.id }}" data-chrono-actif="{{ 'true' if chrono_actif else 'false' }}" data-langue="{{ langue }}">
@@ -160,7 +160,7 @@
 
   <section class="jeu-session-progress" aria-label="Avancement du défi">
     <div class="jeu-progress-meta">
-      <strong>{% if langue == "mg" %}Fanontaniana {{ numero_question }} amin’ny {{ total_questions }}{% else %}Question {{ numero_question }} sur {{ total_questions }}{% endif %}</strong>
+      <strong>{% if langue == "en" %}Question {{ numero_question }} of {{ total_questions }}{% elif langue == "mg" %}Fanontaniana {{ numero_question }} amin’ny {{ total_questions }}{% else %}Question {{ numero_question }} sur {{ total_questions }}{% endif %}</strong>
       <span>{% if langue == "mg" %}Fanontaniana iray isaky ny mandeha · ambaratonga miovaova{% else %}Une question à la fois · niveau adaptatif{% endif %}</span>
     </div>
     <div class="jeu-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total_questions }}" aria-valuenow="{{ numero_question - 1 }}" aria-label="Progression du jeu">
@@ -226,10 +226,10 @@
       {% endif %}
       <span>{% if langue == "mg" %}Lohahevitra hita maso · fanontaniana iray isaky ny mandeha{% else %}Un repère visuel pour le thème · une question à la fois{% endif %}</span>
     </div>
-    <div class="jeu-level-steps" aria-label="{% if langue == 'mg' %}Ambaratonga telo{% else %}Progression en trois niveaux{% endif %}">
-      <span class="jeu-level-step" {% if niveau_index == 0 %}aria-current="step"{% endif %}><i>1</i>{% if langue == "mg" %}Mora{% else %}Facile{% endif %}</span>
-      <span class="jeu-level-step" {% if niveau_index == 1 %}aria-current="step"{% endif %}><i>2</i>{% if langue == "mg" %}Antonony{% else %}Moyen{% endif %}</span>
-      <span class="jeu-level-step" {% if niveau_index == 2 %}aria-current="step"{% endif %}><i>3</i>{% if langue == "mg" %}Sarotra{% else %}Difficile{% endif %}</span>
+    <div class="jeu-level-steps" aria-label="{% if langue == 'en' %}Three-level progression{% elif langue == 'mg' %}Ambaratonga telo{% else %}Progression en trois niveaux{% endif %}">
+      <span class="jeu-level-step" {% if niveau_index == 0 %}aria-current="step"{% endif %}><i>1</i>{% if langue == "en" %}Easy{% elif langue == "mg" %}Mora{% else %}Facile{% endif %}</span>
+      <span class="jeu-level-step" {% if niveau_index == 1 %}aria-current="step"{% endif %}><i>2</i>{% if langue == "en" %}Medium{% elif langue == "mg" %}Antonony{% else %}Moyen{% endif %}</span>
+      <span class="jeu-level-step" {% if niveau_index == 2 %}aria-current="step"{% endif %}><i>3</i>{% if langue == "en" %}Hard{% elif langue == "mg" %}Sarotra{% else %}Difficile{% endif %}</span>
     </div>
     <div data-no-translate>
       <h2 class="jeu-question-text" id="question-du-jeu" data-rendu>{{ question.question }}</h2>
