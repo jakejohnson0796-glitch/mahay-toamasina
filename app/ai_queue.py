@@ -1215,6 +1215,8 @@ def echouer_tache(tache_id: int, erreur: Exception) -> None:
                         document.resume_statut_ia = "indisponible"
                     if document.resume_statut_ia_mg not in {"generee", "indisponible"}:
                         document.resume_statut_ia_mg = "indisponible"
+                    if document.resume_statut_ia_en not in {"generee", "indisponible"}:
+                        document.resume_statut_ia_en = "indisponible"
                     session.add(document)
             if tache.type_tache == TYPE_FICHE_REVISION_COURS and tache.fiche_revision_cours_id:
                 fiche_revision = session.get(FicheRevisionCours, tache.fiche_revision_cours_id)
