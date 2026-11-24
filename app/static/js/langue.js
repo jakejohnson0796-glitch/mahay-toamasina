@@ -3847,6 +3847,10 @@
     "Aucun cours virtuel n’est associé à cet élève pour le moment.": "Tsy misy kilasy virtoaly mifandray amin'ity mpianatra ity amin'izao fotoana izao.",
     "Aucun enfant rattaché pour le moment": "Mbola tsy misy zaza mifandray amin'ny kaonty",
 
+    "/ Fiche de révision": "/ Taratasy famerenana",
+    "Cette fiche a été générée automatiquement depuis le texte extrait du cours. Le rendu PDF/Word peut simplifier certaines notations scientifiques ; compare les formules importantes avec le document original. Les exercices sont conçus à partir des notions détectées, mais ils peuvent nécessiter une validation pédagogique.": "Ity taratasy ity dia novokarina ho azy avy amin'ny lahatsoratra nalaina tao amin'ny lesona. Mety hanatsotra ny marika siantifika sasany ny endrika PDF/Word; ampitahao amin'ny antontan-taratasy tany am-boalohany ireo raikipohy manan-danja. Namboarina avy amin'ny lohahevitra hita ireo fanazaran-tena, saingy mety mbola mila fanamarinana ara-pedagojika.",
+    "Exercice": "Fanazaran-tena",
+
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -7215,6 +7219,9 @@
     "Aucun cours virtuel n’est associé à cet élève pour le moment.": "No virtual classes are linked to this student at the moment.",
     "Aucun enfant rattaché pour le moment": "No children are linked to this account yet",
     "révision ·": "revision ·",
+    "/ Fiche de révision": "/ Revision sheet",
+    "Cette fiche a été générée automatiquement depuis le texte extrait du cours. Le rendu PDF/Word peut simplifier certaines notations scientifiques ; compare les formules importantes avec le document original. Les exercices sont conçus à partir des notions détectées, mais ils peuvent nécessiter une validation pédagogique.": "This sheet was generated automatically from text extracted from the lesson. The PDF/Word layout may simplify some scientific notation; compare important formulas with the original document. The exercises are based on detected topics, but may still need pedagogical review.",
+
   });
 
   var noeudsOriginaux = new WeakMap();
