@@ -3846,6 +3846,7 @@
     "Pointages connus : sur séances recensées. Une séance sans pointage n’est pas considérée comme une absence.": "Fanatrehana voarakitra: amin'ireo fotoam-pianarana voaisa. Tsy raisina ho tsy fahatongavana ny fotoam-pianarana tsy nisy fanamarihana.",
     "Aucun cours virtuel n’est associé à cet élève pour le moment.": "Tsy misy kilasy virtoaly mifandray amin'ity mpianatra ity amin'izao fotoana izao.",
     "Aucun enfant rattaché pour le moment": "Mbola tsy misy zaza mifandray amin'ny kaonty",
+
   });
 
   var TRADUCTIONS_EN = Object.freeze({
@@ -7214,6 +7215,7 @@
     "Pointages connus : sur séances recensées. Une séance sans pointage n’est pas considérée comme une absence.": "Known check-ins: out of recorded sessions. A session without a check-in is not counted as an absence.",
     "Aucun cours virtuel n’est associé à cet élève pour le moment.": "No virtual classes are linked to this student at the moment.",
     "Aucun enfant rattaché pour le moment": "No children are linked to this account yet",
+    "révision ·": "revision ·",
   });
 
   var noeudsOriginaux = new WeakMap();
@@ -7348,6 +7350,18 @@
     if (match) return match[1] + " days remaining";
     match = cle.match(/^(\d+)\s+jours?$/i);
     if (match) return match[1] + " days";
+    match = cle.match(/^Ton profil indique actuellement (.+?)\\. Tu peux déjà poursuivre tes quiz et tes révisions, puis revenir à Objectif Examen lorsque ton profil sera à jour\\.$/i);
+    if (match) return "Your profile currently shows " + match[1] + ". You can continue with quizzes and revisions for now, then return to Exam Goal once your profile is up to date.";
+    match = cle.match(/^Ton profil indique (.+?)\\. Le parcours CEPE et les annales d’examen sont accessibles à partir de la classe T5\\.$/i);
+    if (match) return "Your profile shows " + match[1] + ". The CEPE pathway and past papers are available from Grade T5.";
+    match = cle.match(/^Documents scolaires publiés après modération et correspondant à ta classe vérifiée et à ta série (.+)$/i);
+    if (match) return "School documents published after moderation and matching your verified grade and stream " + match[1];
+    match = cle.match(/^Ton profil indique actuellement (.+?)\\. Tu peux déjà poursuivre tes quiz et tes révisions, puis revenir à Objectif Examen lorsque ton profil sera à jour\\.$/i);
+    if (match) return "Asehon'ny mombamomba anao fa " + match[1] + ". Azonao tohizana aloha ny quiz sy ny famerenana lesona, ary miverina eto amin'ny Tanjona Fanadinana rehefa nohavaozina ny mombamomba anao.";
+    match = cle.match(/^Ton profil indique (.+?)\\. Le parcours CEPE et les annales d’examen sont accessibles à partir de la classe T5\\.$/i);
+    if (match) return "Asehon'ny mombamomba anao fa " + match[1] + ". Azo idirana manomboka amin'ny kilasy T5 ny lalam-piomanana CEPE sy ny fanadinana taloha.";
+    match = cle.match(/^Documents scolaires publiés après modération et correspondant à ta classe vérifiée et à ta série (.+)$/i);
+    if (match) return "Tahirin-kevitra an-tsekoly navoaka taorian'ny fanamarinana ary mifanaraka amin'ny kilasy sy sampam-pianarana voamarina anao " + match[1];
     match = cle.match(/^Quiz — (.+) — MITARIDALA$/i);
     if (match) return "Quiz — " + match[1] + " — MITARIDALA";
     match = cle.match(/^Résultat — (.+) — MITARIDALA$/i);
