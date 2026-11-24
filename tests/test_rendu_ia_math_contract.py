@@ -97,7 +97,7 @@ def test_renderer_anticipe_les_commandes_latex_perdues_et_les_parentheses_mathem
     assert r".replace(/\u0009imes(?=\s*(?:\d|[A-Za-z(]))/g" in js
     assert r"normalisee.replace(/\(([^()\n]{1,160})\)/g" in js
     assert "const contientMath =" in js
-    assert 'cible.dataset.renduVersion = "16"' in js
+    assert 'cible.dataset.renduVersion = "17"' in js
 
 
 def test_renderer_supporte_mhchem_et_formules_chimiques_sans_delimiteurs():
@@ -300,3 +300,22 @@ def test_version_katex_est_alignee_dans_build_runtime_et_ci():
     assert "simulation_count" in smoke
     assert "simulationsAttendues" in smoke
     assert "katex@0.19.1" in ci
+
+
+def test_renderer_canonicalise_le_latex_multidisciplinaire_sans_toucher_au_code():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    assert "commandesTeXReparables" in js
+    assert r"/\\{2,}(?=[A-Za-z])/g" in js
+    assert "motifFractionAvecAntislashParasite" in js
+    assert "function normaliserCodeMathInline(source)" in js
+    assert 'cible.dataset.renduVersion = "17"' in js
+
+
+def test_renderer_preserve_dates_mesures_medicales_coordonnees_et_code():
+    js = (RACINE / "app" / "static" / "js" / "rendu_ia.js").read_text(encoding="utf-8")
+
+    assert "expressionEstDate" in js
+    assert "expressionEstMesureClinique" in js
+    assert r"\d{1,2}[./-]\d{1,2}" in js
+    assert "mm\\s*hg" in js
