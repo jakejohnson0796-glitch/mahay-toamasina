@@ -76,6 +76,18 @@ def test_prompts_fiches_revision_prescrivent_une_meilleure_pedagogie_et_un_latex
         assert r"\begin{pmatrix}" in prompt
         assert "Facile" in prompt and "Difficile" in prompt
 
+    for langue, niveaux in (
+        ("mg", "Mora, antonony ary sarotra"),
+        ("en", "Easy, Medium and Hard"),
+    ):
+        prompt_personnel_localise = course_revision._texte_ia_non_fiable(contexte, langue=langue)
+        prompt_document_localise = course_revision._texte_ia_document(contexte, langue=langue)
+        for prompt_localise in (prompt_personnel_localise, prompt_document_localise):
+            assert niveaux in prompt_localise
+        if langue == "en":
+            assert "Facile, Moyen et Difficile" not in prompt_personnel_localise
+            assert "Facile, Moyen et Difficile" not in prompt_document_localise
+
 
 def test_budget_completion_tokens_se_reduit_quand_le_contexte_grandit():
     schema_court = {"type": "json_schema", "schema": {"type": "object"}}
