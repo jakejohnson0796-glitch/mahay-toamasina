@@ -742,7 +742,7 @@ for (const preserved of [
   "Co n'est pas CO"
 ]) {
   if (!disciplinesText.includes(preserved)) {
-    throw new Error('A non-mathematical domain value was altered: ' + preserved);
+    throw new Error('A non-mathematical domain value was altered: ' + preserved + ' ; rendered text=' + JSON.stringify(disciplinesText));
   }
 }
 const sourceCode = disciplinesHost.querySelector('pre code');
