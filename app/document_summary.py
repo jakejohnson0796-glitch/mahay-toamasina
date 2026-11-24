@@ -633,6 +633,25 @@ def generer_et_sauvegarder_fiche_document(document_id: int) -> None:
                     fiche_fr = {}
             except (TypeError, ValueError):
                 fiche_fr = {}
+            if not fiche_fr.get("resume"):
+                # Les anciens enregistrements peuvent avoir le résumé texte
+                # sans le JSON structuré ; la traduction utilise ce texte
+                # existant au lieu de produire une fiche anglaise vide.
+                fiche_fr = {
+                    **fiche_fr,
+                    "resume": document.resume_ia,
+                    "objectif_pedagogique": fiche_fr.get("objectif_pedagogique", ""),
+                    "type_cours": fiche_fr.get("type_cours", document.type_document.value),
+                    "niveau_cible": fiche_fr.get("niveau_cible", ""),
+                    "notions_cles": fiche_fr.get("notions_cles", []),
+                    "competences_visees": fiche_fr.get("competences_visees", []),
+                    "prerequis": fiche_fr.get("prerequis", []),
+                    "plan_cours": fiche_fr.get("plan_cours", []),
+                    "langue": fiche_fr.get("langue", ""),
+                    "confiance": fiche_fr.get("confiance", 0.55),
+                    "limites": fiche_fr.get("limites", ""),
+                    "statut": document.resume_statut_ia,
+                }
             fiche_mg_enregistree = (
                 fiche_fr.get("fiche_malagasy")
                 if not fiche_mg_deja_prete else None
