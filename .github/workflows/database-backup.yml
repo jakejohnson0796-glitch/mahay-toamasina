@@ -15,11 +15,11 @@ jobs:
     name: Exporter et chiffrer les tables public
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    env:
-      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
-      AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
     steps:
       - name: Vérifier la configuration sans afficher les secrets
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -47,6 +47,9 @@ jobs:
           sudo apt-get install --yes --no-install-recommends age
 
       - name: Créer, vérifier et chiffrer le dump PostgreSQL
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
         shell: bash
         run: |
           set -Eeuo pipefail
