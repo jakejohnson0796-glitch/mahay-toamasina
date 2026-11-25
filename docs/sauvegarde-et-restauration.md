@@ -39,23 +39,26 @@ Après fusion de ce changement dans `main` :
 3. Clique sur **Run workflow** en sélectionnant `main`.
 4. Vérifie que l'exécution est verte, puis récupère l'artefact `mahay-postgres-public-...`.
 
+GitHub télécharge l'artefact sous forme de ZIP : extrais-le pour obtenir le fichier `mahay-public.dump.age` avant le déchiffrement.
+
 Le dépôt étant public, ses lecteurs peuvent télécharger les artefacts. L'artefact ne contient donc que des données chiffrées avec la clé publique age. Sans la clé privée conservée hors de GitHub, son contenu n'est pas lisible.
 
 Les artefacts GitHub expirent après 30 jours. Ce mécanisme est une première protection, pas une politique d'archivage longue durée. Il faudra ajouter une destination de sauvegarde externe privée et une exécution planifiée pour obtenir une véritable stratégie de sauvegarde quotidienne.
 
 ## Restaurer dans un environnement de test
 
-Télécharge l'artefact, puis déchiffre-le avec la clé privée conservée hors de GitHub :
+Télécharge l'artefact ZIP, extrais `mahay-public.dump.age`, puis déchiffre-le avec la clé privée conservée hors de GitHub. Sous Windows PowerShell, avec age et les outils PostgreSQL 17 installés :
 
-```bash
-age --decrypt --identity mahay-backup-key.txt --output mahay-public.dump mahay-public.dump.age
-pg_restore --list mahay-public.dump
+```powershell
+age.exe --decrypt --identity .\\mahay-backup-key.txt --output .\\mahay-public.dump .\\mahay-public.dump.age
+pg_restore.exe --list .\\mahay-public.dump
 ```
 
-Pour tester la restauration, crée d'abord une base ou un projet Supabase de test vide, puis restaure l'archive avec les outils PostgreSQL 17 :
+Pour tester la restauration, crée d'abord une base ou un projet Supabase de test vide. Définis ensuite sa chaîne de connexion dans la session PowerShell et restaure l'archive :
 
-```bash
-pg_restore --no-owner --no-acl --dbname="$RESTORE_DATABASE_URL" mahay-public.dump
+```powershell
+$env:RESTORE_DATABASE_URL = "postgresql://..."
+pg_restore.exe --no-owner --no-acl --dbname="$env:RESTORE_DATABASE_URL" .\\mahay-public.dump
 ```
 
 N'exécute pas cette commande sur la base de production pour un simple test. Vérifie ensuite les tables, les volumes de lignes et les parcours principaux sur l'environnement de test.
