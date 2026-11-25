@@ -32,7 +32,7 @@ La chaîne de connexion doit viser le bon projet et comporter le paramètre SSL 
 
 ### 3. Lancer une sauvegarde
 
-Après fusion de ce changement dans `main) :
+Après fusion de ce changement dans `main` :
 
 1. Ouvre l'onglet **Actions** du dépôt.
 2. Sélectionne **Sauvegarde chiffrée de la base Postgres**.
