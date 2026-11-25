@@ -24,7 +24,11 @@ def test_workflow_exports_public_schema_and_uploads_only_ciphertext():
     assert "--schema=public" in workflow
     assert "pg_restore --list" in workflow
     assert "age --encrypt" in workflow
-    assert "rm -f \"$dump_file\"" in workflow
+    assert "trap 'rm -f" in workflow
+    assert "trap 'rm -rf" not in workflow
+    assert workflow.index("Publier uniquement le fichier chiffré") < workflow.index(
+        "Nettoyer les fichiers temporaires du runner"
+    )
     assert "path: ${{ runner.temp }}/mahay-backup/mahay-public.dump.age" in workflow
     assert "retention-days: 30" in workflow
 
