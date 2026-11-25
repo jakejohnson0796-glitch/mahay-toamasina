@@ -53,7 +53,7 @@ jobs:
           umask 077
           backup_dir="${RUNNER_TEMP}/mahay-backup"
           mkdir -p "$backup_dir"
-          trap 'rm -rf "$backup_dir"' EXIT
+          trap 'rm -f "$dump_file"' EXIT
 
           dump_file="$backup_dir/mahay-public.dump"
           encrypted_file="$backup_dir/mahay-public.dump.age"
@@ -83,3 +83,8 @@ jobs:
           path: ${{ runner.temp }}/mahay-backup/mahay-public.dump.age
           if-no-files-found: error
           retention-days: 30
+
+      - name: Nettoyer les fichiers temporaires du runner
+        if: always()
+        shell: bash
+        run: rm -rf "${RUNNER_TEMP}/mahay-backup"
