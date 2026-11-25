@@ -1,0 +1,41 @@
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_workflow_requires_database_url_and_age_public_recipient():
+    workflow = (ROOT / ".github" / "workflows" / "database-backup.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "workflow_dispatch:" in workflow
+    assert "secrets.BACKUP_DATABASE_URL" in workflow
+    assert "secrets.BACKUP_AGE_RECIPIENT" in workflow
+    assert "age1[0-9a-z]+" in workflow
+    assert "postgres:17-alpine" in workflow
+
+
+def test_workflow_exports_public_schema_and_uploads_only_ciphertext():
+    workflow = (ROOT / ".github" / "workflows" / "database-backup.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "--schema=public" in workflow
+    assert "pg_restore --list" in workflow
+    assert "age --encrypt" in workflow
+    assert "rm -f \"$dump_file\"" in workflow
+    assert "path: ${{ runner.temp }}/mahay-backup/mahay-public.dump.age" in workflow
+    assert "retention-days: 30" in workflow
+
+
+def test_backup_document_states_storage_and_automation_limits():
+    guide = (ROOT / "docs" / "sauvegarde-et-restauration.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "volumes de lignes" in guide
+    assert "ne couvre pas" in guide
+    assert "fichiers binaires" in guide
+    assert "volontairement manuel" in guide
+    assert "clé privée" in guide
