@@ -165,3 +165,29 @@ def test_detects_download_size_mismatch(tmp_path):
     backup.opener = mismatching_api
     with pytest.raises(StorageBackupError, match="did not match"):
         backup.backup(tmp_path / "storage")
+
+
+
+def test_requires_https_for_storage_credentials():
+    with pytest.raises(StorageBackupError, match="HTTPS"):
+        SupabaseStorageBackup(
+            "http://example.supabase.co",
+            "service-role-secret-for-tests",
+            opener=FakeStorageAPI(),
+        )
+
+
+def test_empty_bucket_inventory_fails_closed(tmp_path):
+    class EmptyBucketsAPI:
+        def __call__(self, request, timeout=0):
+            assert request.get_method() == "GET"
+            return FakeResponse(b"[]")
+
+    backup = SupabaseStorageBackup(
+        "https://example.supabase.co",
+        "service-role-secret-for-tests",
+        opener=EmptyBucketsAPI(),
+    )
+
+    with pytest.raises(StorageBackupError, match="No Storage buckets"):
+        backup.backup(tmp_path / "empty-storage")
