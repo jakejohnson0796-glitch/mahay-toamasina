@@ -40,15 +40,28 @@ jobs:
             exit 1
           fi
 
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
       - name: Installer Python
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
-      - name: Exporter tous les buckets et chiffrer l'archive
+      - name: Exporter tous les buckets Supabase
         env:
           SUPABASE_URL: ${{ secrets.BACKUP_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.BACKUP_STORAGE_SERVICE_KEY }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          backup_dir="${RUNNER_TEMP}/mahay-storage-plain"
+          mkdir -p "$backup_dir"
+          python scripts/backup_supabase_storage.py --output "$backup_dir"
+
+      - name: Créer et chiffrer l'archive
+        env:
           AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
         shell: bash
         run: |
@@ -57,10 +70,9 @@ jobs:
           backup_dir="${RUNNER_TEMP}/mahay-storage-plain"
           archive_file="${RUNNER_TEMP}/mahay-storage.tar.gz"
           encrypted_file="${RUNNER_TEMP}/mahay-storage.tar.gz.age"
-          trap 'rm -rf "$backup_dir" "$archive_file"' EXIT
-          mkdir -p "$backup_dir"
+          trap 'rm -f "$archive_file"' EXIT
 
-          python scripts/backup_supabase_storage.py --output "$backup_dir"
+          test -d "$backup_dir"
           tar -czf "$archive_file" -C "$backup_dir" .
           test -s "$archive_file"
           tar -tzf "$archive_file" >/dev/null
@@ -69,7 +81,7 @@ jobs:
           test -s "$encrypted_file"
           head -n 1 "$encrypted_file" | grep -qx 'age-encryption.org/v1'
 
-          # Les octets des documents et leur manifeste ne sont jamais publiés en clair.
+          # Les octets des documents et leur manifeste sont supprimés avant l'upload.
           rm -rf "$backup_dir"
           rm -f "$archive_file"
           echo "Archive Storage vérifiée et chiffrée."
