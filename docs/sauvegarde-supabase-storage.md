@@ -45,6 +45,7 @@ Après avoir téléchargé le fichier `.age`, ouvre PowerShell dans le dossier q
 
 ```powershell
 age.exe --decrypt --identity .\mahay-backup-key.txt --output .\mahay-storage.tar.gz .\mahay-storage.tar.gz.age
+New-Item -ItemType Directory -Force .\mahay-storage-restaure | Out-Null
 tar.exe -xzf .\mahay-storage.tar.gz -C .\mahay-storage-restaure
 ```
 
@@ -60,10 +61,10 @@ La restauration doit d'abord être répétée dans un **projet Supabase vide de 
 
 1. Crée les buckets listés dans `storage-manifest.json`, en reprenant leur nom, leur visibilité publique/privée et leurs limites.
 2. Installe et authentifie la Supabase CLI sur ton poste.
-3. Pour chaque bucket, copie son dossier local vers le bucket distant correspondant. Exemple pour le bucket `documents` avec le projet de test déjà lié :
+3. Pour chaque bucket, copie son dossier local vers le bucket distant correspondant. Remplace `PROJECT_REF` par la référence du projet de test :
 
 ```powershell
-supabase storage cp --recursive --experimental --linked .\mahay-storage-restaure\documents ss:///documents/
+supabase storage cp --recursive --experimental --remote=PROJECT_REF .\mahay-storage-restaure\documents ss:///documents/
 ```
 
 La CLI prend en charge la copie récursive de répertoires vers Storage. Vérifie la syntaxe et le projet distant sélectionné avant d'exécuter la copie. Ne lance pas cette opération contre le projet de production lors d'un exercice de restauration.
