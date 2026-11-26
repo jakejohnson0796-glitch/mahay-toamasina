@@ -8,6 +8,7 @@ import pytest
 from scripts.backup_supabase_storage import (
     StorageBackupError,
     SupabaseStorageBackup,
+    _CredentialSafeRedirectHandler,
 )
 
 
@@ -191,3 +192,52 @@ def test_empty_bucket_inventory_fails_closed(tmp_path):
 
     with pytest.raises(StorageBackupError, match="No Storage buckets"):
         backup.backup(tmp_path / "empty-storage")
+
+
+
+def test_cross_origin_redirect_does_not_forward_storage_credentials():
+    from urllib.request import Request
+
+    request = Request(
+        "https://project.supabase.co/storage/v1/object/private/file.pdf",
+        headers={
+            "apikey": "never-forward-this-key",
+            "Authorization": "Bearer never-forward-this-key",
+        },
+    )
+    redirected = _CredentialSafeRedirectHandler().redirect_request(
+        request,
+        None,
+        302,
+        "Found",
+        {},
+        "https://signed-download.example/file.pdf?token=signed",
+    )
+
+    headers = {key.lower(): value for key, value in redirected.header_items()}
+    assert "authorization" not in headers
+    assert "apikey" not in headers
+
+
+def test_same_origin_redirect_keeps_storage_credentials():
+    from urllib.request import Request
+
+    request = Request(
+        "https://project.supabase.co/storage/v1/object/private/file.pdf",
+        headers={
+            "apikey": "test-key",
+            "Authorization": "Bearer test-key",
+        },
+    )
+    redirected = _CredentialSafeRedirectHandler().redirect_request(
+        request,
+        None,
+        302,
+        "Found",
+        {},
+        "https://project.supabase.co/storage/v1/object/private/file.pdf?download=1",
+    )
+
+    headers = {key.lower(): value for key, value in redirected.header_items()}
+    assert headers["authorization"] == "Bearer test-key"
+    assert headers["apikey"] == "test-key"
