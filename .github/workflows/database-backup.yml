@@ -1,0 +1,93 @@
+name: Sauvegarde chiffrée de la base Postgres
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mahay-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Exporter et chiffrer les tables public
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Vérifier la configuration sans afficher les secrets
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "${DATABASE_URL:-}" ]]; then
+            echo "::error::Le secret BACKUP_DATABASE_URL est absent."
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "::error::BACKUP_DATABASE_URL doit être une URI PostgreSQL."
+              exit 1
+              ;;
+          esac
+          if [[ ! "${AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]+$ ]]; then
+            echo "::error::BACKUP_AGE_RECIPIENT doit contenir une clé publique age valide (age1...)."
+            exit 1
+          fi
+
+      - name: Installer age
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends age
+
+      - name: Créer, vérifier et chiffrer le dump PostgreSQL
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          backup_dir="${RUNNER_TEMP}/mahay-backup"
+          mkdir -p "$backup_dir"
+          trap 'rm -f "$dump_file"' EXIT
+
+          dump_file="$backup_dir/mahay-public.dump"
+          encrypted_file="$backup_dir/mahay-public.dump.age"
+
+          # PostgreSQL 17 correspond à la version majeure du projet Supabase.
+          # Le dump ne contient que le schéma applicatif public.
+          docker run --rm \
+            --env DATABASE_URL \
+            --mount "type=bind,src=$backup_dir,dst=/backup" \
+            postgres:17-alpine \
+            sh -euc 'pg_dump --format=custom --no-owner --no-acl --schema=public --file=/backup/mahay-public.dump "$DATABASE_URL" && pg_restore --list /backup/mahay-public.dump >/dev/null'
+
+          test -s "$dump_file"
+          age --encrypt --recipient "$AGE_RECIPIENT" --output "$encrypted_file" "$dump_file"
+          test -s "$encrypted_file"
+          head -n 1 "$encrypted_file" | grep -qx 'age-encryption.org/v1'
+
+          # Le seul fichier qui pourra devenir un artefact est le fichier chiffré.
+          rm -f "$dump_file"
+          echo "Dump PostgreSQL vérifié puis chiffré."
+          echo "Taille du fichier chiffré : $(wc -c < "$encrypted_file") octets."
+
+      - name: Publier uniquement le fichier chiffré
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: mahay-postgres-public-${{ github.run_id }}
+          path: ${{ runner.temp }}/mahay-backup/mahay-public.dump.age
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Nettoyer les fichiers temporaires du runner
+        if: always()
+        shell: bash
+        run: rm -rf "${RUNNER_TEMP}/mahay-backup"
