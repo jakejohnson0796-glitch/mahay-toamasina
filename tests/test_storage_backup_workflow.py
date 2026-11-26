@@ -42,3 +42,20 @@ def test_storage_backup_workflow_scopes_credentials_and_encrypts_before_upload()
     assert "AGE_RECIPIENT" not in upload_step
     assert "path: ${{ runner.temp }}/mahay-storage.tar.gz.age" in upload_step
     assert "retention-days: 30" in upload_step
+
+
+
+def test_storage_backup_docs_explain_scope_and_restore_limits():
+    storage_guide = (ROOT / "docs" / "sauvegarde-supabase-storage.md").read_text(
+        encoding="utf-8"
+    )
+    database_guide = (ROOT / "docs" / "sauvegarde-et-restauration.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "tous les buckets" in storage_guide
+    assert "SHA-256" in storage_guide
+    assert "BACKUP_STORAGE_SERVICE_KEY" in storage_guide
+    assert "projet Supabase vide de test" in storage_guide
+    assert "pas un instantané transactionnel" in storage_guide
+    assert "sauvegarde-supabase-storage.md" in database_guide
