@@ -13,6 +13,7 @@ def test_storage_backup_workflow_uses_dedicated_secrets_and_manual_trigger():
     assert "secrets.BACKUP_SUPABASE_URL" in workflow
     assert "secrets.BACKUP_STORAGE_SERVICE_KEY" in workflow
     assert "secrets.BACKUP_AGE_RECIPIENT" in workflow
+    assert "Vérifier la configuration sans afficher les secrets" not in workflow
     assert "uses: actions/checkout@v7" in workflow
     assert "python scripts/backup_supabase_storage.py" in workflow
 
