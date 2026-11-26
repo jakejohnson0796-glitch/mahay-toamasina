@@ -60,3 +60,14 @@ def test_storage_backup_docs_explain_scope_and_restore_limits():
     assert "projet Supabase vide de test" in storage_guide
     assert "pas un instantané transactionnel" in storage_guide
     assert "sauvegarde-supabase-storage.md" in database_guide
+
+def test_storage_backup_workflow_installs_age_before_encryption():
+    workflow = (ROOT / ".github" / "workflows" / "storage-backup.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "sudo apt-get update" in workflow
+    assert "sudo apt-get install --yes age" in workflow
+    assert "age --version" in workflow
+    assert workflow.index("Installer age") < workflow.index("Créer et chiffrer l'archive")
+
