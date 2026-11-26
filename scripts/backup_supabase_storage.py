@@ -15,7 +15,7 @@ import sys
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 
 PAGE_SIZE = 100
@@ -25,6 +25,32 @@ REQUEST_TIMEOUT_SECONDS = 90
 
 class StorageBackupError(RuntimeError):
     """A safe-to-display backup error without secrets or response bodies."""
+
+
+class _CredentialSafeRedirectHandler(HTTPRedirectHandler):
+    """Never forward project credentials to a different origin on redirect."""
+
+    @staticmethod
+    def _origin(url: str) -> tuple[str, str | None, int | None]:
+        parts = urlsplit(url)
+        default_port = 443 if parts.scheme.lower() == "https" else 80
+        return parts.scheme.lower(), (parts.hostname or "").lower(), parts.port or default_port
+
+    def redirect_request(self, request, fp, code, message, headers, new_url):
+        redirected = super().redirect_request(
+            request, fp, code, message, headers, new_url
+        )
+        if redirected is not None and self._origin(request.full_url) != self._origin(new_url):
+            for header in tuple(redirected.headers):
+                if header.lower() in {"authorization", "apikey"}:
+                    redirected.remove_header(header)
+            for header in tuple(redirected.unredirected_hdrs):
+                if header.lower() in {"authorization", "apikey"}:
+                    redirected.remove_header(header)
+        return redirected
+
+
+_SAFE_OPENER = build_opener(_CredentialSafeRedirectHandler())
 
 
 def _safe_segment(value: Any, *, label: str) -> str:
@@ -41,12 +67,24 @@ class SupabaseStorageBackup:
         supabase_url: str,
         service_key: str,
         *,
-        opener=urlopen,
+        opener=None,
         page_size: int = PAGE_SIZE,
         timeout: int = REQUEST_TIMEOUT_SECONDS,
     ) -> None:
-        parsed = urlsplit((supabase_url or "").strip())
-        if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+        try:
+            parsed = urlsplit((supabase_url or "").strip())
+            valid_url = (
+                parsed.scheme == "https"
+                and bool(parsed.hostname)
+                and not parsed.username
+                and not parsed.password
+                and not parsed.query
+                and not parsed.fragment
+                and parsed.path in {"", "/"}
+            )
+        except ValueError:
+            valid_url = False
+        if not valid_url:
             raise StorageBackupError("SUPABASE_URL must be a valid HTTPS project URL.")
         if not service_key or "\r" in service_key or "\n" in service_key:
             raise StorageBackupError("SUPABASE_SERVICE_KEY is missing or invalid.")
@@ -55,7 +93,7 @@ class SupabaseStorageBackup:
 
         self.base_url = supabase_url.strip().rstrip("/")
         self.service_key = service_key
-        self.opener = opener
+        self.opener = opener or _SAFE_OPENER.open
         self.page_size = page_size
         self.timeout = timeout
 
