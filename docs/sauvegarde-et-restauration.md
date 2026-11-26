@@ -79,3 +79,8 @@ Le résultat ne doit donc pas être présenté comme une sauvegarde complète de
 - [Connexion PostgreSQL Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres) : la connexion directe est recommandée pour les opérations `pg_dump`; le Session pooler est l'alternative IPv4.
 - [Télécharger les artefacts GitHub Actions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts) : un utilisateur doit disposer d'un accès en lecture au dépôt pour télécharger un artefact.
 - [Render - Health checks](https://render.com/docs/health-checks) : les contrôles de disponibilité doivent rester rapides ; cette PR ne modifie pas les routes de santé utilisées par les services.
+
+
+## Sauvegarde des fichiers Storage
+
+Le dump PostgreSQL précédent ne contient pas le contenu binaire des fichiers Supabase Storage. La sauvegarde complémentaire des buckets et objets est décrite dans [sauvegarde-supabase-storage.md](./sauvegarde-supabase-storage.md). Les deux archives sont nécessaires pour couvrir à la fois les données applicatives relationnelles et les fichiers déposés.
