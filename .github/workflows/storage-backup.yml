@@ -36,6 +36,14 @@ jobs:
           mkdir -p "$backup_dir"
           python scripts/backup_supabase_storage.py --output "$backup_dir"
 
+      - name: Installer age
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes age
+          age --version
+
       - name: Créer et chiffrer l'archive
         env:
           AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
