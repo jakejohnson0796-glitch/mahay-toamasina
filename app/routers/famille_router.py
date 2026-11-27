@@ -27,7 +27,7 @@ from ..models import (
 )
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
-from ..permissions import Permission, est_administrateur_global, has_permission
+from ..permissions import Permission, est_administrateur_global, has_permission, responsable_approuve
 from ..bulletins import calculer_moyenne_generale, lire_snapshot_bulletin
 
 router = APIRouter()
@@ -503,7 +503,7 @@ def associer_responsable_eleve(
     ).first()
     if not responsable or not eleve:
         return RedirectResponse("/admin/responsables-eleves?erreur=comptes", status_code=303)
-    if responsable.role != RoleUtilisateur.RESPONSABLE:
+    if not responsable_approuve(responsable):
         return RedirectResponse("/admin/responsables-eleves?erreur=profil", status_code=303)
     if (
         responsable.banni
