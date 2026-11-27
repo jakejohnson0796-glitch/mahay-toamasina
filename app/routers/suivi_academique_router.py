@@ -19,19 +19,13 @@ from ..models import (
     TypeNotification, Utilisateur,
 )
 from ..templating import templates
+from ..permissions import Permission, has_permission
 
 router = APIRouter()
 
 def _peut_gerer(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    """Admin ou professeur approuvé propriétaire du cours."""
-    return bool(utilisateur and (
-        utilisateur.role == RoleUtilisateur.ADMIN
-        or (
-            utilisateur.role == RoleUtilisateur.PROFESSEUR
-            and utilisateur.statut_verification_enseignant == "approuve"
-            and utilisateur.id == cours.professeur_id
-        )
-    ))
+    """Délègue la décision d'accès au cours à la politique RBAC centrale."""
+    return has_permission(utilisateur, Permission.COURSE_MANAGE, resource=cours)
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
     return session.exec(select(InscriptionCours).where(
