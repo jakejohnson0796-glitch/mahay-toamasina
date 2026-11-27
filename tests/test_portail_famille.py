@@ -41,6 +41,9 @@ def _utilisateur(nom, telephone, role=None, profil="eleve"):
         mot_de_passe_hash="hash-test",
         role=role,
         profil_souhaite=profil,
+        statut_verification_responsable=(
+            "approuve" if role == RoleUtilisateur.RESPONSABLE else "non_concerne"
+        ),
     )
 
 
