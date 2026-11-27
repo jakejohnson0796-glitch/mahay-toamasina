@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
+from ..permissions import est_administrateur_global
 from ..csrf import verifier_csrf
 from ..database import get_session
 from ..models import OpportuniteAcademique, RoleUtilisateur
@@ -18,9 +19,7 @@ CATEGORIES = ("bourse", "concours", "admission", "stage", "formation", "evenemen
 
 def _admin(request: Request, session: Session):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 def _source_http_valide(url: str) -> bool:
