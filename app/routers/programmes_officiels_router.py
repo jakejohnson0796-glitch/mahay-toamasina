@@ -15,6 +15,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from ..auth import utilisateur_courant
+from ..permissions import est_administrateur_global
 from ..client_ip import adresse_ip_client
 from ..csrf import verifier_csrf
 from ..database import get_session
@@ -59,9 +60,7 @@ MIN_TEXTE_VALIDABLE = 80
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 def _redirect(etat: str, programme_id: Optional[int] = None) -> RedirectResponse:
