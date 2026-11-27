@@ -28,6 +28,7 @@ from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSea
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..localization import langue_depuis_requete
 from ..profile_approval import profil_validation_requise
+from ..permissions import Permission, has_permission
 from ..websocket_security import origine_websocket_autorisee
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -46,30 +47,13 @@ router = APIRouter()
 
 
 def _est_professeur(utilisateur: Optional[Utilisateur]) -> bool:
-    """Un enseignant n'accède aux outils professionnels qu'après validation."""
-    return bool(
-        utilisateur
-        and (
-            utilisateur.role == RoleUtilisateur.ADMIN
-            or (
-                utilisateur.role == RoleUtilisateur.PROFESSEUR
-                and utilisateur.statut_verification_enseignant == "approuve"
-            )
-        )
-    )
+    """Accès aux outils enseignants accordé par la politique RBAC centrale."""
+    return has_permission(utilisateur, Permission.TEACHING_TOOLS)
 
 
 def _peut_gerer_cours(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    """Professeur vérifié propriétaire de CE cours, ou administrateur."""
-    if not utilisateur:
-        return False
-    if utilisateur.role == RoleUtilisateur.ADMIN:
-        return True
-    return bool(
-        utilisateur.role == RoleUtilisateur.PROFESSEUR
-        and utilisateur.statut_verification_enseignant == "approuve"
-        and utilisateur.id == cours.professeur_id
-    )
+    """Professeur approuvé propriétaire du cours, ou administrateur global."""
+    return has_permission(utilisateur, Permission.COURSE_MANAGE, resource=cours)
 
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
