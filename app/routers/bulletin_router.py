@@ -32,6 +32,7 @@ from ..models import (
 )
 from ..templating import templates
 from .classe_router import _peut_gerer_cours
+from ..permissions import Permission, has_permission
 
 router = APIRouter()
 
@@ -430,23 +431,15 @@ def responsable_autorise_bulletin(
     bulletin: BulletinScolaire,
 ) -> bool:
     """Autorise seulement le responsable lié activement à l'élève du bulletin."""
-    if (
-        not utilisateur
-        or utilisateur.role != RoleUtilisateur.RESPONSABLE
-        or utilisateur.profil_souhaite != "responsable"
-        or bulletin.statut != "publie"
-    ):
+    if not bulletin or bulletin.statut != "publie":
         return False
-    eleve = session.get(Utilisateur, bulletin.utilisateur_id)
-    if not eleve or eleve.banni or eleve.role != RoleUtilisateur.ETUDIANT:
-        return False
-    return session.exec(
-        select(LienResponsableEleve).where(
-            LienResponsableEleve.responsable_id == utilisateur.id,
-            LienResponsableEleve.eleve_id == bulletin.utilisateur_id,
-            LienResponsableEleve.statut == "actif",
-        )
-    ).first() is not None
+    return has_permission(
+        utilisateur,
+        Permission.FAMILY_BULLETIN_VIEW,
+        session=session,
+        resource=bulletin,
+        child_id=bulletin.utilisateur_id,
+    )
 
 
 @router.get("/famille/bulletins/periode/telecharger")
@@ -460,21 +453,16 @@ def telecharger_bulletin_general_famille(
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    if (
-        utilisateur.role != RoleUtilisateur.RESPONSABLE
-        or utilisateur.profil_souhaite != "responsable"
+    if not has_permission(
+        utilisateur,
+        Permission.FAMILY_CHILD_VIEW,
+        session=session,
+        child_id=eleve_id,
     ):
-        return RedirectResponse("/dashboard", status_code=303)
+        return RedirectResponse("/famille", status_code=303)
 
-    lien_actif = session.exec(
-        select(LienResponsableEleve).where(
-            LienResponsableEleve.responsable_id == utilisateur.id,
-            LienResponsableEleve.eleve_id == eleve_id,
-            LienResponsableEleve.statut == "actif",
-        )
-    ).first()
     eleve = session.get(Utilisateur, eleve_id)
-    if not lien_actif or not eleve or eleve.banni or eleve.role != RoleUtilisateur.ETUDIANT:
+    if not eleve:
         return RedirectResponse("/famille", status_code=303)
 
     bulletins = session.exec(
