@@ -26,6 +26,7 @@ from ..templating import templates
 from ..permissions import (
     Permission,
     est_administrateur_global,
+    professeur_approuve,
     has_permission,
     peut_gerer_role_institution,
     roles_institution_assignables,
@@ -502,7 +503,7 @@ def _role_membre_valide(role: str, compte: Utilisateur) -> bool:
     if role not in ROLE_MEMBRE_LABELS:
         return False
     if role == RoleMembreEtablissement.ENSEIGNANT.value:
-        return compte.role == RoleUtilisateur.PROFESSEUR
+        return professeur_approuve(compte)
     return True
 
 
