@@ -51,6 +51,9 @@ def _utilisateur(nom, telephone, role=RoleUtilisateur.ETUDIANT, profil="eleve"):
         role=role,
         profil_souhaite=profil,
         statut_verification_enseignant="approuve" if role == RoleUtilisateur.PROFESSEUR else "non_concerne",
+        statut_verification_responsable=(
+            "approuve" if role == RoleUtilisateur.RESPONSABLE else "non_concerne"
+        ),
     )
 
 
