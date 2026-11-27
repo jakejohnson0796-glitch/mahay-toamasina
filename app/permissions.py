@@ -75,9 +75,6 @@ GLOBAL_ADMIN_PERMISSIONS = frozenset(
         Permission.INSTITUTION_ROLE_ASSIGN,
         Permission.CIRCLE_ACCESS,
         Permission.CIRCLE_MANAGE,
-        Permission.FAMILY_PORTAL_VIEW,
-        Permission.FAMILY_CHILD_VIEW,
-        Permission.FAMILY_BULLETIN_VIEW,
     }
 )
 
