@@ -17,6 +17,7 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
+from ..permissions import est_administrateur_global
 from ..models import FAQ, Feedback, CategorieFAQ, CategorieFeedback, Utilisateur, RoleUtilisateur
 from ..aide_avis_data import donnees_faq, donnees_avis
 
@@ -25,9 +26,7 @@ router = APIRouter()
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 # ============================================================

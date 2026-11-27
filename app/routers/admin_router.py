@@ -19,6 +19,7 @@ from ..database import get_session
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import empreinte_session_utilisateur, utilisateur_courant, verifier_mot_de_passe
+from ..permissions import est_administrateur_global
 from ..models import (
     Utilisateur, RoleUtilisateur, NiveauScolaire, OptionScolaire, CycleEnseigne, CercleEtude, MembreCercle, RoleMembreCercle, MessageCercle, SignalementMessage,
     DemandeAdhesionCercle, StatutDemandeAdhesion, Document, StatutDocument, TentativeQuiz, AbonnementEtudiant,
@@ -53,9 +54,7 @@ router = APIRouter()
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 def _condition_comptes_reels_supervisables():

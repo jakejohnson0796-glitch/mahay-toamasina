@@ -41,6 +41,9 @@ def _utilisateur(nom, telephone, role=None, profil="eleve"):
         mot_de_passe_hash="hash-test",
         role=role,
         profil_souhaite=profil,
+        statut_verification_responsable=(
+            "approuve" if role == RoleUtilisateur.RESPONSABLE else "non_concerne"
+        ),
     )
 
 
@@ -464,7 +467,7 @@ def test_inscription_responsable_et_templates_famille_sont_coherents():
     assert 'class EvenementLienResponsableEleve' in (ROOT / "app" / "models.py").read_text(encoding="utf-8")
     assert "EvenementLienResponsableEleve" in family_router
     assert 'eleve.profil_souhaite != "eleve"' in family_router
-    assert "responsable.role != RoleUtilisateur.RESPONSABLE" in family_router
+    assert "responsable_approuve(responsable)" in family_router
     assert 'identifiant_eleve: str = Form("")' in family_router
     assert 'Utilisateur.identifiant_connexion == identifiant_eleve_nettoye' in family_router
     assert 'RESPONSABLE = "responsable"' in (ROOT / "app" / "models.py").read_text(encoding="utf-8")

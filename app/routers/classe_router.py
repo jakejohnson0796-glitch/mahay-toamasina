@@ -28,6 +28,7 @@ from ..models import (Cours, InscriptionCours, Seance, StatutSeance, PresenceSea
 from ..auth import utilisateur_courant, session_utilisateur_valide
 from ..localization import langue_depuis_requete
 from ..profile_approval import profil_validation_requise
+from ..permissions import Permission, est_administrateur_global, has_permission
 from ..websocket_security import origine_websocket_autorisee
 from ..livekit_tokens import generer_jeton_salle, livekit_configure, LiveKitNonConfigure, muter_micro_participant, expulser_participant
 from ..config import parametres
@@ -46,30 +47,13 @@ router = APIRouter()
 
 
 def _est_professeur(utilisateur: Optional[Utilisateur]) -> bool:
-    """Un enseignant n'accède aux outils professionnels qu'après validation."""
-    return bool(
-        utilisateur
-        and (
-            utilisateur.role == RoleUtilisateur.ADMIN
-            or (
-                utilisateur.role == RoleUtilisateur.PROFESSEUR
-                and utilisateur.statut_verification_enseignant == "approuve"
-            )
-        )
-    )
+    """Accès aux outils enseignants accordé par la politique RBAC centrale."""
+    return has_permission(utilisateur, Permission.TEACHING_TOOLS)
 
 
 def _peut_gerer_cours(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    """Professeur vérifié propriétaire de CE cours, ou administrateur."""
-    if not utilisateur:
-        return False
-    if utilisateur.role == RoleUtilisateur.ADMIN:
-        return True
-    return bool(
-        utilisateur.role == RoleUtilisateur.PROFESSEUR
-        and utilisateur.statut_verification_enseignant == "approuve"
-        and utilisateur.id == cours.professeur_id
-    )
+    """Professeur approuvé propriétaire du cours, ou administrateur global."""
+    return has_permission(utilisateur, Permission.COURSE_MANAGE, resource=cours)
 
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
@@ -92,7 +76,7 @@ ORDRE_CYCLES_ENSEIGNEMENT = {
 
 def _cycles_enseignes_utilisateur(session: Session, utilisateur: Utilisateur) -> list[str]:
     """Renvoie uniquement les cycles déclarés, avec un repli universitaire historique."""
-    if utilisateur.role == RoleUtilisateur.ADMIN:
+    if est_administrateur_global(utilisateur):
         return list(CYCLES_ENSEIGNEMENT_VALIDES)
 
     declarations = session.exec(
@@ -397,10 +381,7 @@ def liste_cours(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    if (
-        utilisateur.role == RoleUtilisateur.PROFESSEUR
-        and utilisateur.statut_verification_enseignant != "approuve"
-    ):
+    if utilisateur.role == RoleUtilisateur.PROFESSEUR and not _est_professeur(utilisateur):
         return RedirectResponse("/dashboard#verification", status_code=303)
 
     if utilisateur.role in (RoleUtilisateur.PROFESSEUR, RoleUtilisateur.ADMIN):
@@ -498,7 +479,7 @@ def creer_cours(
 
     if portee == "universitaire":
         cycles_autorises = set(_cycles_enseignes_utilisateur(session, utilisateur))
-        if utilisateur.role != RoleUtilisateur.ADMIN and "universite" not in cycles_autorises:
+        if not est_administrateur_global(utilisateur) and "universite" not in cycles_autorises:
             return RedirectResponse("/classe?erreur=cycle_non_autorise#nouveau-cours", status_code=303)
         matiere = " ".join((matiere or "").split())
         niveau = " ".join((niveau or "").split())

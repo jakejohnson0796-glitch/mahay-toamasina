@@ -44,20 +44,17 @@ from ..models import (
 )
 from ..templating import templates
 from ..rate_limit import limite_depassee
+from ..permissions import Permission, has_permission
 
 router = APIRouter()
 
 
 def professeur_verifie(utilisateur: Optional[Utilisateur]) -> bool:
-    return bool(
-        utilisateur
-        and utilisateur.role == RoleUtilisateur.PROFESSEUR
-        and utilisateur.statut_verification_enseignant == "approuve"
-    )
+    return has_permission(utilisateur, Permission.TEACHING_UPDATE_SUBMIT)
 
 
 def administrateur_autorise(utilisateur: Optional[Utilisateur]) -> bool:
-    return bool(utilisateur and utilisateur.role == RoleUtilisateur.ADMIN)
+    return has_permission(utilisateur, Permission.TEACHING_UPDATE_REVIEW)
 
 
 def _rediriger_professeur(etat: str) -> RedirectResponse:

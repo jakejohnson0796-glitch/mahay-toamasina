@@ -24,6 +24,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import (LeconReferentielle, Document, Filiere, NiveauScolaire, OptionScolaire, EtablissementScolaire, ReferentielScolaire, MatiereScolaire, ProgrammeMatiereScolaire, TypeDocument, StatutDocument, RoleUtilisateur, ConsultationDocument, CercleEtude, MembreCercle, Utilisateur, Notification, TypeNotification, TentativeQuiz, TacheIA, FicheRevisionDocument, StatutFicheRevisionDocument)
 from ..auth import utilisateur_courant
+from ..permissions import Permission, est_administrateur_global, has_permission
 from ..localization import langue_depuis_requete
 from ..ai_quiz import generer_quiz_depuis_texte
 from ..text_extraction import extraire_texte, ExtractionSaturee
@@ -1601,7 +1602,7 @@ def consulter_document_moderation(
     lire un document EN_ATTENTE ou REJETE avant de décider de son statut.
     """
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -1647,7 +1648,7 @@ def fichier_document_moderation(
 ):
     """Sert temporairement le fichier à un administrateur uniquement."""
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -1741,14 +1742,14 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             "fiche_pedagogique": _charger_fiche_pedagogique(document),
             "fiche_revision_document": fiche_revision_document,
             "peut_relancer_revision": (
-                utilisateur.role == RoleUtilisateur.ADMIN
+                est_administrateur_global(utilisateur)
                 or document.uploader_id == utilisateur.id
             ),
             "fiche_validee": _fiche_pedagogique_est_validee(document),
             "fiche_validation_possible": _fiche_pedagogique_peut_etre_validee(document),
             "types_document": list(TypeDocument),
             "peut_valider_fiche": (
-                utilisateur.role == RoleUtilisateur.ADMIN
+                est_administrateur_global(utilisateur)
                 or document.uploader_id == utilisateur.id
             ),
         },
@@ -2018,14 +2019,14 @@ def relancer_fiche_revision_document(
         or document.statut != StatutDocument.APPROUVE
         or document.type_document != TypeDocument.COURS
         or (
-            utilisateur.role != RoleUtilisateur.ADMIN
+            not est_administrateur_global(utilisateur)
             and document.uploader_id != utilisateur.id
         )
     ):
         return RedirectResponse("/documents", status_code=303)
     if document.cercle_id is not None and not _est_membre_cercle(
         session, document.cercle_id, utilisateur.id
-    ) and utilisateur.role != RoleUtilisateur.ADMIN:
+    ) and not est_administrateur_global(utilisateur):
         return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
 
     fiche = session.exec(
@@ -2067,11 +2068,11 @@ def valider_fiche_document(
     document = session.get(Document, document_id)
     if not document or document.statut != StatutDocument.APPROUVE:
         return RedirectResponse("/documents", status_code=303)
-    if utilisateur.role != RoleUtilisateur.ADMIN and document.uploader_id != utilisateur.id:
+    if not est_administrateur_global(utilisateur) and document.uploader_id != utilisateur.id:
         return RedirectResponse("/documents", status_code=303)
     if (
         document.cercle_id is not None
-        and utilisateur.role != RoleUtilisateur.ADMIN
+        and not est_administrateur_global(utilisateur)
         and not _est_membre_cercle(session, document.cercle_id, utilisateur.id)
     ):
         return RedirectResponse(f"/cercles/{document.cercle_id}", status_code=303)
@@ -2350,7 +2351,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
 @router.get("/moderation")
 def panneau_moderation(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     en_attente = session.exec(
@@ -2455,7 +2456,7 @@ def formulaire_modifier_document(
 ):
     """Formulaire d'édition des métadonnées réservé aux administrateurs."""
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2501,7 +2502,7 @@ def enregistrer_modification_document(
 ):
     """Corrige les métadonnées sans modifier le fichier ni le statut de publication."""
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2651,7 +2652,7 @@ def approuver_document(
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2683,7 +2684,7 @@ def rejeter_document(
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2716,7 +2717,7 @@ def supprimer_document(
     avant de supprimer l'enregistrement Document.
     """
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)

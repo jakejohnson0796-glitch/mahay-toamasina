@@ -19,19 +19,13 @@ from ..models import (
     TypeNotification, Utilisateur,
 )
 from ..templating import templates
+from ..permissions import Permission, has_permission
 
 router = APIRouter()
 
 def _peut_gerer(cours: Cours, utilisateur: Optional[Utilisateur]) -> bool:
-    """Admin ou professeur approuvé propriétaire du cours."""
-    return bool(utilisateur and (
-        utilisateur.role == RoleUtilisateur.ADMIN
-        or (
-            utilisateur.role == RoleUtilisateur.PROFESSEUR
-            and utilisateur.statut_verification_enseignant == "approuve"
-            and utilisateur.id == cours.professeur_id
-        )
-    ))
+    """Délègue la décision d'accès au cours à la politique RBAC centrale."""
+    return has_permission(utilisateur, Permission.COURSE_MANAGE, resource=cours)
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
     return session.exec(select(InscriptionCours).where(
@@ -656,7 +650,7 @@ def _csv_academique_sans_formule(valeur) -> str:
 @router.get("/admin/statistiques-academiques")
 def page_statistiques_academiques(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_AUDIT_READ):
         return RedirectResponse("/", status_code=303)
     statistiques = _charger_statistiques_globales(session)
     return templates.TemplateResponse(request, "admin_rapport_academique.html", {

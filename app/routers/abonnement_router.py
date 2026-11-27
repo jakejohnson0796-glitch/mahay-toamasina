@@ -15,6 +15,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import RoleUtilisateur, StatutAbonnementEtudiant, AbonnementEtudiant, Utilisateur
 from ..auth import utilisateur_courant
+from ..permissions import est_administrateur_global
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif
 from .. import subscription
 
@@ -96,11 +97,9 @@ def soumettre_demande(
 # Cote admin
 # ---------------------------------------------------------------------
 
-def _admin_requis(request: Request, session: Session):
+def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 @router.get("/admin/abonnements")

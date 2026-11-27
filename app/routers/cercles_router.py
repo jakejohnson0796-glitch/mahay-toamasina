@@ -39,6 +39,7 @@ from ..profile_approval import profil_validation_requise
 from ..websocket_security import origine_websocket_autorisee
 from ..ws_manager import gestionnaire
 from ..dependencies import acces_premium_ou_redirection
+from ..permissions import Permission, est_administrateur_global, has_permission
 from ..storage import sauvegarder_fichier, obtenir_url_telechargement, stockage_distant_actif, FichierInvalide, supprimer_fichier
 from .. import subscription
 from .. import theme_service
@@ -91,36 +92,21 @@ MOTIFS_SIGNALEMENT_AUTORISES = {
 
 
 def _a_acces_cercle(session: Session, cercle_id: int, utilisateur_id: int) -> bool:
-    """Acces effectif au cercle : membre reel OU administrateur global.
-
-    L'administrateur n'est pas materialise comme membre de chaque cercle :
-    cela evite une enorme redondance de lignes MembreCercle et toutes les
-    operations d'entretien associees. Les compteurs de membres continuent,
-    eux, de compter uniquement les membres reels.
-    """
+    """L'accès est limité aux membres actifs ou à l'administration globale."""
     cercle = session.get(CercleEtude, cercle_id)
-    if not cercle or cercle.statut != StatutCercle.ACTIF:
+    utilisateur = session.get(Utilisateur, utilisateur_id)
+    if not cercle or cercle.statut != StatutCercle.ACTIF or not utilisateur:
         return False
-
-    return session.exec(
-        select(Utilisateur.id)
-        .outerjoin(
-            MembreCercle,
-            (MembreCercle.cercle_id == cercle_id)
-            & (MembreCercle.utilisateur_id == Utilisateur.id),
-        )
-        .where(
-            Utilisateur.id == utilisateur_id,
-            or_(
-                Utilisateur.role == RoleUtilisateur.ADMIN,
-                MembreCercle.id.is_not(None),
-            ),
-        )
-    ).first() is not None
+    return has_permission(
+        utilisateur,
+        Permission.CIRCLE_ACCESS,
+        session=session,
+        resource=cercle,
+    )
 
 
 def _est_admin(utilisateur: Optional[Utilisateur]) -> bool:
-    return bool(utilisateur and utilisateur.role == RoleUtilisateur.ADMIN)
+    return est_administrateur_global(utilisateur)
 
 
 def _a_acces_premium_cercle(session: Session, utilisateur: Utilisateur) -> bool:
@@ -151,15 +137,12 @@ def _exiger_acces_premium_api(session: Session, utilisateur: Utilisateur) -> Non
 
 
 def _peut_gerer_cercle(cercle: CercleEtude, utilisateur: Optional[Utilisateur]) -> bool:
-    """Createur du cercle (uniquement le sien) ou admin (n'importe
-    lequel), mais uniquement tant que le cercle est ACTIF.
-
-    Un cercle ARCHIVE reste recuperable pour l'historique, mais ne doit
-    plus accepter d'actions utilisateur (adhesion, moderation, messages,
-    membres, etc.)."""
-    if not utilisateur or cercle.statut != StatutCercle.ACTIF:
-        return False
-    return utilisateur.id == cercle.createur_id or _est_admin(utilisateur)
+    """Créateur du cercle concerné ou administrateur global, sur un cercle actif."""
+    return bool(
+        cercle
+        and cercle.statut == StatutCercle.ACTIF
+        and has_permission(utilisateur, Permission.CIRCLE_MANAGE, resource=cercle)
+    )
 
 
 def _demande_en_attente(session: Session, cercle_id: int, utilisateur_id: int) -> Optional[DemandeAdhesionCercle]:
@@ -1557,7 +1540,7 @@ def demander_adhesion(
     # Les administrateurs ont un accès transversal accordé par
     # _a_acces_cercle ; ils ne sont pas ajoutés artificiellement comme
     # membres à chaque cercle et ne doivent jamais créer de demande.
-    if utilisateur.role == RoleUtilisateur.ADMIN:
+    if _est_admin(utilisateur):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     if _a_acces_cercle(session, cercle_id, utilisateur.id):
@@ -1747,7 +1730,7 @@ def _traiter_acceptation_demande(
     # Le bypass n'est possible que pour une action explicitement effectuée
     # par un compte administrateur. Un créateur/modérateur de cercle garde
     # le contrôle de cohérence du profil au moment de l'acceptation.
-    force_admin = force_admin and traiteur.role == RoleUtilisateur.ADMIN
+    force_admin = force_admin and _est_admin(traiteur)
     demandeur = session.get(Utilisateur, demande.utilisateur_id)
     # §32 du brief : le niveau (ou la filiere) du demandeur a pu changer
     # entre la demande et son traitement — la verification doit etre
