@@ -20,6 +20,7 @@ from ..client_ip import adresse_ip_client
 from ..templating import templates
 from ..csrf import verifier_csrf
 from ..auth import utilisateur_courant
+from ..permissions import est_administrateur_global
 from ..rate_limit import limite_depassee
 from ..models import (
     Feedback, ReponseFeedback, CategorieFeedback, StatutFeedback,
@@ -39,9 +40,7 @@ def _ip_client(request: Request) -> str:
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 def _creer_notification_reponse(session: Session, feedback: Feedback) -> None:
