@@ -23,6 +23,13 @@ from ..models import (
 )
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
+from ..permissions import (
+    Permission,
+    est_administrateur_global,
+    has_permission,
+    peut_gerer_role_institution,
+    roles_institution_assignables,
+)
 from ..subscription import creer_essais_gratuits_en_masse
 
 router = APIRouter()
@@ -33,9 +40,7 @@ LONGUEUR_MAX_NOM = 120
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 def _ascii(value: str) -> str:
@@ -395,31 +400,13 @@ RANG_ROLE_MEMBRE = {
 
 
 def roles_assignables(role_acteur: str | None, administrateur_global: bool = False) -> list[str]:
-    """Rôles locaux que l'acteur peut attribuer ; le responsable reste réservé au global admin."""
-    if administrateur_global:
-        return list(ROLE_MEMBRE_LABELS)
-    role = str(getattr(role_acteur, "value", role_acteur) or "")
-    if role == RoleMembreEtablissement.RESPONSABLE.value:
-        return [
-            RoleMembreEtablissement.GESTIONNAIRE.value,
-            RoleMembreEtablissement.ENSEIGNANT.value,
-            RoleMembreEtablissement.ETUDIANT.value,
-        ]
-    if role == RoleMembreEtablissement.GESTIONNAIRE.value:
-        return [
-            RoleMembreEtablissement.ENSEIGNANT.value,
-            RoleMembreEtablissement.ETUDIANT.value,
-        ]
-    return []
+    """Compatibilité de l'interface avec le moteur central des rôles locaux."""
+    return roles_institution_assignables(role_acteur, administrateur_global)
 
 
 def peut_gerer_role(role_acteur: str | None, role_cible: str | None, administrateur_global: bool = False) -> bool:
-    """Interdit à un acteur local de modifier un membre de rang égal ou supérieur."""
-    if administrateur_global:
-        return True
-    acteur = str(getattr(role_acteur, "value", role_acteur) or "")
-    cible = str(getattr(role_cible, "value", role_cible) or "")
-    return RANG_ROLE_MEMBRE.get(acteur, 0) > RANG_ROLE_MEMBRE.get(cible, 99)
+    """Empêche la modification d'un membre de rang égal ou supérieur."""
+    return peut_gerer_role_institution(role_acteur, role_cible, administrateur_global)
 
 
 def _contexte_gestion_institution(request: Request, session: Session, institution_id: int):
@@ -429,7 +416,7 @@ def _contexte_gestion_institution(request: Request, session: Session, institutio
     institution = session.get(EtablissementPartenaire, institution_id)
     if not institution:
         raise HTTPException(status_code=404, detail="Établissement introuvable.")
-    administrateur_global = utilisateur.role == RoleUtilisateur.ADMIN
+    administrateur_global = est_administrateur_global(utilisateur)
     membre_acteur = None
     role_acteur = "admin" if administrateur_global else None
     if not administrateur_global:
@@ -442,11 +429,13 @@ def _contexte_gestion_institution(request: Request, session: Session, institutio
         ).first()
         if (
             not institution.est_actif
+            or not has_permission(
+                utilisateur,
+                Permission.INSTITUTION_MEMBERS_MANAGE,
+                session=session,
+                institution_id=institution.id,
+            )
             or not membre_acteur
-            or membre_acteur.role not in {
-                RoleMembreEtablissement.RESPONSABLE.value,
-                RoleMembreEtablissement.GESTIONNAIRE.value,
-            }
         ):
             raise HTTPException(status_code=403, detail="Tu n'as pas les droits de gestion de cet établissement.")
         role_acteur = membre_acteur.role
