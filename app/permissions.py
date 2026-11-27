@@ -103,15 +103,14 @@ def compte_actif(utilisateur: Optional[Utilisateur]) -> bool:
 
 
 def profil_approuve(utilisateur: Optional[Utilisateur], profil: str) -> bool:
-    """Check effective role, explicit approval status, and profile consistency.
+    """Trust effective role plus explicit approval, not the requested-profile label.
 
-    A missing profil_souhaite is tolerated only for lightweight legacy/test
-    objects. Persisted user rows always have this field and must match.
+    profil_souhaite records what the person requested at signup; it is not an
+    authorization field. The effective role and its independently recorded
+    approval status are the security boundary. This also preserves already
+    approved legacy accounts whose descriptive label was not backfilled.
     """
     if not compte_actif(utilisateur) or role_value(utilisateur) != profil:
-        return False
-    profil_demande = getattr(utilisateur, "profil_souhaite", None)
-    if profil_demande not in (None, "", profil):
         return False
     champ_statut = {
         "professeur": "statut_verification_enseignant",
