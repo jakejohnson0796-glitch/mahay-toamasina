@@ -27,6 +27,7 @@ from ..models import (
 )
 from ..telephone import TelephoneInvalide, normaliser_telephone
 from ..templating import templates
+from ..permissions import Permission, est_administrateur_global, has_permission
 from ..bulletins import calculer_moyenne_generale, lire_snapshot_bulletin
 
 router = APIRouter()
@@ -41,7 +42,7 @@ _STATUTS_PRESENCE = ("present", "absent", "retard", "excuse")
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     admin = utilisateur_courant(request, session)
-    if not admin or admin.role != RoleUtilisateur.ADMIN:
+    if not est_administrateur_global(admin):
         return None
     return admin
 
@@ -413,10 +414,7 @@ def portail_famille(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
     if not utilisateur:
         return RedirectResponse("/connexion", status_code=303)
-    if (
-        utilisateur.role != RoleUtilisateur.RESPONSABLE
-        or utilisateur.profil_souhaite != "responsable"
-    ):
+    if not has_permission(utilisateur, Permission.FAMILY_PORTAL_VIEW):
         return RedirectResponse("/dashboard", status_code=303)
 
     enfants = construire_portail_famille(session, utilisateur.id)
