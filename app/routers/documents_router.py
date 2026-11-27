@@ -1648,7 +1648,7 @@ def fichier_document_moderation(
 ):
     """Sert temporairement le fichier à un administrateur uniquement."""
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -1749,7 +1749,7 @@ def parcours_document(request: Request, document_id: int, session: Session = Dep
             "fiche_validation_possible": _fiche_pedagogique_peut_etre_validee(document),
             "types_document": list(TypeDocument),
             "peut_valider_fiche": (
-                utilisateur.role == RoleUtilisateur.ADMIN
+                est_administrateur_global(utilisateur)
                 or document.uploader_id == utilisateur.id
             ),
         },
@@ -2351,7 +2351,7 @@ def quiz_document(request: Request, document_id: int, session: Session = Depends
 @router.get("/moderation")
 def panneau_moderation(request: Request, session: Session = Depends(get_session)):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     en_attente = session.exec(
@@ -2456,7 +2456,7 @@ def formulaire_modifier_document(
 ):
     """Formulaire d'édition des métadonnées réservé aux administrateurs."""
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2502,7 +2502,7 @@ def enregistrer_modification_document(
 ):
     """Corrige les métadonnées sans modifier le fichier ni le statut de publication."""
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2652,7 +2652,7 @@ def approuver_document(
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2684,7 +2684,7 @@ def rejeter_document(
     _csrf: None = Depends(verifier_csrf),
 ):
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
@@ -2717,7 +2717,7 @@ def supprimer_document(
     avant de supprimer l'enregistrement Document.
     """
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
+    if not has_permission(utilisateur, Permission.PLATFORM_DOCUMENTS_MODERATE):
         return RedirectResponse("/", status_code=303)
 
     document = session.get(Document, document_id)
