@@ -42,13 +42,15 @@ from ..models import (
 )
 from ..storage import obtenir_url_telechargement, stockage_distant_actif
 from ..templating import templates
+from ..permissions import Permission, has_permission
 from .. import classe_transcription
 
 router = APIRouter()
 
 
 def _est_gerant(cours: Cours, utilisateur: Utilisateur) -> bool:
-    return utilisateur.role == RoleUtilisateur.ADMIN or cours.professeur_id == utilisateur.id
+    """Le professeur doit être approuvé et propriétaire du cours."""
+    return has_permission(utilisateur, Permission.COURSE_MANAGE, resource=cours)
 
 
 def _est_inscrit(session: Session, cours_id: int, utilisateur_id: int) -> bool:
