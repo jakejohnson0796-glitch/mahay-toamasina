@@ -129,3 +129,13 @@ def test_portail_famille_exige_un_lien_actif_et_un_responsable_approuve():
         banni=False,
     )
     assert not peut_voir_enfant(_SessionFamille(enfant, object()), responsable_non_approuve, 2)
+
+def test_admin_global_ne_contourne_pas_les_liens_familiaux():
+    admin = SimpleNamespace(role=RoleUtilisateur.ADMIN, banni=False)
+    assert not has_permission(admin, Permission.FAMILY_PORTAL_VIEW)
+    assert not has_permission(
+        admin,
+        Permission.FAMILY_CHILD_VIEW,
+        session=object(),
+        child_id=2,
+    )
