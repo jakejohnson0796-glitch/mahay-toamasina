@@ -16,6 +16,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select, func, or_
 
 from ..auth import utilisateur_courant
+from ..permissions import est_administrateur_global
 from ..csrf import verifier_csrf
 from ..database import get_session
 from ..models import (
@@ -75,9 +76,7 @@ ETABLISSEMENTS_ATTENDUS_PAR_REGION = {
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 def _referentiel_courant(session: Session) -> Optional[ReferentielScolaire]:
