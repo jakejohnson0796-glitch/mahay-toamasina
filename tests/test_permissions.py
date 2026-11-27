@@ -42,11 +42,21 @@ def test_administrateur_global_est_reconnu_mais_un_admin_banni_ne_l_est_pas():
     assert not has_permission(admin_banni, Permission.PLATFORM_SECURITY_MANAGE)
 
 
-def test_professeur_doit_etre_approuve_et_avoir_un_profil_coherent():
+def test_professeur_doit_avoir_un_role_effectif_et_une_approbation_active():
     assert professeur_approuve(_professeur())
     assert not professeur_approuve(_professeur(statut="en_attente"))
     assert not professeur_approuve(_professeur(statut="retire"))
-    assert not professeur_approuve(_professeur(profil="eleve"))
+    # Le profil demandé à l'inscription n'est pas un droit : seul le rôle
+    # effectif attribué après validation et son statut gouvernent l'accès.
+    assert professeur_approuve(_professeur(profil="eleve"))
+    compte_sans_role = SimpleNamespace(
+        id=11,
+        role=RoleUtilisateur.ETUDIANT,
+        profil_souhaite="professeur",
+        statut_verification_enseignant="approuve",
+        banni=False,
+    )
+    assert not professeur_approuve(compte_sans_role)
 
 
 def test_gestion_cours_exige_a_la_fois_approbation_et_propriete():
