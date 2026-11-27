@@ -251,6 +251,12 @@ def has_permission(
     if not compte_actif(utilisateur):
         return False
 
+    # Resource lifecycle constraints apply even to the global administrator.
+    # Admins have broad authority, but archived circles are read-only.
+    if cle in {Permission.CIRCLE_ACCESS.value, Permission.CIRCLE_MANAGE.value}:
+        if resource is None or getattr(resource, "statut", None) != "actif":
+            return False
+
     if est_administrateur_global(utilisateur):
         return cle in GLOBAL_ADMIN_PERMISSIONS or cle in {
             Permission.REPETITEUR_PROFILE_MANAGE.value,
@@ -262,7 +268,7 @@ def has_permission(
     if cle == Permission.TEACHING_TOOLS.value:
         return professeur_approuve(utilisateur)
     if cle == Permission.TEACHING_COURSE_MANAGE.value:
-        return professeur_approuve(utilisateur)
+        return peut_gerer_cours(resource, utilisateur)
     if cle == Permission.TEACHING_UPDATE_SUBMIT.value:
         return professeur_approuve(utilisateur)
     if cle == Permission.COURSE_MANAGE.value:
