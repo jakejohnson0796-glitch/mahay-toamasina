@@ -24,6 +24,7 @@ from ..templating import templates
 from ..csrf import verifier_csrf
 from ..models import Abonnement, StatutAbonnement, RoleUtilisateur, Utilisateur
 from ..auth import utilisateur_courant
+from ..permissions import est_administrateur_global
 
 router = APIRouter()
 
@@ -83,9 +84,7 @@ def demander_contact(
 
 def _admin_requis(request: Request, session: Session) -> Optional[Utilisateur]:
     utilisateur = utilisateur_courant(request, session)
-    if not utilisateur or utilisateur.role != RoleUtilisateur.ADMIN:
-        return None
-    return utilisateur
+    return utilisateur if est_administrateur_global(utilisateur) else None
 
 
 @router.get("/admin/sponsors")
