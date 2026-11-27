@@ -1540,7 +1540,7 @@ def demander_adhesion(
     # Les administrateurs ont un accès transversal accordé par
     # _a_acces_cercle ; ils ne sont pas ajoutés artificiellement comme
     # membres à chaque cercle et ne doivent jamais créer de demande.
-    if utilisateur.role == RoleUtilisateur.ADMIN:
+    if _est_admin(utilisateur):
         return RedirectResponse(f"/cercles/{cercle_id}", status_code=303)
 
     if _a_acces_cercle(session, cercle_id, utilisateur.id):
@@ -1730,7 +1730,7 @@ def _traiter_acceptation_demande(
     # Le bypass n'est possible que pour une action explicitement effectuée
     # par un compte administrateur. Un créateur/modérateur de cercle garde
     # le contrôle de cohérence du profil au moment de l'acceptation.
-    force_admin = force_admin and traiteur.role == RoleUtilisateur.ADMIN
+    force_admin = force_admin and _est_admin(traiteur)
     demandeur = session.get(Utilisateur, demande.utilisateur_id)
     # §32 du brief : le niveau (ou la filiere) du demandeur a pu changer
     # entre la demande et son traitement — la verification doit etre
